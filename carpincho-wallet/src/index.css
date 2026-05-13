@@ -231,6 +231,14 @@ select {
   position: relative;
   z-index: 5;
   margin-top: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.account-control-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
 }
 
 .account-switcher {
@@ -245,6 +253,17 @@ select {
   background: rgba(255, 255, 255, 0.78);
   color: var(--wallet-text);
   text-align: left;
+}
+
+.account-add-button {
+  min-height: 56px;
+  margin-top: 12px;
+  padding: 0 16px;
+  border: 1px solid var(--arg-sky-2);
+  border-radius: 16px;
+  background: linear-gradient(180deg, var(--arg-sky), var(--arg-sky-2));
+  color: white;
+  font-weight: 900;
 }
 
 .account-switcher-copy,
@@ -270,9 +289,16 @@ select {
 }
 
 .chevron {
-  color: var(--wallet-muted);
-  font-size: 0.72rem;
-  font-weight: 900;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid var(--wallet-muted);
+  border-bottom: 2px solid var(--wallet-muted);
+  transform: rotate(45deg);
+  transition: transform 140ms ease;
+}
+
+.chevron.open {
+  transform: rotate(225deg);
 }
 
 .account-dropdown {

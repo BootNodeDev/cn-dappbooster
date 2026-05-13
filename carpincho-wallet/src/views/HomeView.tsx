@@ -375,53 +375,58 @@ export const HomeView = (): JSX.Element => {
           </div>
         ) : (
           <>
-            <div className="account-switcher-wrap">
-              <button
-                className="account-switcher"
-                type="button"
-                onClick={() => setAccountMenuOpen(open => !open)}
-                aria-expanded={accountMenuOpen}
-              >
-                <span className="account-avatar small" style={avatarStyle(primary.partyId)}>{initials(primary.name)}</span>
-                <span className="account-switcher-copy">
-                  <span>{primary.name}</span>
-                  <small>{shortMiddle(primary.partyId, 11, 6)}</small>
-                </span>
-                <span className="chevron">{accountMenuOpen ? 'Up' : 'Down'}</span>
-              </button>
-              {accountMenuOpen && (
-                <div className="account-dropdown">
-                  <div className="dropdown-kicker">Connected wallet</div>
-                  {accountsSorted.map(a => (
+            <div className="account-control-row">
+              <div className="account-switcher-wrap">
+                <button
+                  className="account-switcher"
+                  type="button"
+                  onClick={() => setAccountMenuOpen(open => !open)}
+                  aria-expanded={accountMenuOpen}
+                >
+                  <span className="account-avatar small" style={avatarStyle(primary.partyId)}>{initials(primary.name)}</span>
+                  <span className="account-switcher-copy">
+                    <span>{primary.name}</span>
+                    <small>{shortMiddle(primary.partyId, 11, 6)}</small>
+                  </span>
+                  <span className={`chevron ${accountMenuOpen ? 'open' : ''}`} aria-hidden="true" />
+                </button>
+                {accountMenuOpen && (
+                  <div className="account-dropdown">
+                    <div className="dropdown-kicker">Connected wallet</div>
+                    {accountsSorted.map(a => (
+                      <button
+                        key={a.id}
+                        className={`dropdown-account ${a.isPrimary ? 'active' : ''}`}
+                        type="button"
+                        onClick={() => {
+                          void v.setPrimary(a.id)
+                          setAccountMenuOpen(false)
+                        }}
+                      >
+                        <span className="account-avatar small" style={avatarStyle(a.partyId)}>{initials(a.name)}</span>
+                        <span className="dropdown-account-copy">
+                          <strong>{a.name}</strong>
+                          <small>{shortMiddle(a.partyId, 14, 7)}</small>
+                        </span>
+                        {a.isPrimary && <span className="tag">current</span>}
+                      </button>
+                    ))}
                     <button
-                      key={a.id}
-                      className={`dropdown-account ${a.isPrimary ? 'active' : ''}`}
+                      className="dropdown-create"
                       type="button"
                       onClick={() => {
-                        void v.setPrimary(a.id)
                         setAccountMenuOpen(false)
+                        setScreen('add-account')
                       }}
                     >
-                      <span className="account-avatar small" style={avatarStyle(a.partyId)}>{initials(a.name)}</span>
-                      <span className="dropdown-account-copy">
-                        <strong>{a.name}</strong>
-                        <small>{shortMiddle(a.partyId, 14, 7)}</small>
-                      </span>
-                      {a.isPrimary && <span className="tag">current</span>}
+                      Create another account
                     </button>
-                  ))}
-                  <button
-                    className="dropdown-create"
-                    type="button"
-                    onClick={() => {
-                      setAccountMenuOpen(false)
-                      setScreen('add-account')
-                    }}
-                  >
-                    Create another account
-                  </button>
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
+              <button className="account-add-button" type="button" onClick={() => setScreen('add-account')}>
+                Add
+              </button>
             </div>
           </>
         )}
