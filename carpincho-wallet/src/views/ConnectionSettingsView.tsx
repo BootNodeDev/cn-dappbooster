@@ -51,10 +51,10 @@ export const ConnectionSettingsView = (): JSX.Element => {
   }
 
   return (
-    <section className="card-soft mb-3">
-      <div className="d-flex align-items-center justify-content-between mb-2">
-        <h5 className="mb-0">Connection settings</h5>
-        <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => setDraft(config)}>
+    <section className="wallet-section settings-panel">
+      <div className="section-title-row">
+        <h5>Settings</h5>
+        <button type="button" className="link-action" onClick={() => setDraft(config)}>
           Reset
         </button>
       </div>
@@ -87,10 +87,10 @@ export const ConnectionSettingsView = (): JSX.Element => {
       {error !== undefined && <div className="error-box mb-2">{error}</div>}
 
       <div className="d-flex gap-2">
-        <button type="button" className="btn btn-arg" onClick={onSave}>
+        <button type="button" className="btn btn-wallet" onClick={onSave}>
           Save
         </button>
-        <button type="button" className="btn btn-outline-secondary" onClick={() => { void onTest() }} disabled={busy}>
+        <button type="button" className="btn btn-wallet-secondary" onClick={() => { void onTest() }} disabled={busy}>
           {busy ? 'Testing...' : 'Test wallet-service'}
         </button>
       </div>

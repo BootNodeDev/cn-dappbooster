@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { useVault } from '../vault/useVault.js'
 import { AddAccountView } from './AddAccountView.js'
 import { ConnectionSettingsView } from './ConnectionSettingsView.js'
@@ -18,7 +18,7 @@ import {
   CANTON_METHOD_SIGN_MESSAGE
 } from '../wc/client.js'
 import { dispatchRequest } from '../wc/handlers.js'
-import type { AccountPublic } from '../vault/types.js'
+import type { AccountPublic, TransactionRecord } from '../vault/types.js'
 import { walletServiceRequest } from '../api/walletService.js'
 
 interface PendingSignRequest {
@@ -60,6 +60,62 @@ const executeParams = (params: unknown, partyId: string): Record<string, unknown
   }
 }
 
+const shortMiddle = (value: string, head = 10, tail = 6): string => {
+  if (value.length <= head + tail + 1) {
+    return value
+  }
+  return `${value.slice(0, head)}...${value.slice(-tail)}`
+}
+
+const commandCount = (params: Record<string, unknown>): number | undefined => {
+  const commands = params.commands
+  return Array.isArray(commands) ? commands.length : undefined
+}
+
+const commandSummary = (params: Record<string, unknown>): string => {
+  const commands = params.commands
+  if (!Array.isArray(commands) || commands.length === 0) {
+    return 'Canton transaction'
+  }
+  const first = commands[0]
+  if (typeof first !== 'object' || first === null || Array.isArray(first)) {
+    return `${commands.length} command${commands.length === 1 ? '' : 's'}`
+  }
+  const [kind] = Object.keys(first)
+  if (kind === undefined) {
+    return `${commands.length} command${commands.length === 1 ? '' : 's'}`
+  }
+  return commands.length === 1 ? kind : `${kind} + ${commands.length - 1} more`
+}
+
+const optionalString = (value: unknown): string | undefined =>
+  typeof value === 'string' && value.length > 0 ? value : undefined
+
+const txTime = (tx: TransactionRecord): string =>
+  new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(tx.createdAt)
+
+const hashString = (value: string): number => {
+  let hash = 0
+  for (let i = 0; i < value.length; i++) {
+    hash = (hash * 31 + value.charCodeAt(i)) >>> 0
+  }
+  return hash
+}
+
+const avatarStyle = (value: string): CSSProperties => {
+  const hue = hashString(value) % 360
+  return {
+    background: `linear-gradient(135deg, hsl(${hue} 78% 58%), hsl(${(hue + 62) % 360} 78% 46%))`
+  }
+}
+
+const initials = (name: string): string => name.slice(0, 2).toUpperCase()
+
 export const HomeView = (): JSX.Element => {
   const v = useVault()
   const [showAdd, setShowAdd] = useState(false)
@@ -71,7 +127,7 @@ export const HomeView = (): JSX.Element => {
   const [info, setInfo] = useState<string | undefined>(undefined)
   const [busy, setBusy] = useState(false)
 
-  // Strip ?wc= after pairing so a refresh doesn't try the same URI twice.
+  // Strip ?wc= after pairing so a refresh does not try the same URI twice.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const wc = params.get('wc')
@@ -217,9 +273,26 @@ export const HomeView = (): JSX.Element => {
         partyId: pendingExecute.account.partyId,
         signatureBase64
       })
+
+      await v.recordTransaction({
+        accountId: pendingExecute.account.id,
+        accountName: pendingExecute.account.name,
+        partyId: pendingExecute.account.partyId,
+        network: pendingExecute.account.network,
+        method: pendingExecute.method,
+        status: 'executed',
+        preparedTransactionHash: prepared.preparedTransactionHash,
+        commandId: optionalString(pendingExecute.params.commandId),
+        submissionId: optionalString(pendingExecute.params.submissionId),
+        updateId: executed.updateId,
+        completionOffset: executed.completionOffset,
+        commandCount: commandCount(pendingExecute.params),
+        summary: commandSummary(pendingExecute.params)
+      })
+
       const tx = {
         status: 'executed',
-        commandId: typeof pendingExecute.params.commandId === 'string' ? pendingExecute.params.commandId : '',
+        commandId: optionalString(pendingExecute.params.commandId) ?? '',
         payload: {
           updateId: executed.updateId ?? '',
           completionOffset: executed.completionOffset ?? 0
@@ -255,42 +328,73 @@ export const HomeView = (): JSX.Element => {
     () => [...v.accounts].sort((a, b) => (a.isPrimary === b.isPrimary ? a.createdAt - b.createdAt : a.isPrimary ? -1 : 1)),
     [v.accounts]
   )
+  const primary = v.primary ?? accountsSorted[0]
+  const visibleTxs = v.transactions.slice(0, 8)
+  const hasPending = proposal !== undefined || pendingSign !== undefined || pendingExecute !== undefined
 
   return (
-    <div>
+    <div className="wallet-home">
       {info !== undefined && <div className="info-box mb-3">{info}</div>}
       {error !== undefined && <div className="error-box mb-3">{error}</div>}
 
-      <ConnectionSettingsView />
+      <section className="wallet-hero">
+        <div className="wallet-hero-top">
+          <span className="network-pill">{primary?.network ?? 'canton:local'}</span>
+          <span className={`status-dot ${hasPending ? 'hot' : ''}`}>{hasPending ? 'Action needed' : 'Ready'}</span>
+        </div>
+        {primary === undefined ? (
+          <div className="wallet-empty-state">
+            <div className="balance-label">No account</div>
+            <div className="wallet-address">Create an external party to start signing.</div>
+          </div>
+        ) : (
+          <>
+            <div className="hero-avatar" style={avatarStyle(primary.partyId)}>{initials(primary.name)}</div>
+            <div className="balance-label">Primary account</div>
+            <div className="wallet-account-name">{primary.name}</div>
+            <div className="wallet-address" title={primary.partyId}>{shortMiddle(primary.partyId, 16, 10)}</div>
+          </>
+        )}
+        <div className="wallet-actions">
+          <button className="wallet-action" type="button" onClick={() => setShowAdd(true)} disabled={showAdd}>
+            Add
+          </button>
+          {primary !== undefined && (
+            <button className="wallet-action ghost" type="button" onClick={() => { void v.setPrimary(primary.id) }}>
+              Account
+            </button>
+          )}
+        </div>
+      </section>
+
+      {showAdd && <AddAccountView onClose={() => setShowAdd(false)} />}
 
       {proposal !== undefined && (
-        <section className="card-soft mb-3">
-          <h5 className="mb-2">Connection request</h5>
-          <p className="mb-2">
-            <strong>{proposal.params.proposer.metadata.name}</strong>
-            {' '}wants to connect.
-          </p>
+        <section className="request-panel mb-3">
+          <div className="request-kicker">Connection request</div>
+          <h5>{proposal.params.proposer.metadata.name}</h5>
+          <p>Choose the account this dApp can see.</p>
           {accountsSorted.length === 0 ? (
             <div className="info-box">Add an account first before approving.</div>
           ) : (
             <>
-              <label className="form-label small">Pair with account</label>
+              <label className="form-label small">Account</label>
               <select
-                className="form-select mb-2"
+                className="form-select mb-3"
                 value={proposalAccount ?? ''}
                 onChange={e => setProposalAccount(e.target.value)}
               >
                 {accountsSorted.map(a => (
                   <option key={a.id} value={a.id}>
-                    {a.name} · {a.partyId.slice(0, 18)}…
+                    {a.name} · {shortMiddle(a.partyId, 12, 6)}
                   </option>
                 ))}
               </select>
-              <div className="d-flex gap-2 mt-2">
-                <button className="btn btn-arg" disabled={busy || proposalAccount === null} onClick={onApproveProposal}>
-                  Approve
+              <div className="button-row">
+                <button className="btn btn-wallet" disabled={busy || proposalAccount === null} onClick={onApproveProposal}>
+                  Connect
                 </button>
-                <button className="btn btn-outline-secondary" onClick={onRejectProposal} disabled={busy}>
+                <button className="btn btn-wallet-secondary" onClick={onRejectProposal} disabled={busy}>
                   Reject
                 </button>
               </div>
@@ -300,71 +404,70 @@ export const HomeView = (): JSX.Element => {
       )}
 
       {pendingSign !== undefined && (
-        <section className="card-soft mb-3">
-          <h5 className="mb-2">Signature request</h5>
-          <p className="mb-2">
-            Signing as <strong>{pendingSign.account.name}</strong> ·{' '}
-            <span className="mono">{pendingSign.account.partyId.slice(0, 18)}…</span>
-          </p>
-          <details className="mb-2">
-            <summary>Message (base64)</summary>
-            <pre className="mono small mt-2" style={{ wordBreak: 'break-all', whiteSpace: 'pre-wrap' }}>
-              {pendingSign.messageBase64}
-            </pre>
+        <section className="request-panel mb-3">
+          <div className="request-kicker">Signature request</div>
+          <h5>{pendingSign.account.name}</h5>
+          <p className="mono tiny">{shortMiddle(pendingSign.account.partyId, 18, 10)}</p>
+          <details className="wallet-details mb-3">
+            <summary>Message</summary>
+            <pre className="mono small mt-2">{pendingSign.messageBase64}</pre>
           </details>
-          <div className="d-flex gap-2">
-            <button className="btn btn-arg" onClick={onApproveSign} disabled={busy}>Approve &amp; sign</button>
-            <button className="btn btn-outline-secondary" onClick={onRejectSign} disabled={busy}>Reject</button>
+          <div className="button-row">
+            <button className="btn btn-wallet" onClick={onApproveSign} disabled={busy}>Sign</button>
+            <button className="btn btn-wallet-secondary" onClick={onRejectSign} disabled={busy}>Reject</button>
           </div>
         </section>
       )}
 
       {pendingExecute !== undefined && (
-        <section className="card-soft mb-3">
-          <h5 className="mb-2">Transaction request</h5>
-          <p className="mb-2">
-            Executing as <strong>{pendingExecute.account.name}</strong> ·{' '}
-            <span className="mono">{pendingExecute.account.partyId.slice(0, 18)}…</span>
+        <section className="request-panel mb-3">
+          <div className="request-kicker">Transaction request</div>
+          <h5>{commandSummary(pendingExecute.params)}</h5>
+          <p>
+            Executing as <strong>{pendingExecute.account.name}</strong>
+            <span className="mono tiny d-block">{shortMiddle(pendingExecute.account.partyId, 18, 10)}</span>
           </p>
-          <details className="mb-2" open>
+          <details className="wallet-details mb-3">
             <summary>Command payload</summary>
-            <pre className="mono small mt-2" style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
-              {JSON.stringify(pendingExecute.params, null, 2)}
-            </pre>
+            <pre className="mono small mt-2">{JSON.stringify(pendingExecute.params, null, 2)}</pre>
           </details>
-          <div className="d-flex gap-2">
-            <button className="btn btn-arg" onClick={onApproveExecute} disabled={busy}>Approve &amp; execute</button>
-            <button className="btn btn-outline-secondary" onClick={onRejectExecute} disabled={busy}>Reject</button>
+          <div className="button-row">
+            <button className="btn btn-wallet" onClick={onApproveExecute} disabled={busy}>Approve</button>
+            <button className="btn btn-wallet-secondary" onClick={onRejectExecute} disabled={busy}>Reject</button>
           </div>
         </section>
       )}
 
-      <section className="mb-3">
-        <div className="d-flex align-items-center justify-content-between mb-2">
-          <h5 className="mb-0">Accounts</h5>
-          <button className="btn btn-arg btn-sm" onClick={() => setShowAdd(true)} disabled={showAdd}>
-            + Add account
-          </button>
+      <ConnectionSettingsView />
+
+      <section className="wallet-section">
+        <div className="section-title-row">
+          <h5>Accounts</h5>
+          <span>{accountsSorted.length}</span>
         </div>
-        {showAdd && <AddAccountView onClose={() => setShowAdd(false)} />}
         {accountsSorted.length === 0 && !showAdd && (
-          <div className="info-box">No accounts yet. Click <em>Add account</em> to onboard one.</div>
+          <div className="info-box">No accounts yet. Add one to create a Canton external party.</div>
         )}
         {accountsSorted.map(a => (
           <div key={a.id} className={`account-row ${a.isPrimary ? 'primary' : ''}`}>
-            <div className="name">
-              <span>{a.name}</span>
-              {a.isPrimary && <span className="badge bg-info">primary</span>}
+            <div className="account-main">
+              <div className="account-avatar" style={avatarStyle(a.partyId)}>{initials(a.name)}</div>
+              <div className="account-copy">
+                <div className="name">
+                  <span>{a.name}</span>
+                  {a.isPrimary && <span className="tag">primary</span>}
+                </div>
+                <div className="partyId">{a.partyId}</div>
+              </div>
             </div>
-            <div className="partyId">{a.partyId}</div>
             <div className="actions">
               {!a.isPrimary && (
-                <button className="btn btn-link btn-sm p-0" onClick={() => { void v.setPrimary(a.id) }}>
+                <button className="link-action" onClick={() => { void v.setPrimary(a.id) }}>
                   Make primary
                 </button>
               )}
               <button
-                className="btn btn-link btn-sm p-0 text-danger"
+                className="link-action danger"
                 onClick={() => {
                   const ok = window.confirm(`Remove ${a.name}? The party stays on the participant; only this device's key is wiped.`)
                   if (ok) {
@@ -379,8 +482,37 @@ export const HomeView = (): JSX.Element => {
         ))}
       </section>
 
-      {proposal === undefined && pendingSign === undefined && pendingExecute === undefined && accountsSorted.length > 0 && (
-        <p className="locked-note text-center">Waiting for connection requests from a dApp.</p>
+      <section className="wallet-section">
+        <div className="section-title-row">
+          <h5>Transactions</h5>
+          <span>{v.transactions.length}</span>
+        </div>
+        {visibleTxs.length === 0 ? (
+          <div className="empty-history">Executed transactions will appear here.</div>
+        ) : (
+          <div className="tx-list">
+            {visibleTxs.map(tx => (
+              <article key={tx.id} className="tx-row">
+                <div className="tx-icon">OK</div>
+                <div className="tx-main">
+                  <div className="tx-title">{tx.summary ?? 'Canton transaction'}</div>
+                  <div className="tx-meta">
+                    {tx.accountName} · {txTime(tx)}
+                    {tx.commandCount !== undefined && ` · ${tx.commandCount} cmd${tx.commandCount === 1 ? '' : 's'}`}
+                  </div>
+                  <div className="tx-hash mono" title={tx.preparedTransactionHash}>
+                    {shortMiddle(tx.preparedTransactionHash, 18, 10)}
+                  </div>
+                </div>
+                <div className="tx-status">Done</div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {!hasPending && accountsSorted.length > 0 && (
+        <p className="locked-note text-center mb-0">Waiting for dApp requests.</p>
       )}
     </div>
   )
