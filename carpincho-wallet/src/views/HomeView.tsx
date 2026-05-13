@@ -368,8 +368,7 @@ export const HomeView = (): JSX.Element => {
         </div>
         {primary === undefined ? (
           <div className="wallet-empty-state">
-            <div className="balance-label">No account</div>
-            <div className="wallet-address">Create an external party to start signing.</div>
+            <div>No account</div>
             <button className="btn btn-wallet mt-3" type="button" onClick={() => setScreen('add-account')}>
               Create account
             </button>
@@ -424,10 +423,6 @@ export const HomeView = (): JSX.Element => {
                 </div>
               )}
             </div>
-            <div className="hero-avatar" style={avatarStyle(primary.partyId)}>{initials(primary.name)}</div>
-            <div className="balance-label">Primary account</div>
-            <div className="wallet-account-name">{primary.name}</div>
-            <div className="wallet-address" title={primary.partyId}>{shortMiddle(primary.partyId, 16, 10)}</div>
           </>
         )}
       </section>
