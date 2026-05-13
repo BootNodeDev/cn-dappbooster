@@ -116,9 +116,13 @@ const avatarStyle = (value: string): CSSProperties => {
 
 const initials = (name: string): string => name.slice(0, 2).toUpperCase()
 
+type WalletScreen = 'home' | 'add-account'
+
 export const HomeView = (): JSX.Element => {
   const v = useVault()
-  const [showAdd, setShowAdd] = useState(false)
+  const [screen, setScreen] = useState<WalletScreen>('home')
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [proposal, setProposal] = useState<ProposalEvent | undefined>(undefined)
   const [proposalAccount, setProposalAccount] = useState<string | null>(null)
   const [pendingSign, setPendingSign] = useState<PendingSignRequest | undefined>(undefined)
@@ -332,6 +336,23 @@ export const HomeView = (): JSX.Element => {
   const visibleTxs = v.transactions.slice(0, 8)
   const hasPending = proposal !== undefined || pendingSign !== undefined || pendingExecute !== undefined
 
+  if (screen === 'add-account') {
+    return (
+      <div className="wallet-home">
+        <section className="page-panel">
+          <div className="page-title-row">
+            <button className="link-action" type="button" onClick={() => setScreen('home')}>
+              Back
+            </button>
+            <h5>Add account</h5>
+            <span />
+          </div>
+          <AddAccountView onClose={() => setScreen('home')} />
+        </section>
+      </div>
+    )
+  }
+
   return (
     <div className="wallet-home">
       {info !== undefined && <div className="info-box mb-3">{info}</div>}
@@ -341,33 +362,89 @@ export const HomeView = (): JSX.Element => {
         <div className="wallet-hero-top">
           <span className="network-pill">{primary?.network ?? 'canton:local'}</span>
           <span className={`status-dot ${hasPending ? 'hot' : ''}`}>{hasPending ? 'Action needed' : 'Ready'}</span>
+          <button className="settings-trigger" type="button" onClick={() => setSettingsOpen(true)}>
+            Settings
+          </button>
         </div>
         {primary === undefined ? (
           <div className="wallet-empty-state">
             <div className="balance-label">No account</div>
             <div className="wallet-address">Create an external party to start signing.</div>
+            <button className="btn btn-wallet mt-3" type="button" onClick={() => setScreen('add-account')}>
+              Create account
+            </button>
           </div>
         ) : (
           <>
+            <div className="account-switcher-wrap">
+              <button
+                className="account-switcher"
+                type="button"
+                onClick={() => setAccountMenuOpen(open => !open)}
+                aria-expanded={accountMenuOpen}
+              >
+                <span className="account-avatar small" style={avatarStyle(primary.partyId)}>{initials(primary.name)}</span>
+                <span className="account-switcher-copy">
+                  <span>{primary.name}</span>
+                  <small>{shortMiddle(primary.partyId, 11, 6)}</small>
+                </span>
+                <span className="chevron">{accountMenuOpen ? 'Up' : 'Down'}</span>
+              </button>
+              {accountMenuOpen && (
+                <div className="account-dropdown">
+                  <div className="dropdown-kicker">Connected wallet</div>
+                  {accountsSorted.map(a => (
+                    <button
+                      key={a.id}
+                      className={`dropdown-account ${a.isPrimary ? 'active' : ''}`}
+                      type="button"
+                      onClick={() => {
+                        void v.setPrimary(a.id)
+                        setAccountMenuOpen(false)
+                      }}
+                    >
+                      <span className="account-avatar small" style={avatarStyle(a.partyId)}>{initials(a.name)}</span>
+                      <span className="dropdown-account-copy">
+                        <strong>{a.name}</strong>
+                        <small>{shortMiddle(a.partyId, 14, 7)}</small>
+                      </span>
+                      {a.isPrimary && <span className="tag">current</span>}
+                    </button>
+                  ))}
+                  <button
+                    className="dropdown-create"
+                    type="button"
+                    onClick={() => {
+                      setAccountMenuOpen(false)
+                      setScreen('add-account')
+                    }}
+                  >
+                    Create another account
+                  </button>
+                </div>
+              )}
+            </div>
             <div className="hero-avatar" style={avatarStyle(primary.partyId)}>{initials(primary.name)}</div>
             <div className="balance-label">Primary account</div>
             <div className="wallet-account-name">{primary.name}</div>
             <div className="wallet-address" title={primary.partyId}>{shortMiddle(primary.partyId, 16, 10)}</div>
           </>
         )}
-        <div className="wallet-actions">
-          <button className="wallet-action" type="button" onClick={() => setShowAdd(true)} disabled={showAdd}>
-            Add
-          </button>
-          {primary !== undefined && (
-            <button className="wallet-action ghost" type="button" onClick={() => { void v.setPrimary(primary.id) }}>
-              Account
-            </button>
-          )}
-        </div>
       </section>
 
-      {showAdd && <AddAccountView onClose={() => setShowAdd(false)} />}
+      {settingsOpen && (
+        <div className="popup-backdrop" role="presentation" onClick={() => setSettingsOpen(false)}>
+          <div className="settings-popup" role="dialog" aria-modal="true" onClick={e => e.stopPropagation()}>
+            <div className="popup-title-row">
+              <h5>Settings</h5>
+              <button className="link-action" type="button" onClick={() => setSettingsOpen(false)}>
+                Close
+              </button>
+            </div>
+            <ConnectionSettingsView />
+          </div>
+        </div>
+      )}
 
       {proposal !== undefined && (
         <section className="request-panel mb-3">
@@ -437,50 +514,6 @@ export const HomeView = (): JSX.Element => {
           </div>
         </section>
       )}
-
-      <ConnectionSettingsView />
-
-      <section className="wallet-section">
-        <div className="section-title-row">
-          <h5>Accounts</h5>
-          <span>{accountsSorted.length}</span>
-        </div>
-        {accountsSorted.length === 0 && !showAdd && (
-          <div className="info-box">No accounts yet. Add one to create a Canton external party.</div>
-        )}
-        {accountsSorted.map(a => (
-          <div key={a.id} className={`account-row ${a.isPrimary ? 'primary' : ''}`}>
-            <div className="account-main">
-              <div className="account-avatar" style={avatarStyle(a.partyId)}>{initials(a.name)}</div>
-              <div className="account-copy">
-                <div className="name">
-                  <span>{a.name}</span>
-                  {a.isPrimary && <span className="tag">primary</span>}
-                </div>
-                <div className="partyId">{a.partyId}</div>
-              </div>
-            </div>
-            <div className="actions">
-              {!a.isPrimary && (
-                <button className="link-action" onClick={() => { void v.setPrimary(a.id) }}>
-                  Make primary
-                </button>
-              )}
-              <button
-                className="link-action danger"
-                onClick={() => {
-                  const ok = window.confirm(`Remove ${a.name}? The party stays on the participant; only this device's key is wiped.`)
-                  if (ok) {
-                    void v.removeAccount(a.id)
-                  }
-                }}
-              >
-                Remove
-              </button>
-            </div>
-          </div>
-        ))}
-      </section>
 
       <section className="wallet-section">
         <div className="section-title-row">

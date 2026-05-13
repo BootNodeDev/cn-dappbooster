@@ -51,9 +51,9 @@ export const ConnectionSettingsView = (): JSX.Element => {
   }
 
   return (
-    <section className="wallet-section settings-panel">
+    <section className="settings-panel">
       <div className="section-title-row">
-        <h5>Settings</h5>
+        <h5>Connection</h5>
         <button type="button" className="link-action" onClick={() => setDraft(config)}>
           Reset
         </button>
