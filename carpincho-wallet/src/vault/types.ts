@@ -18,6 +18,7 @@ export interface VaultPlaintext {
   v: 1
   primaryAccountId: string | null
   accounts: AccountSecret[]
+  transactions?: TransactionRecord[]
 }
 
 export interface AccountSecret {
@@ -39,4 +40,22 @@ export interface AccountPublic {
   network: string
   isPrimary: boolean
   createdAt: number
+}
+
+export interface TransactionRecord {
+  id: string
+  accountId: string
+  accountName: string
+  partyId: string
+  network: string
+  method: string
+  status: 'executed'
+  createdAt: number
+  preparedTransactionHash: string
+  commandId?: string
+  submissionId?: string
+  updateId?: string
+  completionOffset?: number
+  commandCount?: number
+  summary?: string
 }

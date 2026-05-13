@@ -13,9 +13,10 @@ import {
 import { assertSecureContext, encryptVault, decryptVault } from './crypto.js'
 import { hasVault as hasVaultOnDisk, loadVault, rotateVault, wipeVault, writeFreshVault } from './storage.js'
 import { signMessageBase64 } from './keypair.js'
-import type { AccountPublic, AccountSecret, VaultPlaintext } from './types.js'
+import type { AccountPublic, AccountSecret, TransactionRecord, VaultPlaintext } from './types.js'
 
 const IDLE_LOCK_MS = 15 * 60 * 1000
+const MAX_TRANSACTION_HISTORY = 50
 
 let unlockedPlaintext: VaultPlaintext | null = null
 let cachedPassword: string | null = null
@@ -71,11 +72,13 @@ const toPublic = (a: AccountSecret, primaryId: string | null): AccountPublic => 
   createdAt: a.createdAt
 })
 
-const generateAccountId = (): string => {
+const generateId = (): string => {
   const buf = new Uint8Array(16)
   crypto.getRandomValues(buf)
   return Array.from(buf).map(b => b.toString(16).padStart(2, '0')).join('')
 }
+
+const transactionHistory = (): TransactionRecord[] => unlockedPlaintext?.transactions ?? []
 
 export interface VaultContextValue {
   isLocked: boolean
@@ -86,6 +89,7 @@ export interface VaultContextValue {
   destroyVault: () => void
   accounts: AccountPublic[]
   primary: AccountPublic | null
+  transactions: TransactionRecord[]
   setPrimary: (id: string) => Promise<void>
   addAccount: (args: {
     name: string
@@ -96,6 +100,7 @@ export interface VaultContextValue {
   }) => Promise<AccountPublic>
   removeAccount: (id: string) => Promise<void>
   signMessage: (accountId: string, messageBase64: string) => Promise<string>
+  recordTransaction: (args: Omit<TransactionRecord, 'id' | 'createdAt'>) => Promise<TransactionRecord>
   changePassword: (oldPassword: string, newPassword: string) => Promise<void>
 }
 
@@ -132,7 +137,7 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
     if (password.length < 8) {
       throw new Error('password must be at least 8 characters')
     }
-    const plaintext: VaultPlaintext = { v: 1, primaryAccountId: null, accounts: [] }
+    const plaintext: VaultPlaintext = { v: 1, primaryAccountId: null, accounts: [], transactions: [] }
     const blob = await encryptVault(password, JSON.stringify(plaintext))
     writeFreshVault(blob)
     unlockedPlaintext = plaintext
@@ -158,6 +163,7 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
     if (parsed.v !== 1) {
       throw new Error(`unsupported vault payload version: ${String(parsed.v)}`)
     }
+    parsed.transactions ??= []
     unlockedPlaintext = parsed
     cachedPassword = password
     persistSessionPassword(password)
@@ -197,7 +203,7 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
     if (unlockedPlaintext === null) {
       throw new Error('vault locked')
     }
-    const id = generateAccountId()
+    const id = generateId()
     const secret: AccountSecret = {
       id,
       name: args.name,
@@ -214,6 +220,26 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
     await persist()
     bump()
     return toPublic(secret, unlockedPlaintext.primaryAccountId)
+  }, [persist, bump])
+
+  const recordTransaction = useCallback(async (
+    args: Omit<TransactionRecord, 'id' | 'createdAt'>
+  ): Promise<TransactionRecord> => {
+    if (unlockedPlaintext === null) {
+      throw new Error('vault locked')
+    }
+    const record: TransactionRecord = {
+      id: generateId(),
+      createdAt: Date.now(),
+      ...args
+    }
+    const next = [record, ...transactionHistory()]
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .slice(0, MAX_TRANSACTION_HISTORY)
+    unlockedPlaintext.transactions = next
+    await persist()
+    bump()
+    return record
   }, [persist, bump])
 
   const removeAccount = useCallback(async (id: string): Promise<void> => {
@@ -308,6 +334,9 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
       ? []
       : unlockedPlaintext.accounts.map(a => toPublic(a, primaryId))
     const primary = accounts.find(a => a.isPrimary) ?? null
+    const transactions = unlockedPlaintext === null
+      ? []
+      : [...transactionHistory()].sort((a, b) => b.createdAt - a.createdAt)
     return {
       isLocked,
       hasVault: vaultExists,
@@ -317,14 +346,16 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
       destroyVault,
       accounts,
       primary,
+      transactions,
       setPrimary,
       addAccount,
       removeAccount,
       signMessage,
+      recordTransaction,
       changePassword
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLocked, vaultExists, tick, setup, unlock, lock, destroyVault, setPrimary, addAccount, removeAccount, signMessage, changePassword])
+  }, [isLocked, vaultExists, tick, setup, unlock, lock, destroyVault, setPrimary, addAccount, removeAccount, signMessage, recordTransaction, changePassword])
 
   return <VaultContext.Provider value={value}>{children}</VaultContext.Provider>
 }
