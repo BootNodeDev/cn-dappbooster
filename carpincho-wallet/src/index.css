@@ -559,6 +559,27 @@ select {
   border: 1px solid rgba(116, 172, 223, 0.45);
 }
 
+.dismissible {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dismissible span {
+  min-width: 0;
+}
+
+.dismissible button {
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: currentColor;
+  font-weight: 900;
+  font-size: 0.78rem;
+  padding: 0;
+}
+
 label {
   color: var(--wallet-soft);
   font-weight: 800;

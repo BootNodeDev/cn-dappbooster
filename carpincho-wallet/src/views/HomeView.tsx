@@ -355,8 +355,18 @@ export const HomeView = (): JSX.Element => {
 
   return (
     <div className="wallet-home">
-      {info !== undefined && <div className="info-box mb-3">{info}</div>}
-      {error !== undefined && <div className="error-box mb-3">{error}</div>}
+      {info !== undefined && (
+        <div className="info-box dismissible mb-3">
+          <span>{info}</span>
+          <button type="button" aria-label="Dismiss message" onClick={() => setInfo(undefined)}>Close</button>
+        </div>
+      )}
+      {error !== undefined && (
+        <div className="error-box dismissible mb-3">
+          <span>{error}</span>
+          <button type="button" aria-label="Dismiss error" onClick={() => setError(undefined)}>Close</button>
+        </div>
+      )}
 
       <section className="wallet-hero">
         <div className="wallet-hero-top">
