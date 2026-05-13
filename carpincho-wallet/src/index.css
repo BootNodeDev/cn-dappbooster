@@ -1,0 +1,168 @@
+:root {
+  --arg-sky: #74acdf;
+  --arg-sky-soft: #cfe3f4;
+  --arg-sky-ink: #245885;
+  --carp-brown: #8b5a2b;
+  --carp-brown-dark: #5a3a1a;
+  --carp-brown-soft: #f5ead8;
+  --ink: #1b1b1b;
+  --muted: #6f6f6f;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(1200px 600px at 50% -10%, var(--arg-sky-soft), transparent 60%),
+    linear-gradient(180deg, #f7fbff 0%, #fdfaf3 100%);
+  min-height: 100vh;
+}
+
+.app-shell {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+}
+
+.brand-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 16px;
+}
+
+.brand-bar h1 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--carp-brown-dark);
+  letter-spacing: 0.02em;
+}
+
+.brand-bar .brand-sub {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.btn-arg {
+  background: var(--arg-sky);
+  border: 1px solid var(--arg-sky);
+  color: white;
+}
+.btn-arg:hover { background: #5e98cd; border-color: #5e98cd; color: white; }
+.btn-arg:focus { box-shadow: 0 0 0 0.2rem rgba(116, 172, 223, 0.4); }
+
+.card-soft {
+  background: white;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.hero-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 8px 0 24px;
+}
+
+.hero-wordmark {
+  margin: 14px 0 6px;
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: var(--carp-brown-dark);
+  line-height: 1;
+}
+
+.hero-wrap h2 {
+  margin-top: 4px;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.account-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  background: white;
+  /* contain content; the partyId block wraps inside */
+  min-width: 0;
+}
+
+.account-row.primary {
+  border-color: var(--arg-sky);
+  background: linear-gradient(180deg, #f3f9fe, white);
+}
+
+.account-row .name {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.account-row .partyId {
+  font-family: 'Source Code Pro', ui-monospace, monospace;
+  font-size: 0.78rem;
+  color: var(--muted);
+  /* The partyId is a single long unbreakable token; allow break-anywhere
+     so it wraps inside the card instead of pushing the row wider. */
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
+
+.account-row .actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.account-row .actions .btn-link {
+  font-size: 0.85rem;
+}
+
+.locked-note {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.error-box {
+  background: #fee;
+  color: #842029;
+  border: 1px solid #f5c2c7;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.info-box {
+  background: var(--arg-sky-soft);
+  color: var(--arg-sky-ink);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.88rem;
+}
+
+label {
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.muted { color: var(--muted); }
+.mono { font-family: 'Source Code Pro', ui-monospace, monospace; }

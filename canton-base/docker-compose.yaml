@@ -1,0 +1,65 @@
+services:
+  postgres:
+    image: "${POSTGRES_IMAGE}"
+    container_name: canton-base-postgres
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      POSTGRES_DB: "${POSTGRES_DB}"
+    ports:
+      - "${POSTGRES_HOST_PORT}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./config/postgres/init.sql:/docker-entrypoint-initdb.d/001-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  canton:
+    image: "${CANTON_IMAGE}"
+    container_name: canton-base-canton
+    environment:
+      DB_SERVER: postgres
+      DB_USER: "${POSTGRES_USER}"
+      DB_PASSWORD: "${POSTGRES_PASSWORD}"
+      CANTON_AUTH_AUDIENCE: "${CANTON_AUTH_AUDIENCE}"
+      CANTON_AUTH_SECRET: "${CANTON_AUTH_SECRET}"
+      CANTON_ADMIN_USER_ID: "${CANTON_ADMIN_USER_ID}"
+      LOG_LEVEL_STDOUT: INFO
+      LOG_LEVEL_CANTON: INFO
+    ports:
+      - "${CANTON_LEDGER_API_PORT}:5011"
+      - "${CANTON_ADMIN_API_PORT}:5012"
+      - "${CANTON_JSON_API_PORT}:7575"
+      - "${CANTON_SEQUENCER_PUBLIC_PORT}:5001"
+      - "${CANTON_HTTP_HEALTH_PORT}:7000"
+    volumes:
+      - ./config/canton/app.conf:/app/app.conf:ro
+      - ./config/canton/bootstrap.canton:/app/bootstrap.canton:ro
+      - ./dars:/dars
+    entrypoint: ["/app/bin/canton"]
+    command:
+      - daemon
+      - --no-tty
+      - --log-encoder=json
+      - --log-level-stdout=INFO
+      - --log-level-canton=INFO
+      - --log-file-appender=off
+      - --config
+      - /app/app.conf
+      - --bootstrap
+      - /app/bootstrap.canton
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/7000'"]
+      interval: 5s
+      timeout: 3s
+      retries: 60
+      start_period: 20s
+
+volumes:
+  postgres-data:

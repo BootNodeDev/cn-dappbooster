@@ -1,0 +1,11 @@
+{
+  "name": "@canton-counter/canton-base",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "up": "docker compose up -d",
+    "down": "docker compose down",
+    "health": "./scripts/health-check.sh",
+    "token": "./scripts/mint-token.sh wallet-service"
+  }
+}

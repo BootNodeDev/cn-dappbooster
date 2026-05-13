@@ -1,0 +1,19 @@
+{
+  "name": "canton-counter-scaffold",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "canton:up": "npm --prefix canton-base run up",
+    "canton:down": "npm --prefix canton-base run down",
+    "canton:health": "npm --prefix canton-base run health",
+    "counter:build-dar": "npm --prefix counter/daml run build",
+    "counter:deploy-dar": "npm --prefix counter/daml run deploy",
+    "wallet-service:dev": "npm --prefix counter/wallet-service run dev",
+    "wallet-service:build": "npm --prefix counter/wallet-service run build",
+    "wallet:dev": "npm --prefix carpincho-wallet run dev -- --host localhost --port 3011 --strictPort",
+    "wallet:build": "npm --prefix carpincho-wallet run build",
+    "app:dev": "npm --prefix counter/frontend run dev -- --host localhost --port 3012 --strictPort",
+    "app:build": "npm --prefix counter/frontend run build"
+  }
+}
