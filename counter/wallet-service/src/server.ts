@@ -102,6 +102,21 @@ const unsupported = (id: JsonRpcId, method: string): JsonRpcError =>
     reason: 'This wallet-service has no private keys. Use Carpincho over WalletConnect for dApp-facing signing methods.'
   })
 
+const errorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error)
+
+const errorData = (error: unknown): Record<string, unknown> => {
+  if (!(error instanceof Error)) {
+    return { raw: String(error) }
+  }
+  return {
+    name: error.name,
+    message: error.message,
+    stack: error.stack,
+    cause: error.cause
+  }
+}
+
 let sdkPromise: Promise<WalletSdk> | undefined
 const pendingPartyCreations = new Map<string, PreparedExternalPartyCreation>()
 
@@ -110,10 +125,14 @@ const getSdk = async (): Promise<WalletSdk> => {
     throw new Error('CANTON_BACKEND_TOKEN is required for Canton JSON API calls')
   }
   sdkPromise ??= SDK.create({
-    auth: { method: 'static', token: config.canton.backendToken },
-    ledgerClientUrl: config.canton.jsonApiUrl,
-    logAdapter: 'console'
-  })
+      auth: { method: 'static', token: config.canton.backendToken },
+      ledgerClientUrl: config.canton.jsonApiUrl,
+      logAdapter: 'console'
+    })
+    .catch((error: unknown) => {
+      sdkPromise = undefined
+      throw new Error('Canton wallet SDK failed to initialize', { cause: error })
+    })
   return await sdkPromise
 }
 
@@ -365,11 +384,23 @@ app.get('/wallet-service/info', (_req, res) => {
 
 app.post('/rpc', async (req, res) => {
   const body = req.body as unknown
+  const id = typeof body === 'object' && body !== null && !Array.isArray(body)
+    ? ((body as JsonRpcRequest).id ?? null)
+    : null
   if (typeof body !== 'object' || body === null || Array.isArray(body)) {
     res.json(rpcError(null, -32600, 'Invalid request', { reason: 'JSON-RPC body must be an object' }))
     return
   }
-  res.json(await handleRpc(body as JsonRpcRequest))
+  try {
+    res.json(await handleRpc(body as JsonRpcRequest))
+  } catch (error) {
+    console.error('[counter-wallet-service] rpc failed', {
+      id,
+      method: (body as JsonRpcRequest).method,
+      error: errorData(error)
+    })
+    res.json(rpcError(id, -32000, errorMessage(error), errorData(error)))
+  }
 })
 
 app.listen(config.port, () => {
