@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import type { DappClient } from '@canton-network/dapp-sdk'
 import {
   COUNTER_PACKAGE_ID,
@@ -11,7 +11,7 @@ import {
   normalizeCounterContract
 } from './counterSignature.js'
 import { connectWallet, type WalletAccount } from './wallet.js'
-import { loadRuntimeConfig, saveRuntimeConfig, type RuntimeConfig } from './runtimeConfig.js'
+import { loadRuntimeConfig, saveRuntimeConfig } from './runtimeConfig.js'
 
 interface ConnectedState {
   client: DappClient
@@ -31,26 +31,16 @@ export const App = (): JSX.Element => {
   const [connected, setConnected] = useState<ConnectedState | undefined>(undefined)
   const [counters, setCounters] = useState<CounterContract[]>([])
   const [pairingUri, setPairingUri] = useState<string | undefined>(undefined)
-  const [runtimeConfig, setRuntimeConfig] = useState<RuntimeConfig>(() => loadRuntimeConfig())
-  const [runtimeDraft, setRuntimeDraft] = useState<RuntimeConfig>(() => loadRuntimeConfig())
+  const [pairingCopied, setPairingCopied] = useState(false)
+  const [runtimeConfig, setRuntimeConfig] = useState(() => loadRuntimeConfig())
   const [partyDrafts, setPartyDrafts] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | undefined>(undefined)
   const [info, setInfo] = useState<string | undefined>(undefined)
 
-  const partyId = connected?.account.partyId
-  const carpinchoUrl = useMemo(() => {
-    if (pairingUri === undefined) {
-      return runtimeConfig.walletCompanionUrl
-    }
-    return `${runtimeConfig.walletCompanionUrl}?wc=${encodeURIComponent(pairingUri)}`
-  }, [pairingUri, runtimeConfig.walletCompanionUrl])
-
-  const onSaveRuntimeConfig = (): void => {
-    const saved = saveRuntimeConfig(runtimeDraft)
+  const onNetworkChange = (network: string): void => {
+    const saved = saveRuntimeConfig({ ...runtimeConfig, cantonNetwork: network })
     setRuntimeConfig(saved)
-    setRuntimeDraft(saved)
-    setInfo('Settings saved.')
     setError(undefined)
   }
 
@@ -92,6 +82,8 @@ export const App = (): JSX.Element => {
     } catch (err) {
       setError((err as Error).message)
     } finally {
+      setPairingUri(undefined)
+      setPairingCopied(false)
       setBusy(false)
     }
   }
@@ -100,19 +92,62 @@ export const App = (): JSX.Element => {
     setBusy(true)
     setError(undefined)
     setInfo(undefined)
+    setPairingUri(undefined)
+    setPairingCopied(false)
     try {
       const next = await connectWallet({
         chainId: runtimeConfig.cantonNetwork,
         onUri: setPairingUri
       })
       setConnected(next)
+      setPairingUri(undefined)
       await loadCounters(next)
       setInfo(`Connected as ${short(next.account.partyId)}`)
     } catch (err) {
       setError((err as Error).message)
     } finally {
+      setPairingUri(undefined)
+      setPairingCopied(false)
       setBusy(false)
     }
+  }
+
+  const onDisconnect = async (): Promise<void> => {
+    if (connected === undefined) {
+      return
+    }
+    setBusy(true)
+    setError(undefined)
+    setInfo(undefined)
+
+    let disconnectError: string | undefined
+    try {
+      await connected.client.disconnect()
+    } catch (err) {
+      disconnectError = (err as Error).message
+    } finally {
+      setConnected(undefined)
+      setCounters([])
+      setPartyDrafts({})
+      setPairingUri(undefined)
+      setPairingCopied(false)
+      setBusy(false)
+    }
+
+    if (disconnectError === undefined) {
+      setInfo('Disconnected.')
+    } else {
+      setError(`Local logout complete; wallet disconnect failed: ${disconnectError}`)
+    }
+  }
+
+  const copyPairingUri = async (): Promise<void> => {
+    if (pairingUri === undefined) {
+      return
+    }
+    await navigator.clipboard.writeText(pairingUri)
+    setPairingCopied(true)
+    window.setTimeout(() => setPairingCopied(false), 1400)
   }
 
   const draftFor = (contractId: string): string => partyDrafts[contractId] ?? ''
@@ -123,157 +158,179 @@ export const App = (): JSX.Element => {
 
   return (
     <main className="shell">
-      <section className="topbar">
+      <header className="app-header">
         <div>
           <p className="eyebrow">Canton base</p>
-          <h1>Counter dApp</h1>
+          <h1>Counter</h1>
         </div>
-        <div className="actions">
-          {connected === undefined ? (
-            <button className="primary" onClick={() => { void onConnect() }} disabled={busy}>
-              Connect Carpincho
-            </button>
-          ) : (
-            <>
-              <button onClick={() => { void loadCounters() }} disabled={busy}>Refresh</button>
-              <button
-                className="primary"
-                onClick={() => { void runCommand('create-counter', createCounterCommand(connected.account.partyId)) }}
-                disabled={busy}
-              >
-                New counter
+        <div className="header-actions">
+          <select
+            className="network-select"
+            value={runtimeConfig.cantonNetwork}
+            onChange={event => onNetworkChange(event.target.value)}
+            aria-label="Network"
+          >
+            <option value="canton:local">canton:local</option>
+          </select>
+          <div className="connect-area">
+            {connected === undefined ? (
+              <button className="primary" type="button" onClick={() => { void onConnect() }} disabled={busy}>
+                {busy ? 'Connecting...' : 'Connect'}
               </button>
-            </>
-          )}
+            ) : (
+              <div className="connected-controls">
+                <button className="account-chip" type="button" onClick={() => { void loadCounters() }} disabled={busy}>
+                  {short(connected.account.partyId)}
+                </button>
+                <button className="logout-button" type="button" onClick={() => { void onDisconnect() }} disabled={busy}>
+                  Logout
+                </button>
+              </div>
+            )}
+            {connected === undefined && (busy || pairingUri !== undefined) && (
+              <div className="pairing-popover">
+                {pairingUri === undefined ? (
+                  <div className="pairing-loading">
+                    <span className="spinner" />
+                    <span>Preparing WalletConnect...</span>
+                  </div>
+                ) : (
+                  <>
+                    <span>Paste in Carpincho</span>
+                    <code>{short(pairingUri)}</code>
+                    <div>
+                      <button
+                        className={pairingCopied ? 'copied' : undefined}
+                        type="button"
+                        onClick={() => { void copyPairingUri() }}
+                      >
+                        {pairingCopied ? 'Copied' : 'Copy'}
+                      </button>
+                      <button type="button" onClick={() => {
+                        setPairingCopied(false)
+                        setPairingUri(undefined)
+                      }}>
+                        Cancel
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
+      </header>
+
+      {info !== undefined && (
+        <div className="info dismissible">
+          <span>{info}</span>
+          <button type="button" onClick={() => setInfo(undefined)}>Close</button>
+        </div>
+      )}
+      {error !== undefined && (
+        <div className="error dismissible">
+          <span>{error}</span>
+          <button type="button" onClick={() => setError(undefined)}>Close</button>
+        </div>
+      )}
+
+      <section className="workspace-panel">
+        <div className="panel-title-row">
+          <div>
+            <span className="section-kicker">Business</span>
+            <h2>Counter workspace</h2>
+          </div>
+          <div className="actions">
+            <button
+              className="primary"
+              onClick={() => {
+                if (connected !== undefined) {
+                  void runCommand('create-counter', createCounterCommand(connected.account.partyId))
+                }
+              }}
+              disabled={busy || connected === undefined}
+            >
+              New counter
+            </button>
+          </div>
+        </div>
+
+        {connected === undefined ? (
+          <div className="empty">
+            <h3>No wallet connected</h3>
+            <p>Connect Carpincho before creating or exercising Counter contracts.</p>
+          </div>
+        ) : counters.length === 0 ? (
+          <div className="empty">
+            <h3>No counters visible</h3>
+            <p>Create one with the connected party or ask another party to add you as viewer.</p>
+          </div>
+        ) : (
+          <section className="counter-grid">
+            {counters.map(counter => {
+              const isIssuer = counter.issuer === connected.account.partyId
+              const draft = draftFor(counter.contractId)
+              return (
+                <article className="counter-card" key={counter.contractId}>
+                  <div className="counter-head">
+                    <div>
+                      <span>Count</span>
+                      <strong>{counter.count}</strong>
+                    </div>
+                    <button
+                      className="primary"
+                      onClick={() => { void runCommand('increment-counter', incrementCounterCommand(counter, connected.account.partyId)) }}
+                      disabled={busy || !canIncrement(counter, connected.account.partyId)}
+                    >
+                      Increment
+                    </button>
+                  </div>
+
+                  <dl>
+                    <div>
+                      <dt>Contract</dt>
+                      <dd>{short(counter.contractId)}</dd>
+                    </div>
+                    <div>
+                      <dt>Issuer</dt>
+                      <dd>{short(counter.issuer)}</dd>
+                    </div>
+                    <div>
+                      <dt>Incrementors</dt>
+                      <dd>{counter.incrementors.length}</dd>
+                    </div>
+                    <div>
+                      <dt>Viewers</dt>
+                      <dd>{counter.viewers.length}</dd>
+                    </div>
+                  </dl>
+
+                  <div className="party-tools">
+                    <input
+                      value={draft}
+                      onChange={event => updateDraft(counter.contractId, event.target.value)}
+                      placeholder="party id"
+                      disabled={!isIssuer || busy}
+                    />
+                    <button
+                      onClick={() => { void runCommand('add-user', addUserCommand(counter, draft.trim())) }}
+                      disabled={!isIssuer || busy || draft.trim() === ''}
+                    >
+                      Add user
+                    </button>
+                    <button
+                      onClick={() => { void runCommand('add-viewer', addViewerCommand(counter, draft.trim())) }}
+                      disabled={!isIssuer || busy || draft.trim() === ''}
+                    >
+                      Add viewer
+                    </button>
+                  </div>
+                </article>
+              )
+            })}
+          </section>
+        )}
       </section>
-
-      <section className="settings-panel">
-        <div>
-          <label htmlFor="canton-network">WalletConnect Canton network</label>
-          <input
-            id="canton-network"
-            value={runtimeDraft.cantonNetwork}
-            onChange={event => setRuntimeDraft(prev => ({ ...prev, cantonNetwork: event.target.value }))}
-            placeholder="canton:local"
-          />
-        </div>
-        <div>
-          <label htmlFor="wallet-companion-url">Carpincho URL</label>
-          <input
-            id="wallet-companion-url"
-            value={runtimeDraft.walletCompanionUrl}
-            onChange={event => setRuntimeDraft(prev => ({ ...prev, walletCompanionUrl: event.target.value }))}
-            placeholder="http://localhost:3011"
-          />
-        </div>
-        <button onClick={onSaveRuntimeConfig} disabled={busy}>Save settings</button>
-      </section>
-
-      {pairingUri !== undefined && connected === undefined && (
-        <section className="panel">
-          <div>
-            <h2>WalletConnect pairing</h2>
-            <p>Open Carpincho and approve the connection request.</p>
-          </div>
-          <a className="primary link-button" href={carpinchoUrl} target="_blank" rel="noreferrer">
-            Open Carpincho
-          </a>
-          <pre>{pairingUri}</pre>
-        </section>
-      )}
-
-      {connected !== undefined && partyId !== undefined && (
-        <section className="account-band">
-          <div>
-            <span>Connected party</span>
-            <strong>{partyId}</strong>
-          </div>
-          <div>
-            <span>Template</span>
-            <strong>{COUNTER_TEMPLATE_ID}</strong>
-          </div>
-        </section>
-      )}
-
-      {info !== undefined && <div className="info">{info}</div>}
-      {error !== undefined && <div className="error">{error}</div>}
-
-      {connected === undefined ? (
-        <section className="empty">
-          <h2>No wallet connected</h2>
-          <p>Start with Carpincho. The dApp will send Counter commands through WalletConnect.</p>
-        </section>
-      ) : counters.length === 0 ? (
-        <section className="empty">
-          <h2>No counters visible</h2>
-          <p>Create one with the connected party or refresh after another party adds you as viewer.</p>
-        </section>
-      ) : (
-        <section className="counter-grid">
-          {counters.map(counter => {
-            const isIssuer = counter.issuer === connected.account.partyId
-            const draft = draftFor(counter.contractId)
-            return (
-              <article className="counter-card" key={counter.contractId}>
-                <div className="counter-head">
-                  <div>
-                    <span>Count</span>
-                    <strong>{counter.count}</strong>
-                  </div>
-                  <button
-                    className="primary"
-                    onClick={() => { void runCommand('increment-counter', incrementCounterCommand(counter, connected.account.partyId)) }}
-                    disabled={busy || !canIncrement(counter, connected.account.partyId)}
-                  >
-                    Increment
-                  </button>
-                </div>
-
-                <dl>
-                  <div>
-                    <dt>Contract</dt>
-                    <dd>{short(counter.contractId)}</dd>
-                  </div>
-                  <div>
-                    <dt>Issuer</dt>
-                    <dd>{short(counter.issuer)}</dd>
-                  </div>
-                  <div>
-                    <dt>Incrementors</dt>
-                    <dd>{counter.incrementors.length}</dd>
-                  </div>
-                  <div>
-                    <dt>Viewers</dt>
-                    <dd>{counter.viewers.length}</dd>
-                  </div>
-                </dl>
-
-                <div className="party-tools">
-                  <input
-                    value={draft}
-                    onChange={event => updateDraft(counter.contractId, event.target.value)}
-                    placeholder="party id"
-                    disabled={!isIssuer || busy}
-                  />
-                  <button
-                    onClick={() => { void runCommand('add-user', addUserCommand(counter, draft.trim())) }}
-                    disabled={!isIssuer || busy || draft.trim() === ''}
-                  >
-                    Add user
-                  </button>
-                  <button
-                    onClick={() => { void runCommand('add-viewer', addViewerCommand(counter, draft.trim())) }}
-                    disabled={!isIssuer || busy || draft.trim() === ''}
-                  >
-                    Add viewer
-                  </button>
-                </div>
-              </article>
-            )
-          })}
-        </section>
-      )}
     </main>
   )
 }

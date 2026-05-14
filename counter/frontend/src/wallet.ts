@@ -1,12 +1,8 @@
-import { DappClient, WalletConnectAdapter } from '@canton-network/dapp-sdk'
+import { DappClient } from '@canton-network/dapp-sdk'
+import { selectWalletAccount, type WalletAccount } from './walletAccount.js'
+import { createWalletConnectProvider } from './walletConnectProvider.js'
 
-export interface WalletAccount {
-  primary?: boolean
-  partyId: string
-  hint?: string
-  publicKey?: string
-  networkId?: string
-}
+export type { WalletAccount } from './walletAccount.js'
 
 export interface WalletConnection {
   client: DappClient
@@ -28,7 +24,7 @@ export const connectWallet = async (args: {
   chainId: string
   onUri: (uri: string) => void
 }): Promise<WalletConnection> => {
-  const adapter = WalletConnectAdapter.create({
+  const provider = createWalletConnectProvider({
     projectId: walletConnectProjectId(),
     chainId: args.chainId,
     metadata: {
@@ -39,7 +35,7 @@ export const connectWallet = async (args: {
     },
     onUri: args.onUri
   })
-  const client = new DappClient(adapter.provider(), {
+  const client = new DappClient(provider, {
     providerType: 'remote',
     injectGlobal: false
   })
@@ -48,8 +44,9 @@ export const connectWallet = async (args: {
     throw new Error(connection.reason ?? 'Wallet did not connect')
   }
   const accounts = await client.listAccounts() as WalletAccount[]
-  const account = accounts.find(a => a.primary) ?? accounts[0]
+  const account = selectWalletAccount(accounts)
   if (account === undefined) {
+    await client.disconnect().catch(() => undefined)
     throw new Error('Wallet connected without accounts')
   }
   return { client, account }
