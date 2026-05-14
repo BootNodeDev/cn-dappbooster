@@ -1,5 +1,6 @@
 import { WalletServiceRpcError, walletServiceRequest } from '../api/walletService.js'
 import type { AccountPublic } from '../vault/types.js'
+import { accountConnection } from './accounts.js'
 import {
   CANTON_METHOD_CONNECT,
   CANTON_METHOD_DISCONNECT,
@@ -131,7 +132,7 @@ export const dispatchRequest = async (
 
   if (method === CANTON_METHOD_CONNECT || method === CANTON_METHOD_IS_CONNECTED) {
     const status = await buildStatus()
-    await respondWithResult(req.topic, req.id, status.connection)
+    await respondWithResult(req.topic, req.id, accountConnection({ accounts, primary }, status.connection))
     return { status: 'handled' }
   }
   if (method === CANTON_METHOD_DISCONNECT) {
@@ -151,7 +152,11 @@ export const dispatchRequest = async (
     return { status: 'handled' }
   }
   if (method === CANTON_METHOD_STATUS) {
-    await respondWithResult(req.topic, req.id, await buildStatus())
+    const status = await buildStatus()
+    await respondWithResult(req.topic, req.id, {
+      ...status,
+      connection: accountConnection({ accounts, primary }, status.connection)
+    })
     return { status: 'handled' }
   }
   if (method === CANTON_METHOD_GET_ACTIVE_NETWORK) {

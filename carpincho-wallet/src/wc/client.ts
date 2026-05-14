@@ -95,16 +95,40 @@ export const getSignClient = async (): Promise<InstanceType<typeof SignClient>> 
   return await signClientPromise
 }
 
-const partyIdToAccount = (partyId: string): string => `${getCantonChain()}:${encodeURIComponent(partyId)}`
+export type ProposalEvent = SignClientTypes.EventArguments['session_proposal']
+export type RequestEvent = SignClientTypes.EventArguments['session_request']
 
-export const approveProposal = async (args: { proposalId: number; partyId: string }): Promise<void> => {
+const isStaleWalletConnectRequestError = (error: unknown): boolean => {
+  const message = error instanceof Error ? error.message : String(error)
+  return message.includes('Record was recently deleted') || message.includes('Missing or invalid')
+}
+
+const respond = async (args: Parameters<InstanceType<typeof SignClient>['respond']>[0]): Promise<void> => {
   const client = await getSignClient()
+  try {
+    await client.respond(args)
+  } catch (error) {
+    if (isStaleWalletConnectRequestError(error)) {
+      console.warn('[carpincho:wc] skipped late response', {
+        topic: args.topic,
+        id: args.response.id,
+        error
+      })
+      return
+    }
+    throw error
+  }
+}
+
+export const approveProposal = async (args: { proposal: ProposalEvent; partyId: string }): Promise<void> => {
+  const client = await getSignClient()
+  const chain = getCantonChain()
   await client.approve({
-    id: args.proposalId,
+    id: args.proposal.id,
     namespaces: {
       [CANTON_NAMESPACE]: {
-        accounts: [partyIdToAccount(args.partyId)],
-        chains: [getCantonChain()],
+        accounts: [`${chain}:${encodeURIComponent(args.partyId)}`],
+        chains: [chain],
         methods: CIP103_METHODS,
         events: CIP103_EVENTS
       }
@@ -119,18 +143,15 @@ export const rejectProposal = async (proposalId: number): Promise<void> => {
 
 // CIP-103 wraps the signature in an object; bare strings get rejected.
 export const respondWithSignMessage = async (topic: string, requestId: number, signatureBase64: string): Promise<void> => {
-  const client = await getSignClient()
-  await client.respond({ topic, response: formatJsonRpcResult(requestId, { signature: signatureBase64 }) })
+  await respond({ topic, response: formatJsonRpcResult(requestId, { signature: signatureBase64 }) })
 }
 
 export const respondWithResult = async <T>(topic: string, requestId: number, result: T): Promise<void> => {
-  const client = await getSignClient()
-  await client.respond({ topic, response: formatJsonRpcResult(requestId, result) })
+  await respond({ topic, response: formatJsonRpcResult(requestId, result) })
 }
 
 export const respondWithError = async (topic: string, requestId: number, code: number, message: string): Promise<void> => {
-  const client = await getSignClient()
-  await client.respond({ topic, response: formatJsonRpcError(requestId, { code, message }) })
+  await respond({ topic, response: formatJsonRpcError(requestId, { code, message }) })
 }
 
 export const pairWithUri = async (uri: string): Promise<void> => {
@@ -150,8 +171,50 @@ export const disconnectAllSessions = async (): Promise<void> => {
   }))
 }
 
-export type ProposalEvent = SignClientTypes.EventArguments['session_proposal']
-export type RequestEvent = SignClientTypes.EventArguments['session_request']
+export interface ConnectedDappSession {
+  topic: string
+  name: string
+  url: string
+  description: string
+}
+
+const toConnectedDappSession = (session: ReturnType<InstanceType<typeof SignClient>['session']['getAll']>[number]): ConnectedDappSession => ({
+  topic: session.topic,
+  name: session.peer.metadata.name,
+  url: session.peer.metadata.url,
+  description: session.peer.metadata.description
+})
+
+export const getConnectedDappSessions = async (): Promise<ConnectedDappSession[]> => {
+  const client = await getSignClient()
+  return client.session.getAll().map(toConnectedDappSession)
+}
+
+export const disconnectSession = async (topic: string): Promise<void> => {
+  const client = await getSignClient()
+  await client.disconnect({ topic, reason: { code: 6000, message: 'user disconnected' } })
+}
+
+export const subscribeToSessionChanges = async (cb: (sessions: ConnectedDappSession[]) => void): Promise<() => void> => {
+  const client = await getSignClient()
+  const emitter = client as unknown as {
+    on: (event: string, cb: () => void) => void
+    off: (event: string, cb: () => void) => void
+  }
+  const refresh = (): void => {
+    void getConnectedDappSessions().then(cb).catch(() => undefined)
+  }
+  const events = ['session_delete', 'session_expire', 'session_update', 'session_extend'] as const
+  for (const event of events) {
+    emitter.on(event, refresh)
+  }
+  refresh()
+  return () => {
+    for (const event of events) {
+      emitter.off(event, refresh)
+    }
+  }
+}
 
 export const subscribeToProposals = async (cb: (e: ProposalEvent) => void): Promise<() => void> => {
   const client = await getSignClient()
