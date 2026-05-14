@@ -11,8 +11,21 @@ It is deliberately app-agnostic: no Counter-specific routes live here.
 ```bash
 npm install
 cp .env.example .env
+npm --prefix ../../canton-base run --silent token
 npm run dev
 ```
+
+Copy the printed token into `.env` as `CANTON_BACKEND_TOKEN` before using
+ledger-backed methods. From the repository root, the same token command is:
+
+```bash
+npm run --silent canton:token
+```
+
+`CANTON_BACKEND_TOKEN` is required for Canton JSON API calls made by
+`prepareCreateParty`, `completeCreateParty`, `ledgerApi`, `prepareTransaction`,
+and `executePrepared`. Basic health/info responses do not prove that the token
+is configured.
 
 Useful checks:
 

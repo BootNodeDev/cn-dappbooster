@@ -6,6 +6,7 @@
     "up": "docker compose up -d",
     "down": "docker compose down",
     "health": "./scripts/health-check.sh",
-    "token": "./scripts/mint-token.sh wallet-service"
+    "token": "node ./scripts/mint-token.mjs wallet-service",
+    "test": "node --test"
   }
 }

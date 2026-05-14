@@ -3,7 +3,41 @@
 Minimal local stack:
 
 ```text
-canton-base -> counter/wallet-service -> carpincho-wallet -> counter/frontend
++------------------------------+        WalletConnect / CIP-0103        +------------------------------+
+| counter/frontend             | <------------------------------------> | carpincho-wallet             |
+| Counter dApp                 |                                        | Vault + signer               |
+| http://localhost:3012        |                                        | http://localhost:3011        |
++------------------------------+                                        +---------------+--------------+
+                                                                                         |
+                                                                                         | JSON-RPC /rpc
+                                                                                         | prepare, execute,
+                                                                                         | read, onboard
+                                                                                         v
+                                                                        +------------------------------+
+                                                                        | counter/wallet-service       |
+                                                                        | Canton bridge                |
+                                                                        | http://localhost:3010        |
+                                                                        +---------------+--------------+
+                                                                                        |
+                                                                                        | Canton JSON API
+                                                                                        | Bearer CANTON_BACKEND_TOKEN
+                                                                                        v
+                                                                        +------------------------------+
+                                                                        | canton-base                  |
+                                                                        | Participant JSON API         |
+                                                                        | http://localhost:3013        |
+                                                                        | Ledger/Admin gRPC            |
+                                                                        | localhost:3014 / 3015        |
+                                                                        +------------------------------+
+                                                                                         ^
+                                                                                         |
+                                                                                         | deploy DAR package
+                                                                                         |
+                                                                        +------------------------------+
+                                                                        | counter/daml                 |
+                                                                        | quickstart-counter DAR       |
+                                                                        | .daml/dist/*.dar             |
+                                                                        +------------------------------+
 ```
 
 The frontend knows the Counter DAML signature and talks to Carpincho through WalletConnect. Carpincho owns the local signing key and uses the wallet service to prepare, read, and execute against the Canton participant.
@@ -22,6 +56,29 @@ cp .env.local.example .env.local
 # edit .env.local with the same VITE_WC_PROJECT_ID
 ```
 
+The wallet-service also needs a local Canton backend token. This token is a
+development JWT for the `wallet-service` user, used by `counter/wallet-service`
+to authenticate its server-side requests to the local Canton JSON API at
+`http://localhost:3013`. It is not a token asset and does not mint funds.
+
+```bash
+cp counter/wallet-service/.env.example counter/wallet-service/.env
+npm run --silent canton:token
+```
+
+Copy the printed JWT into `counter/wallet-service/.env`:
+
+```env
+CANTON_BACKEND_TOKEN=<printed JWT>
+```
+
+The Canton participant verifies this JWT using the local HS256 auth settings in
+`canton-base/.env`. The token is used only when the wallet-service calls the
+Canton JSON API to create external parties, read active contracts, prepare
+transactions, and submit signed prepared transactions. Health and service-info
+endpoints can still respond without it, so missing token setup usually shows up
+later when adding an account or executing a command.
+
 The Canton network, Carpincho URL, and wallet-service URL are configured from the app UIs, not from env files. The defaults are:
 
 - Canton network: `canton:local`
@@ -30,17 +87,17 @@ The Canton network, Carpincho URL, and wallet-service URL are configured from th
 
 Local ports are intentionally assigned in the `3010+` range:
 
-| Component | URL / Port |
-| --- | --- |
-| Counter wallet service | `http://localhost:3010` |
-| Carpincho wallet | `http://localhost:3011` |
-| Counter frontend | `http://localhost:3012` |
-| Canton JSON API | `http://localhost:3013` |
-| Canton Ledger API | `grpc://localhost:3014` |
-| Canton Admin API | `grpc://localhost:3015` |
-| Canton health | `http://localhost:3016` |
-| Canton sequencer public API | `localhost:3017` |
-| Canton Postgres | `localhost:3018` |
+| Component                   | URL / Port              |
+| --------------------------- | ----------------------- |
+| Counter wallet service      | `http://localhost:3010` |
+| Carpincho wallet            | `http://localhost:3011` |
+| Counter frontend            | `http://localhost:3012` |
+| Canton JSON API             | `http://localhost:3013` |
+| Canton Ledger API           | `grpc://localhost:3014` |
+| Canton Admin API            | `grpc://localhost:3015` |
+| Canton health               | `http://localhost:3016` |
+| Canton sequencer public API | `localhost:3017`        |
+| Canton Postgres             | `localhost:3018`        |
 
 ## 1. Start Canton
 

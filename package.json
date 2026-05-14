@@ -7,6 +7,7 @@
     "canton:up": "npm --prefix canton-base run up",
     "canton:down": "npm --prefix canton-base run down",
     "canton:health": "npm --prefix canton-base run health",
+    "canton:token": "npm --prefix canton-base run token",
     "counter:build-dar": "npm --prefix counter/daml run build",
     "counter:deploy-dar": "npm --prefix counter/daml run deploy",
     "wallet-service:dev": "npm --prefix counter/wallet-service run dev",
