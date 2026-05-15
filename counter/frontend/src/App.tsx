@@ -192,7 +192,7 @@ export const App = (): JSX.Element => {
                 {pairingUri === undefined ? (
                   <div className="pairing-loading">
                     <span className="spinner" />
-                    <span>Preparing WalletConnect...</span>
+                    <span>Waiting for Carpincho...</span>
                   </div>
                 ) : (
                   <>

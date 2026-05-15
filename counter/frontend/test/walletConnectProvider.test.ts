@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { createWalletConnectProvider } from '../src/walletConnectProvider.js'
+import { createWalletConnectProvider } from '../src/walletConnectProvider.ts'
 
 describe('WalletConnect provider', () => {
   it('emits the pairing URI without opening a browser tab', async () => {

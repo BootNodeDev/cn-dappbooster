@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { normalizeCounterContract } from '../src/counterSignature.js'
+import { normalizeCounterContract } from '../src/counterSignature.ts'
 
 describe('counter contract normalization', () => {
   it('normalizes record-field createArgument payloads returned by the JSON API', () => {

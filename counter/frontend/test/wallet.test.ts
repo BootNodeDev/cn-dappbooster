@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { selectWalletAccount, type WalletAccount } from '../src/walletAccount.js'
+import { selectWalletAccount, type WalletAccount } from '../src/walletAccount.ts'
 
 describe('wallet account selection', () => {
   it('uses the primary account when present', () => {

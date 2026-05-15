@@ -10,6 +10,7 @@
     "dev": "vite",
     "build": "tsc -b --noEmit && vite build",
     "lint": "eslint .",
+    "test": "node --test --experimental-strip-types \"test/**/*.test.ts\"",
     "preview": "vite preview"
   },
   "dependencies": {

@@ -82,8 +82,11 @@ class CopyUriWalletConnectProvider implements Provider<DappRpcTypes> {
   private signClientPromise: Promise<WalletConnectSignClient> | undefined
   private session: WalletConnectSession | undefined
   private sessionEventsAttached = false
+  private readonly config: WalletConnectProviderConfig
 
-  constructor(private readonly config: WalletConnectProviderConfig) {}
+  constructor(config: WalletConnectProviderConfig) {
+    this.config = config
+  }
 
   async request<M extends keyof DappRpcTypes>(args: RequestArgs<DappRpcTypes, M>): Promise<DappRpcTypes[M]['result']> {
     if (args.method === 'connect') {
