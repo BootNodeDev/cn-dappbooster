@@ -20,6 +20,7 @@ import {
 } from './sessionUnlock.js'
 import { signMessageBase64 } from './keypair.js'
 import type { AccountPublic, AccountSecret, TransactionRecord, VaultPlaintext } from './types.js'
+import { persistWalletSnapshot } from '../extension/walletSnapshot.ts'
 
 const IDLE_LOCK_MS = 15 * 60 * 1000
 const MAX_TRANSACTION_HISTORY = 50
@@ -341,6 +342,15 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLocked, vaultExists, tick, setup, unlock, lock, destroyVault, setPrimary, addAccount, removeAccount, signMessage, recordTransaction, changePassword])
+
+  useEffect(() => {
+    void persistWalletSnapshot(isLocked
+      ? null
+      : {
+          accounts: value.accounts,
+          primary: value.primary
+        }).catch(() => undefined)
+  }, [isLocked, value.accounts, value.primary])
 
   return <VaultContext.Provider value={value}>{children}</VaultContext.Provider>
 }

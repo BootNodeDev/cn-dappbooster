@@ -7,6 +7,8 @@ import {
   type RuntimeProviderRequest,
   type RuntimeProviderResponse
 } from './messages.ts'
+import { createDirectProviderResponse } from './directProvider.ts'
+import { readWalletSnapshot } from './walletSnapshot.ts'
 
 type RuntimeMessage =
   | RuntimeProviderRequest
@@ -33,20 +35,16 @@ type RuntimeApi = {
   sendMessage: (message: RuntimePendingRequestMessage) => Promise<unknown>
 }
 
-type WindowsApi = {
-  create: (createData: {
-    url: string
-    type: 'popup'
-    width: number
-    height: number
-    focused: boolean
-  }) => Promise<unknown>
+type ActionApi = {
+  openPopup?: () => Promise<void> | void
+  setBadgeText?: (details: { text: string }) => Promise<void> | void
+  setBadgeBackgroundColor?: (details: { color: string }) => Promise<void> | void
 }
 
 const chromeApi = (globalThis as {
   chrome?: {
     runtime?: RuntimeApi
-    windows?: WindowsApi
+    action?: ActionApi
   }
 }).chrome
 
@@ -72,35 +70,58 @@ const notifyWalletViews = async (pending: RuntimePendingRequest): Promise<void> 
   }).catch(() => undefined)
 }
 
-const openWalletWindow = async (): Promise<void> => {
-  const url = chromeApi?.runtime?.getURL('index.html')
-  if (url === undefined) {
+const updateActionBadge = async (): Promise<void> => {
+  const count = pendingRequests.size
+  await chromeApi?.action?.setBadgeText?.({
+    text: count === 0 ? '' : String(count)
+  })
+  if (count > 0) {
+    await chromeApi?.action?.setBadgeBackgroundColor?.({ color: '#b83242' })
+  }
+}
+
+const openWalletPopup = async (): Promise<void> => {
+  await chromeApi?.action?.openPopup?.()
+}
+
+const queueProviderRequest = async (
+  message: RuntimeProviderRequest,
+  sendResponse: (response?: unknown) => void
+): Promise<void> => {
+  const id = requestId(message.request)
+  const pending: RuntimePendingRequest = {
+    requestId: id,
+    request: message.request,
+    origin: message.origin,
+    createdAt: Date.now()
+  }
+  pendingRequests.set(id, {
+    pending,
+    sendResponse: response => sendResponse(response)
+  })
+  await updateActionBadge().catch(() => undefined)
+  await notifyWalletViews(pending)
+  await openWalletPopup().catch(() => undefined)
+}
+
+const handleProviderRequest = async (
+  message: RuntimeProviderRequest,
+  sendResponse: (response?: unknown) => void
+): Promise<void> => {
+  const directResponse = await createDirectProviderResponse(
+    message.request,
+    await readWalletSnapshot().catch(() => null)
+  )
+  if (directResponse !== undefined) {
+    sendResponse(directResponse)
     return
   }
-  await chromeApi?.windows?.create({
-    url,
-    type: 'popup',
-    width: 460,
-    height: 720,
-    focused: true
-  }).catch(() => undefined)
+  await queueProviderRequest(message, sendResponse)
 }
 
 chromeApi?.runtime?.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === 'CARPINCHO_PROVIDER_REQUEST') {
-    const id = requestId(message.request)
-    const pending: RuntimePendingRequest = {
-      requestId: id,
-      request: message.request,
-      origin: message.origin,
-      createdAt: Date.now()
-    }
-    pendingRequests.set(id, {
-      pending,
-      sendResponse: response => sendResponse(response)
-    })
-    void notifyWalletViews(pending)
-    void openWalletWindow()
+    void handleProviderRequest(message, sendResponse)
     return true
   }
 
@@ -117,6 +138,7 @@ chromeApi?.runtime?.onMessage.addListener((message, _sender, sendResponse) => {
     }
     pendingRequests.delete(message.requestId)
     pending.sendResponse(message.response)
+    void updateActionBadge().catch(() => undefined)
     sendResponse({ ok: true })
     return false
   }

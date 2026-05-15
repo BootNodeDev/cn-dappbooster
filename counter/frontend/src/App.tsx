@@ -10,7 +10,7 @@ import {
   incrementCounterCommand,
   normalizeCounterContract
 } from './counterSignature.js'
-import { connectWallet, type WalletAccount } from './wallet.js'
+import { connectWallet, type ConnectWalletMode, type WalletAccount } from './wallet.js'
 import { loadRuntimeConfig, saveRuntimeConfig } from './runtimeConfig.js'
 
 interface ConnectedState {
@@ -35,6 +35,7 @@ export const App = (): JSX.Element => {
   const [runtimeConfig, setRuntimeConfig] = useState(() => loadRuntimeConfig())
   const [partyDrafts, setPartyDrafts] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState(false)
+  const [connectMode, setConnectMode] = useState<ConnectWalletMode | undefined>(undefined)
   const [error, setError] = useState<string | undefined>(undefined)
   const [info, setInfo] = useState<string | undefined>(undefined)
 
@@ -88,14 +89,16 @@ export const App = (): JSX.Element => {
     }
   }
 
-  const onConnect = async (): Promise<void> => {
+  const onConnect = async (mode: ConnectWalletMode): Promise<void> => {
     setBusy(true)
+    setConnectMode(mode)
     setError(undefined)
     setInfo(undefined)
     setPairingUri(undefined)
     setPairingCopied(false)
     try {
       const next = await connectWallet({
+        mode,
         chainId: runtimeConfig.cantonNetwork,
         onUri: setPairingUri
       })
@@ -108,6 +111,7 @@ export const App = (): JSX.Element => {
     } finally {
       setPairingUri(undefined)
       setPairingCopied(false)
+      setConnectMode(undefined)
       setBusy(false)
     }
   }
@@ -159,11 +163,10 @@ export const App = (): JSX.Element => {
   return (
     <main className="shell">
       <header className="app-header">
-        <div>
-          <p className="eyebrow">Canton base</p>
-          <h1>Counter</h1>
-        </div>
-        <div className="header-actions">
+        <h1>Canton Counter</h1>
+        <div className="network-row">
+          <span className="network-icon" aria-hidden="true" />
+          <span className="network-separator" aria-hidden="true">&gt;</span>
           <select
             className="network-select"
             value={runtimeConfig.cantonNetwork}
@@ -172,52 +175,6 @@ export const App = (): JSX.Element => {
           >
             <option value="canton:local">canton:local</option>
           </select>
-          <div className="connect-area">
-            {connected === undefined ? (
-              <button className="primary" type="button" onClick={() => { void onConnect() }} disabled={busy}>
-                {busy ? 'Connecting...' : 'Connect'}
-              </button>
-            ) : (
-              <div className="connected-controls">
-                <button className="account-chip" type="button" onClick={() => { void loadCounters() }} disabled={busy}>
-                  {short(connected.account.partyId)}
-                </button>
-                <button className="logout-button" type="button" onClick={() => { void onDisconnect() }} disabled={busy}>
-                  Logout
-                </button>
-              </div>
-            )}
-            {connected === undefined && (busy || pairingUri !== undefined) && (
-              <div className="pairing-popover">
-                {pairingUri === undefined ? (
-                  <div className="pairing-loading">
-                    <span className="spinner" />
-                    <span>Waiting for Carpincho...</span>
-                  </div>
-                ) : (
-                  <>
-                    <span>Paste in Carpincho</span>
-                    <code>{short(pairingUri)}</code>
-                    <div>
-                      <button
-                        className={pairingCopied ? 'copied' : undefined}
-                        type="button"
-                        onClick={() => { void copyPairingUri() }}
-                      >
-                        {pairingCopied ? 'Copied' : 'Copy'}
-                      </button>
-                      <button type="button" onClick={() => {
-                        setPairingCopied(false)
-                        setPairingUri(undefined)
-                      }}>
-                        Cancel
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
         </div>
       </header>
 
@@ -234,11 +191,78 @@ export const App = (): JSX.Element => {
         </div>
       )}
 
-      <section className="workspace-panel">
+      {connected === undefined ? (
+        <section className="connect-panel" aria-label="Connect wallet">
+          <div className="connect-buttons">
+            <button
+              className="connect-card carpincho-connect"
+              type="button"
+              onClick={() => { void onConnect('extension') }}
+              disabled={busy}
+            >
+              <span className="connect-glyph" aria-hidden="true">C</span>
+              <span>{busy && connectMode === 'extension' ? 'Connecting...' : 'Connect with Carpincho'}</span>
+            </button>
+            <button
+              className="connect-card"
+              type="button"
+              onClick={() => { void onConnect('walletconnect') }}
+              disabled={busy}
+            >
+              <img src="/Walletconnect-logo.png" alt="" aria-hidden="true" />
+              <span>{busy && connectMode === 'walletconnect' ? 'Pairing...' : 'Connect with WC'}</span>
+            </button>
+          </div>
+          {(busy || pairingUri !== undefined) && (
+            <div className="pairing-popover">
+              {pairingUri === undefined ? (
+                <div className="pairing-loading">
+                  <span className="spinner" />
+                  <span>{connectMode === 'walletconnect' ? 'Preparing WalletConnect...' : 'Waiting for Carpincho...'}</span>
+                </div>
+              ) : (
+                <>
+                  <span>Paste in Carpincho</span>
+                  <code>{short(pairingUri)}</code>
+                  <div>
+                    <button
+                      className={pairingCopied ? 'copied' : undefined}
+                      type="button"
+                      onClick={() => { void copyPairingUri() }}
+                    >
+                      {pairingCopied ? 'Copied' : 'Copy'}
+                    </button>
+                    <button type="button" onClick={() => {
+                      setPairingCopied(false)
+                      setPairingUri(undefined)
+                    }}>
+                      Cancel
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </section>
+      ) : (
+        <>
+          <section className="connected-panel">
+            <div>
+              <span className="section-kicker">Connected with</span>
+              <button className="account-chip" type="button" onClick={() => { void loadCounters() }} disabled={busy}>
+                {short(connected.account.partyId)}
+              </button>
+            </div>
+            <button className="logout-button" type="button" onClick={() => { void onDisconnect() }} disabled={busy}>
+              Logout
+            </button>
+          </section>
+
+          <section className="workspace-panel">
         <div className="panel-title-row">
           <div>
-            <span className="section-kicker">Business</span>
-            <h2>Counter workspace</h2>
+            <span className="section-kicker">Counter</span>
+            <h2>Counter form</h2>
           </div>
           <div className="actions">
             <button
@@ -255,12 +279,7 @@ export const App = (): JSX.Element => {
           </div>
         </div>
 
-        {connected === undefined ? (
-          <div className="empty">
-            <h3>No wallet connected</h3>
-            <p>Connect Carpincho before creating or exercising Counter contracts.</p>
-          </div>
-        ) : counters.length === 0 ? (
+        {counters.length === 0 ? (
           <div className="empty">
             <h3>No counters visible</h3>
             <p>Create one with the connected party or ask another party to add you as viewer.</p>
@@ -331,6 +350,8 @@ export const App = (): JSX.Element => {
           </section>
         )}
       </section>
+        </>
+      )}
     </main>
   )
 }

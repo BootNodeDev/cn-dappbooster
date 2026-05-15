@@ -79,9 +79,9 @@ button:disabled {
 }
 
 .shell {
-  width: min(1120px, calc(100vw - 32px));
+  width: min(980px, calc(100vw - 28px));
   margin: 0 auto;
-  padding: 28px 0 48px;
+  padding: 24px 0 48px;
 }
 
 .app-header,
@@ -94,7 +94,11 @@ button:disabled {
 }
 
 .app-header {
-  margin-bottom: 16px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  text-align: center;
 }
 
 .eyebrow,
@@ -122,7 +126,8 @@ h3 {
 }
 
 h1 {
-  font-size: 34px;
+  font-size: 36px;
+  line-height: 1.05;
   font-weight: 900;
 }
 
@@ -142,6 +147,8 @@ p {
 
 .wallet-panel,
 .workspace-panel,
+.connect-panel,
+.connected-panel,
 .counter-card,
 .modal-panel {
   border: 1px solid var(--border);
@@ -151,9 +158,28 @@ p {
 }
 
 .wallet-panel,
-.workspace-panel {
+.workspace-panel,
+.connect-panel,
+.connected-panel {
   padding: 18px;
   margin-bottom: 14px;
+}
+
+.connect-panel {
+  display: grid;
+  justify-items: center;
+  padding: 22px 16px;
+}
+
+.connected-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.connected-panel > div {
+  min-width: 0;
 }
 
 .status-pill {
@@ -239,6 +265,49 @@ p {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.network-row {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(42, 86, 117, 0.08);
+}
+
+.network-icon {
+  position: relative;
+  width: 17px;
+  height: 17px;
+  border: 2px solid var(--sky);
+  border-radius: 999px;
+}
+
+.network-icon::before,
+.network-icon::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2px;
+  height: 13px;
+  background: var(--sky);
+  transform: translate(-50%, -50%);
+}
+
+.network-icon::after {
+  width: 13px;
+  height: 2px;
+}
+
+.network-separator {
+  color: var(--muted);
+  font-weight: 900;
 }
 
 .info,
@@ -403,7 +472,8 @@ pre {
   .app-header,
   .panel-title-row,
   .wallet-empty,
-  .connected-card {
+  .connected-card,
+  .connected-panel {
     align-items: stretch;
     grid-template-columns: 1fr;
     flex-direction: column;
@@ -413,17 +483,89 @@ pre {
   .wallet-empty button {
     width: 100%;
   }
+
+  .panel-title-row {
+    gap: 12px;
+  }
+
+  .actions {
+    width: 100%;
+  }
+
+  .counter-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .counter-head .primary {
+    width: 100%;
+  }
+
+  dl div {
+    grid-template-columns: 1fr;
+    gap: 3px;
+  }
+
+  .party-tools {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .party-tools input,
+  .party-tools button {
+    width: 100%;
+  }
+
+  .connected-panel .account-chip,
+  .connected-panel .logout-button {
+    width: 100%;
+  }
 }
 
-.header-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
+.connect-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(132px, 168px));
+  justify-content: center;
+  gap: 14px;
+  width: 100%;
 }
 
-.connect-area {
-  position: relative;
+.connect-card {
+  aspect-ratio: 1;
+  min-height: 0;
+  height: auto;
+  border-radius: 18px;
+  padding: 14px;
+  flex-direction: column;
+  gap: 12px;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.18;
+  box-shadow: 0 14px 32px rgba(42, 86, 117, 0.12);
+}
+
+.connect-card img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+.connect-glyph {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  color: #ffffff;
+  background: linear-gradient(180deg, var(--sky), var(--sky-2));
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.carpincho-connect {
+  border-color: rgba(47, 125, 119, 0.32);
+  background: var(--sky-soft);
+  color: var(--sky-ink);
 }
 
 .account-chip {
@@ -458,11 +600,9 @@ pre {
 }
 
 .pairing-popover {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  z-index: 20;
+  position: static;
   width: min(320px, calc(100vw - 32px));
+  margin: 14px auto 0;
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 12px;
@@ -516,15 +656,16 @@ pre {
   font-weight: 900;
 }
 .network-select {
-  min-width: 132px;
+  min-width: 118px;
   height: 36px;
-  border: 1px solid var(--border);
+  border: 0;
   border-radius: 999px;
-  padding: 0 34px 0 14px;
-  color: var(--ink);
-  background: var(--panel);
+  padding: 0 30px 0 0;
+  color: var(--text);
+  background-color: transparent;
   font: inherit;
   font-size: 0.85rem;
+  font-weight: 900;
   appearance: none;
   background-image:
     linear-gradient(45deg, transparent 50%, var(--muted) 50%),
@@ -540,7 +681,6 @@ pre {
 
 .network-select:focus {
   outline: 2px solid rgba(47, 125, 119, 0.2);
-  border-color: var(--sky);
 }
 
 .pairing-loading {

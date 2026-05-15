@@ -61,4 +61,46 @@ describe('extension wallet provider', () => {
     assert.equal(selected.providerType, 'browser')
     assert.equal(walletConnectCreated, false)
   })
+
+  it('uses WalletConnect directly without detecting the extension', async () => {
+    let extensionChecked = false
+    let walletConnectCreated = false
+    const selected = await createPreferredProvider({
+      mode: 'walletconnect',
+      chainId: 'canton:local',
+      onUri: () => undefined,
+      extensionProviderFactory: async () => {
+        extensionChecked = true
+        return fakeProvider
+      },
+      walletConnectProviderFactory: () => {
+        walletConnectCreated = true
+        return fakeProvider
+      }
+    })
+
+    assert.equal(selected.provider, fakeProvider)
+    assert.equal(selected.providerType, 'remote')
+    assert.equal(extensionChecked, false)
+    assert.equal(walletConnectCreated, true)
+  })
+
+  it('does not fall back to WalletConnect in extension-only mode', async () => {
+    let walletConnectCreated = false
+    await assert.rejects(
+      async () => await createPreferredProvider({
+        mode: 'extension',
+        chainId: 'canton:local',
+        onUri: () => undefined,
+        extensionProviderFactory: async () => undefined,
+        walletConnectProviderFactory: () => {
+          walletConnectCreated = true
+          return fakeProvider
+        }
+      }),
+      /Carpincho extension was not detected/
+    )
+
+    assert.equal(walletConnectCreated, false)
+  })
 })

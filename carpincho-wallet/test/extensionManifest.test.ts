@@ -38,6 +38,13 @@ describe('extension packaging', () => {
     assert.match(viteConfig, /outDir: isExtension \? 'dist-extension' : 'dist'/)
   })
 
+  it('emits a classic content script without module imports', () => {
+    const contentScript = readText('dist-extension/contentScript.js')
+
+    assert.doesNotMatch(contentScript, /\bimport\s*[{*\w]/)
+    assert.doesNotMatch(contentScript, /\bfrom\s*["'][^"']+["']/)
+  })
+
   it('does not depend on remote stylesheet assets', () => {
     const html = readText('index.html')
     assert.doesNotMatch(html, /cdn\.jsdelivr\.net/)

@@ -13,11 +13,14 @@ export interface WalletConnection {
 }
 
 export interface ConnectWalletArgs {
+  mode?: ConnectWalletMode
   chainId: string
   onUri: (uri: string) => void
   extensionProviderFactory?: () => Promise<Provider<DappRpcTypes> | undefined>
   walletConnectProviderFactory?: () => Provider<DappRpcTypes>
 }
+
+export type ConnectWalletMode = 'preferred' | 'extension' | 'walletconnect'
 
 export interface PreferredProvider {
   provider: Provider<DappRpcTypes>
@@ -56,6 +59,10 @@ export const connectWallet = async (args: ConnectWalletArgs): Promise<WalletConn
 }
 
 export const createPreferredProvider = async (args: ConnectWalletArgs): Promise<PreferredProvider> => {
+  if (args.mode === 'walletconnect') {
+    return createWalletConnectSelectedProvider(args)
+  }
+
   const extensionProvider = await (args.extensionProviderFactory?.() ?? createExtensionWalletProvider())
   if (extensionProvider !== undefined) {
     return {
@@ -63,6 +70,15 @@ export const createPreferredProvider = async (args: ConnectWalletArgs): Promise<
       providerType: 'browser'
     }
   }
+
+  if (args.mode === 'extension') {
+    throw new Error('Carpincho extension was not detected')
+  }
+
+  return createWalletConnectSelectedProvider(args)
+}
+
+const createWalletConnectSelectedProvider = (args: ConnectWalletArgs): PreferredProvider => {
   return {
     provider: args.walletConnectProviderFactory?.() ?? createWalletConnectProvider({
       projectId: walletConnectProjectId(),

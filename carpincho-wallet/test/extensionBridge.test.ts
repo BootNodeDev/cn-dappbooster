@@ -45,4 +45,13 @@ describe('extension postMessage bridge', () => {
       request: { jsonrpc: '2.0', id: '1', method: 'status' }
     }), true)
   })
+
+  it('uses the extension action popup instead of opening tabs or windows', () => {
+    const background = readText('src/extension/background.ts')
+
+    assert.match(background, /openPopup/)
+    assert.match(background, /setBadgeText/)
+    assert.doesNotMatch(background, /windows\.create/)
+    assert.doesNotMatch(background, /tabs\.create/)
+  })
 })
