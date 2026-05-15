@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { accountConnection, selectedAccount } from '../src/wc/accounts.js'
+import { accountConnection, selectedAccount } from '../src/wc/accounts.ts'
 
 const account = {
   id: 'acct-1',

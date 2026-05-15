@@ -21,6 +21,18 @@ html, body, #root {
   min-height: 100%;
 }
 
+html[data-runtime="extension"],
+html[data-runtime="extension"] body,
+html[data-runtime="extension"] #root {
+  width: 420px;
+  min-width: 420px;
+  min-height: 600px;
+}
+
+html[data-runtime="extension"] body {
+  overflow-x: hidden;
+}
+
 body {
   margin: 0;
   font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;

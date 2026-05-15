@@ -12,6 +12,12 @@ import {
 } from 'react'
 import { assertSecureContext, encryptVault, decryptVault } from './crypto.js'
 import { hasVault as hasVaultOnDisk, loadVault, rotateVault, wipeVault, writeFreshVault } from './storage.js'
+import {
+  clearSessionPassword,
+  persistSessionPassword,
+  readSessionPassword,
+  shouldWipeMemoryOnPageHide
+} from './sessionUnlock.js'
 import { signMessageBase64 } from './keypair.js'
 import type { AccountPublic, AccountSecret, TransactionRecord, VaultPlaintext } from './types.js'
 
@@ -21,34 +27,7 @@ const MAX_TRANSACTION_HISTORY = 50
 let unlockedPlaintext: VaultPlaintext | null = null
 let cachedPassword: string | null = null
 
-// sessionStorage so refresh keeps you unlocked. Per-tab; XSS on this origin can read it.
-const SESSION_KEY = 'carpincho.session.unlock'
-
-const persistSessionPassword = (password: string): void => {
-  try {
-    sessionStorage.setItem(SESSION_KEY, password)
-  } catch {
-    // soft-fail to in-memory only
-  }
-}
-
-const readSessionPassword = (): string | null => {
-  try {
-    return sessionStorage.getItem(SESSION_KEY)
-  } catch {
-    return null
-  }
-}
-
-const clearSessionPassword = (): void => {
-  try {
-    sessionStorage.removeItem(SESSION_KEY)
-  } catch {
-    // ignore
-  }
-}
-
-const wipeMemory = (): void => {
+const wipeMemory = async (): Promise<void> => {
   if (cachedPassword !== null) {
     cachedPassword = ''
     cachedPassword = null
@@ -59,7 +38,7 @@ const wipeMemory = (): void => {
     }
     unlockedPlaintext = null
   }
-  clearSessionPassword()
+  await clearSessionPassword()
 }
 
 const toPublic = (a: AccountSecret, primaryId: string | null): AccountPublic => ({
@@ -117,7 +96,7 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
   const bump = useCallback((): void => setTick(t => t + 1), [])
 
   const lock = useCallback((): void => {
-    wipeMemory()
+    void wipeMemory().catch(() => undefined)
     setIsLocked(true)
     bump()
   }, [bump])
@@ -142,7 +121,7 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
     writeFreshVault(blob)
     unlockedPlaintext = plaintext
     cachedPassword = password
-    persistSessionPassword(password)
+    await persistSessionPassword(password)
     setVaultExists(true)
     setIsLocked(false)
     bump()
@@ -166,13 +145,13 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
     parsed.transactions ??= []
     unlockedPlaintext = parsed
     cachedPassword = password
-    persistSessionPassword(password)
+    await persistSessionPassword(password)
     setIsLocked(false)
     bump()
   }, [bump])
 
   const destroyVault = useCallback((): void => {
-    wipeMemory()
+    void wipeMemory().catch(() => undefined)
     wipeVault()
     setVaultExists(false)
     setIsLocked(true)
@@ -278,20 +257,22 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
     const blob = await encryptVault(newPassword, JSON.stringify(unlockedPlaintext))
     rotateVault(blob)
     cachedPassword = newPassword
-    persistSessionPassword(newPassword)
+    await persistSessionPassword(newPassword)
     bump()
   }, [bump])
 
-  // Restore the unlocked session from sessionStorage on first mount.
+  // Restore the unlocked session on first mount.
   useEffect(() => {
     if (unlockedPlaintext !== null || !hasVaultOnDisk()) {
       return
     }
-    const stored = readSessionPassword()
-    if (stored === null || stored === '') {
-      return
-    }
-    void unlock(stored).catch(clearSessionPassword)
+    void (async () => {
+      const stored = await readSessionPassword()
+      if (stored === null || stored === '') {
+        return
+      }
+      await unlock(stored).catch(() => { void clearSessionPassword() })
+    })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -323,7 +304,11 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
   }, [isLocked, lock])
 
   useEffect(() => {
-    const onUnload = (): void => { wipeMemory() }
+    const onUnload = (): void => {
+      if (shouldWipeMemoryOnPageHide()) {
+        void wipeMemory().catch(() => undefined)
+      }
+    }
     window.addEventListener('pagehide', onUnload)
     return () => { window.removeEventListener('pagehide', onUnload) }
   }, [])

@@ -21,6 +21,25 @@ Dev server:
 http://localhost:3011
 ```
 
+## Local Browser Extension
+
+Build the unpacked Chromium extension:
+
+```bash
+npm run build:extension
+```
+
+Then install it locally:
+
+1. Open `chrome://extensions` or the equivalent Chromium extensions page.
+2. Enable Developer mode.
+3. Click `Load unpacked`.
+4. Select `carpincho-wallet-2/dist-extension`.
+5. Open the Carpincho Wallet extension from the browser toolbar.
+
+The extension uses its own `chrome-extension://` origin, so its encrypted vault
+is separate from the development vault at `http://localhost:3011`.
+
 ## Runtime Config
 
 The wallet has a `Connection settings` panel in the UI. The wallet-service JSON-RPC endpoint is stored in browser `localStorage` and starts with this scaffold default:

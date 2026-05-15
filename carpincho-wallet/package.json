@@ -6,8 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b --noEmit && vite build",
+    "build:extension": "tsc -b --noEmit && vite build --mode extension",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node --test --experimental-strip-types \"test/**/*.test.ts\""
   },
   "dependencies": {
     "@noble/ed25519": "^3.1.0",
