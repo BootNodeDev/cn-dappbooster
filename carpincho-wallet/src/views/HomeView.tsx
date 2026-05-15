@@ -10,7 +10,6 @@ import {
   rejectProposal,
   respondWithError,
   respondWithResult,
-  respondWithSignMessage,
   subscribeToSessionChanges,
   subscribeToProposals,
   subscribeToRequests,
@@ -21,22 +20,34 @@ import {
   CANTON_METHOD_PREPARE_EXECUTE_AND_WAIT,
   CANTON_METHOD_SIGN_MESSAGE
 } from '../wc/client.js'
-import { dispatchRequest } from '../wc/handlers.js'
 import { selectedAccount, type AccountSnapshot } from '../wc/accounts.js'
 import type { AccountPublic, TransactionRecord } from '../vault/types.js'
 import { walletServiceRequest } from '../api/walletService.js'
+import {
+  dispatchProviderRequest,
+  type ProviderRequest,
+  type ProviderResponder
+} from '../provider/dispatch.js'
+import {
+  createRuntimeResponder,
+  getPendingProviderRequests,
+  isExtensionRuntime,
+  subscribeToPendingProviderRequests
+} from '../extension/runtimeClient.js'
+import type { RuntimePendingRequest } from '../extension/messages.js'
 
 interface PendingSignRequest {
-  req: RequestEvent
   account: AccountPublic
   messageBase64: string
+  responder: ProviderResponder
 }
 
 interface PendingExecuteRequest {
-  req: RequestEvent
   account: AccountPublic
   method: typeof CANTON_METHOD_PREPARE_EXECUTE | typeof CANTON_METHOD_PREPARE_EXECUTE_AND_WAIT
   params: Record<string, unknown>
+  rawMethod: string
+  responder: ProviderResponder
 }
 
 interface PreparedTransactionResponse {
@@ -126,6 +137,15 @@ const initials = (name: string): string => name.slice(0, 2).toUpperCase()
 
 type WalletScreen = 'home' | 'add-account'
 
+const walletConnectResponder = (req: RequestEvent): ProviderResponder => ({
+  result: async value => {
+    await respondWithResult(req.topic, req.id, value)
+  },
+  error: async (code, message) => {
+    await respondWithError(req.topic, req.id, code, message)
+  }
+})
+
 export const HomeView = (): JSX.Element => {
   const v = useVault()
   const [screen, setScreen] = useState<WalletScreen>('home')
@@ -142,9 +162,14 @@ export const HomeView = (): JSX.Element => {
   const [info, setInfo] = useState<string | undefined>(undefined)
   const [busy, setBusy] = useState(false)
   const accountSnapshotRef = useRef<AccountSnapshot>({ accounts: v.accounts, primary: v.primary })
+  const seenExtensionRequests = useRef<Set<string>>(new Set())
+  const extensionMode = isExtensionRuntime()
 
   // Strip ?wc= after pairing so a refresh does not try the same URI twice.
   useEffect(() => {
+    if (extensionMode) {
+      return
+    }
     const params = new URLSearchParams(window.location.search)
     const wc = params.get('wc')
     if (wc === null || wc === '') {
@@ -158,7 +183,7 @@ export const HomeView = (): JSX.Element => {
         window.history.replaceState(null, '', url)
       })
       .catch((err: Error) => setError(`pair failed: ${err.message}`))
-  }, [])
+  }, [extensionMode])
 
   useEffect(() => {
     if (proposal === undefined) {
@@ -182,15 +207,80 @@ export const HomeView = (): JSX.Element => {
     setSessions(await getConnectedDappSessions())
   }, [])
 
+  const handleProviderRequest = useCallback(async (
+    request: ProviderRequest,
+    responder: ProviderResponder,
+    context: { label: string; rawMethod?: string }
+  ): Promise<void> => {
+    const result = await dispatchProviderRequest(request, resolveAccounts, responder)
+    if (result.status === 'pending-approval' && result.pendingMethod === CANTON_METHOD_SIGN_MESSAGE) {
+      const messageBase64 = (request.params as { message?: string })?.message
+      if (typeof messageBase64 !== 'string') {
+        await responder.error(-32602, 'message param missing')
+        return
+      }
+      const account = selectedAccount(resolveAccounts())
+      if (account === undefined) {
+        await responder.error(-32000, 'no account available')
+        return
+      }
+      setPendingSign({ account, messageBase64, responder })
+      return
+    }
+    if (
+      result.status === 'pending-approval' &&
+      (result.pendingMethod === CANTON_METHOD_PREPARE_EXECUTE || result.pendingMethod === CANTON_METHOD_PREPARE_EXECUTE_AND_WAIT)
+    ) {
+      const account = selectedAccount(resolveAccounts())
+      if (account === undefined) {
+        await responder.error(-32000, 'no account available')
+        return
+      }
+      setPendingExecute({
+        account,
+        method: result.pendingMethod,
+        params: executeParams(request.params, account.partyId),
+        rawMethod: context.rawMethod ?? request.method,
+        responder
+      })
+    }
+  }, [resolveAccounts])
+
+  const handleExtensionPending = useCallback(async (pending: RuntimePendingRequest): Promise<void> => {
+    if (seenExtensionRequests.current.has(pending.requestId)) {
+      return
+    }
+    seenExtensionRequests.current.add(pending.requestId)
+    try {
+      await handleProviderRequest(
+        {
+          method: pending.request.method,
+          params: pending.request.params
+        },
+        createRuntimeResponder(pending),
+        { label: pending.origin }
+      )
+    } catch (error) {
+      console.error('[carpincho:extension] request handler failed', { pending, error })
+      setError(`Extension request failed: ${(error as Error).message}`)
+    }
+  }, [handleProviderRequest])
+
   useEffect(() => {
+    if (extensionMode) {
+      return
+    }
     let unsub: (() => void) | undefined
     void subscribeToSessionChanges(setSessions)
       .then(fn => { unsub = fn })
       .catch((err: Error) => setError(`WalletConnect sessions failed: ${err.message}`))
     return () => { unsub?.() }
-  }, [])
+  }, [extensionMode])
 
   useEffect(() => {
+    if (extensionMode) {
+      return
+    }
     let unsubP: (() => void) | undefined
     let unsubR: (() => void) | undefined
     void (async () => {
@@ -198,36 +288,14 @@ export const HomeView = (): JSX.Element => {
       unsubP = await subscribeToProposals(setProposal)
       unsubR = await subscribeToRequests(async (req) => {
         try {
-          const result = await dispatchRequest(req, resolveAccounts)
-          if (result.status === 'pending-approval' && result.pendingMethod === CANTON_METHOD_SIGN_MESSAGE) {
-            const messageBase64 = (req.params.request.params as { message?: string })?.message
-            if (typeof messageBase64 !== 'string') {
-              await respondWithError(req.topic, req.id, -32602, 'message param missing')
-              return
-            }
-            const account = selectedAccount(resolveAccounts())
-            if (account === undefined) {
-              await respondWithError(req.topic, req.id, -32000, 'no account available')
-              return
-            }
-            setPendingSign({ req, account, messageBase64 })
-          }
-          if (
-            result.status === 'pending-approval' &&
-            (result.pendingMethod === CANTON_METHOD_PREPARE_EXECUTE || result.pendingMethod === CANTON_METHOD_PREPARE_EXECUTE_AND_WAIT)
-          ) {
-            const account = selectedAccount(resolveAccounts())
-            if (account === undefined) {
-              await respondWithError(req.topic, req.id, -32000, 'no account available')
-              return
-            }
-            setPendingExecute({
-              req,
-              account,
-              method: result.pendingMethod,
-              params: executeParams(req.params.request.params, account.partyId)
-            })
-          }
+          await handleProviderRequest(
+            {
+              method: req.params.request.method,
+              params: req.params.request.params
+            },
+            walletConnectResponder(req),
+            { label: 'WalletConnect', rawMethod: req.params.request.method }
+          )
         } catch (error) {
           console.error('[carpincho:wc] request handler failed', { req, error })
           setError(`WalletConnect request failed: ${(error as Error).message}`)
@@ -238,7 +306,24 @@ export const HomeView = (): JSX.Element => {
       unsubP?.()
       unsubR?.()
     }
-  }, [resolveAccounts])
+  }, [extensionMode, handleProviderRequest])
+
+  useEffect(() => {
+    if (!extensionMode) {
+      return
+    }
+    const unsubscribe = subscribeToPendingProviderRequests(pending => {
+      void handleExtensionPending(pending)
+    })
+    void getPendingProviderRequests()
+      .then(pendingRequests => {
+        for (const pending of pendingRequests) {
+          void handleExtensionPending(pending)
+        }
+      })
+      .catch((err: Error) => setError(`Extension requests failed: ${err.message}`))
+    return unsubscribe
+  }, [extensionMode, handleExtensionPending])
 
   const onApproveProposal = async (): Promise<void> => {
     if (proposal === undefined || proposalAccount === null) {
@@ -276,12 +361,12 @@ export const HomeView = (): JSX.Element => {
     setBusy(true)
     try {
       const signature = await v.signMessage(pendingSign.account.id, pendingSign.messageBase64)
-      await respondWithSignMessage(pendingSign.req.topic, pendingSign.req.id, signature)
+      await pendingSign.responder.result({ signature })
       setInfo('Signed.')
       setPendingSign(undefined)
     } catch (err) {
       const msg = (err as Error).message
-      await respondWithError(pendingSign.req.topic, pendingSign.req.id, -32000, msg).catch(() => undefined)
+      await pendingSign.responder.error(-32000, msg).catch(() => undefined)
       setError(`sign failed: ${msg}`)
       setPendingSign(undefined)
     } finally {
@@ -293,7 +378,7 @@ export const HomeView = (): JSX.Element => {
     if (pendingSign === undefined) {
       return
     }
-    await respondWithError(pendingSign.req.topic, pendingSign.req.id, 4001, 'user rejected').catch(() => undefined)
+    await pendingSign.responder.error(4001, 'user rejected').catch(() => undefined)
     setPendingSign(undefined)
   }
 
@@ -335,17 +420,17 @@ export const HomeView = (): JSX.Element => {
           completionOffset: executed.completionOffset ?? 0
         }
       }
-      const isLegacyPrepareSign = pendingExecute.req.params.request.method === 'canton_prepareSignExecute'
+      const isLegacyPrepareSign = pendingExecute.rawMethod === 'canton_prepareSignExecute'
       const result =
         pendingExecute.method === CANTON_METHOD_PREPARE_EXECUTE
           ? null
           : isLegacyPrepareSign ? tx : { tx }
-      await respondWithResult(pendingExecute.req.topic, pendingExecute.req.id, result)
+      await pendingExecute.responder.result(result)
       setInfo('Transaction executed.')
       setPendingExecute(undefined)
     } catch (err) {
       const msg = (err as Error).message
-      await respondWithError(pendingExecute.req.topic, pendingExecute.req.id, -32000, msg).catch(() => undefined)
+      await pendingExecute.responder.error(-32000, msg).catch(() => undefined)
       setError(`transaction failed: ${msg}`)
       setPendingExecute(undefined)
     } finally {
@@ -357,7 +442,7 @@ export const HomeView = (): JSX.Element => {
     if (pendingExecute === undefined) {
       return
     }
-    await respondWithError(pendingExecute.req.topic, pendingExecute.req.id, 4001, 'user rejected').catch(() => undefined)
+    await pendingExecute.responder.error(4001, 'user rejected').catch(() => undefined)
     setPendingExecute(undefined)
   }
 
@@ -575,6 +660,17 @@ export const HomeView = (): JSX.Element => {
             <div className="button-row">
               <button className="btn btn-wallet" onClick={onApproveExecute} disabled={busy}>Approve</button>
               <button className="btn btn-wallet-secondary" onClick={onRejectExecute} disabled={busy}>Reject</button>
+            </div>
+          </div>
+        ) : extensionMode ? (
+          <div className="wc-connect-card">
+            <div className="wc-connect-body">
+              <div className="wc-connected-row">
+                <div className="wc-dapp-copy">
+                  <strong>Browser extension mode</strong>
+                  <small>Waiting for dApp requests from local browser tabs</small>
+                </div>
+              </div>
             </div>
           </div>
         ) : connectedSession !== undefined ? (
