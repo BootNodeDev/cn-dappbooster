@@ -1,83 +1,93 @@
 import { useState } from 'react'
-import { CarpinchoLogo } from '../components/CarpinchoLogo.js'
-import { useVault } from '../vault/useVault.js'
+import { NewPasswordFields } from '@/components/NewPasswordFields.tsx'
+import { PrimaryButton } from '@/components/ui/Button.tsx'
+import { Card } from '@/components/ui/Card.tsx'
+import { Tooltip } from '@/components/ui/Tooltip.tsx'
+import { toast } from '@/components/ui/toast.ts'
+import { WelcomeHero } from '@/components/WelcomeHero.tsx'
+import { useVault } from '@/vault/useVault.ts'
 
 export const SetupView = (): JSX.Element => {
   const v = useVault()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | undefined>(undefined)
+  const [acknowledged, setAcknowledged] = useState(false)
+  const [isWorking, setIsWorking] = useState(false)
+  const [passwordValid, setPasswordValid] = useState(false)
+
+  const canSubmit = passwordValid && acknowledged
 
   const onSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault()
-    setError(undefined)
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters.')
-      return
-    }
-    if (password !== confirm) {
-      setError('Passwords do not match.')
-      return
-    }
-    setBusy(true)
+    if (!canSubmit) return
+    setIsWorking(true)
     try {
       await v.setup(password)
     } catch (err) {
-      setError((err as Error).message)
+      toast.error(`Vault setup failed: ${(err as Error).message}`)
     } finally {
-      setBusy(false)
+      setIsWorking(false)
     }
   }
 
   return (
-    <div className="app-shell">
-      <div className="hero-wrap">
-        <CarpinchoLogo size={140} />
-        <div className="hero-wordmark">Carpincho Wallet</div>
-        <h2>Welcome</h2>
-        <p className="muted">
-          A Canton wallet built like a real wallet: your keys live in this
-          browser, encrypted with a password only you know.
+    <div>
+      <WelcomeHero description="Canton development wallet." />
+      <Card className="mb-3">
+        <h2 className="m-0 mb-1 font-display text-[1.6rem] font-semibold text-foreground tracking-[-0.02em] leading-tight">
+          Create a vault
+        </h2>
+        <p className="text-soft text-[1rem] mb-5 leading-relaxed flex items-center gap-2">
+          Choose a strong password
+          <Tooltip
+            content={
+              <>
+                Your password encrypts your private keys locally with{' '}
+                <span className="font-mono">AES-GCM</span>. It never leaves this device and{' '}
+                <b>cannot be recovered</b>.
+              </>
+            }
+            label="What is the password for?"
+          />
         </p>
-      </div>
-      <div className="card-soft">
-        <p className="locked-note mb-3">
-          Pick a password. We&apos;ll use it to encrypt your private keys
-          locally with AES-GCM. There&apos;s no recovery — write it down.
-        </p>
-        <form onSubmit={onSubmit}>
-          <div className="mb-2">
-            <label htmlFor="pw">New password</label>
+        <form
+          className="flex flex-col gap-4"
+          onSubmit={onSubmit}
+        >
+          <NewPasswordFields
+            confirm={confirm}
+            confirmLabel="Confirm password"
+            labelMode="visible"
+            onConfirmChange={setConfirm}
+            onPasswordChange={setPassword}
+            onValidityChange={setPasswordValid}
+            password={password}
+            passwordLabel="Password"
+          />
+          <label
+            className="flex items-start gap-2.5 rounded-sm border border-border bg-muted p-2 text-[0.85rem] leading-snug text-soft cursor-pointer"
+            htmlFor="ack"
+          >
             <input
-              id="pw"
-              type="password"
-              className="form-control"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              minLength={8}
-              autoFocus
-              autoComplete="new-password"
+              id="ack"
+              type="checkbox"
+              checked={acknowledged}
+              onChange={(e) => setAcknowledged(e.target.checked)}
+              className="mt-0.5 shrink-0 accent-primary"
             />
-          </div>
-          <div className="mb-3">
-            <label htmlFor="pw2">Confirm password</label>
-            <input
-              id="pw2"
-              type="password"
-              className="form-control"
-              value={confirm}
-              onChange={e => setConfirm(e.target.value)}
-              minLength={8}
-              autoComplete="new-password"
-            />
-          </div>
-          {error !== undefined && <div className="error-box mb-3">{error}</div>}
-          <button type="submit" className="btn btn-arg w-100" disabled={busy}>
-            {busy ? 'Encrypting vault…' : 'Create vault'}
-          </button>
+            <span>
+              I understand that if I lose my password, <b>it can't be recovered</b>.
+            </span>
+          </label>
+          <PrimaryButton
+            className="w-full mt-10"
+            disabled={isWorking || !canSubmit}
+            type="submit"
+          >
+            {isWorking ? 'Encrypting vault…' : 'Create vault'}
+          </PrimaryButton>
         </form>
-      </div>
+      </Card>
     </div>
   )
 }

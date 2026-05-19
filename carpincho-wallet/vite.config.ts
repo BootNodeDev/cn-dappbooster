@@ -1,7 +1,8 @@
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { defineConfig } from 'vite'
+import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -10,7 +11,12 @@ export default defineConfig(({ mode }) => {
 
   return {
     base: isExtension ? './' : '/',
-    plugins: [react()],
+    plugins: [tailwindcss(), react()],
+    resolve: {
+      alias: {
+        '@': resolve(__dirname, 'src'),
+      },
+    },
     build: {
       outDir: isExtension ? 'dist-extension' : 'dist',
       rollupOptions: isExtension
@@ -18,21 +24,21 @@ export default defineConfig(({ mode }) => {
             input: {
               app: resolve(__dirname, 'index.html'),
               contentScript: resolve(__dirname, 'src/extension/contentScript.ts'),
-              background: resolve(__dirname, 'src/extension/background.ts')
+              background: resolve(__dirname, 'src/extension/background.ts'),
             },
             output: {
-              entryFileNames: chunk =>
+              entryFileNames: (chunk) =>
                 chunk.name === 'contentScript' || chunk.name === 'background'
                   ? '[name].js'
-                  : 'assets/[name]-[hash].js'
-            }
+                  : 'assets/[name]-[hash].js',
+            },
           }
-        : undefined
+        : undefined,
     },
     server: {
       host: 'localhost',
       port: 3011,
-      strictPort: true
-    }
+      strictPort: true,
+    },
   }
 })

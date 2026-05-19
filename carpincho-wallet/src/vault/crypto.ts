@@ -1,5 +1,5 @@
 // PBKDF2-HMAC-SHA256 (600k iters) → AES-256-GCM via SubtleCrypto.
-import type { EncryptedVault } from './types.js'
+import type { EncryptedVault } from '@/vault/types.ts'
 
 const KDF_ITERATIONS = 600_000
 const SALT_BYTES = 16
@@ -33,33 +33,32 @@ const randomBytes = (length: number): Uint8Array<ArrayBuffer> => {
 }
 
 const deriveKey = async (password: string, salt: Uint8Array<ArrayBuffer>): Promise<CryptoKey> => {
-  const baseKey = await crypto.subtle.importKey(
-    'raw',
-    enc.encode(password),
-    'PBKDF2',
-    false,
-    ['deriveKey']
-  )
+  const baseKey = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, [
+    'deriveKey',
+  ])
   return await crypto.subtle.deriveKey(
     { name: 'PBKDF2', hash: 'SHA-256', salt, iterations: KDF_ITERATIONS },
     baseKey,
     { name: 'AES-GCM', length: 256 },
     false,
-    ['encrypt', 'decrypt']
+    ['encrypt', 'decrypt'],
   )
 }
 
-export const encryptVault = async (password: string, plaintext: string): Promise<EncryptedVault> => {
+export const encryptVault = async (
+  password: string,
+  plaintext: string,
+): Promise<EncryptedVault> => {
   const salt = randomBytes(SALT_BYTES)
   const iv = randomBytes(IV_BYTES)
   const key = await deriveKey(password, salt)
   const data = new Uint8Array(
-    await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(plaintext))
+    await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(plaintext)),
   )
   return {
     v: 1,
     kdf: { name: 'PBKDF2', hash: 'SHA-256', iterations: KDF_ITERATIONS, salt: toBase64(salt) },
-    cipher: { name: 'AES-GCM', iv: toBase64(iv), data: toBase64(data) }
+    cipher: { name: 'AES-GCM', iv: toBase64(iv), data: toBase64(data) },
   }
 }
 
@@ -71,7 +70,7 @@ export const decryptVault = async (password: string, blob: EncryptedVault): Prom
   const plaintext = await crypto.subtle.decrypt(
     { name: 'AES-GCM', iv: fromBase64(blob.cipher.iv) },
     key,
-    fromBase64(blob.cipher.data)
+    fromBase64(blob.cipher.data),
   )
   return dec.decode(plaintext)
 }

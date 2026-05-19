@@ -1,4 +1,4 @@
-import type { AccountPublic } from '../vault/types.js'
+import type { AccountPublic } from '@/vault/types.ts'
 
 export interface AccountSnapshot {
   accounts: AccountPublic[]
@@ -22,10 +22,10 @@ export const selectedAccount = (snapshot: AccountSnapshot): AccountPublic | unde
 
 export const accountConnection = (
   snapshot: AccountSnapshot,
-  remote: AccountConnectionInput
+  remote: AccountConnectionInput,
 ): AccountConnection => ({
   isConnected: selectedAccount(snapshot) !== undefined,
   isNetworkConnected: remote.isNetworkConnected ?? false,
   ...(selectedAccount(snapshot) === undefined ? { reason: 'No wallet account available.' } : {}),
-  ...(remote.networkReason === undefined ? {} : { networkReason: remote.networkReason })
+  ...(remote.networkReason === undefined ? {} : { networkReason: remote.networkReason }),
 })

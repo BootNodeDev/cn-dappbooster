@@ -5,8 +5,8 @@ import {
   CANTON_METHOD_LIST_ACCOUNTS,
   CANTON_METHOD_SIGN_MESSAGE,
   dispatchProviderRequest,
-  type ProviderResponder
-} from '../src/provider/dispatch.ts'
+  type ProviderResponder,
+} from '@/provider/dispatch.ts'
 
 const account = {
   id: 'acct-1',
@@ -15,7 +15,7 @@ const account = {
   publicKeyBase64: 'public-key',
   network: 'canton:local',
   isPrimary: true,
-  createdAt: 1
+  createdAt: 1,
 }
 
 const captureResponder = (): ProviderResponder & {
@@ -27,12 +27,12 @@ const captureResponder = (): ProviderResponder & {
   return {
     results,
     errors,
-    result: async value => {
+    result: async (value) => {
       results.push(value)
     },
     error: async (code, message) => {
       errors.push({ code, message })
-    }
+    },
   }
 }
 
@@ -43,21 +43,25 @@ describe('provider request dispatch', () => {
     const result = await dispatchProviderRequest(
       { method: CANTON_METHOD_LIST_ACCOUNTS },
       () => ({ accounts: [account], primary: account }),
-      responder
+      responder,
     )
 
     assert.deepEqual(result, { status: 'handled' })
     assert.equal(responder.errors.length, 0)
-    assert.deepEqual(responder.results, [[{
-      primary: true,
-      partyId: 'alice::fingerprint',
-      status: 'allocated',
-      hint: 'Alice',
-      publicKey: 'public-key',
-      namespace: 'fingerprint',
-      networkId: 'canton:local',
-      signingProviderId: 'carpincho-wallet'
-    }]])
+    assert.deepEqual(responder.results, [
+      [
+        {
+          primary: true,
+          partyId: 'alice::fingerprint',
+          status: 'allocated',
+          hint: 'Alice',
+          publicKey: 'public-key',
+          namespace: 'fingerprint',
+          networkId: 'canton:local',
+          signingProviderId: 'carpincho-wallet',
+        },
+      ],
+    ])
   })
 
   it('returns pending approval for signMessage without transport-specific code', async () => {
@@ -66,10 +70,13 @@ describe('provider request dispatch', () => {
     const result = await dispatchProviderRequest(
       { method: CANTON_METHOD_SIGN_MESSAGE, params: { message: 'aGVsbG8=' } },
       () => ({ accounts: [account], primary: account }),
-      responder
+      responder,
     )
 
-    assert.deepEqual(result, { status: 'pending-approval', pendingMethod: CANTON_METHOD_SIGN_MESSAGE })
+    assert.deepEqual(result, {
+      status: 'pending-approval',
+      pendingMethod: CANTON_METHOD_SIGN_MESSAGE,
+    })
     assert.equal(responder.results.length, 0)
     assert.equal(responder.errors.length, 0)
   })

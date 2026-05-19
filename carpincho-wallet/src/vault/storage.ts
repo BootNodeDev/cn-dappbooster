@@ -1,4 +1,4 @@
-import type { EncryptedVault } from './types.js'
+import type { EncryptedVault } from '@/vault/types.ts'
 
 const KEY_VAULT = 'carpincho.vault'
 const KEY_VAULT_NEXT = 'carpincho.vault.next'
@@ -46,4 +46,21 @@ export const rotateVault = (blob: EncryptedVault): void => {
 export const wipeVault = (): void => {
   localStorage.removeItem(KEY_VAULT)
   localStorage.removeItem(KEY_VAULT_NEXT)
+}
+
+const KEY_AUTO_LOCK = 'carpincho.autoLockOption'
+
+export const AUTO_LOCK_OPTIONS = ['never', '1m', '5m', '1h'] as const
+export type AutoLockOption = (typeof AUTO_LOCK_OPTIONS)[number]
+
+const isAutoLockOption = (raw: string | null): raw is AutoLockOption =>
+  raw !== null && (AUTO_LOCK_OPTIONS as readonly string[]).includes(raw)
+
+export const loadAutoLockOption = (): AutoLockOption => {
+  const raw = localStorage.getItem(KEY_AUTO_LOCK)
+  return isAutoLockOption(raw) ? raw : 'never'
+}
+
+export const writeAutoLockOption = (option: AutoLockOption): void => {
+  localStorage.setItem(KEY_AUTO_LOCK, option)
 }

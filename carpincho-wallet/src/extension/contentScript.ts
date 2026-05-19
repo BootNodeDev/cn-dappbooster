@@ -6,7 +6,7 @@ const WalletEvent = {
   SPLICE_WALLET_REQUEST: 'SPLICE_WALLET_REQUEST',
   SPLICE_WALLET_RESPONSE: 'SPLICE_WALLET_RESPONSE',
   SPLICE_WALLET_EXT_READY: 'SPLICE_WALLET_EXT_READY',
-  SPLICE_WALLET_EXT_ACK: 'SPLICE_WALLET_EXT_ACK'
+  SPLICE_WALLET_EXT_ACK: 'SPLICE_WALLET_EXT_ACK',
 } as const
 
 const CANTON_REQUEST_PROVIDER_EVENT = 'canton:requestProvider'
@@ -68,22 +68,33 @@ const isSpliceWalletRequest = (value: unknown): value is SpliceWalletRequestMess
   value.request.jsonrpc === '2.0' &&
   typeof value.request.method === 'string'
 
-const extensionAck = (): { type: typeof WalletEvent.SPLICE_WALLET_EXT_ACK; target: typeof CARPINCHO_PROVIDER_ID } => ({
+const extensionAck = (): {
+  type: typeof WalletEvent.SPLICE_WALLET_EXT_ACK
+  target: typeof CARPINCHO_PROVIDER_ID
+} => ({
   type: WalletEvent.SPLICE_WALLET_EXT_ACK,
-  target: CARPINCHO_PROVIDER_ID
+  target: CARPINCHO_PROVIDER_ID,
 })
 
-const jsonRpcError = (id: JsonRpcRequest['id'], code: number, message: string, data?: unknown): JsonRpcResponse => ({
+const jsonRpcError = (
+  id: JsonRpcRequest['id'],
+  code: number,
+  message: string,
+  data?: unknown,
+): JsonRpcResponse => ({
   jsonrpc: '2.0',
   id,
-  error: data === undefined ? { code, message } : { code, message, data }
+  error: data === undefined ? { code, message } : { code, message, data },
 })
 
 type RuntimeApi = {
   id: string
   getURL: (path: string) => string
   lastError?: { message?: string }
-  sendMessage: (message: RuntimeProviderRequest, callback: (response?: JsonRpcResponse) => void) => void
+  sendMessage: (
+    message: RuntimeProviderRequest,
+    callback: (response?: JsonRpcResponse) => void,
+  ) => void
 }
 
 const runtime = (globalThis as { chrome?: { runtime?: RuntimeApi } }).chrome?.runtime
@@ -92,15 +103,17 @@ const announceProvider = (): void => {
   if (runtime === undefined) {
     return
   }
-  window.dispatchEvent(new CustomEvent(CANTON_ANNOUNCE_PROVIDER_EVENT, {
-    detail: {
-      id: CARPINCHO_PROVIDER_ID,
-      name: CARPINCHO_PROVIDER_NAME,
-      icon: runtime.getURL('icons/carpincho-48.png'),
-      description: CARPINCHO_PROVIDER_DESCRIPTION,
-      target: CARPINCHO_PROVIDER_ID
-    }
-  }))
+  window.dispatchEvent(
+    new CustomEvent(CANTON_ANNOUNCE_PROVIDER_EVENT, {
+      detail: {
+        id: CARPINCHO_PROVIDER_ID,
+        name: CARPINCHO_PROVIDER_NAME,
+        icon: runtime.getURL('icons/carpincho-48.png'),
+        description: CARPINCHO_PROVIDER_DESCRIPTION,
+        target: CARPINCHO_PROVIDER_ID,
+      },
+    }),
+  )
 }
 
 const runtimeRequest = async (message: RuntimeProviderRequest): Promise<JsonRpcResponse> =>
@@ -109,7 +122,7 @@ const runtimeRequest = async (message: RuntimeProviderRequest): Promise<JsonRpcR
       reject(new Error('Carpincho extension runtime is not available'))
       return
     }
-    runtime.sendMessage(message, response => {
+    runtime.sendMessage(message, (response) => {
       const lastError = runtime.lastError
       if (lastError !== undefined) {
         reject(new Error(lastError.message ?? 'Carpincho extension runtime failed'))
@@ -126,7 +139,7 @@ const runtimeRequest = async (message: RuntimeProviderRequest): Promise<JsonRpcR
 const postResponse = (response: JsonRpcResponse): void => {
   const message: SpliceWalletResponseMessage = {
     type: WalletEvent.SPLICE_WALLET_RESPONSE,
-    response
+    response,
   }
   window.postMessage(message, '*')
 }
@@ -134,7 +147,7 @@ const postResponse = (response: JsonRpcResponse): void => {
 window.addEventListener(CANTON_REQUEST_PROVIDER_EVENT, announceProvider)
 queueMicrotask(announceProvider)
 
-window.addEventListener('message', event => {
+window.addEventListener('message', (event) => {
   if (event.source !== window) {
     return
   }
@@ -149,10 +162,10 @@ window.addEventListener('message', event => {
   void runtimeRequest({
     type: 'CARPINCHO_PROVIDER_REQUEST',
     request: data.request,
-    origin: window.location.origin
+    origin: window.location.origin,
   })
     .then(postResponse)
-    .catch(error => {
+    .catch((error) => {
       postResponse(jsonRpcError(data.request.id, -32000, (error as Error).message))
     })
 })

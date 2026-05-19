@@ -7,18 +7,18 @@ const STORAGE_KEY = 'carpincho.runtime-config.v1'
 
 const DEFAULT_RUNTIME_CONFIG: RuntimeConfig = {
   walletServiceRpcUrl: 'http://localhost:3010/rpc',
-  cantonNetwork: 'canton:local'
+  cantonNetwork: 'canton:local',
 }
 
 export const defaultRuntimeConfig = (): RuntimeConfig => ({
-  ...DEFAULT_RUNTIME_CONFIG
+  ...DEFAULT_RUNTIME_CONFIG,
 })
 
 const sanitizeRuntimeConfig = (raw: Partial<RuntimeConfig>): RuntimeConfig => {
   const defaults = defaultRuntimeConfig()
   return {
     walletServiceRpcUrl: raw.walletServiceRpcUrl?.trim() ?? defaults.walletServiceRpcUrl,
-    cantonNetwork: raw.cantonNetwork?.trim() ?? defaults.cantonNetwork
+    cantonNetwork: raw.cantonNetwork?.trim() ?? defaults.cantonNetwork,
   }
 }
 

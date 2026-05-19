@@ -1,4 +1,4 @@
-import logoUrl from '../assets/carpincho-hero.svg'
+import logoUrl from '@/assets/carpincho-hero.svg'
 
 export interface CarpinchoLogoProps {
   size?: number

@@ -1,17 +1,15 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
-
-import {
-  createRuntimeResponder,
-  getPendingProviderRequests,
-  subscribeToPendingProviderRequests
-} from '../src/extension/runtimeClient.ts'
-
 import type {
   RuntimePendingRequest,
   RuntimePendingRequestMessage,
-  RuntimeProviderResponse
-} from '../src/extension/messages.ts'
+  RuntimeProviderResponse,
+} from '@/extension/messages.ts'
+import {
+  createRuntimeResponder,
+  getPendingProviderRequests,
+  subscribeToPendingProviderRequests,
+} from '@/extension/runtimeClient.ts'
 
 const originalChrome = (globalThis as { chrome?: unknown }).chrome
 
@@ -22,8 +20,8 @@ const pending: RuntimePendingRequest = {
   request: {
     jsonrpc: '2.0',
     id: 'json-rpc-1',
-    method: 'listAccounts'
-  }
+    method: 'listAccounts',
+  },
 }
 
 const installChromeRuntime = (): {
@@ -46,25 +44,25 @@ const installChromeRuntime = (): {
           },
           removeListener: (listener: (message: unknown) => void) => {
             listeners.delete(listener)
-          }
-        }
-      }
-    }
+          },
+        },
+      },
+    },
   })
   return {
     sent,
-    emit: message => {
+    emit: (message) => {
       for (const listener of listeners) {
         listener(message)
       }
-    }
+    },
   }
 }
 
 afterEach(() => {
   Object.defineProperty(globalThis, 'chrome', {
     configurable: true,
-    value: originalChrome
+    value: originalChrome,
   })
 })
 
@@ -88,25 +86,28 @@ describe('extension runtime client', () => {
     assert.deepEqual((runtime.sent[0] as RuntimeProviderResponse).response, {
       jsonrpc: '2.0',
       id: 'json-rpc-1',
-      result: { ok: true }
+      result: { ok: true },
     })
     assert.deepEqual((runtime.sent[1] as RuntimeProviderResponse).response, {
       jsonrpc: '2.0',
       id: 'json-rpc-1',
-      error: { code: 4001, message: 'user rejected' }
+      error: { code: 4001, message: 'user rejected' },
     })
   })
 
   it('subscribes to newly queued provider requests', () => {
     const runtime = installChromeRuntime()
     const received: RuntimePendingRequest[] = []
-    const unsubscribe = subscribeToPendingProviderRequests(request => {
+    const unsubscribe = subscribeToPendingProviderRequests((request) => {
       received.push(request)
     })
 
     runtime.emit({ type: 'CARPINCHO_PENDING_REQUEST', pending })
     unsubscribe()
-    runtime.emit({ type: 'CARPINCHO_PENDING_REQUEST', pending: { ...pending, requestId: 'after-unsubscribe' } })
+    runtime.emit({
+      type: 'CARPINCHO_PENDING_REQUEST',
+      pending: { ...pending, requestId: 'after-unsubscribe' },
+    })
 
     assert.deepEqual(received, [pending])
   })

@@ -11,7 +11,9 @@ ed.hashes.sha512 = sha512Bytes
 ed.hashes.sha512Async = async (msg) => sha512Bytes(msg)
 
 export const toHex = (bytes: Uint8Array): string =>
-  Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')
+  Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
 
 export const fromHex = (hex: string): Uint8Array => {
   if (hex.length % 2 !== 0) {
@@ -51,11 +53,14 @@ export const generateKeypair = async (): Promise<GeneratedKeypair> => {
   const publicKey = await ed.getPublicKeyAsync(privateKey)
   return {
     privateKeyHex: toHex(privateKey),
-    publicKeyBase64: toBase64(publicKey)
+    publicKeyBase64: toBase64(publicKey),
   }
 }
 
-export const signMessageBase64 = async (privateKeyHex: string, messageBase64: string): Promise<string> => {
+export const signMessageBase64 = async (
+  privateKeyHex: string,
+  messageBase64: string,
+): Promise<string> => {
   const sig = await ed.signAsync(fromBase64(messageBase64), fromHex(privateKeyHex))
   return toBase64(sig)
 }

@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
   loadRuntimeConfig,
+  type RuntimeConfig,
   saveRuntimeConfig,
   subscribeRuntimeConfig,
-  type RuntimeConfig
-} from './runtimeConfig.js'
+} from '@/config/runtimeConfig.ts'
 
 export const useRuntimeConfig = (): {
   config: RuntimeConfig

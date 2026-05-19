@@ -1,1 +1,32 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+dist-extension/
+
+# env
+.env.local
+
+# typescript
+*.tsbuildinfo
+
+# misc
 .DS_Store
+npm-debug.log*
+
+# IDE
+.idea/
+.vscode/
+
+# worktrees
+.worktrees/
+
+# LLM
+CLAUDE.local.md
+AGENTS.local.md
+.claude/settings.local.json
+.vercel
+
+# local design specs
+docs/

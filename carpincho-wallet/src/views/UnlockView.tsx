@@ -1,6 +1,11 @@
 import { useState } from 'react'
-import { CarpinchoLogo } from '../components/CarpinchoLogo.js'
-import { useVault } from '../vault/useVault.js'
+import { Alert } from '@/components/ui/Alert.tsx'
+import { PrimaryButton } from '@/components/ui/Button.tsx'
+import { Card } from '@/components/ui/Card.tsx'
+import { PasswordInput } from '@/components/ui/PasswordInput.tsx'
+import { toast } from '@/components/ui/toast.ts'
+import { WelcomeHero } from '@/components/WelcomeHero.tsx'
+import { useVault } from '@/vault/useVault.ts'
 
 export const UnlockView = (): JSX.Element => {
   const v = useVault()
@@ -15,7 +20,12 @@ export const UnlockView = (): JSX.Element => {
     try {
       await v.unlock(password)
     } catch (err) {
-      setError((err as Error).message)
+      const message = (err as Error).message
+      if (message === 'invalid password') {
+        setError('Incorrect password.')
+      } else {
+        toast.error(`Unlock failed: ${message}`)
+      }
     } finally {
       setBusy(false)
     }
@@ -23,7 +33,7 @@ export const UnlockView = (): JSX.Element => {
 
   const onReset = (): void => {
     const ok = window.confirm(
-      'This wipes the vault from this browser. If you have not exported your private keys, your accounts will be unrecoverable. Continue?'
+      'This wipes the vault from this browser. If you have not exported your private keys, your accounts will be unrecoverable. Continue?',
     )
     if (ok) {
       v.destroyVault()
@@ -31,36 +41,45 @@ export const UnlockView = (): JSX.Element => {
   }
 
   return (
-    <div className="app-shell">
-      <div className="hero-wrap">
-        <CarpinchoLogo size={120} />
-        <div className="hero-wordmark">Carpincho Wallet</div>
-        <h2>Unlock</h2>
-        <p className="muted">Enter your vault password to continue.</p>
-      </div>
-      <div className="card-soft">
-        <form onSubmit={onSubmit}>
-          <div className="mb-3">
+    <div>
+      <WelcomeHero
+        logoSize={112}
+        description="Enter your vault password to continue."
+      />
+      <Card>
+        <h2 className="m-0 mb-4 font-display text-[1.55rem] font-semibold text-foreground tracking-[-0.02em] leading-tight">
+          Welcome back
+        </h2>
+        <form
+          onSubmit={onSubmit}
+          className="flex flex-col gap-4"
+        >
+          <div>
             <label htmlFor="pw">Password</label>
-            <input
+            <PasswordInput
               id="pw"
-              type="password"
-              className="form-control"
               value={password}
-              onChange={e => setPassword(e.target.value)}
-              autoFocus
+              onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
             />
           </div>
-          {error !== undefined && <div className="error-box mb-3">{error}</div>}
-          <button type="submit" className="btn btn-arg w-100 mb-2" disabled={busy || password === ''}>
+          {error !== undefined && <Alert variant="error">{error}</Alert>}
+          <PrimaryButton
+            type="submit"
+            className="w-full"
+            disabled={busy || password === ''}
+          >
             {busy ? 'Unlocking…' : 'Unlock'}
-          </button>
+          </PrimaryButton>
         </form>
-        <button type="button" className="btn btn-link btn-sm text-danger w-100 mt-2" onClick={onReset}>
+        <button
+          type="button"
+          className="block w-full mt-5 py-2 px-2 text-[0.85rem] bg-transparent border-0 text-muted-foreground font-semibold tracking-wide hover:text-danger transition-colors"
+          onClick={onReset}
+        >
           Forgot password? Reset vault
         </button>
-      </div>
+      </Card>
     </div>
   )
 }

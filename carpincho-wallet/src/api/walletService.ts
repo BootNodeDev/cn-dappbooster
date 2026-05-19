@@ -1,4 +1,4 @@
-import { loadRuntimeConfig } from '../config/runtimeConfig.ts'
+import { loadRuntimeConfig } from '@/config/runtimeConfig.ts'
 
 export interface JsonRpcErrorObject {
   code: number
@@ -30,7 +30,7 @@ const rpcUrl = (options?: WalletServiceRequestOptions): string =>
 export const walletServiceRequest = async <T>(
   method: string,
   params?: unknown,
-  options?: WalletServiceRequestOptions
+  options?: WalletServiceRequestOptions,
 ): Promise<T> => {
   const response = await fetch(rpcUrl(options), {
     method: 'POST',
@@ -39,8 +39,8 @@ export const walletServiceRequest = async <T>(
       jsonrpc: '2.0',
       id: crypto.randomUUID(),
       method,
-      ...(params === undefined ? {} : { params })
-    })
+      ...(params === undefined ? {} : { params }),
+    }),
   })
 
   if (!response.ok) {
@@ -48,7 +48,7 @@ export const walletServiceRequest = async <T>(
     throw new Error(`wallet-service HTTP ${response.status}${body === '' ? '' : `: ${body}`}`)
   }
 
-  const payload = await response.json() as {
+  const payload = (await response.json()) as {
     result?: T
     error?: JsonRpcErrorObject
   }

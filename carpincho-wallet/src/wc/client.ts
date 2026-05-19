@@ -1,9 +1,9 @@
 import { Core } from '@walletconnect/core'
+import { formatJsonRpcError, formatJsonRpcResult } from '@walletconnect/jsonrpc-utils'
 import SignClient from '@walletconnect/sign-client'
-import { formatJsonRpcResult, formatJsonRpcError } from '@walletconnect/jsonrpc-utils'
-import { getSdkError } from '@walletconnect/utils'
 import type { SignClientTypes } from '@walletconnect/types'
-import { loadRuntimeConfig } from '../config/runtimeConfig.js'
+import { getSdkError } from '@walletconnect/utils'
+import { loadRuntimeConfig } from '@/config/runtimeConfig.ts'
 
 export const CANTON_NAMESPACE = 'canton'
 
@@ -26,7 +26,7 @@ const LEGACY_CANTON_METHODS = [
   'canton_getActiveNetwork',
   'canton_status',
   'canton_ledgerApi',
-  'canton_signMessage'
+  'canton_signMessage',
 ]
 
 // Must be a superset of what @canton-network/dapp-sdk's WalletConnectAdapter requires.
@@ -42,7 +42,7 @@ export const CIP103_METHODS = [
   CANTON_METHOD_STATUS,
   CANTON_METHOD_LEDGER_API,
   CANTON_METHOD_SIGN_MESSAGE,
-  ...LEGACY_CANTON_METHODS
+  ...LEGACY_CANTON_METHODS,
 ]
 
 export const CIP103_EVENTS = ['accountsChanged', 'statusChanged', 'txChanged']
@@ -56,7 +56,7 @@ const normalizeCantonNetwork = (value: string): string => {
 }
 
 const getWalletConnectProjectId = (): string =>
-  ((import.meta.env['VITE_WC_PROJECT_ID'] as string | undefined) ?? '').trim()
+  ((import.meta.env.VITE_WC_PROJECT_ID as string | undefined) ?? '').trim()
 
 export const getCantonNetwork = (): string =>
   normalizeCantonNetwork(loadRuntimeConfig().cantonNetwork)
@@ -82,8 +82,8 @@ export const getSignClient = async (): Promise<InstanceType<typeof SignClient>> 
         name: 'Carpincho Wallet',
         description: 'Argentinian Canton wallet',
         url: window.location.origin,
-        icons: [`${window.location.origin}/carpincho-icon.svg`]
-      }
+        icons: [`${window.location.origin}/carpincho-icon.svg`],
+      },
     })
   })().catch((err: unknown) => {
     if (signClientProjectId === projectId) {
@@ -103,7 +103,9 @@ const isStaleWalletConnectRequestError = (error: unknown): boolean => {
   return message.includes('Record was recently deleted') || message.includes('Missing or invalid')
 }
 
-const respond = async (args: Parameters<InstanceType<typeof SignClient>['respond']>[0]): Promise<void> => {
+const respond = async (
+  args: Parameters<InstanceType<typeof SignClient>['respond']>[0],
+): Promise<void> => {
   const client = await getSignClient()
   try {
     await client.respond(args)
@@ -112,7 +114,7 @@ const respond = async (args: Parameters<InstanceType<typeof SignClient>['respond
       console.warn('[carpincho:wc] skipped late response', {
         topic: args.topic,
         id: args.response.id,
-        error
+        error,
       })
       return
     }
@@ -120,7 +122,10 @@ const respond = async (args: Parameters<InstanceType<typeof SignClient>['respond
   }
 }
 
-export const approveProposal = async (args: { proposal: ProposalEvent; partyId: string }): Promise<void> => {
+export const approveProposal = async (args: {
+  proposal: ProposalEvent
+  partyId: string
+}): Promise<void> => {
   const client = await getSignClient()
   const chain = getCantonChain()
   await client.approve({
@@ -130,9 +135,9 @@ export const approveProposal = async (args: { proposal: ProposalEvent; partyId: 
         accounts: [`${chain}:${encodeURIComponent(args.partyId)}`],
         chains: [chain],
         methods: CIP103_METHODS,
-        events: CIP103_EVENTS
-      }
-    }
+        events: CIP103_EVENTS,
+      },
+    },
   })
 }
 
@@ -142,15 +147,28 @@ export const rejectProposal = async (proposalId: number): Promise<void> => {
 }
 
 // CIP-103 wraps the signature in an object; bare strings get rejected.
-export const respondWithSignMessage = async (topic: string, requestId: number, signatureBase64: string): Promise<void> => {
+export const respondWithSignMessage = async (
+  topic: string,
+  requestId: number,
+  signatureBase64: string,
+): Promise<void> => {
   await respond({ topic, response: formatJsonRpcResult(requestId, { signature: signatureBase64 }) })
 }
 
-export const respondWithResult = async <T>(topic: string, requestId: number, result: T): Promise<void> => {
+export const respondWithResult = async <T>(
+  topic: string,
+  requestId: number,
+  result: T,
+): Promise<void> => {
   await respond({ topic, response: formatJsonRpcResult(requestId, result) })
 }
 
-export const respondWithError = async (topic: string, requestId: number, code: number, message: string): Promise<void> => {
+export const respondWithError = async (
+  topic: string,
+  requestId: number,
+  code: number,
+  message: string,
+): Promise<void> => {
   await respond({ topic, response: formatJsonRpcError(requestId, { code, message }) })
 }
 
@@ -162,13 +180,18 @@ export const pairWithUri = async (uri: string): Promise<void> => {
 export const disconnectAllSessions = async (): Promise<void> => {
   const client = await getSignClient()
   const sessions = client.session.getAll()
-  await Promise.all(sessions.map(async s => {
-    try {
-      await client.disconnect({ topic: s.topic, reason: { code: 6000, message: 'wallet locked' } })
-    } catch {
-      // ignore
-    }
-  }))
+  await Promise.all(
+    sessions.map(async (s) => {
+      try {
+        await client.disconnect({
+          topic: s.topic,
+          reason: { code: 6000, message: 'wallet locked' },
+        })
+      } catch {
+        // ignore
+      }
+    }),
+  )
 }
 
 export interface ConnectedDappSession {
@@ -178,11 +201,13 @@ export interface ConnectedDappSession {
   description: string
 }
 
-const toConnectedDappSession = (session: ReturnType<InstanceType<typeof SignClient>['session']['getAll']>[number]): ConnectedDappSession => ({
+const toConnectedDappSession = (
+  session: ReturnType<InstanceType<typeof SignClient>['session']['getAll']>[number],
+): ConnectedDappSession => ({
   topic: session.topic,
   name: session.peer.metadata.name,
   url: session.peer.metadata.url,
-  description: session.peer.metadata.description
+  description: session.peer.metadata.description,
 })
 
 export const getConnectedDappSessions = async (): Promise<ConnectedDappSession[]> => {
@@ -195,14 +220,18 @@ export const disconnectSession = async (topic: string): Promise<void> => {
   await client.disconnect({ topic, reason: { code: 6000, message: 'user disconnected' } })
 }
 
-export const subscribeToSessionChanges = async (cb: (sessions: ConnectedDappSession[]) => void): Promise<() => void> => {
+export const subscribeToSessionChanges = async (
+  cb: (sessions: ConnectedDappSession[]) => void,
+): Promise<() => void> => {
   const client = await getSignClient()
   const emitter = client as unknown as {
     on: (event: string, cb: () => void) => void
     off: (event: string, cb: () => void) => void
   }
   const refresh = (): void => {
-    void getConnectedDappSessions().then(cb).catch(() => undefined)
+    void getConnectedDappSessions()
+      .then(cb)
+      .catch(() => undefined)
   }
   const events = ['session_delete', 'session_expire', 'session_update', 'session_extend'] as const
   for (const event of events) {

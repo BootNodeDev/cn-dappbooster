@@ -1,8 +1,12 @@
 import { useState } from 'react'
-import { useVault } from '../vault/useVault.js'
-import { generateKeypair, signMessageBase64 } from '../vault/keypair.js'
-import { getCantonNetwork } from '../wc/client.js'
-import { walletServiceRequest } from '../api/walletService.js'
+import { walletServiceRequest } from '@/api/walletService.ts'
+import { Alert } from '@/components/ui/Alert.tsx'
+import { PrimaryButton, SecondaryButton } from '@/components/ui/Button.tsx'
+import { TextInput } from '@/components/ui/TextInput.tsx'
+import { toast } from '@/components/ui/toast.ts'
+import { generateKeypair, signMessageBase64 } from '@/vault/keypair.ts'
+import { useVault } from '@/vault/useVault.ts'
+import { getCantonNetwork } from '@/wc/client.ts'
 
 export interface AddAccountViewProps {
   onClose: () => void
@@ -31,58 +35,66 @@ export const AddAccountView = ({ onClose }: AddAccountViewProps): JSX.Element =>
         multiHash: string
       }>('prepareCreateParty', {
         publicKeyBase64: kp.publicKeyBase64,
-        partyHint: trimmed
+        partyHint: trimmed,
       })
       const signatureBase64 = await signMessageBase64(kp.privateKeyHex, prepared.multiHash)
       const completed = await walletServiceRequest<{
         partyId: string
       }>('completeCreateParty', {
         onboardingId: prepared.onboardingId,
-        signatureBase64
+        signatureBase64,
       })
       await v.addAccount({
         name: trimmed,
         partyId: completed.partyId,
         network: getCantonNetwork(),
         privateKeyHex: kp.privateKeyHex,
-        publicKeyBase64: kp.publicKeyBase64
+        publicKeyBase64: kp.publicKeyBase64,
       })
       onClose()
     } catch (err) {
-      setError((err as Error).message)
+      toast.error(`Create account failed: ${(err as Error).message}`)
     } finally {
       setBusy(false)
     }
   }
 
   return (
-    <div className="card-soft mb-3">
-      <h5>Add account</h5>
-      <p className="locked-note mb-3">
-        Generates a fresh ed25519 keypair and creates a Canton external party through the wallet-service.
+    <div className="flex flex-col gap-4 pt-1">
+      <p className="text-soft text-[1rem] m-0 leading-relaxed">
+        Generates a fresh ed25519 keypair and creates a Canton external party through the
+        wallet-service.
       </p>
-      <form onSubmit={onSubmit}>
-        <div className="mb-2">
+      <form
+        onSubmit={onSubmit}
+        className="flex flex-col gap-4"
+      >
+        <div>
           <label htmlFor="acct-name">Username / party hint</label>
-          <input
+          <TextInput
             id="acct-name"
             type="text"
-            className="form-control"
+            className="font-mono"
             value={name}
-            onChange={e => setName(e.target.value)}
-            autoFocus
+            onChange={(e) => setName(e.target.value)}
             placeholder="alice"
             maxLength={64}
           />
         </div>
-        {error !== undefined && <div className="error-box mb-2">{error}</div>}
-        <div className="d-flex gap-2">
-          <button type="submit" className="btn btn-arg" disabled={busy || name.trim() === ''}>
-            {busy ? 'Creating...' : 'Create account'}
-          </button>
-          <button type="button" className="btn btn-outline-secondary" onClick={onClose} disabled={busy}>
+        {error !== undefined && <Alert variant="error">{error}</Alert>}
+        <div className="flex gap-3 mt-1">
+          <PrimaryButton
+            type="submit"
+            disabled={busy || name.trim() === ''}
+          >
+            {busy ? 'Creating…' : 'Create account'}
+          </PrimaryButton>
+          <SecondaryButton
+            onClick={onClose}
+            disabled={busy}
+          >
             Cancel
-          </button>
+          </SecondaryButton>
         </div>
       </form>
     </div>

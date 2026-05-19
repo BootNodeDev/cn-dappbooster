@@ -1,4 +1,4 @@
-import type { AccountPublic } from '../vault/types.ts'
+import type { AccountPublic } from '@/vault/types.ts'
 
 const WALLET_SNAPSHOT_KEY = 'carpincho.wallet.snapshot'
 
@@ -9,13 +9,15 @@ type ChromeSessionStorage = {
 }
 
 const chromeSessionStorage = (): ChromeSessionStorage | undefined =>
-  (globalThis as {
-    chrome?: {
-      storage?: {
-        session?: ChromeSessionStorage
+  (
+    globalThis as {
+      chrome?: {
+        storage?: {
+          session?: ChromeSessionStorage
+        }
       }
     }
-  }).chrome?.storage?.session
+  ).chrome?.storage?.session
 
 export interface ExtensionWalletSnapshot {
   accounts: AccountPublic[]
@@ -39,14 +41,12 @@ const isWalletSnapshot = (value: unknown): value is ExtensionWalletSnapshot =>
   value !== null &&
   Array.isArray((value as ExtensionWalletSnapshot).accounts) &&
   (value as ExtensionWalletSnapshot).accounts.every(isAccountPublic) &&
-  (
-    (value as ExtensionWalletSnapshot).primary === null ||
-    isAccountPublic((value as ExtensionWalletSnapshot).primary)
-  ) &&
+  ((value as ExtensionWalletSnapshot).primary === null ||
+    isAccountPublic((value as ExtensionWalletSnapshot).primary)) &&
   typeof (value as ExtensionWalletSnapshot).updatedAt === 'number'
 
 export const persistWalletSnapshot = async (
-  snapshot: Omit<ExtensionWalletSnapshot, 'updatedAt'> | null
+  snapshot: Omit<ExtensionWalletSnapshot, 'updatedAt'> | null,
 ): Promise<void> => {
   const storage = chromeSessionStorage()
   if (storage === undefined) {
@@ -59,8 +59,8 @@ export const persistWalletSnapshot = async (
   await storage.set({
     [WALLET_SNAPSHOT_KEY]: {
       ...snapshot,
-      updatedAt: Date.now()
-    } satisfies ExtensionWalletSnapshot
+      updatedAt: Date.now(),
+    } satisfies ExtensionWalletSnapshot,
   })
 }
 

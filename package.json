@@ -15,6 +15,13 @@
     "wallet:dev": "npm --prefix carpincho-wallet run dev -- --host localhost --port 3011 --strictPort",
     "wallet:build": "npm --prefix carpincho-wallet run build",
     "app:dev": "npm --prefix counter/frontend run dev -- --host localhost --port 3012 --strictPort",
-    "app:build": "npm --prefix counter/frontend run build"
+    "app:build": "npm --prefix counter/frontend run build",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^21.0.1",
+    "@commitlint/config-conventional": "^21.0.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.4"
   }
 }

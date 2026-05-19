@@ -7,7 +7,7 @@ export const WalletEvent = {
   SPLICE_WALLET_RESPONSE: 'SPLICE_WALLET_RESPONSE',
   SPLICE_WALLET_EXT_READY: 'SPLICE_WALLET_EXT_READY',
   SPLICE_WALLET_EXT_ACK: 'SPLICE_WALLET_EXT_ACK',
-  SPLICE_WALLET_EXT_OPEN: 'SPLICE_WALLET_EXT_OPEN'
+  SPLICE_WALLET_EXT_OPEN: 'SPLICE_WALLET_EXT_OPEN',
 } as const
 
 type WalletEventValue<K extends keyof typeof WalletEvent> = (typeof WalletEvent)[K]
@@ -100,17 +100,22 @@ export const isSpliceWalletRequest = (value: unknown): value is SpliceWalletRequ
 
 export const extensionAck = (): SpliceWalletAckMessage => ({
   type: WalletEvent.SPLICE_WALLET_EXT_ACK,
-  target: CARPINCHO_PROVIDER_ID
+  target: CARPINCHO_PROVIDER_ID,
 })
 
 export const jsonRpcResult = (id: JsonRpcRequest['id'], result: unknown): JsonRpcResponse => ({
   jsonrpc: '2.0',
   id,
-  result
+  result,
 })
 
-export const jsonRpcError = (id: JsonRpcRequest['id'], code: number, message: string, data?: unknown): JsonRpcResponse => ({
+export const jsonRpcError = (
+  id: JsonRpcRequest['id'],
+  code: number,
+  message: string,
+  data?: unknown,
+): JsonRpcResponse => ({
   jsonrpc: '2.0',
   id,
-  error: data === undefined ? { code, message } : { code, message, data }
+  error: data === undefined ? { code, message } : { code, message, data },
 })

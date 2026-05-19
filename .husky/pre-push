@@ -1,0 +1,12 @@
+set -e
+
+echo "TypeScript checks: carpincho-wallet"
+( cd carpincho-wallet && npx tsc -b --noEmit --pretty )
+
+echo "TypeScript checks: counter/frontend"
+( cd counter/frontend && npx tsc -b --noEmit --pretty )
+
+echo "TypeScript checks: counter/wallet-service"
+( cd counter/wallet-service && npx tsc --noEmit --pretty )
+
+echo "All TypeScript checks passed. Proceeding with push."

@@ -1,19 +1,16 @@
+import { createDirectProviderResponse } from '@/extension/directProvider.ts'
 import {
-  jsonRpcError,
   type JsonRpcResponse,
+  jsonRpcError,
   type RuntimeGetPendingRequests,
   type RuntimePendingRequest,
   type RuntimePendingRequestMessage,
   type RuntimeProviderRequest,
-  type RuntimeProviderResponse
-} from './messages.ts'
-import { createDirectProviderResponse } from './directProvider.ts'
-import { readWalletSnapshot } from './walletSnapshot.ts'
+  type RuntimeProviderResponse,
+} from '@/extension/messages.ts'
+import { readWalletSnapshot } from '@/extension/walletSnapshot.ts'
 
-type RuntimeMessage =
-  | RuntimeProviderRequest
-  | RuntimeProviderResponse
-  | RuntimeGetPendingRequests
+type RuntimeMessage = RuntimeProviderRequest | RuntimeProviderResponse | RuntimeGetPendingRequests
 
 type RuntimeSender = {
   tab?: {
@@ -28,8 +25,8 @@ type RuntimeApi = {
       listener: (
         message: RuntimeMessage,
         sender: RuntimeSender,
-        sendResponse: (response?: unknown) => void
-      ) => boolean | void
+        sendResponse: (response?: unknown) => void,
+      ) => boolean | undefined,
     ) => void
   }
   sendMessage: (message: RuntimePendingRequestMessage) => Promise<unknown>
@@ -41,17 +38,22 @@ type ActionApi = {
   setBadgeBackgroundColor?: (details: { color: string }) => Promise<void> | void
 }
 
-const chromeApi = (globalThis as {
-  chrome?: {
-    runtime?: RuntimeApi
-    action?: ActionApi
+const chromeApi = (
+  globalThis as {
+    chrome?: {
+      runtime?: RuntimeApi
+      action?: ActionApi
+    }
   }
-}).chrome
+).chrome
 
-const pendingRequests = new Map<string, {
-  pending: RuntimePendingRequest
-  sendResponse: (response: JsonRpcResponse) => void
-}>()
+const pendingRequests = new Map<
+  string,
+  {
+    pending: RuntimePendingRequest
+    sendResponse: (response: JsonRpcResponse) => void
+  }
+>()
 
 const requestId = (request: RuntimeProviderRequest['request']): string =>
   typeof request.id === 'string' || typeof request.id === 'number'
@@ -60,20 +62,22 @@ const requestId = (request: RuntimeProviderRequest['request']): string =>
 
 const pendingList = (): RuntimePendingRequest[] =>
   [...pendingRequests.values()]
-    .map(entry => entry.pending)
+    .map((entry) => entry.pending)
     .sort((a, b) => a.createdAt - b.createdAt)
 
 const notifyWalletViews = async (pending: RuntimePendingRequest): Promise<void> => {
-  await chromeApi?.runtime?.sendMessage({
-    type: 'CARPINCHO_PENDING_REQUEST',
-    pending
-  }).catch(() => undefined)
+  await chromeApi?.runtime
+    ?.sendMessage({
+      type: 'CARPINCHO_PENDING_REQUEST',
+      pending,
+    })
+    .catch(() => undefined)
 }
 
 const updateActionBadge = async (): Promise<void> => {
   const count = pendingRequests.size
   await chromeApi?.action?.setBadgeText?.({
-    text: count === 0 ? '' : String(count)
+    text: count === 0 ? '' : String(count),
   })
   if (count > 0) {
     await chromeApi?.action?.setBadgeBackgroundColor?.({ color: '#b83242' })
@@ -86,18 +90,18 @@ const openWalletPopup = async (): Promise<void> => {
 
 const queueProviderRequest = async (
   message: RuntimeProviderRequest,
-  sendResponse: (response?: unknown) => void
+  sendResponse: (response?: unknown) => void,
 ): Promise<void> => {
   const id = requestId(message.request)
   const pending: RuntimePendingRequest = {
     requestId: id,
     request: message.request,
     origin: message.origin,
-    createdAt: Date.now()
+    createdAt: Date.now(),
   }
   pendingRequests.set(id, {
     pending,
-    sendResponse: response => sendResponse(response)
+    sendResponse: (response) => sendResponse(response),
   })
   await updateActionBadge().catch(() => undefined)
   await notifyWalletViews(pending)
@@ -106,11 +110,11 @@ const queueProviderRequest = async (
 
 const handleProviderRequest = async (
   message: RuntimeProviderRequest,
-  sendResponse: (response?: unknown) => void
+  sendResponse: (response?: unknown) => void,
 ): Promise<void> => {
   const directResponse = await createDirectProviderResponse(
     message.request,
-    await readWalletSnapshot().catch(() => null)
+    await readWalletSnapshot().catch(() => null),
   )
   if (directResponse !== undefined) {
     sendResponse(directResponse)

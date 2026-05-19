@@ -2,11 +2,14 @@ import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
 import {
+  clearLockAt,
   clearSessionPassword,
+  persistLockAt,
   persistSessionPassword,
+  readLockAt,
   readSessionPassword,
-  shouldWipeMemoryOnPageHide
-} from '../src/vault/sessionUnlock.ts'
+  shouldWipeMemoryOnPageHide,
+} from '@/vault/sessionUnlock.ts'
 
 type FakeChromeStorage = {
   data: Record<string, string>
@@ -28,11 +31,11 @@ const originalSessionStorage = globalThis.sessionStorage
 const installWindow = (protocol: string, sessionStorage: Storage = memoryStorage()): void => {
   Object.defineProperty(globalThis, 'window', {
     configurable: true,
-    value: { location: { protocol } }
+    value: { location: { protocol } },
   })
   Object.defineProperty(globalThis, 'sessionStorage', {
     configurable: true,
-    value: sessionStorage
+    value: sessionStorage,
   })
 }
 
@@ -48,14 +51,14 @@ const installChromeStorage = (): FakeChromeStorage => {
           get: async (key) => ({ [key]: fake.data[key] }),
           remove: async (key) => {
             delete fake.data[key]
-          }
-        }
-      }
-    }
+          },
+        },
+      },
+    },
   }
   Object.defineProperty(globalThis, 'chrome', {
     configurable: true,
-    value: fake.api
+    value: fake.api,
   })
   return fake
 }
@@ -74,22 +77,22 @@ const memoryStorage = (): Storage => {
     },
     setItem: (key: string, value: string) => {
       data.set(key, value)
-    }
+    },
   }
 }
 
 afterEach(() => {
   Object.defineProperty(globalThis, 'chrome', {
     configurable: true,
-    value: originalChrome
+    value: originalChrome,
   })
   Object.defineProperty(globalThis, 'window', {
     configurable: true,
-    value: originalWindow
+    value: originalWindow,
   })
   Object.defineProperty(globalThis, 'sessionStorage', {
     configurable: true,
-    value: originalSessionStorage
+    value: originalSessionStorage,
   })
 })
 
@@ -123,5 +126,26 @@ describe('session unlock persistence', () => {
     assert.equal(shouldWipeMemoryOnPageHide(), true)
     await clearSessionPassword()
     assert.equal(storage.getItem('carpincho.session.unlock'), null)
+  })
+
+  it('round-trips the lockAt timestamp via sessionStorage', async () => {
+    const storage = memoryStorage()
+    installWindow('http:', storage)
+
+    await persistLockAt(1_700_000_000_000)
+
+    assert.equal(storage.getItem('carpincho.session.lockAt'), '1700000000000')
+    assert.equal(await readLockAt(), 1_700_000_000_000)
+    await clearLockAt()
+    assert.equal(storage.getItem('carpincho.session.lockAt'), null)
+    assert.equal(await readLockAt(), null)
+  })
+
+  it('readLockAt returns null when the persisted value is unparseable', async () => {
+    const storage = memoryStorage()
+    installWindow('http:', storage)
+    storage.setItem('carpincho.session.lockAt', 'not-a-number')
+
+    assert.equal(await readLockAt(), null)
   })
 })

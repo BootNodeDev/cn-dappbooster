@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
-import { walletServiceRequest } from '../api/walletService.js'
-import { useRuntimeConfig } from '../config/useRuntimeConfig.js'
-import type { RuntimeConfig } from '../config/runtimeConfig.js'
+import { walletServiceRequest } from '@/api/walletService.ts'
+import { GhostButton, PrimaryButton, SecondaryButton } from '@/components/ui/Button.tsx'
+import { TextInput } from '@/components/ui/TextInput.tsx'
+import { toast } from '@/components/ui/toast.ts'
+import type { RuntimeConfig } from '@/config/runtimeConfig.ts'
+import { useRuntimeConfig } from '@/config/useRuntimeConfig.ts'
 
 interface WalletServiceStatus {
   connection?: {
@@ -17,82 +20,76 @@ export const ConnectionSettingsView = (): JSX.Element => {
   const { config, saveConfig } = useRuntimeConfig()
   const [draft, setDraft] = useState<RuntimeConfig>(config)
   const [busy, setBusy] = useState(false)
-  const [message, setMessage] = useState<string | undefined>(undefined)
-  const [error, setError] = useState<string | undefined>(undefined)
 
   useEffect(() => setDraft(config), [config])
 
   const onSave = (): void => {
     const saved = saveConfig(draft)
     setDraft(saved)
-    setError(undefined)
-    setMessage('Saved.')
+    toast.success('Saved.')
   }
 
   const onTest = async (): Promise<void> => {
     setBusy(true)
-    setMessage(undefined)
-    setError(undefined)
     try {
       const status = await walletServiceRequest<WalletServiceStatus>('status', undefined, {
-        rpcUrl: draft.walletServiceRpcUrl
+        rpcUrl: draft.walletServiceRpcUrl,
       })
       const network = status.network?.networkId ?? 'unknown network'
       const connected = status.connection?.isNetworkConnected === true
       const reason = status.connection?.networkReason
-      setMessage(connected
-        ? `wallet-service reachable: ${network}`
-        : `wallet-service responded, Canton not connected: ${reason ?? network}`)
+      if (connected) {
+        toast.success(`wallet-service reachable: ${network}`)
+      } else {
+        toast.warning(`wallet-service responded, Canton not connected: ${reason ?? network}`)
+      }
     } catch (err) {
-      setError((err as Error).message)
+      toast.error((err as Error).message)
     } finally {
       setBusy(false)
     }
   }
 
   return (
-    <section className="settings-panel">
-      <div className="section-title-row">
-        <h5>Connection</h5>
-        <button type="button" className="link-action" onClick={() => setDraft(config)}>
-          Reset
-        </button>
+    <section className="flex flex-col gap-4 pt-1">
+      <div className="flex items-center justify-end">
+        <GhostButton onClick={() => setDraft(config)}>Reset</GhostButton>
       </div>
 
-      <div className="mb-2">
+      <div>
         <label htmlFor="wallet-service-rpc">Wallet-service RPC URL</label>
-        <input
+        <TextInput
           id="wallet-service-rpc"
           type="url"
-          className="form-control mono"
+          className="font-mono"
           value={draft.walletServiceRpcUrl}
-          onChange={e => setDraft(prev => ({ ...prev, walletServiceRpcUrl: e.target.value }))}
+          onChange={(e) => setDraft((prev) => ({ ...prev, walletServiceRpcUrl: e.target.value }))}
           placeholder="http://localhost:3010/rpc"
         />
       </div>
 
-      <div className="mb-2">
+      <div>
         <label htmlFor="canton-network">WalletConnect Canton network</label>
-        <input
+        <TextInput
           id="canton-network"
           type="text"
-          className="form-control mono"
+          className="font-mono"
           value={draft.cantonNetwork}
-          onChange={e => setDraft(prev => ({ ...prev, cantonNetwork: e.target.value }))}
+          onChange={(e) => setDraft((prev) => ({ ...prev, cantonNetwork: e.target.value }))}
           placeholder="canton:local"
         />
       </div>
 
-      {message !== undefined && <div className="info-box mb-2">{message}</div>}
-      {error !== undefined && <div className="error-box mb-2">{error}</div>}
-
-      <div className="d-flex gap-2">
-        <button type="button" className="btn btn-wallet" onClick={onSave}>
-          Save
-        </button>
-        <button type="button" className="btn btn-wallet-secondary" onClick={() => { void onTest() }} disabled={busy}>
-          {busy ? 'Testing...' : 'Test wallet-service'}
-        </button>
+      <div className="flex gap-3 mt-1">
+        <PrimaryButton onClick={onSave}>Save</PrimaryButton>
+        <SecondaryButton
+          onClick={() => {
+            void onTest()
+          }}
+          disabled={busy}
+        >
+          {busy ? 'Testing…' : 'Test wallet-service'}
+        </SecondaryButton>
       </div>
     </section>
   )

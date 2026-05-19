@@ -4,9 +4,9 @@ import {
   type RuntimeGetPendingRequests,
   type RuntimePendingRequest,
   type RuntimePendingRequestMessage,
-  type RuntimeProviderResponse
-} from './messages.ts'
-import type { ProviderResponder } from '../provider/dispatch.ts'
+  type RuntimeProviderResponse,
+} from '@/extension/messages.ts'
+import type { ProviderResponder } from '@/provider/dispatch.ts'
 
 type RuntimeListener = (message: unknown) => void
 
@@ -31,7 +31,7 @@ const sendRuntimeMessage = async <T>(message: unknown): Promise<T> =>
       reject(new Error('Carpincho extension runtime is not available'))
       return
     }
-    api.sendMessage(message, response => {
+    api.sendMessage(message, (response) => {
       const lastError = api.lastError
       if (lastError !== undefined) {
         reject(new Error(lastError.message ?? 'Carpincho extension runtime failed'))
@@ -43,28 +43,28 @@ const sendRuntimeMessage = async <T>(message: unknown): Promise<T> =>
 
 export const getPendingProviderRequests = async (): Promise<RuntimePendingRequest[]> =>
   await sendRuntimeMessage<RuntimePendingRequest[]>({
-    type: 'CARPINCHO_GET_PENDING_REQUESTS'
+    type: 'CARPINCHO_GET_PENDING_REQUESTS',
   } satisfies RuntimeGetPendingRequests)
 
 export const createRuntimeResponder = (pending: RuntimePendingRequest): ProviderResponder => ({
-  result: async value => {
+  result: async (value) => {
     await sendRuntimeMessage<unknown>({
       type: 'CARPINCHO_PROVIDER_RESPONSE',
       requestId: pending.requestId,
-      response: jsonRpcResult(pending.request.id, value)
+      response: jsonRpcResult(pending.request.id, value),
     } satisfies RuntimeProviderResponse)
   },
   error: async (code, message) => {
     await sendRuntimeMessage<unknown>({
       type: 'CARPINCHO_PROVIDER_RESPONSE',
       requestId: pending.requestId,
-      response: jsonRpcError(pending.request.id, code, message)
+      response: jsonRpcError(pending.request.id, code, message),
     } satisfies RuntimeProviderResponse)
-  }
+  },
 })
 
 export const subscribeToPendingProviderRequests = (
-  cb: (pending: RuntimePendingRequest) => void
+  cb: (pending: RuntimePendingRequest) => void,
 ): (() => void) => {
   const api = runtime()
   if (api === undefined) {
