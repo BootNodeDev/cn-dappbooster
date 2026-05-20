@@ -151,49 +151,47 @@ export const App = (): JSX.Element => {
   return (
     <main className="shell">
       <Toaster position="bottom-center" richColors />
-      <header className="app-header">
-        {connected === undefined ? (
-          <div className="connect-status" aria-label="Connect wallet">
-            <button
-              className="connect-chip carpincho-connect"
-              type="button"
-              onClick={() => { void onConnect('extension') }}
-              disabled={busy}
-            >
-              <span className="connect-glyph" aria-hidden="true">C</span>
-              <span>{busy && connectMode === 'extension' ? 'Connecting' : 'Carpincho'}</span>
-            </button>
-            <button
-              className="connect-chip"
-              type="button"
-              onClick={() => { void onConnect('walletconnect') }}
-              disabled={busy}
-            >
-              <img src="/Walletconnect-logo.png" alt="" aria-hidden="true" />
-              <span>{busy && connectMode === 'walletconnect' ? 'Pairing' : 'WC'}</span>
-            </button>
-          </div>
-        ) : (
-          <div className="connected-status">
-            <span className="connected-party">party:{short(connected.account.partyId)}</span>
-            <button
-              className="logout-icon"
-              type="button"
-              onClick={() => { void onDisconnect() }}
-              disabled={busy}
-              aria-label="Disconnect wallet"
-              title="Disconnect wallet"
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <path d="M16 17l5-5-5-5" />
-                <path d="M21 12H9" />
-              </svg>
-            </button>
-          </div>
-        )}
-      </header>
       <h1 className="app-title">Canton Counter</h1>
+      {connected === undefined ? (
+        <div className="session-controls" aria-label="Connect wallet">
+          <button
+            className="connect-chip carpincho-connect"
+            type="button"
+            onClick={() => { void onConnect('extension') }}
+            disabled={busy}
+          >
+            <span className="connect-glyph" aria-hidden="true">C</span>
+            <span>{busy && connectMode === 'extension' ? 'Connecting' : 'Carpincho'}</span>
+          </button>
+          <button
+            className="connect-chip"
+            type="button"
+            onClick={() => { void onConnect('walletconnect') }}
+            disabled={busy}
+          >
+            <img src="/Walletconnect-logo.png" alt="" aria-hidden="true" />
+            <span>{busy && connectMode === 'walletconnect' ? 'Pairing' : 'WC'}</span>
+          </button>
+        </div>
+      ) : (
+        <div className="session-controls">
+          <span className="connected-party">party:{short(connected.account.partyId)}</span>
+          <button
+            className="logout-icon"
+            type="button"
+            onClick={() => { void onDisconnect() }}
+            disabled={busy}
+            aria-label="Disconnect wallet"
+            title="Disconnect wallet"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <path d="M16 17l5-5-5-5" />
+              <path d="M21 12H9" />
+            </svg>
+          </button>
+        </div>
+      )}
 
       {connected === undefined && (busy || pairingUri !== undefined) && (
         <div className="pairing-popover">
@@ -227,11 +225,12 @@ export const App = (): JSX.Element => {
       )}
 
       <section className="workspace-panel">
-        <div className="panel-title-row">
-          <div>
-            <span className="section-kicker">Counter</span>
-            <h2>Counter form</h2>
+        {connected === undefined ? (
+          <div className="empty">
+            <p className="empty-title">Connect to continue</p>
           </div>
+        ) : (
+          <>
           <div className="actions">
             <button
               className="primary"
@@ -249,15 +248,14 @@ export const App = (): JSX.Element => {
               New counter
             </button>
           </div>
-        </div>
 
-        {connected === undefined || counters.length === 0 ? (
-          <div className="empty">
-            <h3>No counters visible</h3>
-            <p>Create one with the connected party or ask another party to add you as viewer.</p>
-          </div>
-        ) : (
-          <section className="counter-grid">
+            <div className="counter-list-label">Your counters:</div>
+            {counters.length === 0 ? (
+              <div className="empty">
+                <p>No counters created yet.</p>
+              </div>
+            ) : (
+              <section className="counter-grid">
             {counters.map(counter => {
               const isIssuer = counter.issuer === connected.account.partyId
               const draft = draftFor(counter.contractId)
@@ -319,7 +317,9 @@ export const App = (): JSX.Element => {
                 </article>
               )
             })}
-          </section>
+              </section>
+            )}
+          </>
         )}
       </section>
     </main>
