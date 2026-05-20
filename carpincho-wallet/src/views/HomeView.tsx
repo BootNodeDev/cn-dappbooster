@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { walletServiceRequest } from '@/api/walletService.ts'
 import { AccountCard } from '@/components/AccountCard.tsx'
 import { ActivityList } from '@/components/ActivityList.tsx'
-import { ConnectionFooter, type ConnectionTone } from '@/components/ConnectionFooter.tsx'
+import { ConnectionFooter } from '@/components/ConnectionFooter.tsx'
 import { PairOrConnectedCard } from '@/components/PairOrConnectedCard.tsx'
 import { Alert } from '@/components/ui/Alert.tsx'
 import { CARD_CLASS } from '@/components/ui/Card.tsx'
@@ -17,6 +17,7 @@ import {
   isExtensionRuntime,
   subscribeToPendingProviderRequests,
 } from '@/extension/runtimeClient.ts'
+import { useWalletServiceStatus } from '@/hooks/useWalletServiceStatus.ts'
 import {
   dispatchProviderRequest,
   type ProviderRequest,
@@ -140,6 +141,7 @@ export const HomeView = (): JSX.Element => {
   const accountSnapshotRef = useRef<AccountSnapshot>({ accounts: v.accounts, primary: v.primary })
   const seenExtensionRequests = useRef<Set<string>>(new Set())
   const extensionMode = isExtensionRuntime()
+  const walletService = useWalletServiceStatus()
 
   useEffect(() => {
     if (extensionMode) {
@@ -505,16 +507,6 @@ export const HomeView = (): JSX.Element => {
   const primary = v.primary ?? accountsSorted[0]
   const hasPending =
     proposal !== undefined || pendingSign !== undefined || pendingExecute !== undefined
-  const hasSession = sessions[0] !== undefined
-  const { tone: connectionTone, label: connectionLabel }: { tone: ConnectionTone; label: string } =
-    extensionMode
-      ? { tone: 'muted', label: 'extension' }
-      : hasSession
-        ? {
-            tone: 'good',
-            label: `${sessions.length} dApp${sessions.length === 1 ? '' : 's'} connected`,
-          }
-        : { tone: 'warn', label: 'no dApps connected' }
 
   return (
     <>
@@ -637,9 +629,8 @@ export const HomeView = (): JSX.Element => {
       </Sheet>
 
       <ConnectionFooter
-        tone={connectionTone}
-        label={connectionLabel}
-        onEdit={() => setSettingsOpen(true)}
+        walletService={walletService}
+        onOpenSettings={() => setSettingsOpen(true)}
       />
     </>
   )
