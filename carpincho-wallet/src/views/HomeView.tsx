@@ -24,7 +24,6 @@ import {
   type ProviderRequest,
   type ProviderResponder,
 } from '@/provider/dispatch.ts'
-import { shortMiddle } from '@/utils/account.ts'
 import { cn } from '@/utils/cn.ts'
 import type { AccountPublic } from '@/vault/types.ts'
 import { useVault } from '@/vault/useVault.ts'
@@ -33,6 +32,7 @@ import { ConnectionSettingsView } from '@/views/ConnectionSettingsView.tsx'
 import { type AccountSnapshot, selectedAccount } from '@/wc/accounts.ts'
 import {
   approveProposal,
+  CANTON_METHOD_CONNECT,
   CANTON_METHOD_PREPARE_EXECUTE,
   CANTON_METHOD_PREPARE_EXECUTE_AND_WAIT,
   CANTON_METHOD_SIGN_MESSAGE,
@@ -519,6 +519,7 @@ export const HomeView = (): JSX.Element => {
         className={cn(
           'flex flex-col gap-3 pb-2',
           !hasAccounts && 'min-h-[calc(100vh-10rem)] justify-center',
+          hasAccounts && hasPending && 'h-[calc(100vh-12rem)] min-h-0 overflow-hidden pb-0',
         )}
       >
         <AccountCard
@@ -532,16 +533,21 @@ export const HomeView = (): JSX.Element => {
         />
 
         {hasAccounts && hasPending && (
-          <section className={cn(CARD_CLASS, 'p-4 border-success/55 animate-soft-pulse')}>
+          <section
+            className={cn(
+              CARD_CLASS,
+              'flex min-h-0 flex-1 flex-col overflow-hidden border-success/55',
+            )}
+          >
             {proposal !== undefined ? (
               <PendingActionCard
-                title="Connection request"
-                subtitle={`${proposal.params.proposer.metadata.name} wants to pair`}
+                method={CANTON_METHOD_CONNECT}
                 approveLabel="Connect"
                 approveDisabled={busy || proposalAccount === null}
                 onApprove={onApproveProposal}
                 onReject={onRejectProposal}
                 busy={busy}
+                payload={{ json: proposal.params }}
               >
                 {accountsSorted.length === 0 ? (
                   <Alert variant="info">Add an account first before approving.</Alert>
@@ -564,7 +570,7 @@ export const HomeView = (): JSX.Element => {
                           key={a.id}
                           value={a.id}
                         >
-                          {a.name} · {shortMiddle(a.partyId, 12, 6)}
+                          {a.name}
                         </SelectItem>
                       ))}
                     </Select>
@@ -573,23 +579,21 @@ export const HomeView = (): JSX.Element => {
               </PendingActionCard>
             ) : pendingSign !== undefined ? (
               <PendingActionCard
-                title="Sign message"
-                subtitle={`${pendingSign.account.name} · ${shortMiddle(pendingSign.account.partyId, 14, 7)}`}
+                method={CANTON_METHOD_SIGN_MESSAGE}
                 approveLabel="Sign"
                 onApprove={onApproveSign}
                 onReject={onRejectSign}
                 busy={busy}
-                payload={{ summary: 'Message', json: pendingSign.messageBase64 }}
+                payload={{ json: pendingSign.messageBase64 }}
               />
             ) : pendingExecute !== undefined ? (
               <PendingActionCard
-                title={commandSummary(pendingExecute.params)}
-                subtitle={`${pendingExecute.account.name} · ${shortMiddle(pendingExecute.account.partyId, 14, 7)}`}
+                method={pendingExecute.rawMethod}
                 approveLabel="Approve"
                 onApprove={onApproveExecute}
                 onReject={onRejectExecute}
                 busy={busy}
-                payload={{ summary: 'Command payload', json: pendingExecute.params }}
+                payload={{ json: pendingExecute.params }}
               />
             ) : null}
           </section>
@@ -611,7 +615,7 @@ export const HomeView = (): JSX.Element => {
           />
         )}
 
-        {hasAccounts && <ActivityList transactions={v.transactions} />}
+        {hasAccounts && !hasPending && <ActivityList transactions={v.transactions} />}
       </div>
 
       <Sheet

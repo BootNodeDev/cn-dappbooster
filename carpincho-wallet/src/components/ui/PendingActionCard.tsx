@@ -1,24 +1,21 @@
 import type { ReactNode } from 'react'
 import { PrimaryButton, SecondaryButton } from '@/components/ui/Button.tsx'
-import { JsonPreview } from '@/components/ui/JsonPreview.tsx'
-import { SectionTitle } from '@/components/ui/SectionTitle.tsx'
 
 interface PendingActionCardProps {
-  title: string
-  subtitle: ReactNode
+  method: string
   approveLabel: string
   rejectLabel?: string
   onApprove: () => void
   onReject: () => void
   approveDisabled?: boolean
   busy?: boolean
-  payload?: { summary: string; json: unknown }
+  payload?: { json: unknown }
   children?: ReactNode
 }
 
+// Renders one pending wallet request with fixed approval actions and a scrollable payload body.
 export const PendingActionCard = ({
-  title,
-  subtitle,
+  method,
   approveLabel,
   rejectLabel = 'Reject',
   onApprove,
@@ -28,26 +25,27 @@ export const PendingActionCard = ({
   payload,
   children,
 }: PendingActionCardProps): JSX.Element => (
-  <div className="flex flex-col gap-4">
-    <div className="min-w-0">
-      <div className="font-mono text-[0.74rem] font-semibold tracking-[0.18em] uppercase text-success mb-2">
-        Awaiting approval
+  <div className="flex h-full min-h-0 flex-col gap-3 overflow-hidden">
+    <div className="min-w-0 shrink-0">
+      <div className="font-mono text-[0.72rem] font-semibold tracking-[0.14em] uppercase text-success">
+        awaiting approval
       </div>
-      <SectionTitle className="text-[1.45rem]">{title}</SectionTitle>
-      <small className="block mt-1.5 text-soft text-[0.95rem] leading-snug">{subtitle}</small>
+      <div className="mt-1 font-mono text-[0.84rem] font-medium text-muted-foreground">
+        method: <span className="text-foreground">{method}</span>
+      </div>
     </div>
-    {children}
+    {children !== undefined && <div className="shrink-0">{children}</div>}
     {payload !== undefined && (
-      <details className="border border-border rounded-md px-3.5 py-3 bg-muted/60 open:bg-muted transition-colors">
-        <summary className="cursor-pointer text-soft font-semibold text-[0.88rem] tracking-tight">
-          {payload.summary}
-        </summary>
-        <JsonPreview>
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="shrink-0 font-mono text-[0.84rem] font-medium text-muted-foreground">
+          payload:
+        </div>
+        <pre className="mt-1.5 min-h-0 flex-1 overflow-auto whitespace-pre-wrap break-words rounded-md border border-border bg-background/60 p-3 font-mono text-[0.82rem] leading-relaxed text-soft">
           {typeof payload.json === 'string' ? payload.json : JSON.stringify(payload.json, null, 2)}
-        </JsonPreview>
-      </details>
+        </pre>
+      </div>
     )}
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid shrink-0 grid-cols-2 gap-3">
       <PrimaryButton
         onClick={onApprove}
         disabled={busy || approveDisabled}
