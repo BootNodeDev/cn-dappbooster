@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { DappClient } from '@canton-network/dapp-sdk'
+import { Toaster, toast } from 'sonner'
 import {
   COUNTER_PACKAGE_ID,
   COUNTER_TEMPLATE_ID,
@@ -11,7 +12,7 @@ import {
   normalizeCounterContract
 } from './counterSignature.js'
 import { connectWallet, type ConnectWalletMode, type WalletAccount } from './wallet.js'
-import { loadRuntimeConfig, saveRuntimeConfig } from './runtimeConfig.js'
+import { loadRuntimeConfig } from './runtimeConfig.js'
 
 interface ConnectedState {
   client: DappClient
@@ -32,18 +33,10 @@ export const App = (): JSX.Element => {
   const [counters, setCounters] = useState<CounterContract[]>([])
   const [pairingUri, setPairingUri] = useState<string | undefined>(undefined)
   const [pairingCopied, setPairingCopied] = useState(false)
-  const [runtimeConfig, setRuntimeConfig] = useState(() => loadRuntimeConfig())
+  const [runtimeConfig] = useState(() => loadRuntimeConfig())
   const [partyDrafts, setPartyDrafts] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState(false)
   const [connectMode, setConnectMode] = useState<ConnectWalletMode | undefined>(undefined)
-  const [error, setError] = useState<string | undefined>(undefined)
-  const [info, setInfo] = useState<string | undefined>(undefined)
-
-  const onNetworkChange = (network: string): void => {
-    const saved = saveRuntimeConfig({ ...runtimeConfig, cantonNetwork: network })
-    setRuntimeConfig(saved)
-    setError(undefined)
-  }
 
   const loadCounters = async (state = connected): Promise<void> => {
     if (state === undefined) {
@@ -69,7 +62,6 @@ export const App = (): JSX.Element => {
       return
     }
     setBusy(true)
-    setError(undefined)
     try {
       await connected.client.prepareExecuteAndWait({
         commandId: commandId(prefix),
@@ -79,9 +71,9 @@ export const App = (): JSX.Element => {
         packageIdSelectionPreference: [COUNTER_PACKAGE_ID]
       })
       await loadCounters(connected)
-      setInfo('Transaction executed.')
+      toast.success('Transaction executed.')
     } catch (err) {
-      setError((err as Error).message)
+      toast.error((err as Error).message)
     } finally {
       setPairingUri(undefined)
       setPairingCopied(false)
@@ -92,8 +84,6 @@ export const App = (): JSX.Element => {
   const onConnect = async (mode: ConnectWalletMode): Promise<void> => {
     setBusy(true)
     setConnectMode(mode)
-    setError(undefined)
-    setInfo(undefined)
     setPairingUri(undefined)
     setPairingCopied(false)
     try {
@@ -105,9 +95,9 @@ export const App = (): JSX.Element => {
       setConnected(next)
       setPairingUri(undefined)
       await loadCounters(next)
-      setInfo(`Connected as ${short(next.account.partyId)}`)
+      toast.success(`Connected as ${short(next.account.partyId)}`)
     } catch (err) {
-      setError((err as Error).message)
+      toast.error((err as Error).message)
     } finally {
       setPairingUri(undefined)
       setPairingCopied(false)
@@ -121,8 +111,6 @@ export const App = (): JSX.Element => {
       return
     }
     setBusy(true)
-    setError(undefined)
-    setInfo(undefined)
 
     let disconnectError: string | undefined
     try {
@@ -139,9 +127,9 @@ export const App = (): JSX.Element => {
     }
 
     if (disconnectError === undefined) {
-      setInfo('Disconnected.')
+      toast.success('Disconnected.')
     } else {
-      setError(`Local logout complete; wallet disconnect failed: ${disconnectError}`)
+      toast.error(`Local logout complete; wallet disconnect failed: ${disconnectError}`)
     }
   }
 
@@ -162,34 +150,29 @@ export const App = (): JSX.Element => {
 
   return (
     <main className="shell">
+      <Toaster position="top-center" richColors />
       <header className="app-header">
         <h1>Canton Counter</h1>
-        <div className="network-row">
-          <span className="network-icon" aria-hidden="true" />
-          <span className="network-separator" aria-hidden="true">&gt;</span>
-          <select
-            className="network-select"
-            value={runtimeConfig.cantonNetwork}
-            onChange={event => onNetworkChange(event.target.value)}
-            aria-label="Network"
-          >
-            <option value="canton:local">canton:local</option>
-          </select>
-        </div>
+        {connected !== undefined && (
+          <div className="connected-status">
+            <span className="connected-party">party:{short(connected.account.partyId)}</span>
+            <button
+              className="logout-icon"
+              type="button"
+              onClick={() => { void onDisconnect() }}
+              disabled={busy}
+              aria-label="Disconnect wallet"
+              title="Disconnect wallet"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <path d="M16 17l5-5-5-5" />
+                <path d="M21 12H9" />
+              </svg>
+            </button>
+          </div>
+        )}
       </header>
-
-      {info !== undefined && (
-        <div className="info dismissible">
-          <span>{info}</span>
-          <button type="button" onClick={() => setInfo(undefined)}>Close</button>
-        </div>
-      )}
-      {error !== undefined && (
-        <div className="error dismissible">
-          <span>{error}</span>
-          <button type="button" onClick={() => setError(undefined)}>Close</button>
-        </div>
-      )}
 
       {connected === undefined ? (
         <section className="connect-panel" aria-label="Connect wallet">
@@ -246,18 +229,6 @@ export const App = (): JSX.Element => {
         </section>
       ) : (
         <>
-          <section className="connected-panel">
-            <div>
-              <span className="section-kicker">Connected with</span>
-              <button className="account-chip" type="button" onClick={() => { void loadCounters() }} disabled={busy}>
-                {short(connected.account.partyId)}
-              </button>
-            </div>
-            <button className="logout-button" type="button" onClick={() => { void onDisconnect() }} disabled={busy}>
-              Logout
-            </button>
-          </section>
-
           <section className="workspace-panel">
         <div className="panel-title-row">
           <div>
