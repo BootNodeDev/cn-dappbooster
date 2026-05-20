@@ -42,7 +42,26 @@ Minimal local stack:
 
 The frontend knows the Counter DAML signature and talks to Carpincho through WalletConnect. Carpincho owns the local signing key and uses the wallet service to prepare, read, and execute against the Canton participant.
 
+## Quick Start
+
+Two scripted entry points cover the common cases. They're aliases over §1 to §6 below; reach for them first and fall back to the manual sequence if you need to tweak a single step.
+
+| Command | What it brings up | Host requirements |
+| --- | --- | --- |
+| `npm run dev:full` | Canton (Docker) -> DAR build + deploy -> wallet-service -> carpincho-wallet -> counter frontend, idempotently. Re-running skips already-done steps. | Docker daemon running, `dpm` on `$PATH`, `VITE_WC_PROJECT_ID` set in `carpincho-wallet/.env.local` and `counter/frontend/.env.local`, `counter/wallet-service/.env` present (the script mints `CANTON_BACKEND_TOKEN` if empty). |
+| `npm run dev:wallet-mock` | Wallet-service in mock mode (no Canton, no Docker) + carpincho-wallet. The mock returns canned, well-formed responses for every RPC method the wallet calls (exercises `Add account`, `prepare`, `execute`, `read`, `status` end-to-end). | Node 24 and `VITE_WC_PROJECT_ID` in `carpincho-wallet/.env.local`. Nothing else. |
+
+Both scripts prefix logs by component and shut every dev server down cleanly on a single `Ctrl-C`. `dev:full` leaves the Canton container running afterwards; stop it with `npm run canton:down`.
+
+Daily wallet work uses `dev:wallet-mock`. Reach for `dev:full` when you need the real Canton round-trip (DAR-touching changes, end-to-end integration, debugging the participant boundary).
+
+The manual §1 to §6 sequence remains the canonical reference. The scripts call the same `canton:*`, `counter:*`, `wallet-service:dev`, `wallet:dev`, and `app:dev` targets you'd run by hand.
+
 ## 0. One-Time Config
+
+These are the prerequisites for `dev:full` and for the manual §1 to §6 path.
+
+`dev:wallet-mock` only needs the carpincho-wallet `VITE_WC_PROJECT_ID` step below; it skips Docker, the DAML SDK, the wallet-service `.env`, and the Canton token.
 
 WalletConnect needs a Reown project id in both browser apps:
 
@@ -98,6 +117,8 @@ Local ports are intentionally assigned in the `3010+` range:
 | Canton health               | `http://localhost:3016` |
 | Canton sequencer public API | `localhost:3017`        |
 | Canton Postgres             | `localhost:3018`        |
+
+The same ports back the [Quick Start](#quick-start) scripts: `dev:full` exposes the whole table, `dev:wallet-mock` only `:3010` (mock) and `:3011`.
 
 ## 1. Start Canton
 
@@ -196,3 +217,5 @@ frontend
   -> counter/wallet-service
   -> canton-base participant
 ```
+
+`npm run dev:full` (see [Quick Start](#quick-start)) drives this loop end-to-end. `npm run dev:wallet-mock` replaces `counter/wallet-service → canton-base` with a canned in-process responder so the wallet stays exercisable without Docker or a participant.

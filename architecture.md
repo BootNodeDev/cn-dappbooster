@@ -11,7 +11,7 @@
 |------------|-------|---------|
 | `canton-base/` | Docker Compose + Bash + Node scripts | Local Canton participant node, Postgres, mint-token helper, DAR deploy script, health-check |
 | `counter/daml/` | DAML (`dpm` build) | `quickstart-counter` model — DAR consumed by Canton |
-| `counter/wallet-service/` | Node 24 + Express 5 + TypeScript + `@canton-network/wallet-sdk` | JSON-RPC bridge between the wallet and the Canton participant JSON API |
+| `counter/wallet-service/` | Node 24 + Express 5 + TypeScript + `@canton-network/wallet-sdk` | JSON-RPC bridge between the wallet and the Canton participant JSON API. Supports a `WALLET_SERVICE_MOCK=1` mode (`src/mock.ts`) that short-circuits the dispatcher with canned responses, used by `npm run dev:wallet-mock`. |
 | `carpincho-wallet/` | Vite 6 + React 18 + Tailwind v4 + Radix UI + Biome + WalletConnect Sign Client 2.x + `@noble/ed25519` | CIP-0103 wallet (web + Chrome extension), encrypted local vault, signing |
 | `counter/frontend/` | Vite + React + `@canton-network/dapp-sdk` + ESLint | Counter dApp UI that talks to the wallet over WalletConnect |
 
@@ -131,8 +131,10 @@ Driven from root `package.json`:
 | `npm run wallet:dev` | Start Carpincho on `:3011` (Vite, strict port) |
 | `npm run app:dev` | Start the Counter frontend on `:3012` (Vite, strict port) |
 | `npm run wallet:build` / `app:build` / `wallet-service:build` | Production builds per subproject |
+| `npm run dev:full` | One-shot bring-up of the entire stack: Docker preflight, port-availability check for 3010/3011/3012, Canton up + health, DAR build (idempotent), DAR deploy (idempotent in Canton, no-op if already uploaded), `CANTON_BACKEND_TOKEN` mint if missing, then wallet-service + wallet + app under a single supervisor with prefixed logs and a single-Ctrl-C clean shutdown that propagates to child process groups. Canton container stays up afterwards (`npm run canton:down` to stop). |
+| `npm run dev:wallet-mock` | carpincho-wallet against `counter/wallet-service` running in mock mode (`WALLET_SERVICE_MOCK=1`). No Docker, no Canton, no DAML SDK. Mock dispatcher (`counter/wallet-service/src/mock.ts`) returns canned, well-formed responses for every method the wallet calls: `status`, `connect`, `isConnected`, `disconnect`, `getActiveNetwork`, `listAccounts`, `getPrimaryAccount`, `prepareCreateParty`, `completeCreateParty`, `prepareTransaction`, `executePrepared`, `ledgerApi`. |
 
-For the full bring-up sequence (Canton up → DAR built → DAR deployed → wallet-service → wallet → counter app), follow [`README.md`](README.md) §1–6.
+For the full bring-up sequence (Canton up -> DAR built -> DAR deployed -> wallet-service -> wallet -> counter app), follow [`README.md`](README.md) §1 to §6, or run `npm run dev:full`.
 
 ## Further Reading
 

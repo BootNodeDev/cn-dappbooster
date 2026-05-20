@@ -16,6 +16,8 @@
     "wallet:build": "npm --prefix carpincho-wallet run build",
     "app:dev": "npm --prefix counter/frontend run dev -- --host localhost --port 3012 --strictPort",
     "app:build": "npm --prefix counter/frontend run build",
+    "dev:full": "node scripts/dev-full.mjs",
+    "dev:wallet-mock": "node scripts/dev-wallet-mock.mjs",
     "prepare": "husky"
   },
   "devDependencies": {

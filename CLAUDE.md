@@ -47,6 +47,8 @@ For the system shape (data flow, components, ports), see [`architecture.md`](arc
   - `npm run wallet-service:dev` / `wallet-service:build`
   - `npm run wallet:dev` / `wallet:build`
   - `npm run app:dev` / `app:build`
+  - `npm run dev:full`: full local stack (Canton + DAR build/deploy + wallet-service + wallet + app), idempotent. Single Ctrl-C shuts every dev server down; the Canton container survives.
+  - `npm run dev:wallet-mock`: carpincho-wallet against a mocked `counter/wallet-service` (no Docker, no Canton). Default driver for daily wallet-only work.
 - Local ports are intentionally assigned in the `3010+` range (see table above). Do not change them without updating every subproject's defaults.
 - Treat `package-lock.json` files as authoritative. Do not delete or regenerate them as part of unrelated changes.
 - Do not commit `.env.local`, `node_modules`, `dist/`, `dist-extension/`, or `.claude/settings.local.json` (covered by root `.gitignore`).

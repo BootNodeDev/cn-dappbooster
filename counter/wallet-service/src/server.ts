@@ -4,8 +4,11 @@ import { SDK } from '@canton-network/wallet-sdk'
 import cors from 'cors'
 import express from 'express'
 import { loadConfig } from './config.js'
+import { createMockHandler, isMockEnabled } from './mock.js'
 
 const config = loadConfig()
+const mockEnabled = isMockEnabled()
+const mockHandler = mockEnabled ? createMockHandler(config) : undefined
 const app = express()
 
 app.use(cors({
@@ -304,6 +307,13 @@ const handleRpc = async (request: JsonRpcRequest): Promise<RpcResponse> => {
     return rpcError(id, -32600, 'Invalid request', { reason: 'method must be a string' })
   }
 
+  if (mockHandler !== undefined) {
+    const response = mockHandler({ method: request.method, params: request.params, id })
+    return response.ok
+      ? rpcResult(id, response.result)
+      : rpcError(id, response.error.code, response.error.message, response.error.data)
+  }
+
   switch (request.method) {
     case 'status': {
       const connection = await connectResult()
@@ -340,7 +350,7 @@ const handleRpc = async (request: JsonRpcRequest): Promise<RpcResponse> => {
 }
 
 app.get('/health', (_req, res) => {
-  res.json({ ok: true, service: 'counter-wallet-service', network: config.network })
+  res.json({ ok: true, service: 'counter-wallet-service', network: config.network, mock: mockEnabled })
 })
 
 const serviceInfo = (): Record<string, unknown> => ({
@@ -371,7 +381,8 @@ const serviceInfo = (): Record<string, unknown> => ({
       adminApiUrl: config.canton.adminApiUrl,
       backendUserId: config.canton.backendUserId,
       hasBackendToken: config.canton.backendToken !== undefined
-    }
+    },
+    mock: mockEnabled
 })
 
 app.get('/', (_req, res) => {
@@ -404,5 +415,5 @@ app.post('/rpc', async (req, res) => {
 })
 
 app.listen(config.port, () => {
-  console.log(`counter-wallet-service listening on ${config.port}`)
+  console.log(`counter-wallet-service listening on ${config.port}${mockEnabled ? ' (MOCK MODE — no Canton calls)' : ''}`)
 })
