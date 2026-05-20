@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import net from 'node:net'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 const ANSI = {
   reset: '\x1b[0m',
@@ -17,7 +18,7 @@ const ANSI = {
 
 const LABEL_COLOURS = [ANSI.cyan, ANSI.magenta, ANSI.yellow, ANSI.blue, ANSI.green]
 
-export const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../..')
+export const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
 export const log = (message) => {
   process.stdout.write(`${ANSI.bold}[dev]${ANSI.reset} ${message}\n`)
