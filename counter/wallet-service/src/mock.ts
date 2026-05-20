@@ -12,12 +12,12 @@ export interface MockRpcResult {
   result: unknown
 }
 
-export interface MockRpcRpcError {
+export interface MockRpcError {
   ok: false
   error: { code: number; message: string; data?: unknown }
 }
 
-export type MockRpcResponse = MockRpcResult | MockRpcRpcError
+export type MockRpcResponse = MockRpcResult | MockRpcError
 
 interface MockState {
   parties: Map<string, { partyId: string }>
