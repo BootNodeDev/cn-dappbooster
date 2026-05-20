@@ -21,14 +21,14 @@ export const AccountCard = ({
   onAddAccount,
   onCopyPartyId,
 }: AccountCardProps): JSX.Element => (
-  <section className="relative overflow-hidden border border-border rounded-xl p-4 bg-surface">
+  <section className="relative overflow-hidden border border-border rounded-lg bg-surface p-2.5">
     <div
       aria-hidden="true"
-      className="absolute inset-x-0 top-0 h-20 bg-[linear-gradient(180deg,var(--color-primary-soft)_0%,transparent_100%)] opacity-90 pointer-events-none"
+      className="absolute inset-x-0 top-0 h-14 bg-[linear-gradient(180deg,var(--color-primary-soft)_0%,transparent_100%)] opacity-70 pointer-events-none"
     />
     <div className="relative z-[1]">
       {primary === undefined ? (
-        <div className="py-4 text-center">
+        <div className="py-3 text-center">
           <div className="font-display text-[1.4rem] font-semibold text-foreground mb-1">
             No account yet
           </div>
@@ -43,93 +43,88 @@ export const AccountCard = ({
           </PrimaryButton>
         </div>
       ) : (
-        <DropdownMenu.Root>
-          <DropdownMenu.Trigger asChild>
-            <button
-              className="group w-full flex items-center gap-3 text-left transition-all duration-200 ease-out hover:-translate-y-px focus-visible:outline-none focus-visible:shadow-focus rounded-md p-1 -m-1"
-              type="button"
-            >
-              <AccountAvatar
-                name={primary.name}
-                partyId={primary.partyId}
-              />
-              <span className="flex flex-1 min-w-0 flex-col">
-                <span className="font-display text-[1.55rem] font-semibold text-foreground tracking-[-0.018em] leading-tight truncate">
-                  {primary.name}
-                </span>
-                <span className="mt-0.5 font-mono text-[0.85rem] font-medium text-muted-foreground truncate">
-                  {shortMiddle(primary.partyId, 12, 7)}
-                </span>
-              </span>
-              <span
-                className="size-[8px] border-r-2 border-b-2 border-muted-foreground transition-transform duration-200 ease-out rotate-45 group-data-[state=open]:rotate-[225deg]"
-                aria-hidden="true"
-              />
-            </button>
-          </DropdownMenu.Trigger>
-          <DropdownMenu.Portal>
-            <DropdownMenu.Content
-              align="start"
-              sideOffset={8}
-              className="z-[12] w-[var(--radix-dropdown-menu-trigger-width)] p-2 border border-border-strong rounded-lg bg-surface shadow-popover data-[state=open]:animate-slide-down-and-fade"
-            >
-              <div className="font-mono text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground px-2 pt-1 pb-2">
-                Accounts
-              </div>
-              {accountsSorted.map((a) => (
-                <DropdownMenu.Item
-                  key={a.id}
-                  onSelect={() => onSelectAccount(a.id)}
-                  className={cn(
-                    'group/item relative w-full flex items-center gap-2.5 rounded-sm p-2 text-foreground text-left outline-none cursor-pointer transition-colors',
-                    'data-[highlighted]:bg-primary-soft',
-                    a.isPrimary &&
-                      'before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-primary',
-                  )}
-                >
-                  <AccountAvatar
-                    name={a.name}
-                    partyId={a.partyId}
-                  />
-                  <span className="flex flex-1 min-w-0 flex-col">
-                    <strong className="truncate text-[1rem] font-semibold tracking-tight">
-                      {a.name}
-                    </strong>
-                    <small className="text-muted-foreground text-[0.82rem] font-mono font-medium">
-                      {shortMiddle(a.partyId, 14, 7)}
-                    </small>
-                  </span>
-                  {a.isPrimary && (
-                    <span className="font-mono text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-primary">
-                      active
-                    </span>
-                  )}
-                </DropdownMenu.Item>
-              ))}
-              <DropdownMenu.Item
-                onSelect={onAddAccount}
-                className="w-full flex justify-center items-center gap-2 border border-dashed border-border rounded-sm p-2 text-primary font-semibold mt-2 outline-none cursor-pointer transition-colors data-[highlighted]:bg-primary-soft data-[highlighted]:border-primary/40"
-              >
-                <span aria-hidden="true">+</span> Add account
-              </DropdownMenu.Item>
-            </DropdownMenu.Content>
-          </DropdownMenu.Portal>
-        </DropdownMenu.Root>
-      )}
-
-      {primary !== undefined && (
-        <div className="mt-4 pt-3 border-t border-border/70 flex items-center gap-2">
+        <div className="flex items-center gap-2">
+          <AccountAvatar
+            name={primary.name}
+            partyId={primary.partyId}
+          />
+          <div className="min-w-0 flex-1">
+            <span className="block truncate font-mono text-[0.9rem] font-semibold text-foreground">
+              {shortMiddle(primary.partyId, 12, 7)}
+            </span>
+          </div>
           <button
             type="button"
             onClick={() => onCopyPartyId(primary.partyId)}
             aria-label="Copy party ID"
-            className={cn(ICON_BUTTON_CLASS, 'size-7 rounded-full text-muted-foreground')}
+            className={cn(ICON_BUTTON_CLASS, 'size-8 rounded-sm text-muted-foreground')}
           >
             {COPY_ICON}
           </button>
-          <span className="font-mono text-[0.78rem] font-medium text-muted-foreground tracking-tight">
-            copy party id
-          </span>
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger asChild>
+              <button
+                className={cn(
+                  ICON_BUTTON_CLASS,
+                  'size-8 rounded-sm text-muted-foreground transition-colors',
+                )}
+                type="button"
+                aria-label="Open account menu"
+              >
+                <span
+                  className="size-[10px] border-r-2 border-b-2 border-current transition-transform duration-200 ease-out rotate-[-45deg] data-[state=open]:rotate-45"
+                  aria-hidden="true"
+                />
+              </button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+              <DropdownMenu.Content
+                align="end"
+                sideOffset={8}
+                className="z-[12] w-64 p-2 border border-border-strong rounded-lg bg-surface shadow-popover data-[state=open]:animate-slide-down-and-fade"
+              >
+                <div className="font-mono text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground px-2 pt-1 pb-2">
+                  Accounts
+                </div>
+                {accountsSorted.map((a) => (
+                  <DropdownMenu.Item
+                    key={a.id}
+                    onSelect={() => onSelectAccount(a.id)}
+                    className={cn(
+                      'group/item relative w-full flex items-center gap-2.5 rounded-sm p-2 text-foreground text-left outline-none cursor-pointer transition-colors',
+                      'data-[highlighted]:bg-primary-soft',
+                      a.isPrimary &&
+                        'before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-primary',
+                    )}
+                  >
+                    <AccountAvatar
+                      name={a.name}
+                      partyId={a.partyId}
+                    />
+                    <span className="flex flex-1 min-w-0 flex-col">
+                      <strong className="truncate text-[1rem] font-semibold tracking-tight">
+                        {a.name}
+                      </strong>
+                      <small className="text-muted-foreground text-[0.82rem] font-mono font-medium">
+                        {shortMiddle(a.partyId, 14, 7)}
+                      </small>
+                    </span>
+                    {a.isPrimary && (
+                      <span className="font-mono text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-primary">
+                        active
+                      </span>
+                    )}
+                  </DropdownMenu.Item>
+                ))}
+                <DropdownMenu.Item
+                  onSelect={onAddAccount}
+                  className="w-full flex justify-center items-center gap-2 border border-dashed border-border rounded-sm p-2 text-primary font-semibold mt-2 outline-none cursor-pointer transition-colors data-[highlighted]:bg-primary-soft data-[highlighted]:border-primary/40"
+                >
+                  <span aria-hidden="true">+</span> Add account
+                </DropdownMenu.Item>
+              </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
         </div>
       )}
     </div>
