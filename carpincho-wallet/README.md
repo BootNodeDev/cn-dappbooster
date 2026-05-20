@@ -10,6 +10,24 @@ dApp frontend -> WalletConnect -> carpincho-wallet -> wallet-service /rpc -> Can
 
 ## Run
 
+For day-to-day wallet work, prefer the root-level mock script. It starts
+Carpincho plus an in-process mocked `counter/wallet-service`, no Docker, no
+Canton:
+
+```bash
+npm --prefix .. run dev:wallet-mock
+```
+
+For the full participant-backed loop (needed when changes touch DAR-level
+shape or the real `counter/wallet-service`):
+
+```bash
+npm --prefix .. run dev:full
+```
+
+To run only Carpincho's dev server (against whatever wallet-service is already
+listening on `http://localhost:3010/rpc`):
+
 ```bash
 npm install
 npm run dev

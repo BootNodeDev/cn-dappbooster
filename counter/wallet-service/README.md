@@ -27,6 +27,36 @@ npm run --silent canton:token
 and `executePrepared`. Basic health/info responses do not prove that the token
 is configured.
 
+## Mock Mode
+
+Set `WALLET_SERVICE_MOCK=1` to short-circuit the JSON-RPC dispatcher before any
+Canton call. The mock layer lives in [`src/mock.ts`](src/mock.ts) and returns
+canned, well-formed responses for every method `carpincho-wallet` invokes:
+
+| Method | Mock behaviour |
+| --- | --- |
+| `status`, `connect`, `isConnected` | Reports `isConnected: false`, `isNetworkConnected: true`, `networkId: <NETWORK>-mock`. |
+| `disconnect` | `null`. |
+| `getActiveNetwork` | `{ networkId }`. |
+| `listAccounts` | `[]`. |
+| `getPrimaryAccount` | RPC error `-32001 Resource not found` (no primary configured). |
+| `prepareCreateParty` | Synthesises a `partyId` from `partyHint`, returns `{ onboardingId, partyId, multiHash }` with a random 32-byte base64 hash. State is per-process. |
+| `completeCreateParty` | Accepts any signature on the previously prepared `onboardingId` and returns `{ partyId }`. |
+| `prepareTransaction` | Returns a fresh `{ preparedTransaction, preparedTransactionHash, hashingSchemeVersion: HASHING_SCHEME_VERSION_V2 }`. |
+| `executePrepared` | Returns `{ updateId, completionOffset }` with a monotonically increasing offset. |
+| `ledgerApi` | Accepts only `POST /v2/state/active-contracts` (the shape the Counter frontend uses) and returns `{ contracts: [] }`. |
+| `prepareExecute`, `prepareExecuteAndWait`, `signMessage` | RPC error `-32004 Method not supported` (Carpincho owns signing). |
+
+`GET /health` and `GET /` keep responding in mock mode and report `mock: true`.
+`CANTON_BACKEND_TOKEN` is not required. Start it directly with:
+
+```bash
+WALLET_SERVICE_MOCK=1 npm run dev
+```
+
+The root `npm run dev:wallet-mock` script wraps this and also starts
+`carpincho-wallet` against it.
+
 Useful checks:
 
 ```bash
