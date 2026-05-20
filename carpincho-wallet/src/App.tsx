@@ -27,7 +27,7 @@ const Shell = (): JSX.Element => {
     )
   }
   return (
-    <div className={`w-popup mx-auto px-3 pt-3 ${showHeader ? 'pb-20' : 'pb-8'}`}>
+    <div className={`w-popup mx-auto px-3 pt-3 ${showHeader ? 'pb-36' : 'pb-8'}`}>
       {showHeader ? (
         <Header onOpenMenu={() => setMenuOpen(true)} />
       ) : (

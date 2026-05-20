@@ -24,6 +24,8 @@ describe('extension packaging', () => {
     assert.equal(manifest.action?.default_icon?.['32'], 'icons/carpincho-32.png')
     assert.equal(manifest.icons?.['128'], 'icons/carpincho-128.png')
     assert.ok(manifest.permissions?.includes('storage'))
+    assert.ok(manifest.permissions?.includes('activeTab'))
+    assert.ok(manifest.permissions?.includes('favicon'))
     assert.ok(manifest.host_permissions?.includes('http://localhost/*'))
     assert.ok(manifest.host_permissions?.includes('http://127.0.0.1/*'))
   })

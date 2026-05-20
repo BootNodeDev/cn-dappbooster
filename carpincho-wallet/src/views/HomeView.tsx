@@ -10,6 +10,7 @@ import { PendingActionCard } from '@/components/ui/PendingActionCard.tsx'
 import { Select, SelectItem } from '@/components/ui/Select.tsx'
 import { Sheet } from '@/components/ui/Sheet.tsx'
 import { toast } from '@/components/ui/toast.ts'
+import { useExtensionDappConnection } from '@/extension/dappConnection.ts'
 import type { RuntimePendingRequest } from '@/extension/messages.ts'
 import {
   createRuntimeResponder,
@@ -507,6 +508,10 @@ export const HomeView = (): JSX.Element => {
   const primary = v.primary ?? accountsSorted[0]
   const hasPending =
     proposal !== undefined || pendingSign !== undefined || pendingExecute !== undefined
+  const dapp = useExtensionDappConnection({
+    extensionMode,
+    sessions,
+  })
 
   return (
     <>
@@ -630,6 +635,7 @@ export const HomeView = (): JSX.Element => {
 
       <ConnectionFooter
         walletService={walletService}
+        dapp={dapp}
         onOpenSettings={() => setSettingsOpen(true)}
       />
     </>
