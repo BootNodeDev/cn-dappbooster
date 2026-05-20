@@ -500,6 +500,8 @@ export const HomeView = (): JSX.Element => {
       ),
     [v.accounts],
   )
+  // Without an account there is no Canton party available for dApp listening or activity history.
+  const hasAccounts = accountsSorted.length > 0
   const primary = v.primary ?? accountsSorted[0]
   const hasPending =
     proposal !== undefined || pendingSign !== undefined || pendingExecute !== undefined
@@ -516,7 +518,12 @@ export const HomeView = (): JSX.Element => {
 
   return (
     <>
-      <div className="flex flex-col gap-3 pb-2">
+      <div
+        className={cn(
+          'flex flex-col gap-3 pb-2',
+          !hasAccounts && 'min-h-[calc(100vh-10rem)] justify-center',
+        )}
+      >
         <AccountCard
           primary={primary}
           accountsSorted={accountsSorted}
@@ -527,7 +534,7 @@ export const HomeView = (): JSX.Element => {
           onCopyPartyId={onCopyPartyId}
         />
 
-        {hasPending && (
+        {hasAccounts && hasPending && (
           <section className={cn(CARD_CLASS, 'p-4 border-success/55 animate-soft-pulse')}>
             {proposal !== undefined ? (
               <PendingActionCard
@@ -591,7 +598,7 @@ export const HomeView = (): JSX.Element => {
           </section>
         )}
 
-        {!hasPending && (
+        {hasAccounts && !hasPending && (
           <PairOrConnectedCard
             extensionMode={extensionMode}
             sessions={sessions}
@@ -608,7 +615,7 @@ export const HomeView = (): JSX.Element => {
           />
         )}
 
-        <ActivityList transactions={v.transactions} />
+        {hasAccounts && <ActivityList transactions={v.transactions} />}
       </div>
 
       <Sheet

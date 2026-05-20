@@ -14,6 +14,7 @@
     "wallet-service:build": "npm --prefix counter/wallet-service run build",
     "wallet:dev": "npm --prefix carpincho-wallet run dev -- --host localhost --port 3011 --strictPort",
     "wallet:build": "npm --prefix carpincho-wallet run build",
+    "build:extension": "npm --prefix carpincho-wallet run build:extension",
     "app:dev": "npm --prefix counter/frontend run dev -- --host localhost --port 3012 --strictPort",
     "app:build": "npm --prefix counter/frontend run build",
     "prepare": "husky"
