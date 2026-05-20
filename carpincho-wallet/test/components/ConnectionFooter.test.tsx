@@ -11,6 +11,7 @@ import {
 const connectedService: WalletServiceFooterStatus = {
   // Wallet-service fixture representing a healthy Canton network connection.
   connected: true,
+  networkId: 'canton:local',
 }
 
 const disconnectedService: WalletServiceFooterStatus = {
@@ -50,8 +51,9 @@ describe('ConnectionFooter', () => {
       />,
     )
 
-    // The service row should use the requested copy instead of the old generic connection label.
+    // The service row should use the requested copy and show the network reported by wallet-service.
     assert.ok(screen.getByText('canton connected'))
+    assert.ok(screen.getByText('canton:local'))
     assert.equal(screen.queryByText(/edit/i), null)
 
     // The cog button is the only settings affordance and must remain keyboard/click accessible.
@@ -63,14 +65,29 @@ describe('ConnectionFooter', () => {
     // Scenario: Canton is unavailable, so the footer should make the service problem explicit.
     render(
       <ConnectionFooter
-        walletService={disconnectedService}
+        walletService={{ ...disconnectedService, networkId: 'canton:local' }}
         dapp={noDapp}
         onOpenSettings={() => undefined}
       />,
     )
 
-    // The disconnected label must be visible without opening settings.
+    // The disconnected label must be visible, but the network is hidden because it is unknown.
     assert.ok(screen.getByText('canton not connected'))
+    assert.equal(screen.queryByText('canton:local'), null)
+  })
+
+  it('shows unknown when connected service omits the network id', () => {
+    // Scenario: wallet-service confirms Canton connectivity but does not include network metadata.
+    render(
+      <ConnectionFooter
+        walletService={{ connected: true }}
+        dapp={noDapp}
+        onOpenSettings={() => undefined}
+      />,
+    )
+
+    // Connected state should still reserve the network slot and mark the missing id explicitly.
+    assert.ok(screen.getByText('unknown'))
   })
 
   it('renders dApp empty and detected states', () => {

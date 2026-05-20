@@ -4,6 +4,7 @@ import { cn } from '@/utils/cn.ts'
 
 export interface WalletServiceFooterStatus {
   connected: boolean
+  networkId?: string
   reason?: string
 }
 
@@ -25,6 +26,7 @@ export const ConnectionFooter = ({
 }: ConnectionFooterProps): JSX.Element => {
   const serviceLabel = walletService.connected ? 'canton connected' : 'canton not connected'
   const dotClass = walletService.connected ? 'bg-success' : 'bg-danger'
+  const networkLabel = walletService.connected ? (walletService.networkId ?? 'unknown') : undefined
 
   return (
     <footer
@@ -47,6 +49,14 @@ export const ConnectionFooter = ({
         >
           {serviceLabel}
         </span>
+        {networkLabel !== undefined && (
+          <span
+            className="max-w-32 shrink-0 truncate rounded-sm border border-border bg-surface px-2 py-1 font-mono text-[0.7rem] font-semibold text-foreground"
+            title={networkLabel}
+          >
+            {networkLabel}
+          </span>
+        )}
         <button
           type="button"
           onClick={onOpenSettings}

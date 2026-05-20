@@ -7,10 +7,14 @@ interface WalletServiceStatusResponse {
     isNetworkConnected?: boolean
     networkReason?: string
   }
+  network?: {
+    networkId?: string
+  }
 }
 
 export interface WalletServiceStatus {
   connected: boolean
+  networkId?: string
   reason?: string
 }
 
@@ -23,6 +27,7 @@ const DEFAULT_POLL_MS = 5000
 // Converts the wallet-service status payload into the footer's binary Canton state.
 const statusFromResponse = (status: WalletServiceStatusResponse): WalletServiceStatus => ({
   connected: status.connection?.isNetworkConnected === true,
+  ...(status.network?.networkId === undefined ? {} : { networkId: status.network.networkId }),
   ...(status.connection?.networkReason === undefined
     ? {}
     : { reason: status.connection.networkReason }),

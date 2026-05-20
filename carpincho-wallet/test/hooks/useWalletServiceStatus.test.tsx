@@ -8,11 +8,13 @@ const originalFetch = globalThis.fetch
 // Renders the hook result as text so tests can assert the footer-facing state.
 const StatusProbe = (): JSX.Element => {
   const status = useWalletServiceStatus({ pollMs: null })
-  return <div>{status.connected ? 'connected' : 'not connected'}</div>
+  return (
+    <div>{`${status.connected ? 'connected' : 'not connected'} ${status.networkId ?? ''}`}</div>
+  )
 }
 
 // Installs a fake wallet-service status response for one test scenario.
-const installStatusResponse = (connected: boolean): void => {
+const installStatusResponse = (connected: boolean, networkId = 'canton:local'): void => {
   globalThis.fetch = async (input) => {
     // The hook should probe the configured JSON-RPC endpoint with the status method.
     assert.equal(String(input), 'http://localhost:3010/rpc')
@@ -21,6 +23,9 @@ const installStatusResponse = (connected: boolean): void => {
         result: {
           connection: {
             isNetworkConnected: connected,
+          },
+          network: {
+            networkId,
           },
         },
       }),
@@ -43,8 +48,8 @@ describe('useWalletServiceStatus', () => {
     // Render the hook and wait for the asynchronous status probe to settle.
     render(<StatusProbe />)
 
-    // The footer state should become connected only after the health response confirms it.
-    await waitFor(() => assert.ok(screen.getByText('connected')))
+    // The footer state should become connected and expose the wallet-service network id.
+    await waitFor(() => assert.ok(screen.getByText('connected canton:local')))
   })
 
   it('marks Canton not connected when wallet-service reports no network connectivity', async () => {

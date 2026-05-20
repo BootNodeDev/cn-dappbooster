@@ -27,9 +27,6 @@ export const AccountCard = ({
       className="absolute inset-x-0 top-0 h-20 bg-[linear-gradient(180deg,var(--color-primary-soft)_0%,transparent_100%)] opacity-90 pointer-events-none"
     />
     <div className="relative z-[1]">
-      <div className="font-mono text-[0.74rem] font-semibold uppercase tracking-[0.18em] text-primary mb-3">
-        {primary?.network ?? 'canton:local'}
-      </div>
       {primary === undefined ? (
         <div className="py-4 text-center">
           <div className="font-display text-[1.4rem] font-semibold text-foreground mb-1">
