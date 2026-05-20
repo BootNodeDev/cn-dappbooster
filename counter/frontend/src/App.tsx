@@ -226,9 +226,7 @@ export const App = (): JSX.Element => {
         </div>
       )}
 
-      {connected !== undefined && (
-        <>
-          <section className="workspace-panel">
+      <section className="workspace-panel">
         <div className="panel-title-row">
           <div>
             <span className="section-kicker">Counter</span>
@@ -244,12 +242,16 @@ export const App = (): JSX.Element => {
               }}
               disabled={busy || connected === undefined}
             >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 12h14" />
+                <path d="M12 5v14" />
+              </svg>
               New counter
             </button>
           </div>
         </div>
 
-        {counters.length === 0 ? (
+        {connected === undefined || counters.length === 0 ? (
           <div className="empty">
             <h3>No counters visible</h3>
             <p>Create one with the connected party or ask another party to add you as viewer.</p>
@@ -320,8 +322,6 @@ export const App = (): JSX.Element => {
           </section>
         )}
       </section>
-        </>
-      )}
     </main>
   )
 }
