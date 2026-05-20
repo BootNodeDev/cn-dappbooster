@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 import { existsSync } from 'node:fs'
-import net from 'node:net'
 import path from 'node:path'
-import { DevSupervisor, fail, log, parseEnvFile, repoRoot } from './lib/run.mjs'
+import { DevSupervisor, fail, log, parseEnvFile, repoRoot, requirePortsFree } from './lib/run.mjs'
 
 const WALLET_DOTENV = path.join(repoRoot, 'carpincho-wallet/.env.local')
 const DEV_PORTS = [
@@ -20,34 +19,10 @@ const requireWalletProjectId = () => {
   }
 }
 
-const isPortFree = (port) =>
-  new Promise((resolve) => {
-    const server = net.createServer()
-    server.once('error', () => resolve(false))
-    server.once('listening', () => {
-      server.close(() => resolve(true))
-    })
-    server.listen({ port, host: '127.0.0.1', exclusive: true })
-  })
-
-const requirePortsFree = async () => {
-  const busy = []
-  for (const entry of DEV_PORTS) {
-    if (!(await isPortFree(entry.port))) {
-      busy.push(entry)
-    }
-  }
-  if (busy.length === 0) {
-    return
-  }
-  const detail = busy.map((entry) => `${entry.port} (${entry.label})`).join(', ')
-  fail(`port(s) already in use: ${detail}. Stop the previous dev process or free the port and retry.`)
-}
-
 const main = async () => {
   log('preflight checks (mock mode)')
   requireWalletProjectId()
-  await requirePortsFree()
+  await requirePortsFree(DEV_PORTS)
   log('preflight ok')
 
   log('starting wallet-service in MOCK mode + carpincho-wallet. Ctrl-C to stop.')

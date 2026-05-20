@@ -20,7 +20,7 @@ export interface MockRpcRpcError {
 export type MockRpcResponse = MockRpcResult | MockRpcRpcError
 
 interface MockState {
-  parties: Map<string, { partyId: string; publicKeyBase64?: string; partyHint?: string }>
+  parties: Map<string, { partyId: string }>
   offset: number
 }
 
@@ -73,7 +73,7 @@ export const createMockHandler = (config: WalletServiceConfig): ((request: MockR
     const partyHint = typeof p.partyHint === 'string' ? p.partyHint.trim() : ''
     const onboardingId = crypto.randomUUID()
     const partyId = `${slugify(partyHint === '' ? 'mock' : partyHint)}::mock-${crypto.randomBytes(6).toString('hex')}`
-    state.parties.set(onboardingId, { partyId, publicKeyBase64, partyHint: partyHint === '' ? undefined : partyHint })
+    state.parties.set(onboardingId, { partyId })
     return {
       onboardingId,
       partyId,
@@ -100,13 +100,19 @@ export const createMockHandler = (config: WalletServiceConfig): ((request: MockR
     return { partyId: entry.partyId }
   }
 
+  const pickPartyId = (p: Record<string, unknown>): string | undefined => {
+    if (typeof p.partyId === 'string' && p.partyId.length > 0) {
+      return p.partyId
+    }
+    if (Array.isArray(p.actAs) && typeof p.actAs[0] === 'string' && p.actAs[0].length > 0) {
+      return p.actAs[0]
+    }
+    return undefined
+  }
+
   const prepareTransaction = (params: unknown): unknown => {
     const p = objectParam(params, 'prepareTransaction')
-    const partyId = typeof p.partyId === 'string' && p.partyId.length > 0
-      ? p.partyId
-      : Array.isArray(p.actAs) && typeof p.actAs[0] === 'string' && p.actAs[0].length > 0
-        ? p.actAs[0]
-        : undefined
+    const partyId = pickPartyId(p)
     if (partyId === undefined) {
       throw new Error('partyId or actAs[0] is required')
     }

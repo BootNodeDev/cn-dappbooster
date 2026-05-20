@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
-import net from 'node:net'
 import path from 'node:path'
-import { DevSupervisor, captureStep, fail, log, parseEnvFile, repoRoot, runStep } from './lib/run.mjs'
+import { DevSupervisor, captureStep, fail, log, parseEnvFile, repoRoot, requirePortsFree, runStep } from './lib/run.mjs'
 
 const COUNTER_DAR = path.join(repoRoot, 'counter/daml/.daml/dist/quickstart-counter-0.0.1.dar')
 const WALLET_SERVICE_ENV = path.join(repoRoot, 'counter/wallet-service/.env')
@@ -46,30 +45,6 @@ const requireDamlToolchain = async () => {
   } catch {
     fail('dpm is missing. Install the Daml Project Manager (dpm). counter/daml uses `dpm build`.')
   }
-}
-
-const isPortFree = (port) =>
-  new Promise((resolve) => {
-    const server = net.createServer()
-    server.once('error', () => resolve(false))
-    server.once('listening', () => {
-      server.close(() => resolve(true))
-    })
-    server.listen({ port, host: '127.0.0.1', exclusive: true })
-  })
-
-const requirePortsFree = async () => {
-  const busy = []
-  for (const entry of DEV_PORTS) {
-    if (!(await isPortFree(entry.port))) {
-      busy.push(entry)
-    }
-  }
-  if (busy.length === 0) {
-    return
-  }
-  const detail = busy.map((entry) => `${entry.port} (${entry.label})`).join(', ')
-  fail(`port(s) already in use: ${detail}. Stop the previous dev process or free the port and retry.`)
 }
 
 const isCantonHealthy = async () => {
@@ -167,8 +142,7 @@ const main = async () => {
   await requireDamlToolchain()
   requireEnvFileWithViteProjectId(WALLET_DOTENV, 'carpincho-wallet')
   requireEnvFileWithViteProjectId(APP_DOTENV, 'counter/frontend')
-  ensureWalletServiceDotenv()
-  await requirePortsFree()
+  await requirePortsFree(DEV_PORTS)
   log('preflight ok')
 
   await ensureCantonUp()

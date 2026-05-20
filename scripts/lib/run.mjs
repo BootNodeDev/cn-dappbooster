@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
+import net from 'node:net'
 import path from 'node:path'
 
 const ANSI = {
@@ -97,6 +98,28 @@ export const captureStep = (label, command, args, options = {}) =>
     })
   })
 
+export const isPortFree = (port) =>
+  new Promise((resolve) => {
+    const server = net.createServer()
+    server.once('error', () => resolve(false))
+    server.once('listening', () => {
+      server.close(() => resolve(true))
+    })
+    server.listen({ port, host: '127.0.0.1', exclusive: true })
+  })
+
+export const requirePortsFree = async (ports) => {
+  const results = await Promise.all(
+    ports.map(async (entry) => ({ entry, free: await isPortFree(entry.port) }))
+  )
+  const busy = results.filter((r) => !r.free).map((r) => r.entry)
+  if (busy.length === 0) {
+    return
+  }
+  const detail = busy.map((entry) => `${entry.port} (${entry.label})`).join(', ')
+  fail(`port(s) already in use: ${detail}. Stop the previous dev process or free the port and retry.`)
+}
+
 const signalProcessGroup = (entry, sig) => {
   if (entry.child.exitCode !== null || entry.child.signalCode !== null) {
     return
@@ -152,34 +175,28 @@ export class DevSupervisor {
     const stderrCarry = { value: '' }
     child.stdout.on('data', (chunk) => writePrefixed(process.stdout, label, colour, chunk, stdoutCarry))
     child.stderr.on('data', (chunk) => writePrefixed(process.stderr, label, colour, chunk, stderrCarry))
-    const entry = { label, child, colour, stdoutCarry, stderrCarry }
-    this.children.push(entry)
-    child.on('exit', (code, signal) => {
-      flushCarry(process.stdout, label, colour, stdoutCarry)
-      flushCarry(process.stderr, label, colour, stderrCarry)
-      const reason = signal === null ? `code ${code}` : `signal ${signal}`
-      process.stdout.write(`${colour}${label}${ANSI.reset} ${ANSI.dim}exited (${reason})${ANSI.reset}\n`)
-      if (!this.shuttingDown) {
-        if (code !== 0 && signal === null) {
-          this.exitCode = code ?? 1
+    const exited = new Promise((resolve) => {
+      child.on('exit', (code, signal) => {
+        flushCarry(process.stdout, label, colour, stdoutCarry)
+        flushCarry(process.stderr, label, colour, stderrCarry)
+        const reason = signal === null ? `code ${code}` : `signal ${signal}`
+        process.stdout.write(`${colour}${label}${ANSI.reset} ${ANSI.dim}exited (${reason})${ANSI.reset}\n`)
+        if (!this.shuttingDown) {
+          if (code !== 0 && signal === null) {
+            this.exitCode = code ?? 1
+          }
+          this.shutdown('child-exit')
         }
-        this.shutdown('child-exit')
-      }
+        resolve(undefined)
+      })
     })
+    const entry = { label, child, colour, stdoutCarry, stderrCarry, exited }
+    this.children.push(entry)
     return entry
   }
 
   async waitForExit() {
-    await new Promise((resolve) => {
-      const tick = () => {
-        if (this.children.every((entry) => entry.child.exitCode !== null || entry.child.signalCode !== null)) {
-          resolve(undefined)
-          return
-        }
-        setTimeout(tick, 100)
-      }
-      tick()
-    })
+    await Promise.all(this.children.map((entry) => entry.exited))
     if (this.sigkillTimer !== undefined) {
       clearTimeout(this.sigkillTimer)
       this.sigkillTimer = undefined
