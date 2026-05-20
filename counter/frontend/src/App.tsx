@@ -150,10 +150,30 @@ export const App = (): JSX.Element => {
 
   return (
     <main className="shell">
-      <Toaster position="top-center" richColors />
+      <Toaster position="bottom-center" richColors />
       <header className="app-header">
-        <h1>Canton Counter</h1>
-        {connected !== undefined && (
+        {connected === undefined ? (
+          <div className="connect-status" aria-label="Connect wallet">
+            <button
+              className="connect-chip carpincho-connect"
+              type="button"
+              onClick={() => { void onConnect('extension') }}
+              disabled={busy}
+            >
+              <span className="connect-glyph" aria-hidden="true">C</span>
+              <span>{busy && connectMode === 'extension' ? 'Connecting' : 'Carpincho'}</span>
+            </button>
+            <button
+              className="connect-chip"
+              type="button"
+              onClick={() => { void onConnect('walletconnect') }}
+              disabled={busy}
+            >
+              <img src="/Walletconnect-logo.png" alt="" aria-hidden="true" />
+              <span>{busy && connectMode === 'walletconnect' ? 'Pairing' : 'WC'}</span>
+            </button>
+          </div>
+        ) : (
           <div className="connected-status">
             <span className="connected-party">party:{short(connected.account.partyId)}</span>
             <button
@@ -173,61 +193,40 @@ export const App = (): JSX.Element => {
           </div>
         )}
       </header>
+      <h1 className="app-title">Canton Counter</h1>
 
-      {connected === undefined ? (
-        <section className="connect-panel" aria-label="Connect wallet">
-          <div className="connect-buttons">
-            <button
-              className="connect-card carpincho-connect"
-              type="button"
-              onClick={() => { void onConnect('extension') }}
-              disabled={busy}
-            >
-              <span className="connect-glyph" aria-hidden="true">C</span>
-              <span>{busy && connectMode === 'extension' ? 'Connecting...' : 'Connect with Carpincho'}</span>
-            </button>
-            <button
-              className="connect-card"
-              type="button"
-              onClick={() => { void onConnect('walletconnect') }}
-              disabled={busy}
-            >
-              <img src="/Walletconnect-logo.png" alt="" aria-hidden="true" />
-              <span>{busy && connectMode === 'walletconnect' ? 'Pairing...' : 'Connect with WC'}</span>
-            </button>
-          </div>
-          {(busy || pairingUri !== undefined) && (
-            <div className="pairing-popover">
-              {pairingUri === undefined ? (
-                <div className="pairing-loading">
-                  <span className="spinner" />
-                  <span>{connectMode === 'walletconnect' ? 'Preparing WalletConnect...' : 'Waiting for Carpincho...'}</span>
-                </div>
-              ) : (
-                <>
-                  <span>Paste in Carpincho</span>
-                  <code>{short(pairingUri)}</code>
-                  <div>
-                    <button
-                      className={pairingCopied ? 'copied' : undefined}
-                      type="button"
-                      onClick={() => { void copyPairingUri() }}
-                    >
-                      {pairingCopied ? 'Copied' : 'Copy'}
-                    </button>
-                    <button type="button" onClick={() => {
-                      setPairingCopied(false)
-                      setPairingUri(undefined)
-                    }}>
-                      Cancel
-                    </button>
-                  </div>
-                </>
-              )}
+      {connected === undefined && (busy || pairingUri !== undefined) && (
+        <div className="pairing-popover">
+          {pairingUri === undefined ? (
+            <div className="pairing-loading">
+              <span className="spinner" />
+              <span>{connectMode === 'walletconnect' ? 'Preparing WalletConnect...' : 'Waiting for Carpincho...'}</span>
             </div>
+          ) : (
+            <>
+              <span>Paste in Carpincho</span>
+              <code>{short(pairingUri)}</code>
+              <div>
+                <button
+                  className={pairingCopied ? 'copied' : undefined}
+                  type="button"
+                  onClick={() => { void copyPairingUri() }}
+                >
+                  {pairingCopied ? 'Copied' : 'Copy'}
+                </button>
+                <button type="button" onClick={() => {
+                  setPairingCopied(false)
+                  setPairingUri(undefined)
+                }}>
+                  Cancel
+                </button>
+              </div>
+            </>
           )}
-        </section>
-      ) : (
+        </div>
+      )}
+
+      {connected !== undefined && (
         <>
           <section className="workspace-panel">
         <div className="panel-title-row">
