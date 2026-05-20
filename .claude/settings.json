@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(set -e)",
+      "Bash(npm run *)",
+      "Bash(npm install *)",
+      "Bash(npm --prefix carpincho-wallet *)",
+      "Bash(npm --prefix counter/* *)",
+      "Bash(npm --prefix canton-base *)",
+      "Bash(sh .husky/pre-push)",
+      "Bash(docker info *)",
+      "Bash(curl -sf -o /dev/null --max-time 1 http://localhost:__TRACKED_VAR__/)",
+      "Bash(curl -sf -o /dev/null --max-time 1 http://localhost:__TRACKED_VAR__/health)",
+      "Bash(curl -s http://localhost:3010/health)",
+      "Bash(curl -sf -o /dev/null --max-time 1 http://localhost:3011/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3011/)",
+      "Bash(curl -s -o /dev/null -w \"wallet :3011 -> HTTP %{http_code}\\\\n\" http://localhost:3011/)",
+      "Bash(curl -s -o /dev/null -w \"counter:3012 -> HTTP %{http_code}\\\\n\" http://localhost:3012/)",
+      "Bash(lsof -iTCP:3010 -iTCP:3011 -iTCP:3012 -sTCP:LISTEN)",
+      "Bash(lsof -nP -iTCP:3010 -iTCP:3011 -iTCP:3012 -sTCP:LISTEN)",
+      "Bash(lsof -nP -iTCP:3010 -iTCP:3011 -iTCP:3012 -sTCP:LISTEN -t)",
+      "Bash(lsof -nP -iTCP:3011 -sTCP:LISTEN)",
+      "Bash(xargs kill)",
+      "Bash(open http://localhost:3010/health)",
+      "Bash(open http://localhost:3011/)",
+      "Bash(open http://localhost:3012/)"
+    ]
+  }
+}
