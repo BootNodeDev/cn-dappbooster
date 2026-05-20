@@ -177,6 +177,24 @@ export class DevSupervisor {
     child.stdout.on('data', (chunk) => writePrefixed(process.stdout, label, colour, chunk, stdoutCarry))
     child.stderr.on('data', (chunk) => writePrefixed(process.stderr, label, colour, chunk, stderrCarry))
     const exited = new Promise((resolve) => {
+      let settled = false
+      const settle = () => {
+        if (settled) {
+          return
+        }
+        settled = true
+        resolve(undefined)
+      }
+      child.on('error', (error) => {
+        flushCarry(process.stdout, label, colour, stdoutCarry)
+        flushCarry(process.stderr, label, colour, stderrCarry)
+        process.stderr.write(`${colour}${label}${ANSI.reset} ${ANSI.dim}spawn error: ${error.message}${ANSI.reset}\n`)
+        if (!this.shuttingDown) {
+          this.exitCode = this.exitCode === 0 ? 1 : this.exitCode
+          this.shutdown('spawn-error')
+        }
+        settle()
+      })
       child.on('exit', (code, signal) => {
         flushCarry(process.stdout, label, colour, stdoutCarry)
         flushCarry(process.stderr, label, colour, stderrCarry)
@@ -188,7 +206,7 @@ export class DevSupervisor {
           }
           this.shutdown('child-exit')
         }
-        resolve(undefined)
+        settle()
       })
     })
     const entry = { label, child, colour, stdoutCarry, stderrCarry, exited }
