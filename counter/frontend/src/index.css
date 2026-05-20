@@ -1,20 +1,28 @@
+@import "@fontsource/geist-sans/latin-400.css";
+@import "@fontsource/geist-sans/latin-500.css";
+@import "@fontsource/geist-sans/latin-600.css";
+@import "@fontsource/geist-sans/latin-700.css";
+@import "@fontsource/geist-sans/latin-800.css";
+
 :root {
-  color: #1e293b;
+  color: #1d293d;
   background: #e2e8f0;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "Geist Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
-  --sky: #0d9488;
-  --sky-2: #0f766e;
+  --sky: #009588;
+  --sky-2: #00776e;
   --sky-soft: #f0fdfa;
-  --sky-ink: #0f766e;
+  --sky-ink: #00776e;
   --surface: #ffffff;
   --surface-2: #f8fafc;
   --border: #e2e8f0;
-  --text: #1e293b;
-  --muted: #94a3b8;
-  --green: #168a53;
-  --red: #ef4444;
+  --text: #1d293d;
+  --muted: #90a1b9;
+  --slate-500: #62748e;
+  --slate-700: #314158;
+  --green: #00bb7f;
+  --red: #fb2c36;
 }
 
 * {
@@ -67,7 +75,7 @@ button:disabled {
 
 .primary:hover {
   border-color: var(--sky-2);
-  background: #115e59;
+  background: #006a62;
 }
 
 .primary svg {
@@ -292,7 +300,7 @@ p {
 }
 
 .empty h3 {
-  color: #334155;
+  color: var(--slate-700);
 }
 
 .empty p {
