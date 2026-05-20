@@ -13,6 +13,9 @@ const DEV_PORTS = [
   { port: 3011, label: 'carpincho-wallet' },
   { port: 3012, label: 'counter/frontend' }
 ]
+const DOCKER_APP_PATH = '/Applications/Docker.app'
+const DOCKER_AUTOSTART_TIMEOUT_MS = 90_000
+const DOCKER_AUTOSTART_POLL_MS = 3_000
 const HEALTH_URL = 'http://127.0.0.1:3016/health'
 const WALLET_SERVICE_HEALTH = 'http://127.0.0.1:3010/health'
 const WALLET_DEV = 'http://127.0.0.1:3011'
@@ -31,12 +34,51 @@ const requireEnvFileWithViteProjectId = (filePath, owner) => {
   }
 }
 
-const requireDocker = async () => {
+const isDockerReachable = async () => {
   try {
     await captureStep('docker', 'docker', ['info'])
-  } catch (error) {
-    fail(`docker is not reachable. Start Docker Desktop or the docker daemon. (${error.message.split('\n')[0]})`)
+    return true
+  } catch {
+    return false
   }
+}
+
+const startDockerDesktopMac = async () => {
+  log('docker: Docker Desktop is not running, attempting to start it (open -a Docker)')
+  await captureStep('open', 'open', ['-a', 'Docker'])
+  const deadline = Date.now() + DOCKER_AUTOSTART_TIMEOUT_MS
+  while (Date.now() < deadline) {
+    if (await isDockerReachable()) {
+      log('docker: ready')
+      return true
+    }
+    await new Promise((resolve) => setTimeout(resolve, DOCKER_AUTOSTART_POLL_MS))
+  }
+  return false
+}
+
+const requireDocker = async () => {
+  if (await isDockerReachable()) {
+    return
+  }
+  try {
+    await captureStep('docker-cli', 'docker', ['--version'])
+  } catch {
+    fail('docker CLI is not installed. Install Docker Desktop (https://www.docker.com/products/docker-desktop/) and re-run.')
+  }
+  if (process.platform === 'darwin' && existsSync(DOCKER_APP_PATH)) {
+    if (await startDockerDesktopMac()) {
+      return
+    }
+    fail(`docker did not become ready within ${DOCKER_AUTOSTART_TIMEOUT_MS / 1000}s after launching Docker Desktop. Open Docker Desktop manually, wait for the whale icon to stop animating, then re-run.`)
+  }
+  if (process.platform === 'darwin') {
+    fail('docker daemon is not running and Docker Desktop is not installed in /Applications/Docker.app. Install Docker Desktop (https://www.docker.com/products/docker-desktop/) or start your daemon manually, then re-run.')
+  }
+  if (process.platform === 'linux') {
+    fail('docker daemon is not running. Start it manually (e.g. `sudo systemctl start docker`) and re-run.')
+  }
+  fail(`docker daemon is not running on ${process.platform}. Start it manually and re-run.`)
 }
 
 const requireDamlToolchain = async () => {

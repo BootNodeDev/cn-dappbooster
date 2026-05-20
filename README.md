@@ -48,7 +48,7 @@ Two scripted entry points cover the common cases. They're aliases over §1 to §
 
 | Command | What it brings up | Host requirements |
 | --- | --- | --- |
-| `npm run dev:full` | Canton (Docker) -> DAR build + deploy -> wallet-service -> carpincho-wallet -> counter frontend, idempotently. Re-running skips already-done steps. | Docker daemon running, `dpm` on `$PATH`, `VITE_WC_PROJECT_ID` set in `carpincho-wallet/.env.local` and `counter/frontend/.env.local`, `counter/wallet-service/.env` present (the script mints `CANTON_BACKEND_TOKEN` if empty). |
+| `npm run dev:full` | Canton (Docker) -> DAR build + deploy -> wallet-service -> carpincho-wallet -> counter frontend, idempotently. Re-running skips already-done steps. | Docker installed (on macOS the script auto-launches Docker Desktop and waits for the daemon; on Linux the daemon must already be running), `dpm` on `$PATH`, `VITE_WC_PROJECT_ID` set in `carpincho-wallet/.env.local` and `counter/frontend/.env.local`, `counter/wallet-service/.env` present (the script mints `CANTON_BACKEND_TOKEN` if empty). |
 | `npm run dev:wallet-mock` | Wallet-service in mock mode (no Canton, no Docker) + carpincho-wallet. The mock returns canned, well-formed responses for every RPC method the wallet calls (exercises `Add account`, `prepare`, `execute`, `read`, `status` end-to-end). | Node 24 and `VITE_WC_PROJECT_ID` in `carpincho-wallet/.env.local`. Nothing else. |
 
 Both scripts prefix logs by component and shut every dev server down cleanly on a single `Ctrl-C`. `dev:full` leaves the Canton container running afterwards; stop it with `npm run canton:down`.
