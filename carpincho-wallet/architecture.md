@@ -114,24 +114,24 @@ Components must never call either system directly. All wallet-service calls go t
 
 ## Data Flow
 
-```
-dApp (browser page)
-  │
-  ├─ WalletConnect session  ──────►  src/wc/handlers.ts
-  │                                        │
-  └─ Direct provider injection  ──►  src/extension/directProvider.ts
-                                           │
-                                           ▼
-                                  src/provider/dispatch.ts
-                                     │             │
-                          read-only  │             │  signing / approval
-                                     ▼             ▼
-                          src/api/           src/vault/
-                          walletService.ts   VaultContext.tsx
-                                     │             │
-                                     └──────┬──────┘
-                                            ▼
-                                  Canton participant node
+```mermaid
+flowchart TD
+  dapp["dApp (browser page)"]
+  wc["src/wc/handlers.ts"]
+  direct["src/extension/directProvider.ts"]
+  dispatch["src/provider/dispatch.ts"]
+  api["src/api/walletService.ts"]
+  vault["src/vault/VaultContext.tsx"]
+  canton["Canton participant node"]
+
+  dapp -->|"WalletConnect session"| wc
+  dapp -->|"Direct provider injection"| direct
+  wc --> dispatch
+  direct --> dispatch
+  dispatch -->|"read-only"| api
+  dispatch -->|"signing / approval"| vault
+  api --> canton
+  vault --> canton
 ```
 
 State mutations (unlock, add account, sign) go through `VaultContext`. Network calls go through `src/api/walletService.ts`. The provider dispatcher never touches `localStorage` directly.

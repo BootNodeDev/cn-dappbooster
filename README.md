@@ -2,42 +2,18 @@
 
 Minimal local stack:
 
-```text
-+------------------------------+        WalletConnect / CIP-0103        +------------------------------+
-| counter/frontend             | <------------------------------------> | carpincho-wallet             |
-| Counter dApp                 |                                        | Vault + signer               |
-| http://localhost:3012        |                                        | http://localhost:3011        |
-+------------------------------+                                        +---------------+--------------+
-                                                                                         |
-                                                                                         | JSON-RPC /rpc
-                                                                                         | prepare, execute,
-                                                                                         | read, onboard
-                                                                                         v
-                                                                        +------------------------------+
-                                                                        | counter/wallet-service       |
-                                                                        | Canton bridge                |
-                                                                        | http://localhost:3010        |
-                                                                        +---------------+--------------+
-                                                                                        |
-                                                                                        | Canton JSON API
-                                                                                        | Bearer CANTON_BACKEND_TOKEN
-                                                                                        v
-                                                                        +------------------------------+
-                                                                        | canton-base                  |
-                                                                        | Participant JSON API         |
-                                                                        | http://localhost:3013        |
-                                                                        | Ledger/Admin gRPC            |
-                                                                        | localhost:3014 / 3015        |
-                                                                        +------------------------------+
-                                                                                         ^
-                                                                                         |
-                                                                                         | deploy DAR package
-                                                                                         |
-                                                                        +------------------------------+
-                                                                        | counter/daml                 |
-                                                                        | quickstart-counter DAR       |
-                                                                        | .daml/dist/*.dar             |
-                                                                        +------------------------------+
+```mermaid
+flowchart TD
+  fe["counter/frontend<br/>Counter dApp<br/>http://localhost:3012"]
+  wallet["carpincho-wallet<br/>Vault + signer<br/>http://localhost:3011"]
+  ws["counter/wallet-service<br/>Canton bridge<br/>http://localhost:3010"]
+  cb["canton-base<br/>Participant JSON API http://localhost:3013<br/>Ledger/Admin gRPC localhost:3014 / 3015"]
+  dar["counter/daml<br/>quickstart-counter DAR<br/>.daml/dist/*.dar"]
+
+  fe <-->|"WalletConnect / CIP-0103"| wallet
+  wallet -->|"JSON-RPC /rpc<br/>prepare, execute, read, onboard"| ws
+  ws -->|"Canton JSON API<br/>Bearer CANTON_BACKEND_TOKEN"| cb
+  dar -->|"deploy DAR package"| cb
 ```
 
 The frontend knows the Counter DAML signature and talks to Carpincho through WalletConnect. Carpincho owns the local signing key and uses the wallet service to prepare, read, and execute against the Canton participant.
