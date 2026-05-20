@@ -51,9 +51,9 @@ describe('ConnectionFooter', () => {
       />,
     )
 
-    // The service row should use the requested copy and show the network reported by wallet-service.
-    assert.ok(screen.getByText('canton connected'))
-    assert.ok(screen.getByText('canton:local'))
+    // The service row should split Canton status color from the muted network label.
+    assert.ok(screen.getByText('canton'))
+    assert.ok(screen.getByText('network:local'))
     assert.equal(screen.queryByText(/edit/i), null)
 
     // The cog button is the only settings affordance and must remain keyboard/click accessible.
@@ -72,8 +72,8 @@ describe('ConnectionFooter', () => {
     )
 
     // The disconnected label must be visible, but the network is hidden because it is unknown.
-    assert.ok(screen.getByText('canton not connected'))
-    assert.equal(screen.queryByText('canton:local'), null)
+    assert.ok(screen.getByText('canton'))
+    assert.equal(screen.queryByText('canton - network:local'), null)
   })
 
   it('shows unknown when connected service omits the network id', () => {
@@ -86,7 +86,7 @@ describe('ConnectionFooter', () => {
       />,
     )
 
-    // Connected state should still reserve the network slot and mark the missing id explicitly.
+    // Connected state should still include network text and mark the missing id explicitly.
     assert.ok(screen.getByText('unknown'))
   })
 
