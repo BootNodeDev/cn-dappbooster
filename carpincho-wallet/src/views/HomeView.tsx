@@ -503,7 +503,7 @@ export const HomeView = (): JSX.Element => {
       ),
     [v.accounts],
   )
-  // Without an account there is no Canton party available for dApp listening or activity history.
+  // Without an account there is no Canton party available for approvals or activity history.
   const hasAccounts = accountsSorted.length > 0
   const primary = v.primary ?? accountsSorted[0]
   const hasPending =
@@ -595,9 +595,8 @@ export const HomeView = (): JSX.Element => {
           </section>
         )}
 
-        {hasAccounts && !hasPending && (
+        {hasAccounts && !hasPending && !extensionMode && (
           <PairOrConnectedCard
-            extensionMode={extensionMode}
             sessions={sessions}
             pairingDraft={pairingDraft}
             pairingBusy={pairingBusy}

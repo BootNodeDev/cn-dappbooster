@@ -5,7 +5,6 @@ import { cn } from '@/utils/cn.ts'
 import type { ConnectedDappSession } from '@/wc/client.ts'
 
 interface PairOrConnectedCardProps {
-  extensionMode: boolean
   sessions: ConnectedDappSession[]
   pairingDraft: string
   pairingBusy: boolean
@@ -16,7 +15,6 @@ interface PairOrConnectedCardProps {
 }
 
 export const PairOrConnectedCard = ({
-  extensionMode,
   sessions,
   pairingDraft,
   pairingBusy,
@@ -25,19 +23,6 @@ export const PairOrConnectedCard = ({
   onPair,
   onDisconnect,
 }: PairOrConnectedCardProps): JSX.Element => {
-  if (extensionMode) {
-    return (
-      <section className={cn(CARD_CLASS, 'p-3.5 text-center')}>
-        <div className="font-display text-[1.2rem] font-semibold tracking-tight text-foreground">
-          Listening on this browser
-        </div>
-        <p className="text-soft text-[0.95rem] font-medium mt-1 mb-0">
-          Open a Canton dApp in any tab, Carpincho will respond.
-        </p>
-      </section>
-    )
-  }
-
   const connectedSession = sessions[0]
 
   return (

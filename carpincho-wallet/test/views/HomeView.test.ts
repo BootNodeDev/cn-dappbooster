@@ -17,8 +17,9 @@ describe('HomeView empty account layout', () => {
     // The empty account state is centered inside the wallet body instead of sitting at the top.
     assert.match(homeView, /!hasAccounts && 'min-h-\[calc\(100vh-10rem\)\] justify-center'/)
 
-    // Listening / connection UI is hidden until an account exists to answer dApp requests.
-    assert.match(homeView, /\{hasAccounts && !hasPending && \(/)
+    // Pairing UI is only useful in the web WalletConnect flow, not in the extension popup.
+    assert.match(homeView, /\{hasAccounts && !hasPending && !extensionMode && \(/)
+    assert.doesNotMatch(homeView, /Listening on this browser/)
 
     // Activity is hidden until an account exists whose transaction history can be listed.
     assert.match(homeView, /\{hasAccounts && <ActivityList transactions=\{v\.transactions\} \/>\}/)
