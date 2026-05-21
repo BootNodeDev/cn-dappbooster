@@ -37,6 +37,7 @@ export const AccountCard = ({
           </p>
           <PrimaryButton
             className="w-full"
+            data-testid="home-create-account"
             onClick={onAddAccount}
           >
             Create account
@@ -55,6 +56,7 @@ export const AccountCard = ({
           </div>
           <button
             type="button"
+            data-testid="home-copy-party-id"
             onClick={() => onCopyPartyId(primary.partyId)}
             aria-label="Copy party ID"
             className={cn(ICON_BUTTON_CLASS, 'size-8 rounded-sm text-muted-foreground')}
@@ -68,6 +70,8 @@ export const AccountCard = ({
                   ICON_BUTTON_CLASS,
                   'size-8 rounded-sm text-muted-foreground transition-colors',
                 )}
+                data-testid="home-active-account"
+                data-party-id={primary.partyId}
                 type="button"
                 aria-label="Open account menu"
               >
@@ -89,6 +93,8 @@ export const AccountCard = ({
                 {accountsSorted.map((a) => (
                   <DropdownMenu.Item
                     key={a.id}
+                    data-testid="account-item"
+                    data-party-id={a.partyId}
                     onSelect={() => onSelectAccount(a.id)}
                     className={cn(
                       'group/item relative w-full flex items-center gap-2.5 rounded-sm p-2 text-foreground text-left outline-none cursor-pointer transition-colors',
@@ -117,6 +123,7 @@ export const AccountCard = ({
                   </DropdownMenu.Item>
                 ))}
                 <DropdownMenu.Item
+                  data-testid="menu-add-account"
                   onSelect={onAddAccount}
                   className="w-full flex justify-center items-center gap-2 border border-dashed border-border rounded-sm p-2 text-primary font-semibold mt-2 outline-none cursor-pointer transition-colors data-[highlighted]:bg-primary-soft data-[highlighted]:border-primary/40"
                 >

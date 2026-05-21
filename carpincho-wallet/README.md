@@ -87,14 +87,42 @@ WalletConnect is only the transport between the dApp and Carpincho. The provider
 
 For compatibility with the old quickstart wallet, Carpincho also accepts legacy `canton_*` aliases and normalizes them internally.
 
+### Event broadcasts
+
+The dapp-api defines event methods (`accountsChanged`, `txChanged`, `connected`,
+`statusChanged`) but the canonical extension transport
+(`@canton-network/core-rpc-transport`'s `WindowTransport`) carries
+request/response only. Carpincho adds a `SPLICE_WALLET_EVENT` postMessage type
+that delivers wallet→page broadcasts through the same content-script channel.
+The wire:
+
+```text
+popup (vault mutation)
+  -> chrome.runtime.sendMessage     CARPINCHO_BROADCAST_EVENT
+background.ts
+  -> chrome.tabs.sendMessage         CARPINCHO_EVENT_RELAY
+contentScript.ts
+  -> window.postMessage              SPLICE_WALLET_EVENT
+dApp page
+  -> provider.emit(eventName, payload)
+```
+
+The canonical `@canton-network/dapp-sdk`'s `client.onAccountsChanged(handler)` /
+`client.onTxChanged(handler)` / `client.onConnected(handler)` /
+`client.onStatusChanged(handler)` APIs fire on top of this. See
+[`src/extension/eventBroadcast.ts`](src/extension/eventBroadcast.ts) and
+[`src/extension/messages.ts`](src/extension/messages.ts) for the wire shapes.
+
 ## Current Scaffold State
 
-- Local accounts are stored in the encrypted browser vault.
-- `signMessage` is approved by the user in Carpincho and signed locally.
+- Local accounts are stored in the encrypted browser vault (PBKDF2 600k iterations + AES-256-GCM via SubtleCrypto).
+- `signMessage` is approved by the user in Carpincho and signed locally with Ed25519. Returns `{signature: base64}` per spec.
 - `status` checks `wallet-service /rpc` and reports whether the Canton JSON API is reachable.
-- `prepareExecute` and `prepareExecuteAndWait` show an approval screen, ask `wallet-service /rpc` to prepare the transaction, sign the prepared hash locally, then ask the service to execute it.
-- `ledgerApi` is forwarded to `wallet-service /rpc` for participant reads.
-- Account creation generates a local ed25519 keypair, asks `wallet-service /rpc` to create the Canton external party, signs the topology hash locally, and stores the returned party id in the encrypted vault.
+- `prepareExecute` and `prepareExecuteAndWait` show an approval screen, ask `wallet-service /rpc` to prepare the transaction, sign the prepared hash locally, then ask the service to execute it. Emits `txChanged` events at each transition: `pending → signed → executed` (or `failed`).
+- `ledgerApi` is forwarded to `wallet-service /rpc` for participant reads. The body is passed through opaquely; the dApp sends participant-native shapes.
+- Account creation generates a local Ed25519 keypair, calls `wallet-service /admin/party/prepare` to build the topology transaction, signs the topology hash locally, calls `wallet-service /admin/party/complete` to submit, and stores the returned party id in the encrypted vault. Emits `accountsChanged` when the active set changes (add / remove / setPrimary).
+- Vault lifecycle (setup, unlock, lock, destroy) emits `connected` (on transition into the unlocked state) and `statusChanged` (on every transition) so dApps can react to user-driven lock/unlock without polling.
+- Auto-lock with idle timeout, session-password caching in `chrome.storage.session` (extension) or `sessionStorage` (web).
 
 ## Attribution
 

@@ -57,12 +57,14 @@ export const SetupView = (): JSX.Element => {
           <NewPasswordFields
             confirm={confirm}
             confirmLabel="Confirm password"
+            confirmTestId="setup-confirm"
             labelMode="visible"
             onConfirmChange={setConfirm}
             onPasswordChange={setPassword}
             onValidityChange={setPasswordValid}
             password={password}
             passwordLabel="Password"
+            passwordTestId="setup-password"
           />
           <label
             className="flex items-start gap-2.5 rounded-sm border border-border bg-muted p-2 text-[0.85rem] leading-snug text-soft cursor-pointer"
@@ -72,6 +74,7 @@ export const SetupView = (): JSX.Element => {
               id="ack"
               type="checkbox"
               checked={acknowledged}
+              data-testid="setup-accept-warning"
               onChange={(e) => setAcknowledged(e.target.checked)}
               className="mt-0.5 shrink-0 accent-primary"
             />
@@ -81,6 +84,7 @@ export const SetupView = (): JSX.Element => {
           </label>
           <PrimaryButton
             className="w-full mt-10"
+            data-testid="setup-create-vault"
             disabled={isWorking || !canSubmit}
             type="submit"
           >

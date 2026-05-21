@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { DappClient } from '@canton-network/dapp-sdk'
 import { Toaster, toast } from 'sonner'
 import {
@@ -37,21 +37,51 @@ export const App = (): JSX.Element => {
   const [partyDrafts, setPartyDrafts] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState(false)
   const [connectMode, setConnectMode] = useState<ConnectWalletMode | undefined>(undefined)
+  const [signInput, setSignInput] = useState<string>('hello canton')
+  const [signature, setSignature] = useState<string | undefined>(undefined)
+  const [lastTxStatus, setLastTxStatus] = useState<string | undefined>(undefined)
+  const [lastTxCommandId, setLastTxCommandId] = useState<string | undefined>(undefined)
 
   const loadCounters = async (state = connected): Promise<void> => {
     if (state === undefined) {
       return
     }
+    // Participant-native ACS body: requires the cumulative filter shape
+    // plus activeAtOffset. wallet-service is a transparent pass-through
+    // since the SDK-side shim was dropped, so the dApp must send the
+    // shape the Canton JSON API expects directly.
+    const ledgerEnd = await state.client.ledgerApi({
+      requestMethod: 'get',
+      resource: '/v2/state/ledger-end'
+    }) as { offset?: number }
+    if (typeof ledgerEnd.offset !== 'number') {
+      throw new Error('ledger-end did not return an offset')
+    }
     const response = await state.client.ledgerApi({
       requestMethod: 'post',
       resource: '/v2/state/active-contracts',
       body: {
-        parties: [state.account.partyId],
-        templateIds: [COUNTER_TEMPLATE_ID],
-        filterByParty: true
+        filter: {
+          filtersByParty: {
+            [state.account.partyId]: {
+              cumulative: [{
+                identifierFilter: {
+                  TemplateFilter: {
+                    value: {
+                      templateId: COUNTER_TEMPLATE_ID,
+                      includeCreatedEventBlob: true
+                    }
+                  }
+                }
+              }]
+            }
+          }
+        },
+        activeAtOffset: ledgerEnd.offset,
+        verbose: true
       }
-    }) as { contracts?: unknown[] }
-    setCounters((response.contracts ?? []).flatMap(row => {
+    }) as unknown[]
+    setCounters((Array.isArray(response) ? response : []).flatMap(row => {
       const counter = normalizeCounterContract(row)
       return counter === undefined ? [] : [counter]
     }))
@@ -110,26 +140,105 @@ export const App = (): JSX.Element => {
     if (connected === undefined) {
       return
     }
-    setBusy(true)
+    // Tear down the connected UI synchronously so a hung wallet response
+    // cannot trap the user in busy state. Any in-flight request that
+    // eventually resolves writes to state that is no longer mounted.
+    const client = connected.client
+    setConnected(undefined)
+    setCounters([])
+    setPartyDrafts({})
+    setPairingUri(undefined)
+    setPairingCopied(false)
+    setBusy(false)
 
-    let disconnectError: string | undefined
     try {
-      await connected.client.disconnect()
-    } catch (err) {
-      disconnectError = (err as Error).message
-    } finally {
-      setConnected(undefined)
-      setCounters([])
-      setPartyDrafts({})
-      setPairingUri(undefined)
-      setPairingCopied(false)
-      setBusy(false)
-    }
-
-    if (disconnectError === undefined) {
+      await client.disconnect()
       toast.success('Disconnected.')
-    } else {
-      toast.error(`Local logout complete; wallet disconnect failed: ${disconnectError}`)
+    } catch (err) {
+      toast.error(`Local logout complete; wallet disconnect failed: ${(err as Error).message}`)
+    }
+  }
+
+  // Subscribe to wallet-pushed accountsChanged events. When the user switches
+  // the primary account in Carpincho, the connected party may shift — re-read
+  // accounts and reload counters for the new primary.
+  useEffect(() => {
+    if (connected === undefined) {
+      return
+    }
+    const handler = async (payload: unknown): Promise<void> => {
+      try {
+        const accounts = Array.isArray(payload) ? payload : await connected.client.listAccounts()
+        const primary = (accounts as Array<{ primary?: boolean; partyId: string }>).find(a => a.primary === true)
+        if (primary === undefined) {
+          return
+        }
+        if (primary.partyId !== connected.account.partyId) {
+          setConnected({
+            client: connected.client,
+            account: { ...connected.account, partyId: primary.partyId }
+          })
+          toast.success(`Active party changed to ${short(primary.partyId)}`)
+        }
+        await loadCounters({
+          client: connected.client,
+          account: { ...connected.account, partyId: primary.partyId }
+        })
+      } catch (err) {
+        toast.error((err as Error).message)
+      }
+    }
+    connected.client.onAccountsChanged(handler)
+    return () => {
+      connected.client.removeOnAccountsChanged(handler)
+    }
+  }, [connected])
+
+  // Subscribe to wallet-pushed txChanged events. Surfaces the lifecycle
+  // (pending → signed → executed / failed) as a small indicator alongside the
+  // counter card so the user sees that a transaction is in flight.
+  useEffect(() => {
+    if (connected === undefined) {
+      return
+    }
+    const handler = (payload: unknown): void => {
+      if (typeof payload !== 'object' || payload === null) {
+        return
+      }
+      const evt = payload as { status?: unknown; commandId?: unknown }
+      if (typeof evt.status === 'string') {
+        setLastTxStatus(evt.status)
+      }
+      if (typeof evt.commandId === 'string') {
+        setLastTxCommandId(evt.commandId)
+      }
+    }
+    connected.client.onTxChanged(handler)
+    return () => {
+      connected.client.removeOnTxChanged(handler)
+    }
+  }, [connected])
+
+  const onSignMessage = async (): Promise<void> => {
+    if (connected === undefined) {
+      return
+    }
+    setBusy(true)
+    setSignature(undefined)
+    try {
+      const messageBase64 = window.btoa(unescape(encodeURIComponent(signInput)))
+      // DappClient doesn't expose signMessage as a typed method; reach through
+      // the underlying Provider per the dapp-api spec.
+      const result = await connected.client.getProvider().request({
+        method: 'signMessage',
+        params: { message: messageBase64 }
+      }) as { signature: string }
+      setSignature(result.signature)
+      toast.success('Message signed.')
+    } catch (err) {
+      toast.error((err as Error).message)
+    } finally {
+      setBusy(false)
     }
   }
 
@@ -156,6 +265,7 @@ export const App = (): JSX.Element => {
         <div className="session-controls" aria-label="Connect wallet">
           <button
             className="connect-chip carpincho-connect"
+            data-testid="connect-extension"
             type="button"
             onClick={() => { void onConnect('extension') }}
             disabled={busy}
@@ -165,6 +275,7 @@ export const App = (): JSX.Element => {
           </button>
           <button
             className="connect-chip"
+            data-testid="connect-walletconnect"
             type="button"
             onClick={() => { void onConnect('walletconnect') }}
             disabled={busy}
@@ -175,12 +286,16 @@ export const App = (): JSX.Element => {
         </div>
       ) : (
         <div className="session-controls">
-          <span className="connected-party">party:{short(connected.account.partyId)}</span>
+          <span
+            className="connected-party"
+            data-testid="connected-party"
+            data-party-id={connected.account.partyId}
+          >party:{short(connected.account.partyId)}</span>
           <button
             className="logout-icon"
+            data-testid="logout"
             type="button"
             onClick={() => { void onDisconnect() }}
-            disabled={busy}
             aria-label="Disconnect wallet"
             title="Disconnect wallet"
           >
@@ -234,6 +349,7 @@ export const App = (): JSX.Element => {
           <div className="actions">
             <button
               className="primary"
+              data-testid="new-counter"
               onClick={() => {
                 if (connected !== undefined) {
                   void runCommand('create-counter', createCounterCommand(connected.account.partyId))
@@ -260,7 +376,16 @@ export const App = (): JSX.Element => {
               const isIssuer = counter.issuer === connected.account.partyId
               const draft = draftFor(counter.contractId)
               return (
-                <article className="counter-card" key={counter.contractId}>
+                <article
+                  className="counter-card"
+                  key={counter.contractId}
+                  data-testid="counter-card"
+                  data-count={counter.count}
+                  data-contract-id={counter.contractId}
+                  data-issuer={counter.issuer}
+                  data-incrementors={counter.incrementors.length}
+                  data-viewers={counter.viewers.length}
+                >
                   <div className="counter-head">
                     <div>
                       <span>Count</span>
@@ -268,6 +393,7 @@ export const App = (): JSX.Element => {
                     </div>
                     <button
                       className="primary"
+                      data-testid="increment"
                       onClick={() => { void runCommand('increment-counter', incrementCounterCommand(counter, connected.account.partyId)) }}
                       disabled={busy || !canIncrement(counter, connected.account.partyId)}
                     >
@@ -296,18 +422,21 @@ export const App = (): JSX.Element => {
 
                   <div className="party-tools">
                     <input
+                      data-testid="party-id-input"
                       value={draft}
                       onChange={event => updateDraft(counter.contractId, event.target.value)}
                       placeholder="party id"
                       disabled={!isIssuer || busy}
                     />
                     <button
+                      data-testid="add-user"
                       onClick={() => { void runCommand('add-user', addUserCommand(counter, draft.trim())) }}
                       disabled={!isIssuer || busy || draft.trim() === ''}
                     >
                       Add user
                     </button>
                     <button
+                      data-testid="add-viewer"
                       onClick={() => { void runCommand('add-viewer', addViewerCommand(counter, draft.trim())) }}
                       disabled={!isIssuer || busy || draft.trim() === ''}
                     >
@@ -322,6 +451,66 @@ export const App = (): JSX.Element => {
           </>
         )}
       </section>
+
+      {lastTxStatus !== undefined && (
+        <section
+          className="workspace-panel"
+          data-testid="tx-status"
+          data-tx-status={lastTxStatus}
+          data-tx-command-id={lastTxCommandId ?? ''}
+        >
+          <div className="panel-title-row">
+            <div>
+              <span className="section-kicker">Last transaction</span>
+              <h2>Status: {lastTxStatus}</h2>
+            </div>
+          </div>
+          {lastTxCommandId !== undefined && lastTxCommandId.length > 0 && (
+            <code>{short(lastTxCommandId)}</code>
+          )}
+        </section>
+      )}
+
+      {connected !== undefined && (
+        <section className="workspace-panel" data-testid="signing-panel">
+          <div className="panel-title-row">
+            <div>
+              <span className="section-kicker">Wallet capability</span>
+              <h2>Sign message</h2>
+            </div>
+          </div>
+          <div className="counter-card">
+            <p>
+              Exercises CIP-0103 <code>signMessage</code> against the connected wallet.
+              The wallet asks for approval, signs with the active party's key, and returns
+              the Ed25519 signature in base64. Useful for "prove you own this party"
+              challenges from a backend.
+            </p>
+            <input
+              type="text"
+              data-testid="sign-input"
+              value={signInput}
+              onChange={event => setSignInput(event.target.value)}
+              placeholder="Message to sign"
+              disabled={busy}
+            />
+            <button
+              data-testid="sign-message"
+              type="button"
+              onClick={() => { void onSignMessage() }}
+              disabled={busy}
+            >
+              Sign with active party
+            </button>
+            {signature !== undefined && (
+              <div data-testid="signature-output" data-signature={signature}>
+                <span className="kicker">Signature (base64)</span>
+                <code>{short(signature)}</code>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
     </main>
   )
 }

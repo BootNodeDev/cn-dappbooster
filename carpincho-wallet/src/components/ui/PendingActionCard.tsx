@@ -25,7 +25,10 @@ export const PendingActionCard = ({
   payload,
   children,
 }: PendingActionCardProps): JSX.Element => (
-  <div className="flex h-full min-h-0 flex-col gap-3 overflow-hidden">
+  <div
+    className="flex h-full min-h-0 flex-col gap-3 overflow-hidden"
+    data-pending-kind={method}
+  >
     <div className="min-w-0 shrink-0">
       <div className="font-mono text-[0.72rem] font-semibold tracking-[0.14em] uppercase text-success">
         awaiting approval
@@ -47,12 +50,14 @@ export const PendingActionCard = ({
     )}
     <div className="grid shrink-0 grid-cols-2 gap-3">
       <PrimaryButton
+        data-testid="pending-approve"
         onClick={onApprove}
         disabled={busy || approveDisabled}
       >
         {approveLabel}
       </PrimaryButton>
       <SecondaryButton
+        data-testid="pending-reject"
         onClick={onReject}
         disabled={busy}
       >

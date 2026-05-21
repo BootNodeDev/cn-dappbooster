@@ -180,18 +180,44 @@ http://localhost:3012
 In the frontend:
 
 1. Keep `canton:local` and `http://localhost:3011` in settings.
-2. Click `Connect Carpincho`.
-3. Open/approve the WalletConnect request in Carpincho.
+2. Click `Connect with Carpincho` (the injected provider; preferred) or `Connect with WC` (WalletConnect; opt-in fallback).
+3. Approve the request in Carpincho.
 4. Create a counter or refresh visible counters.
 
 ## Normal Flow
 
 ```text
-frontend
-  -> WalletConnect
+frontend (counter dApp)
+  -> window.canton injection (preferred) | WalletConnect (opt-in)
   -> carpincho-wallet
-  -> counter/wallet-service
+  -> counter/wallet-service /rpc (dapp-api projection over JSON-RPC)
   -> canton-base participant
 ```
 
+The dApp talks to Carpincho through the canonical CIP-0103 surface defined in
+[`counter/wallet-service/api-specs/openrpc-dapp-api.json`](counter/wallet-service/api-specs/openrpc-dapp-api.json).
+Carpincho's injected provider is the preferred path; WalletConnect remains an
+opt-in fallback.
+
+Wallet → page events (`accountsChanged`, `txChanged`, `connected`,
+`statusChanged`) ride a small extension to the canonical SPLICE_WALLET
+postMessage envelope — see
+[`carpincho-wallet/README.md`](carpincho-wallet/README.md) for the wire diagram.
+
 `npm run dev:full` (see [Quick Start](#quick-start)) drives this loop end-to-end. `npm run dev:wallet-mock` replaces `counter/wallet-service → canton-base` with a canned in-process responder so the wallet stays exercisable without Docker or a participant.
+
+## End-to-end tests
+
+A standalone Playwright suite lives under [`e2e/`](e2e/). It walks the full
+dApp ↔ wallet ↔ wallet-service stack against the running dev servers:
+
+```bash
+npm run dev:full                       # in one terminal
+npm --prefix carpincho-wallet run build:extension   # one-shot if dist-extension is stale
+npm run e2e                            # in another terminal
+```
+
+12 tests cover smoke, spec conformance for `/rpc`, the `signMessage`
+round-trip, the `accountsChanged` propagation, and the `txChanged` lifecycle.
+See [`e2e/README.md`](e2e/README.md) for what's exercised and the
+black-box convention.

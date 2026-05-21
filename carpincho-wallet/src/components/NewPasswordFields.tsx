@@ -16,6 +16,8 @@ type Props = {
   passwordLabel?: string
   confirmLabel?: string
   labelMode?: 'visible' | 'aria'
+  passwordTestId?: string
+  confirmTestId?: string
 }
 
 export const NewPasswordFields = ({
@@ -27,6 +29,8 @@ export const NewPasswordFields = ({
   passwordLabel = 'New password',
   confirmLabel = 'Confirm new password',
   labelMode = 'aria',
+  passwordTestId,
+  confirmTestId,
 }: Props): JSX.Element => {
   usePasswordStrengthReady()
   const passwordId = useId()
@@ -55,6 +59,7 @@ export const NewPasswordFields = ({
             onChange={(e) => onPasswordChange(e.target.value)}
             placeholder={visible ? undefined : passwordLabel}
             value={password}
+            {...(passwordTestId === undefined ? {} : { 'data-testid': passwordTestId })}
           />
         </div>
         <PasswordStrengthIndicator
@@ -72,6 +77,7 @@ export const NewPasswordFields = ({
           onChange={(e) => onConfirmChange(e.target.value)}
           placeholder={visible ? undefined : confirmLabel}
           value={confirm}
+          {...(confirmTestId === undefined ? {} : { 'data-testid': confirmTestId })}
         />
       </div>
     </>
