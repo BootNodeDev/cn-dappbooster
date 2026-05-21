@@ -120,7 +120,7 @@ export const VaultContext = createContext<VaultContextValue | undefined>(undefin
 export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
   assertSecureContext()
 
-  const [_tick, setTick] = useState(0)
+  const [tick, setTick] = useState(0)
   const [isLocked, setIsLocked] = useState(unlockedPlaintext === null)
   const [vaultExists, setVaultExists] = useState(hasVaultOnDisk())
   const [isLoading, setIsLoading] = useState(() => unlockedPlaintext === null && hasVaultOnDisk())
@@ -422,6 +422,10 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
     }
   }, [autoLockOption])
 
+  // `tick` is the version counter bumped by every mutation to
+  // `unlockedPlaintext`; including it here forces the memo to recompute
+  // `accounts`/`primary`/`transactions` from the latest in-place state.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: see comment above
   const value = useMemo<VaultContextValue>(() => {
     const primaryId = unlockedPlaintext?.primaryAccountId ?? null
     const accounts =
@@ -454,8 +458,8 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
       autoLockOption,
       setAutoLockOption,
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
+    tick,
     isLocked,
     isLoading,
     vaultExists,
