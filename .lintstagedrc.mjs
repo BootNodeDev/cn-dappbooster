@@ -17,4 +17,15 @@ export default {
     const rels = stripPrefix(files, 'counter/frontend')
     return [`cd counter/frontend && eslint --fix ${rels.join(' ')}`]
   },
+  'canton-connect-kit/src/**/*.{ts,tsx,js,jsx}': files => {
+    const rels = stripPrefix(files, 'canton-connect-kit')
+    return [
+      `cd canton-connect-kit && biome check --write --no-errors-on-unmatched ${rels.join(' ')}`,
+      'npm --prefix canton-connect-kit test',
+    ]
+  },
+  'canton-connect-kit/src/**/*.{json,jsonc,mjs,cjs}': files => {
+    const rels = stripPrefix(files, 'canton-connect-kit')
+    return [`cd canton-connect-kit && biome check --write --no-errors-on-unmatched ${rels.join(' ')}`]
+  },
 }

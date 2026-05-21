@@ -59,11 +59,32 @@ const mapEntries = (value: unknown): unknown[] => {
   return []
 }
 
+// Unwrap the participant-native /v2/state/active-contracts envelope:
+//   { workflowId, contractEntry: { JsActiveContract: { createdEvent: {...} } } }
+// Returns undefined for non-active variants (JsIncompleteAssigned,
+// JsIncompleteUnassigned) — those are transient reassignment states we don't
+// surface in the counter list.
+const unwrapActiveContract = (row: JsonRecord): RawContract | undefined => {
+  const entry = asRecord(row.contractEntry)
+  if (entry === undefined) {
+    return undefined
+  }
+  const active = asRecord(entry.JsActiveContract)
+  if (active === undefined) {
+    return undefined
+  }
+  const event = asRecord(active.createdEvent)
+  return event as RawContract | undefined
+}
+
 export const normalizeCounterContract = (raw: unknown): CounterContract | undefined => {
   if (typeof raw !== 'object' || raw === null) {
     return undefined
   }
-  const row = raw as RawContract
+  const row = unwrapActiveContract(raw as JsonRecord)
+  if (row === undefined) {
+    return undefined
+  }
   const args = recordArgument(row.createArgument)
   if (typeof row.contractId !== 'string' || args === undefined) {
     return undefined

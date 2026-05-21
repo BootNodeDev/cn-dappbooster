@@ -3,6 +3,7 @@
 This file defines monorepo-wide rules for agents working in this repository. Each subproject can layer its own `CLAUDE.md` for stack-specific details:
 
 - [`carpincho-wallet/CLAUDE.md`](carpincho-wallet/CLAUDE.md) — CIP-0103 wallet (Vite + React + Biome)
+- [`canton-connect-kit/README.md`](canton-connect-kit/README.md) — wagmi-style React hooks for Canton dApps
 - `canton-base/`, `counter/daml/`, `counter/wallet-service/`, `counter/frontend/` — see each subproject's `README.md`
 
 For the system shape (data flow, components, ports), see [`architecture.md`](architecture.md).
@@ -30,6 +31,7 @@ For the system shape (data flow, components, ports), see [`architecture.md`](arc
 | [`counter/wallet-service/`](counter/wallet-service/) | JSON-RPC bridge between the wallet and the Canton participant | Node + Express + TypeScript | 3010 |
 | [`carpincho-wallet/`](carpincho-wallet/) | CIP-0103 wallet — vault, signing, WalletConnect, Chrome extension | Vite 6 + React 18 + Tailwind v4 + Biome | 3011 |
 | [`counter/frontend/`](counter/frontend/) | Counter dApp UI | Vite + React + ESLint | 3012 |
+| [`canton-connect-kit/`](canton-connect-kit/) | wagmi-style React hooks for connecting Canton dApps to CIP-0103 wallets | TypeScript + React 18 + Biome | n/a (library) |
 
 ## Code Style
 

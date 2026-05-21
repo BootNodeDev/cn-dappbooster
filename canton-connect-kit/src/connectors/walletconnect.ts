@@ -1,10 +1,25 @@
-import SignClient from '@walletconnect/sign-client'
-import type { RequestArgs } from '@canton-network/core-types'
+// WalletConnect connector — opt-in fallback that pairs the dApp with a
+// Canton-aware mobile or remote wallet via the WalletConnect Sign Client.
+// Self-contained Provider<DappRpcTypes> implementation that:
+//
+//   * establishes a WC session bound to the configured chain id
+//   * routes the canonical CIP-0103 methods through canton_* WC methods
+//   * forwards session_event messages onto the canonical Provider emit
+//
+// @walletconnect/sign-client is dynamically imported so dApps that only
+// need the extension connector do not pay the bundle cost.
+
 import type { EventListener, Provider } from '@canton-network/core-splice-provider'
+import type { RequestArgs } from '@canton-network/core-types'
 import type {
   RpcTypes as DappRpcTypes,
-  StatusEvent
+  StatusEvent,
 } from '@canton-network/core-wallet-dapp-rpc-client'
+import type {
+  ConnectorProvider,
+  WalletConnectConnector,
+  WalletConnectConnectorOptions,
+} from '../types.ts'
 
 const CANTON_NAMESPACE = 'canton'
 const CANTON_WC_METHODS = [
@@ -14,81 +29,52 @@ const CANTON_WC_METHODS = [
   'canton_getActiveNetwork',
   'canton_status',
   'canton_ledgerApi',
-  'canton_signMessage'
+  'canton_signMessage',
 ]
 const CANTON_WC_EVENTS = ['accountsChanged', 'statusChanged']
 
 const PROVIDER_INFO = {
   id: 'walletconnect',
-  providerType: 'mobile' as const
+  providerType: 'mobile' as const,
 }
 
-export interface WalletConnectSession {
+interface WalletConnectSession {
   topic: string
 }
 
-export interface WalletConnectSignClient {
+interface WalletConnectSignClient {
   connect: (args: {
-    requiredNamespaces: Record<string, {
-      chains: string[]
-      methods: string[]
-      events: string[]
-    }>
-  }) => Promise<{
-    uri?: string
-    approval: () => Promise<WalletConnectSession>
-  }>
+    requiredNamespaces: Record<string, { chains: string[]; methods: string[]; events: string[] }>
+  }) => Promise<{ uri?: string; approval: () => Promise<WalletConnectSession> }>
   request: (args: {
     topic: string
     chainId: string
-    request: {
-      method: string
-      params: unknown
-    }
+    request: { method: string; params: unknown }
   }) => Promise<unknown>
-  disconnect: (args: {
-    topic: string
-    reason: { code: number; message: string }
-  }) => Promise<void>
-  on: (event: string, listener: (event: {
-    params: {
-      event: {
-        name: string
-        data: unknown
-      }
-    }
-  }) => void) => unknown
-  session: {
-    getAll: () => WalletConnectSession[]
-  }
+  disconnect: (args: { topic: string; reason: { code: number; message: string } }) => Promise<void>
+  on: (
+    event: string,
+    listener: (event: { params: { event: { name: string; data: unknown } } }) => void,
+  ) => unknown
+  session: { getAll: () => WalletConnectSession[] }
 }
 
-export interface WalletConnectProviderConfig {
-  projectId: string
-  chainId: string
-  metadata: {
-    name: string
-    description: string
-    url: string
-    icons: string[]
-  }
-  onUri: (uri: string) => void
+interface InternalOptions extends WalletConnectConnectorOptions {
   signClientFactory?: () => Promise<WalletConnectSignClient>
 }
 
-class CopyUriWalletConnectProvider implements Provider<DappRpcTypes> {
+class WalletConnectKitProvider implements Provider<DappRpcTypes> {
   private readonly listeners: Record<string, Array<EventListener<unknown>>> = {}
   private signClient: WalletConnectSignClient | undefined
   private signClientPromise: Promise<WalletConnectSignClient> | undefined
   private session: WalletConnectSession | undefined
   private sessionEventsAttached = false
-  private readonly config: WalletConnectProviderConfig
 
-  constructor(config: WalletConnectProviderConfig) {
-    this.config = config
-  }
+  constructor(private readonly config: InternalOptions) {}
 
-  async request<M extends keyof DappRpcTypes>(args: RequestArgs<DappRpcTypes, M>): Promise<DappRpcTypes[M]['result']> {
+  async request<M extends keyof DappRpcTypes>(
+    args: RequestArgs<DappRpcTypes, M>,
+  ): Promise<DappRpcTypes[M]['result']> {
     if (args.method === 'connect') {
       if (this.session === undefined) {
         await this.establishSession()
@@ -107,10 +93,7 @@ class CopyUriWalletConnectProvider implements Provider<DappRpcTypes> {
     if (args.method === 'status' && this.session === undefined) {
       return {
         provider: PROVIDER_INFO,
-        connection: {
-          isConnected: false,
-          isNetworkConnected: false
-        }
+        connection: { isConnected: false, isNetworkConnected: false },
       } as DappRpcTypes[M]['result']
     }
 
@@ -124,7 +107,10 @@ class CopyUriWalletConnectProvider implements Provider<DappRpcTypes> {
       return { tx: result } as DappRpcTypes[M]['result']
     }
 
-    return await this.walletConnectRequest(args.method, paramsOf(args)) as DappRpcTypes[M]['result']
+    return (await this.walletConnectRequest(
+      args.method,
+      paramsOf(args),
+    )) as DappRpcTypes[M]['result']
   }
 
   on<E>(event: string, listener: EventListener<E>): Provider<DappRpcTypes> {
@@ -138,7 +124,9 @@ class CopyUriWalletConnectProvider implements Provider<DappRpcTypes> {
     if (listeners === undefined) {
       return false
     }
-    listeners.forEach(listener => listener(...args))
+    for (const listener of listeners) {
+      listener(...args)
+    }
     return true
   }
 
@@ -147,7 +135,7 @@ class CopyUriWalletConnectProvider implements Provider<DappRpcTypes> {
     if (listeners === undefined) {
       return this
     }
-    this.listeners[event] = listeners.filter(listener => listener !== listenerToRemove)
+    this.listeners[event] = listeners.filter((listener) => listener !== listenerToRemove)
     return this
   }
 
@@ -164,10 +152,11 @@ class CopyUriWalletConnectProvider implements Provider<DappRpcTypes> {
     if (this.config.signClientFactory !== undefined) {
       return await this.config.signClientFactory()
     }
-    return await SignClient.init({
+    const { default: SignClient } = await import('@walletconnect/sign-client')
+    return (await SignClient.init({
       projectId: this.config.projectId,
-      metadata: this.config.metadata
-    }) as WalletConnectSignClient
+      metadata: this.config.metadata,
+    })) as WalletConnectSignClient
   }
 
   private async establishSession(): Promise<void> {
@@ -175,11 +164,11 @@ class CopyUriWalletConnectProvider implements Provider<DappRpcTypes> {
     const { uri, approval } = await client.connect({
       requiredNamespaces: {
         [CANTON_NAMESPACE]: {
-          chains: [this.config.chainId],
+          chains: [this.config.network],
           methods: CANTON_WC_METHODS,
-          events: CANTON_WC_EVENTS
-        }
-      }
+          events: CANTON_WC_EVENTS,
+        },
+      },
     })
     if (uri !== undefined) {
       this.config.onUri(uri)
@@ -193,7 +182,7 @@ class CopyUriWalletConnectProvider implements Provider<DappRpcTypes> {
       return
     }
     this.sessionEventsAttached = true
-    client.on('session_event', event => {
+    client.on('session_event', (event) => {
       const { name, data } = event.params.event
       this.emit(name, data)
     })
@@ -207,20 +196,18 @@ class CopyUriWalletConnectProvider implements Provider<DappRpcTypes> {
     try {
       return await client.request({
         topic: this.session.topic,
-        chainId: this.config.chainId,
-        request: {
-          method: `canton_${method}`,
-          params: params ?? {}
-        }
+        chainId: this.config.network,
+        request: { method: `canton_${method}`, params: params ?? {} },
       })
     } catch (error) {
       const errorRecord = typeof error === 'object' && error !== null ? error : {}
       const code = 'code' in errorRecord ? errorRecord.code : -32603
-      const message = error instanceof Error
-        ? error.message
-        : 'message' in errorRecord && typeof errorRecord.message === 'string'
-          ? errorRecord.message
-          : String(error)
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'message' in errorRecord && typeof errorRecord.message === 'string'
+            ? errorRecord.message
+            : String(error)
       throw new Error(`RPC error: ${String(code)} - ${message}`, { cause: error })
     }
   }
@@ -233,10 +220,10 @@ class CopyUriWalletConnectProvider implements Provider<DappRpcTypes> {
     try {
       await this.signClient.disconnect({
         topic: this.session.topic,
-        reason: { code: 6000, message: 'User disconnected' }
+        reason: { code: 6000, message: 'User disconnected' },
       })
     } catch {
-      // WalletConnect sessions can already be gone locally or remotely.
+      // WC sessions can already be gone locally or remotely.
     } finally {
       this.session = undefined
     }
@@ -245,21 +232,14 @@ class CopyUriWalletConnectProvider implements Provider<DappRpcTypes> {
   private connectedStatus(): StatusEvent {
     return {
       provider: PROVIDER_INFO,
-      connection: {
-        isConnected: true,
-        isNetworkConnected: true
-      }
+      connection: { isConnected: true, isNetworkConnected: true },
     }
   }
 
   private emitDisconnected(reason: string): void {
     this.emit('statusChanged', {
       provider: PROVIDER_INFO,
-      connection: {
-        isConnected: false,
-        isNetworkConnected: false,
-        reason
-      }
+      connection: { isConnected: false, isNetworkConnected: false, reason },
     })
   }
 }
@@ -267,5 +247,19 @@ class CopyUriWalletConnectProvider implements Provider<DappRpcTypes> {
 const paramsOf = <M extends keyof DappRpcTypes>(args: RequestArgs<DappRpcTypes, M>): unknown =>
   'params' in args ? args.params : undefined
 
-export const createWalletConnectProvider = (config: WalletConnectProviderConfig): Provider<DappRpcTypes> =>
-  new CopyUriWalletConnectProvider(config)
+export const createWalletConnectConnector = (
+  options: WalletConnectConnectorOptions & {
+    signClientFactory?: () => Promise<WalletConnectSignClient>
+  },
+): WalletConnectConnector => {
+  let cachedProvider: Provider<DappRpcTypes> | undefined
+  return {
+    id: 'walletconnect',
+    connect: async (): Promise<ConnectorProvider> => {
+      if (cachedProvider === undefined) {
+        cachedProvider = new WalletConnectKitProvider(options)
+      }
+      return { provider: cachedProvider, providerType: 'remote' }
+    },
+  }
+}
