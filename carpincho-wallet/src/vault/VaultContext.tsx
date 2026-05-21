@@ -133,11 +133,30 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
 
   const bump = useCallback((): void => setTick((t) => t + 1), [])
 
+  // dapp-api connect lifecycle events. `connected` fires once on every
+  // transition into the unlocked state (matching the canonical SDK's "fires
+  // when the wallet becomes connected" semantic). `statusChanged` fires on
+  // every transition, including back to locked. isNetworkConnected stays
+  // true because Carpincho always operates against the configured
+  // wallet-service; participant reachability surfaces through subsequent
+  // RPC calls, not through this lifecycle signal.
+  const broadcastConnectionState = useCallback((isConnected: boolean): void => {
+    const connection = { isConnected, isNetworkConnected: true }
+    if (isConnected) {
+      void broadcastWalletEvent('connected', connection)
+    }
+    void broadcastWalletEvent('statusChanged', {
+      provider: { id: 'carpincho-wallet', providerType: 'browser' },
+      connection,
+    })
+  }, [])
+
   const lock = useCallback((): void => {
     void wipeMemory().catch(() => undefined)
     setIsLocked(true)
     bump()
-  }, [bump])
+    broadcastConnectionState(false)
+  }, [bump, broadcastConnectionState])
 
   const persist = useCallback(async (): Promise<void> => {
     if (unlockedPlaintext === null || cachedPassword === null) {
@@ -169,8 +188,9 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
       setVaultExists(true)
       setIsLocked(false)
       bump()
+      broadcastConnectionState(true)
     },
-    [bump],
+    [bump, broadcastConnectionState],
   )
 
   const unlock = useCallback(
@@ -195,8 +215,9 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
       await persistSessionPassword(password)
       setIsLocked(false)
       bump()
+      broadcastConnectionState(true)
     },
-    [bump],
+    [bump, broadcastConnectionState],
   )
 
   const destroyVault = useCallback((): void => {
@@ -205,7 +226,8 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
     setVaultExists(false)
     setIsLocked(true)
     bump()
-  }, [bump])
+    broadcastConnectionState(false)
+  }, [bump, broadcastConnectionState])
 
   // Build the dapp-api AccountsChangedEvent payload (Wallet[]) from current
   // plaintext. Returns [] if locked — broadcast is a no-op in that case.
