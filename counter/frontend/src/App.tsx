@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { DappClient } from '@canton-network/dapp-sdk'
 import { Toaster, toast } from 'sonner'
 import {
@@ -37,6 +37,10 @@ export const App = (): JSX.Element => {
   const [partyDrafts, setPartyDrafts] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState(false)
   const [connectMode, setConnectMode] = useState<ConnectWalletMode | undefined>(undefined)
+  const [signInput, setSignInput] = useState<string>('hello canton')
+  const [signature, setSignature] = useState<string | undefined>(undefined)
+  const [lastTxStatus, setLastTxStatus] = useState<string | undefined>(undefined)
+  const [lastTxCommandId, setLastTxCommandId] = useState<string | undefined>(undefined)
 
   const loadCounters = async (state = connected): Promise<void> => {
     if (state === undefined) {
@@ -130,6 +134,89 @@ export const App = (): JSX.Element => {
       toast.success('Disconnected.')
     } else {
       toast.error(`Local logout complete; wallet disconnect failed: ${disconnectError}`)
+    }
+  }
+
+  // Subscribe to wallet-pushed accountsChanged events. When the user switches
+  // the primary account in Carpincho, the connected party may shift — re-read
+  // accounts and reload counters for the new primary.
+  useEffect(() => {
+    if (connected === undefined) {
+      return
+    }
+    const handler = async (payload: unknown): Promise<void> => {
+      try {
+        const accounts = Array.isArray(payload) ? payload : await connected.client.listAccounts()
+        const primary = (accounts as Array<{ primary?: boolean; partyId: string }>).find(a => a.primary === true)
+        if (primary === undefined) {
+          return
+        }
+        if (primary.partyId !== connected.account.partyId) {
+          setConnected({
+            client: connected.client,
+            account: { ...connected.account, partyId: primary.partyId }
+          })
+          toast.success(`Active party changed to ${short(primary.partyId)}`)
+        }
+        await loadCounters({
+          client: connected.client,
+          account: { ...connected.account, partyId: primary.partyId }
+        })
+      } catch (err) {
+        toast.error((err as Error).message)
+      }
+    }
+    connected.client.onAccountsChanged(handler)
+    return () => {
+      connected.client.removeOnAccountsChanged(handler)
+    }
+  }, [connected])
+
+  // Subscribe to wallet-pushed txChanged events. Surfaces the lifecycle
+  // (pending → signed → executed / failed) as a small indicator alongside the
+  // counter card so the user sees that a transaction is in flight.
+  useEffect(() => {
+    if (connected === undefined) {
+      return
+    }
+    const handler = (payload: unknown): void => {
+      if (typeof payload !== 'object' || payload === null) {
+        return
+      }
+      const evt = payload as { status?: unknown; commandId?: unknown }
+      if (typeof evt.status === 'string') {
+        setLastTxStatus(evt.status)
+      }
+      if (typeof evt.commandId === 'string') {
+        setLastTxCommandId(evt.commandId)
+      }
+    }
+    connected.client.onTxChanged(handler)
+    return () => {
+      connected.client.removeOnTxChanged(handler)
+    }
+  }, [connected])
+
+  const onSignMessage = async (): Promise<void> => {
+    if (connected === undefined) {
+      return
+    }
+    setBusy(true)
+    setSignature(undefined)
+    try {
+      const messageBase64 = window.btoa(unescape(encodeURIComponent(signInput)))
+      // DappClient doesn't expose signMessage as a typed method; reach through
+      // the underlying Provider per the dapp-api spec.
+      const result = await connected.client.getProvider().request({
+        method: 'signMessage',
+        params: { message: messageBase64 }
+      }) as { signature: string }
+      setSignature(result.signature)
+      toast.success('Message signed.')
+    } catch (err) {
+      toast.error((err as Error).message)
+    } finally {
+      setBusy(false)
     }
   }
 
@@ -343,6 +430,66 @@ export const App = (): JSX.Element => {
           </>
         )}
       </section>
+
+      {lastTxStatus !== undefined && (
+        <section
+          className="workspace-panel"
+          data-testid="tx-status"
+          data-tx-status={lastTxStatus}
+          data-tx-command-id={lastTxCommandId ?? ''}
+        >
+          <div className="panel-title-row">
+            <div>
+              <span className="section-kicker">Last transaction</span>
+              <h2>Status: {lastTxStatus}</h2>
+            </div>
+          </div>
+          {lastTxCommandId !== undefined && lastTxCommandId.length > 0 && (
+            <code>{short(lastTxCommandId)}</code>
+          )}
+        </section>
+      )}
+
+      {connected !== undefined && (
+        <section className="workspace-panel" data-testid="signing-panel">
+          <div className="panel-title-row">
+            <div>
+              <span className="section-kicker">Wallet capability</span>
+              <h2>Sign message</h2>
+            </div>
+          </div>
+          <div className="counter-card">
+            <p>
+              Exercises CIP-0103 <code>signMessage</code> against the connected wallet.
+              The wallet asks for approval, signs with the active party's key, and returns
+              the Ed25519 signature in base64. Useful for "prove you own this party"
+              challenges from a backend.
+            </p>
+            <input
+              type="text"
+              data-testid="sign-input"
+              value={signInput}
+              onChange={event => setSignInput(event.target.value)}
+              placeholder="Message to sign"
+              disabled={busy}
+            />
+            <button
+              data-testid="sign-message"
+              type="button"
+              onClick={() => { void onSignMessage() }}
+              disabled={busy}
+            >
+              Sign with active party
+            </button>
+            {signature !== undefined && (
+              <div data-testid="signature-output" data-signature={signature}>
+                <span className="kicker">Signature (base64)</span>
+                <code>{short(signature)}</code>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
     </main>
   )
 }
