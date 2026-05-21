@@ -46,16 +46,42 @@ export const App = (): JSX.Element => {
     if (state === undefined) {
       return
     }
+    // Participant-native ACS body: requires the cumulative filter shape
+    // plus activeAtOffset. wallet-service is a transparent pass-through
+    // since the SDK-side shim was dropped, so the dApp must send the
+    // shape the Canton JSON API expects directly.
+    const ledgerEnd = await state.client.ledgerApi({
+      requestMethod: 'get',
+      resource: '/v2/state/ledger-end'
+    }) as { offset?: number }
+    if (typeof ledgerEnd.offset !== 'number') {
+      throw new Error('ledger-end did not return an offset')
+    }
     const response = await state.client.ledgerApi({
       requestMethod: 'post',
       resource: '/v2/state/active-contracts',
       body: {
-        parties: [state.account.partyId],
-        templateIds: [COUNTER_TEMPLATE_ID],
-        filterByParty: true
+        filter: {
+          filtersByParty: {
+            [state.account.partyId]: {
+              cumulative: [{
+                identifierFilter: {
+                  TemplateFilter: {
+                    value: {
+                      templateId: COUNTER_TEMPLATE_ID,
+                      includeCreatedEventBlob: true
+                    }
+                  }
+                }
+              }]
+            }
+          }
+        },
+        activeAtOffset: ledgerEnd.offset,
+        verbose: true
       }
-    }) as { contracts?: unknown[] }
-    setCounters((response.contracts ?? []).flatMap(row => {
+    }) as unknown[]
+    setCounters((Array.isArray(response) ? response : []).flatMap(row => {
       const counter = normalizeCounterContract(row)
       return counter === undefined ? [] : [counter]
     }))
