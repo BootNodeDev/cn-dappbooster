@@ -10,7 +10,9 @@ import {
   useRef,
   useState,
 } from 'react'
+import { broadcastWalletEvent } from '@/extension/eventBroadcast.ts'
 import { persistWalletSnapshot } from '@/extension/walletSnapshot.ts'
+import { accountToCip103Wallet } from '@/provider/accounts.ts'
 import { assertSecureContext, decryptVault, encryptVault } from '@/vault/crypto.ts'
 import { signMessageBase64 } from '@/vault/keypair.ts'
 import {
@@ -205,6 +207,16 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
     bump()
   }, [bump])
 
+  // Build the dapp-api AccountsChangedEvent payload (Wallet[]) from current
+  // plaintext. Returns [] if locked — broadcast is a no-op in that case.
+  const accountsChangedPayload = useCallback((): unknown[] => {
+    if (unlockedPlaintext === null) {
+      return []
+    }
+    const primaryId = unlockedPlaintext.primaryAccountId
+    return unlockedPlaintext.accounts.map((a) => accountToCip103Wallet(toPublic(a, primaryId)))
+  }, [])
+
   const setPrimary = useCallback(
     async (id: string): Promise<void> => {
       if (unlockedPlaintext === null) {
@@ -216,8 +228,9 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
       unlockedPlaintext.primaryAccountId = id
       await persist()
       bump()
+      void broadcastWalletEvent('accountsChanged', accountsChangedPayload())
     },
-    [persist, bump],
+    [persist, bump, accountsChangedPayload],
   )
 
   // Caller (AddAccountView) generates the keypair before creating the Canton external party.
@@ -249,9 +262,10 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
       }
       await persist()
       bump()
+      void broadcastWalletEvent('accountsChanged', accountsChangedPayload())
       return toPublic(secret, unlockedPlaintext.primaryAccountId)
     },
-    [persist, bump],
+    [persist, bump, accountsChangedPayload],
   )
 
   const recordTransaction = useCallback(
@@ -286,8 +300,9 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
       }
       await persist()
       bump()
+      void broadcastWalletEvent('accountsChanged', accountsChangedPayload())
     },
-    [persist, bump],
+    [persist, bump, accountsChangedPayload],
   )
 
   const signMessage = useCallback(
