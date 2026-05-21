@@ -156,6 +156,7 @@ export const App = (): JSX.Element => {
         <div className="session-controls" aria-label="Connect wallet">
           <button
             className="connect-chip carpincho-connect"
+            data-testid="connect-extension"
             type="button"
             onClick={() => { void onConnect('extension') }}
             disabled={busy}
@@ -165,6 +166,7 @@ export const App = (): JSX.Element => {
           </button>
           <button
             className="connect-chip"
+            data-testid="connect-walletconnect"
             type="button"
             onClick={() => { void onConnect('walletconnect') }}
             disabled={busy}
@@ -175,9 +177,14 @@ export const App = (): JSX.Element => {
         </div>
       ) : (
         <div className="session-controls">
-          <span className="connected-party">party:{short(connected.account.partyId)}</span>
+          <span
+            className="connected-party"
+            data-testid="connected-party"
+            data-party-id={connected.account.partyId}
+          >party:{short(connected.account.partyId)}</span>
           <button
             className="logout-icon"
+            data-testid="logout"
             type="button"
             onClick={() => { void onDisconnect() }}
             disabled={busy}
@@ -234,6 +241,7 @@ export const App = (): JSX.Element => {
           <div className="actions">
             <button
               className="primary"
+              data-testid="new-counter"
               onClick={() => {
                 if (connected !== undefined) {
                   void runCommand('create-counter', createCounterCommand(connected.account.partyId))
@@ -260,7 +268,16 @@ export const App = (): JSX.Element => {
               const isIssuer = counter.issuer === connected.account.partyId
               const draft = draftFor(counter.contractId)
               return (
-                <article className="counter-card" key={counter.contractId}>
+                <article
+                  className="counter-card"
+                  key={counter.contractId}
+                  data-testid="counter-card"
+                  data-count={counter.count}
+                  data-contract-id={counter.contractId}
+                  data-issuer={counter.issuer}
+                  data-incrementors={counter.incrementors.length}
+                  data-viewers={counter.viewers.length}
+                >
                   <div className="counter-head">
                     <div>
                       <span>Count</span>
@@ -268,6 +285,7 @@ export const App = (): JSX.Element => {
                     </div>
                     <button
                       className="primary"
+                      data-testid="increment"
                       onClick={() => { void runCommand('increment-counter', incrementCounterCommand(counter, connected.account.partyId)) }}
                       disabled={busy || !canIncrement(counter, connected.account.partyId)}
                     >
@@ -296,18 +314,21 @@ export const App = (): JSX.Element => {
 
                   <div className="party-tools">
                     <input
+                      data-testid="party-id-input"
                       value={draft}
                       onChange={event => updateDraft(counter.contractId, event.target.value)}
                       placeholder="party id"
                       disabled={!isIssuer || busy}
                     />
                     <button
+                      data-testid="add-user"
                       onClick={() => { void runCommand('add-user', addUserCommand(counter, draft.trim())) }}
                       disabled={!isIssuer || busy || draft.trim() === ''}
                     >
                       Add user
                     </button>
                     <button
+                      data-testid="add-viewer"
                       onClick={() => { void runCommand('add-viewer', addViewerCommand(counter, draft.trim())) }}
                       disabled={!isIssuer || busy || draft.trim() === ''}
                     >

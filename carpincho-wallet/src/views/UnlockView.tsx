@@ -58,6 +58,7 @@ export const UnlockView = (): JSX.Element => {
             <label htmlFor="pw">Password</label>
             <PasswordInput
               id="pw"
+              data-testid="unlock-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
@@ -66,6 +67,7 @@ export const UnlockView = (): JSX.Element => {
           {error !== undefined && <Alert variant="error">{error}</Alert>}
           <PrimaryButton
             type="submit"
+            data-testid="unlock-submit"
             className="w-full"
             disabled={busy || password === ''}
           >
