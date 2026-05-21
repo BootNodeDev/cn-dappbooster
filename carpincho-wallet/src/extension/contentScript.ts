@@ -7,6 +7,7 @@ const WalletEvent = {
   SPLICE_WALLET_RESPONSE: 'SPLICE_WALLET_RESPONSE',
   SPLICE_WALLET_EXT_READY: 'SPLICE_WALLET_EXT_READY',
   SPLICE_WALLET_EXT_ACK: 'SPLICE_WALLET_EXT_ACK',
+  SPLICE_WALLET_EVENT: 'SPLICE_WALLET_EVENT',
 } as const
 
 const CANTON_REQUEST_PROVIDER_EVENT = 'canton:requestProvider'
@@ -87,6 +88,19 @@ const jsonRpcError = (
   error: data === undefined ? { code, message } : { code, message, data },
 })
 
+interface RuntimeEventRelay {
+  type: 'CARPINCHO_EVENT_RELAY'
+  eventName: string
+  payload: unknown
+}
+
+interface SpliceWalletEventMessage {
+  type: typeof WalletEvent.SPLICE_WALLET_EVENT
+  eventName: string
+  payload: unknown
+  target: typeof CARPINCHO_PROVIDER_ID
+}
+
 type RuntimeApi = {
   id: string
   getURL: (path: string) => string
@@ -95,6 +109,9 @@ type RuntimeApi = {
     message: RuntimeProviderRequest,
     callback: (response?: JsonRpcResponse) => void,
   ) => void
+  onMessage?: {
+    addListener: (listener: (message: unknown) => void) => void
+  }
 }
 
 const runtime = (globalThis as { chrome?: { runtime?: RuntimeApi } }).chrome?.runtime
@@ -143,6 +160,28 @@ const postResponse = (response: JsonRpcResponse): void => {
   }
   window.postMessage(message, '*')
 }
+
+const isRuntimeEventRelay = (value: unknown): value is RuntimeEventRelay =>
+  typeof value === 'object' &&
+  value !== null &&
+  (value as { type?: unknown }).type === 'CARPINCHO_EVENT_RELAY' &&
+  typeof (value as { eventName?: unknown }).eventName === 'string'
+
+const forwardEventToPage = (message: RuntimeEventRelay): void => {
+  const out: SpliceWalletEventMessage = {
+    type: WalletEvent.SPLICE_WALLET_EVENT,
+    eventName: message.eventName,
+    payload: message.payload,
+    target: CARPINCHO_PROVIDER_ID,
+  }
+  window.postMessage(out, '*')
+}
+
+runtime?.onMessage?.addListener((message: unknown) => {
+  if (isRuntimeEventRelay(message)) {
+    forwardEventToPage(message)
+  }
+})
 
 window.addEventListener(CANTON_REQUEST_PROVIDER_EVENT, announceProvider)
 queueMicrotask(announceProvider)

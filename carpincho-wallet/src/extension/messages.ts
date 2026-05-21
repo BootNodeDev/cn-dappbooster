@@ -8,6 +8,10 @@ export const WalletEvent = {
   SPLICE_WALLET_EXT_READY: 'SPLICE_WALLET_EXT_READY',
   SPLICE_WALLET_EXT_ACK: 'SPLICE_WALLET_EXT_ACK',
   SPLICE_WALLET_EXT_OPEN: 'SPLICE_WALLET_EXT_OPEN',
+  // Carpincho-defined extension to the canonical SPLICE_WALLET_* set:
+  // wallet → page push for dapp-api event methods (accountsChanged, txChanged, ...)
+  // that the canonical extension transport doesn't yet define a channel for.
+  SPLICE_WALLET_EVENT: 'SPLICE_WALLET_EVENT',
 } as const
 
 type WalletEventValue<K extends keyof typeof WalletEvent> = (typeof WalletEvent)[K]
@@ -82,8 +86,36 @@ export interface RuntimeGetPendingRequests {
   type: 'CARPINCHO_GET_PENDING_REQUESTS'
 }
 
+// Wallet→page event broadcast. Runs popup → background (CARPINCHO_BROADCAST_EVENT)
+// → content script (CARPINCHO_EVENT_RELAY) → page (SPLICE_WALLET_EVENT).
+// `eventName` matches the dapp-api spec method names (accountsChanged,
+// txChanged, ...). `payload` matches the corresponding *Event schema.
+export interface RuntimeBroadcastEvent {
+  type: 'CARPINCHO_BROADCAST_EVENT'
+  eventName: string
+  payload: unknown
+}
+
+export interface RuntimeEventRelay {
+  type: 'CARPINCHO_EVENT_RELAY'
+  eventName: string
+  payload: unknown
+}
+
+export interface SpliceWalletEventMessage {
+  type: WalletEventValue<'SPLICE_WALLET_EVENT'>
+  eventName: string
+  payload: unknown
+  target?: string
+}
+
 export const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null
+
+export const isSpliceWalletEvent = (value: unknown): value is SpliceWalletEventMessage =>
+  isRecord(value) &&
+  value.type === WalletEvent.SPLICE_WALLET_EVENT &&
+  typeof value.eventName === 'string'
 
 export const isForCarpincho = (message: { target?: unknown }): boolean =>
   message.target === undefined || message.target === CARPINCHO_PROVIDER_ID
