@@ -57,3 +57,39 @@ export const walletServiceRequest = async <T>(
   }
   return payload.result as T
 }
+
+type AdminRequestOptions = WalletServiceRequestOptions
+
+const adminUrl = (path: string, options?: AdminRequestOptions): string => {
+  const base = rpcUrl(options).replace(/\/rpc\/?$/, '')
+  return `${base}${path}`
+}
+
+export const walletServiceAdminPost = async <TResult>(
+  path: string,
+  body: Record<string, unknown>,
+  options?: AdminRequestOptions,
+): Promise<TResult> => {
+  const response = await fetch(adminUrl(path, options), {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  if (!response.ok) {
+    const text = await response.text().catch(() => '')
+    throw new Error(`wallet-service HTTP ${response.status}${text === '' ? '' : `: ${text}`}`)
+  }
+  return (await response.json()) as TResult
+}
+
+export const prepareCreateParty = async (
+  body: { publicKeyBase64: string; partyHint: string },
+  options?: AdminRequestOptions,
+): Promise<{ onboardingId: string; partyId: string; multiHash: string }> =>
+  await walletServiceAdminPost('/admin/party/prepare', body, options)
+
+export const completeCreateParty = async (
+  body: { onboardingId: string; signatureBase64: string; expectHeavyLoad?: boolean },
+  options?: AdminRequestOptions,
+): Promise<{ partyId: string }> =>
+  await walletServiceAdminPost('/admin/party/complete', body, options)

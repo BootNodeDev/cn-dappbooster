@@ -101,31 +101,29 @@ describe('invalid params mapping', () => {
     assert.ok('error' in res)
     assert.equal(res.error.code, -32602)
   })
+
+
 })
 
-describe('party methods on /rpc surface', () => {
-  // These methods are still dispatched here. The next commit moves them
-  // onto /admin/party/* HTTP routes and removes them from /rpc.
-  it('prepareCreateParty is recognized (not -32601)', async () => {
+describe('party methods are off the dapp-api surface', () => {
+  it('prepareCreateParty returns -32601 Method not found', async () => {
     const rpc = createRpc(baseConfig())
     const res = (await rpc.handle({
       jsonrpc: '2.0', id: 1, method: 'prepareCreateParty',
       params: { publicKeyBase64: 'pk', partyHint: 'alice' }
     })) as JsonRpcResponse
     assert.ok('error' in res)
-    // Without a backend token + real SDK this fails at the token check,
-    // not at method-not-found.
-    assert.notEqual(res.error.code, -32601)
+    assert.equal(res.error.code, -32601)
   })
 
-  it('completeCreateParty is recognized (not -32601)', async () => {
+  it('completeCreateParty returns -32601 Method not found', async () => {
     const rpc = createRpc(baseConfig())
     const res = (await rpc.handle({
       jsonrpc: '2.0', id: 1, method: 'completeCreateParty',
       params: { onboardingId: 'x', signatureBase64: 'sig' }
     })) as JsonRpcResponse
     assert.ok('error' in res)
-    assert.notEqual(res.error.code, -32601)
+    assert.equal(res.error.code, -32601)
   })
 })
 

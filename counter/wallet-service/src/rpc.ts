@@ -88,15 +88,6 @@ type ExecutePreparedParams = {
   submissionId?: string
 }
 
-type PrepareCreatePartyParams = { publicKeyBase64?: string; partyHint?: string }
-type CompleteCreatePartyParams = {
-  onboardingId?: string
-  signatureBase64?: string
-  expectHeavyLoad?: boolean
-}
-
-type PreparedExternalPartyCreation = ReturnType<WalletSdk['party']['external']['create']>
-
 
 const rpcResult = (id: JsonRpcId, result: unknown): JsonRpcSuccess => ({
   jsonrpc: '2.0',
@@ -152,10 +143,6 @@ export type Rpc = {
 
 export const createRpc = (config: WalletServiceConfig): Rpc => {
   let sdkPromise: Promise<WalletSdk> | undefined
-  const pendingPartyCreations = createPendingStore<PreparedExternalPartyCreation>({
-    ttlMs: 5 * 60_000,
-    maxSize: 32
-  })
 
   const getSdk = async (): Promise<WalletSdk> => {
     if (config.canton.backendToken === undefined) {
@@ -308,47 +295,6 @@ export const createRpc = (config: WalletServiceConfig): Rpc => {
     return parsed
   }
 
-  const prepareCreateParty = async (params: unknown): Promise<unknown> => {
-    const p = objectParam<PrepareCreatePartyParams>(params, 'prepareCreateParty')
-    if (p.publicKeyBase64 === undefined || p.publicKeyBase64.trim() === '') {
-      throw new InvalidParams('publicKeyBase64 is required')
-    }
-    const partyHint = p.partyHint?.trim()
-    if (partyHint === '') {
-      throw new InvalidParams('partyHint cannot be empty')
-    }
-    const sdk = await getSdk()
-    const prepared = sdk.party.external.create(p.publicKeyBase64, {
-      ...(partyHint === undefined ? {} : { partyHint })
-    })
-    const topology = await prepared.topology()
-    const onboardingId = crypto.randomUUID()
-    pendingPartyCreations.set(onboardingId, prepared)
-    return { onboardingId, ...topology }
-  }
-
-  const completeCreateParty = async (params: unknown): Promise<unknown> => {
-    const p = objectParam<CompleteCreatePartyParams>(params, 'completeCreateParty')
-    if (p.onboardingId === undefined || p.onboardingId.length === 0) {
-      throw new InvalidParams('onboardingId is required')
-    }
-    if (p.signatureBase64 === undefined || p.signatureBase64.length === 0) {
-      throw new InvalidParams('signatureBase64 is required')
-    }
-    const prepared = pendingPartyCreations.get(p.onboardingId)
-    if (prepared === undefined) {
-      throw new InvalidParams('party onboarding request not found or expired')
-    }
-    try {
-      return await prepared.execute(p.signatureBase64, {
-        expectHeavyLoad: p.expectHeavyLoad,
-        grantUserRights: true
-      })
-    } finally {
-      pendingPartyCreations.delete(p.onboardingId)
-    }
-  }
-
   const dispatch = async (id: JsonRpcId, request: JsonRpcRequest): Promise<JsonRpcResponse> => {
     if (request.jsonrpc !== undefined && request.jsonrpc !== '2.0') {
       return rpcError(id, -32600, 'Invalid request', { reason: 'jsonrpc must be "2.0"' })
@@ -379,10 +325,6 @@ export const createRpc = (config: WalletServiceConfig): Rpc => {
           return rpcResult(id, await executePrepared(request.params))
         case 'ledgerApi':
           return rpcResult(id, await ledgerApi(request.params))
-        case 'prepareCreateParty':
-          return rpcResult(id, await prepareCreateParty(request.params))
-        case 'completeCreateParty':
-          return rpcResult(id, await completeCreateParty(request.params))
         case 'prepareExecute':
         case 'prepareExecuteAndWait':
         case 'signMessage':
@@ -425,11 +367,10 @@ export const createRpc = (config: WalletServiceConfig): Rpc => {
       'getPrimaryAccount',
       'ledgerApi',
       'prepareTransaction',
-      'executePrepared',
-      'prepareCreateParty',
-      'completeCreateParty'
+      'executePrepared'
     ],
     reservedMethods: ['prepareExecute', 'prepareExecuteAndWait', 'signMessage'],
+    adminEndpoints: ['POST /admin/party/prepare', 'POST /admin/party/complete'],
     network: config.network,
     provider: provider(),
     canton: {

@@ -3,11 +3,13 @@ import 'dotenv/config'
 import cors from 'cors'
 import express from 'express'
 import { loadConfig } from './config.ts'
-import { createRpc } from './rpc.ts'
+import { createRpc, InvalidParams } from './rpc.ts'
+import { createPartyApi } from './party.ts'
 import type { JsonRpcRequest, JsonRpcResponse } from './types.ts'
 
 const config = loadConfig()
 const rpc = createRpc(config)
+const adminParty = createPartyApi(config, { getSdk: () => rpc.getSdk() })
 const app = express()
 
 app.use(cors({
@@ -26,6 +28,33 @@ app.get('/', (_req, res) => {
 
 app.get('/wallet-service/info', (_req, res) => {
   res.json(rpc.serviceInfo())
+})
+
+const handleAdminError = (res: express.Response, error: unknown): void => {
+  if (error instanceof InvalidParams) {
+    res.status(400).json({ error: error.message })
+    return
+  }
+  console.error('[counter-wallet-service] admin failed', error)
+  res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
+}
+
+app.post('/admin/party/prepare', async (req, res) => {
+  const body = req.body as { publicKeyBase64?: string; partyHint?: string }
+  try {
+    res.json(await adminParty.prepare(body))
+  } catch (error) {
+    handleAdminError(res, error)
+  }
+})
+
+app.post('/admin/party/complete', async (req, res) => {
+  const body = req.body as { onboardingId?: string; signatureBase64?: string; expectHeavyLoad?: boolean }
+  try {
+    res.json(await adminParty.complete(body))
+  } catch (error) {
+    handleAdminError(res, error)
+  }
 })
 
 app.post('/rpc', async (req, res) => {
