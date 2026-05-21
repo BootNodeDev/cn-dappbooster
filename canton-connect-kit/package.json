@@ -1,0 +1,35 @@
+{
+  "name": "canton-connect-kit",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "wagmi-style React hooks for connecting Canton dApps to CIP-0103 wallets. Pairs with carpincho-wallet but works with any CIP-0103 provider.",
+  "engines": {
+    "node": ">=22"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "biome check",
+    "lint:fix": "biome check --write",
+    "test": "node --import tsx --test \"test/**/*.test.ts\" \"test/**/*.test.tsx\"",
+    "typecheck": "tsc -b --noEmit"
+  },
+  "peerDependencies": {
+    "@canton-network/core-splice-provider": "^1.0.0",
+    "@canton-network/dapp-sdk": "^1.0.0",
+    "react": "^18.0.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.1",
+    "@happy-dom/global-registrator": "^20.0.5",
+    "@testing-library/react": "^16.3.0",
+    "@types/node": "^25.0.2",
+    "@types/react": "^18.3.21",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
