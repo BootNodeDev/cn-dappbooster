@@ -114,26 +114,22 @@ export const App = (): JSX.Element => {
     if (connected === undefined) {
       return
     }
-    setBusy(true)
+    // Tear down the connected UI synchronously so a hung wallet response
+    // cannot trap the user in busy state. Any in-flight request that
+    // eventually resolves writes to state that is no longer mounted.
+    const client = connected.client
+    setConnected(undefined)
+    setCounters([])
+    setPartyDrafts({})
+    setPairingUri(undefined)
+    setPairingCopied(false)
+    setBusy(false)
 
-    let disconnectError: string | undefined
     try {
-      await connected.client.disconnect()
-    } catch (err) {
-      disconnectError = (err as Error).message
-    } finally {
-      setConnected(undefined)
-      setCounters([])
-      setPartyDrafts({})
-      setPairingUri(undefined)
-      setPairingCopied(false)
-      setBusy(false)
-    }
-
-    if (disconnectError === undefined) {
+      await client.disconnect()
       toast.success('Disconnected.')
-    } else {
-      toast.error(`Local logout complete; wallet disconnect failed: ${disconnectError}`)
+    } catch (err) {
+      toast.error(`Local logout complete; wallet disconnect failed: ${(err as Error).message}`)
     }
   }
 
@@ -274,7 +270,6 @@ export const App = (): JSX.Element => {
             data-testid="logout"
             type="button"
             onClick={() => { void onDisconnect() }}
-            disabled={busy}
             aria-label="Disconnect wallet"
             title="Disconnect wallet"
           >
