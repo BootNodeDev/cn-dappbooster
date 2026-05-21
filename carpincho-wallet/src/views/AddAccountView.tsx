@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { walletServiceRequest } from '@/api/walletService.ts'
+import { completeCreateParty, prepareCreateParty } from '@/api/walletService.ts'
 import { Alert } from '@/components/ui/Alert.tsx'
 import { PrimaryButton, SecondaryButton } from '@/components/ui/Button.tsx'
 import { TextInput } from '@/components/ui/TextInput.tsx'
@@ -29,18 +29,12 @@ export const AddAccountView = ({ onClose }: AddAccountViewProps): JSX.Element =>
     setBusy(true)
     try {
       const kp = await generateKeypair()
-      const prepared = await walletServiceRequest<{
-        onboardingId: string
-        partyId: string
-        multiHash: string
-      }>('prepareCreateParty', {
+      const prepared = await prepareCreateParty({
         publicKeyBase64: kp.publicKeyBase64,
         partyHint: trimmed,
       })
       const signatureBase64 = await signMessageBase64(kp.privateKeyHex, prepared.multiHash)
-      const completed = await walletServiceRequest<{
-        partyId: string
-      }>('completeCreateParty', {
+      const completed = await completeCreateParty({
         onboardingId: prepared.onboardingId,
         signatureBase64,
       })
@@ -75,6 +69,7 @@ export const AddAccountView = ({ onClose }: AddAccountViewProps): JSX.Element =>
             id="acct-name"
             type="text"
             className="font-mono"
+            data-testid="add-account-hint-input"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="alice"
@@ -85,12 +80,14 @@ export const AddAccountView = ({ onClose }: AddAccountViewProps): JSX.Element =>
         <div className="flex gap-3 mt-1">
           <PrimaryButton
             type="submit"
+            data-testid="add-account-submit"
             disabled={busy || name.trim() === ''}
           >
             {busy ? 'Creating…' : 'Create account'}
           </PrimaryButton>
           <SecondaryButton
             onClick={onClose}
+            data-testid="add-account-cancel"
             disabled={busy}
           >
             Cancel

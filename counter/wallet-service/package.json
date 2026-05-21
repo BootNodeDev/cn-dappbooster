@@ -8,7 +8,8 @@
   "scripts": {
     "build": "tsc -p .",
     "dev": "tsx watch src/server.ts",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "test": "node --test --experimental-strip-types \"test/**/*.test.ts\""
   },
   "dependencies": {
     "@canton-network/wallet-sdk": "^1.1.0",
