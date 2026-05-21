@@ -11,6 +11,7 @@ import { Select, SelectItem } from '@/components/ui/Select.tsx'
 import { Sheet } from '@/components/ui/Sheet.tsx'
 import { toast } from '@/components/ui/toast.ts'
 import { useExtensionDappConnection } from '@/extension/dappConnection.ts'
+import { broadcastWalletEvent } from '@/extension/eventBroadcast.ts'
 import type { RuntimePendingRequest } from '@/extension/messages.ts'
 import {
   createRuntimeResponder,
@@ -391,7 +392,11 @@ export const HomeView = (): JSX.Element => {
       return
     }
     setBusy(true)
+    const cmdId = optionalString(pendingExecute.params.commandId) ?? ''
     try {
+      // dapp-api txChanged: pending — the wallet has accepted the request and
+      // is about to call the participant prepare.
+      void broadcastWalletEvent('txChanged', { status: 'pending', commandId: cmdId })
       const prepared = await walletServiceRequest<PreparedTransactionResponse>(
         'prepareTransaction',
         pendingExecute.params,
@@ -400,6 +405,16 @@ export const HomeView = (): JSX.Element => {
         pendingExecute.account.id,
         prepared.preparedTransactionHash,
       )
+      // dapp-api txChanged: signed — the prepared transaction was hashed and
+      // signed locally; the wallet is about to submit to the participant.
+      void broadcastWalletEvent('txChanged', {
+        status: 'signed',
+        commandId: cmdId,
+        payload: {
+          preparedTransactionHash: prepared.preparedTransactionHash,
+          signature: signatureBase64,
+        },
+      })
       const executed = await walletServiceRequest<ExecutePreparedResponse>('executePrepared', {
         ...prepared,
         partyId: pendingExecute.account.partyId,
@@ -424,7 +439,7 @@ export const HomeView = (): JSX.Element => {
 
       const tx = {
         status: 'executed',
-        commandId: optionalString(pendingExecute.params.commandId) ?? '',
+        commandId: cmdId,
         payload: {
           updateId: executed.updateId ?? '',
           completionOffset: executed.completionOffset ?? 0,
@@ -437,11 +452,15 @@ export const HomeView = (): JSX.Element => {
           : isLegacyPrepareSign
             ? tx
             : { tx }
+      // dapp-api txChanged: executed — the participant accepted the submission.
+      void broadcastWalletEvent('txChanged', tx)
       await pendingExecute.responder.result(result)
       toast.success('Transaction executed.')
       setPendingExecute(undefined)
     } catch (err) {
       const msg = (err as Error).message
+      // dapp-api txChanged: failed — submission did not complete on the participant.
+      void broadcastWalletEvent('txChanged', { status: 'failed', commandId: cmdId, reason: msg })
       await pendingExecute.responder.error(-32000, msg).catch(() => undefined)
       toast.error(`Transaction failed: ${msg}`)
       setPendingExecute(undefined)
@@ -455,6 +474,13 @@ export const HomeView = (): JSX.Element => {
     if (pendingExecute === undefined) {
       return
     }
+    const cmdId = optionalString(pendingExecute.params.commandId) ?? ''
+    // dapp-api txChanged: failed — user declined the request before submission.
+    void broadcastWalletEvent('txChanged', {
+      status: 'failed',
+      commandId: cmdId,
+      reason: 'user rejected',
+    })
     await pendingExecute.responder.error(4001, 'user rejected').catch(() => undefined)
     setPendingExecute(undefined)
     closeExtensionPopup()

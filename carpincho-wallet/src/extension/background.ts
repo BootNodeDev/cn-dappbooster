@@ -2,6 +2,8 @@ import { createDirectProviderResponse } from '@/extension/directProvider.ts'
 import {
   type JsonRpcResponse,
   jsonRpcError,
+  type RuntimeBroadcastEvent,
+  type RuntimeEventRelay,
   type RuntimeGetPendingRequests,
   type RuntimePendingRequest,
   type RuntimePendingRequestMessage,
@@ -10,12 +12,21 @@ import {
 } from '@/extension/messages.ts'
 import { readWalletSnapshot } from '@/extension/walletSnapshot.ts'
 
-type RuntimeMessage = RuntimeProviderRequest | RuntimeProviderResponse | RuntimeGetPendingRequests
+type RuntimeMessage =
+  | RuntimeProviderRequest
+  | RuntimeProviderResponse
+  | RuntimeGetPendingRequests
+  | RuntimeBroadcastEvent
 
 type RuntimeSender = {
   tab?: {
     id?: number
   }
+}
+
+type TabsApi = {
+  query: (queryInfo: { url?: string | string[] }) => Promise<Array<{ id?: number }>>
+  sendMessage: (tabId: number, message: RuntimeEventRelay) => Promise<unknown>
 }
 
 type RuntimeApi = {
@@ -43,9 +54,39 @@ const chromeApi = (
     chrome?: {
       runtime?: RuntimeApi
       action?: ActionApi
+      tabs?: TabsApi
     }
   }
 ).chrome
+
+// Match patterns kept in sync with public/manifest.json `content_scripts.matches`.
+// Any drift here means the event broadcast misses some pages.
+const CONTENT_SCRIPT_MATCHES = [
+  'http://localhost/*',
+  'http://127.0.0.1/*',
+  'https://localhost/*',
+  'https://127.0.0.1/*',
+]
+
+const relayBroadcastToTabs = async (message: RuntimeBroadcastEvent): Promise<void> => {
+  const tabs = await chromeApi?.tabs?.query({ url: CONTENT_SCRIPT_MATCHES }).catch(() => [])
+  if (tabs === undefined) {
+    return
+  }
+  const relay: RuntimeEventRelay = {
+    type: 'CARPINCHO_EVENT_RELAY',
+    eventName: message.eventName,
+    payload: message.payload,
+  }
+  await Promise.all(
+    tabs.map((tab) => {
+      if (tab.id === undefined) {
+        return Promise.resolve()
+      }
+      return chromeApi?.tabs?.sendMessage(tab.id, relay).catch(() => undefined)
+    }),
+  )
+}
 
 const pendingRequests = new Map<
   string,
@@ -131,6 +172,12 @@ chromeApi?.runtime?.onMessage.addListener((message, _sender, sendResponse) => {
 
   if (message.type === 'CARPINCHO_GET_PENDING_REQUESTS') {
     sendResponse(pendingList())
+    return false
+  }
+
+  if (message.type === 'CARPINCHO_BROADCAST_EVENT') {
+    void relayBroadcastToTabs(message)
+    sendResponse({ ok: true })
     return false
   }
 
