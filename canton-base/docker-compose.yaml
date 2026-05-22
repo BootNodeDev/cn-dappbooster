@@ -61,5 +61,35 @@ services:
       retries: 60
       start_period: 20s
 
+  wallet-service:
+    build: ./wallet-service
+    container_name: canton-base-wallet-service
+    environment:
+      CANTON_AUTH_AUDIENCE:   "${CANTON_AUTH_AUDIENCE}"
+      CANTON_AUTH_SECRET:     "${CANTON_AUTH_SECRET}"
+      CANTON_BACKEND_USER_ID: "${CANTON_BACKEND_USER_ID:-wallet-service}"
+      CANTON_JSON_API_URL:   "http://canton:7575"
+      CANTON_LEDGER_API_URL: "grpc://canton:5011"
+      CANTON_ADMIN_API_URL:  "grpc://canton:5012"
+      WALLET_SERVICE_PORT: "3010"
+      WALLET_SERVICE_CORS_ORIGINS: "${WALLET_SERVICE_CORS_ORIGINS:-http://localhost:3011}"
+      NETWORK: "${NETWORK:-canton:local}"
+      WALLET_PROVIDER_ID:       "${WALLET_PROVIDER_ID:-wallet-service}"
+      WALLET_PROVIDER_VERSION:  "${WALLET_PROVIDER_VERSION:-0.1.0}"
+      WALLET_PROVIDER_URL:      "${WALLET_PROVIDER_URL:-http://localhost:3010}"
+      WALLET_PROVIDER_USER_URL: "${WALLET_PROVIDER_USER_URL:-http://localhost:3010}"
+      WALLET_SERVICE_MOCK:      "${WALLET_SERVICE_MOCK:-}"
+    ports:
+      - "${WALLET_SERVICE_PORT:-3010}:3010"
+    depends_on:
+      canton:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3010/health >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+
 volumes:
   postgres-data:
