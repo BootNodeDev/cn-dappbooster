@@ -26,7 +26,15 @@ while true; do
   if [ "$health_status" = "healthy" ] && grep -q "connected-synchronizer : Ok()" <<<"$health_body"; then
     docker compose ps
     echo "canton health-check succeeded"
-    exit 0
+
+    wallet_service_port="${WALLET_SERVICE_PORT:-3010}"
+    if curl -fsS "http://localhost:${wallet_service_port}/health" >/dev/null 2>&1; then
+      echo "wallet-service health-check succeeded (port ${wallet_service_port})"
+      exit 0
+    fi
+    echo "wallet-service health-check failed on port ${wallet_service_port}" >&2
+    docker compose logs --tail=120 wallet-service >&2
+    exit 1
   fi
 
   if (( SECONDS >= deadline )); then
