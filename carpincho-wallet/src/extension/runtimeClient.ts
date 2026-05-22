@@ -1,6 +1,8 @@
 import {
   jsonRpcError,
   jsonRpcResult,
+  type RuntimeConnectedOriginsChangedMessage,
+  type RuntimeGetConnectedOrigins,
   type RuntimeGetPendingRequests,
   type RuntimePendingRequest,
   type RuntimePendingRequestMessage,
@@ -11,9 +13,9 @@ import type { ProviderResponder } from '@/provider/dispatch.ts'
 type RuntimeListener = (message: unknown) => void
 
 type RuntimeApi = {
-  sendMessage: (message: unknown, callback: (response?: unknown) => void) => void
+  sendMessage?: (message: unknown, callback: (response?: unknown) => void) => void
   lastError?: { message?: string }
-  onMessage: {
+  onMessage?: {
     addListener: (listener: RuntimeListener) => void
     removeListener: (listener: RuntimeListener) => void
   }
@@ -27,7 +29,7 @@ export const isExtensionRuntime = (): boolean => runtime() !== undefined
 const sendRuntimeMessage = async <T>(message: unknown): Promise<T> =>
   await new Promise<T>((resolve, reject) => {
     const api = runtime()
-    if (api === undefined) {
+    if (api?.sendMessage === undefined) {
       reject(new Error('Carpincho extension runtime is not available'))
       return
     }
@@ -45,6 +47,12 @@ export const getPendingProviderRequests = async (): Promise<RuntimePendingReques
   await sendRuntimeMessage<RuntimePendingRequest[]>({
     type: 'CARPINCHO_GET_PENDING_REQUESTS',
   } satisfies RuntimeGetPendingRequests)
+
+// Reads direct injected-provider dApp origins so the popup footer can show connection state.
+export const getDirectConnectedOrigins = async (): Promise<string[]> =>
+  await sendRuntimeMessage<string[]>({
+    type: 'CARPINCHO_GET_CONNECTED_ORIGINS',
+  } satisfies RuntimeGetConnectedOrigins)
 
 export const createRuntimeResponder = (pending: RuntimePendingRequest): ProviderResponder => ({
   result: async (value) => {
@@ -67,7 +75,8 @@ export const subscribeToPendingProviderRequests = (
   cb: (pending: RuntimePendingRequest) => void,
 ): (() => void) => {
   const api = runtime()
-  if (api === undefined) {
+  const onMessage = api?.onMessage
+  if (onMessage === undefined) {
     return () => undefined
   }
   const listener = (message: unknown): void => {
@@ -79,6 +88,30 @@ export const subscribeToPendingProviderRequests = (
       cb((message as RuntimePendingRequestMessage).pending)
     }
   }
-  api.onMessage.addListener(listener)
-  return () => api.onMessage.removeListener(listener)
+  onMessage.addListener(listener)
+  return () => onMessage.removeListener(listener)
+}
+
+// Subscribes to background pushes when direct dApp connection origins change.
+export const subscribeToDirectConnectedOrigins = (
+  cb: (origins: string[]) => void,
+): (() => void) => {
+  const api = runtime()
+  const onMessage = api?.onMessage
+  if (onMessage === undefined) {
+    return () => undefined
+  }
+  const listener = (message: unknown): void => {
+    if (
+      typeof message === 'object' &&
+      message !== null &&
+      (message as RuntimeConnectedOriginsChangedMessage).type ===
+        'CARPINCHO_CONNECTED_ORIGINS_CHANGED' &&
+      Array.isArray((message as RuntimeConnectedOriginsChangedMessage).origins)
+    ) {
+      cb((message as RuntimeConnectedOriginsChangedMessage).origins)
+    }
+  }
+  onMessage.addListener(listener)
+  return () => onMessage.removeListener(listener)
 }

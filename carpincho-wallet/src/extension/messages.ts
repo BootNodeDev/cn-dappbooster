@@ -86,6 +86,15 @@ export interface RuntimeGetPendingRequests {
   type: 'CARPINCHO_GET_PENDING_REQUESTS'
 }
 
+export interface RuntimeGetConnectedOrigins {
+  type: 'CARPINCHO_GET_CONNECTED_ORIGINS'
+}
+
+export interface RuntimeConnectedOriginsChangedMessage {
+  type: 'CARPINCHO_CONNECTED_ORIGINS_CHANGED'
+  origins: string[]
+}
+
 // Wallet→page event broadcast. Runs popup → background (CARPINCHO_BROADCAST_EVENT)
 // → content script (CARPINCHO_EVENT_RELAY) → page (SPLICE_WALLET_EVENT).
 // `eventName` matches the dapp-api spec method names (accountsChanged,
