@@ -41,7 +41,7 @@ The full local stack must be running. From the repo root:
 # In four terminals — see the root README §1–6 for the canonical bring-up
 npm run canton:up && npm run canton:health
 npm run --silent canton:token > /tmp/canton.token
-sed -i '' "s|^CANTON_BACKEND_TOKEN=.*|CANTON_BACKEND_TOKEN=$(cat /tmp/canton.token)|" counter/wallet-service/.env
+sed -i '' "s|^CANTON_BACKEND_TOKEN=.*|CANTON_BACKEND_TOKEN=$(cat /tmp/canton.token)|" canton-base/wallet-service/.env
 ./canton-base/scripts/deploy-dar.sh counter/daml/.daml/dist/quickstart-counter-0.0.1.dar
 npm --prefix carpincho-wallet run build:extension
 npm run wallet-service:dev      # terminal 1
