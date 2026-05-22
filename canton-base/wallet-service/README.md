@@ -1,4 +1,4 @@
-# Counter Wallet Service
+# Wallet Service
 
 Small Express service that sits between Carpincho and the Canton participant.
 
