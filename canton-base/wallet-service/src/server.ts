@@ -84,5 +84,5 @@ app.post('/rpc', async (req, res) => {
 
 app.listen(config.port, () => {
   const suffix = mockEnabled ? ' (MOCK MODE — no Canton calls)' : ''
-  console.log(`wallet-service listening on ${config.port}${suffix}`)
+  console.log(`wallet-service listening on ${config.port}${suffix} (token: ${config.canton.tokenSource})`)
 })
