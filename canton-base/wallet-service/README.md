@@ -8,23 +8,21 @@ It is deliberately app-agnostic: no Counter-specific routes live here.
 
 ## Run
 
+Primary path — started for you by `npm run canton:up` at the repo root. Verify with:
+
+```bash
+npm run wallet-service:health
+```
+
+The service self-mints its Canton JWT at boot from `CANTON_AUTH_AUDIENCE`, `CANTON_AUTH_SECRET`, and `CANTON_BACKEND_USER_ID` (all in `canton-base/.env`). Set `CANTON_BACKEND_TOKEN` explicitly in the compose env or in this subproject's `.env` to bypass the self-mint.
+
+Host-side dev mode (for mock-mode iteration without Docker):
+
 ```bash
 npm install
 cp .env.example .env
-npm --prefix ../../canton-base run --silent token
-npm run dev
+WALLET_SERVICE_MOCK=1 npm run dev
 ```
-
-Copy the printed token into `.env` as `CANTON_BACKEND_TOKEN` before using
-ledger-backed methods. From the repository root, the same token command is:
-
-```bash
-npm run --silent canton:token
-```
-
-`CANTON_BACKEND_TOKEN` is required for Canton JSON API calls made by
-`ledgerApi`, `prepareTransaction`, `executePrepared`, and the `/admin/party/*`
-endpoints. Basic health/info responses do not prove that the token is configured.
 
 Useful checks:
 

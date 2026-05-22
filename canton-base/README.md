@@ -10,15 +10,23 @@ docker compose up -d
 ./scripts/health-check.sh
 ```
 
-## Backend Token
+## Wallet service
 
-The local Canton participant accepts HS256 JWTs configured by `.env`:
+`docker compose up -d` (via `npm run canton:up`) brings up `wallet-service` alongside postgres + canton. Verify with `npm run wallet-service:health`.
+
+The wallet-service self-mints an HS256 JWT at boot from `CANTON_AUTH_AUDIENCE`, `CANTON_AUTH_SECRET`, and `CANTON_BACKEND_USER_ID`. Set `CANTON_BACKEND_TOKEN` explicitly in the compose env override (or this `.env`) to bypass the self-mint.
+
+Set `WALLET_SERVICE_MOCK=1` in `.env` to short-circuit Canton calls; the service still starts but every `/rpc` method returns canned mock data.
+
+## Backend Token (ad-hoc)
+
+The participant accepts HS256 JWTs configured by `.env`:
 
 - `CANTON_AUTH_AUDIENCE`
 - `CANTON_AUTH_SECRET`
-- `CANTON_ADMIN_USER_ID`
+- `CANTON_BACKEND_USER_ID`
 
-Generate a token for the wallet-service user from this package:
+Generate a token from this package (useful for paste-into-curl debugging):
 
 ```bash
 npm run --silent token
@@ -30,17 +38,9 @@ Or from the repository root:
 npm run --silent canton:token
 ```
 
-Put the printed JWT in `counter/wallet-service/.env` as
-`CANTON_BACKEND_TOKEN`. The wallet-service uses that token to authenticate its
-Canton JSON API calls for external party onboarding, active-contract reads,
-transaction preparation, and prepared transaction execution.
+The token script does not mint assets or funds. It only creates a local development auth token. Regenerate it when `CANTON_AUTH_AUDIENCE`, `CANTON_AUTH_SECRET`, or the wallet-service user id changes.
 
-The token script does not mint assets or funds. It only creates a local
-development auth token. Regenerate it when `CANTON_AUTH_AUDIENCE`,
-`CANTON_AUTH_SECRET`, or the wallet-service user id changes.
-
-`scripts/mint-token.mjs` is the Node.js implementation. `scripts/mint-token.sh`
-is kept as a compatibility wrapper for older commands.
+`scripts/mint-token.mjs` is the Node.js implementation. `scripts/mint-token.sh` is kept as a compatibility wrapper for older commands.
 
 ## URLs
 
