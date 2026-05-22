@@ -109,7 +109,7 @@ button:disabled {
 }
 
 .shell {
-  width: min(400px, calc(100vw - 28px));
+  width: min(600px, calc(100vw - 28px));
   margin: 0 auto;
   border-radius: 24px;
   padding: 20px;
@@ -187,6 +187,10 @@ p {
 .workspace-panel {
   padding: 16px;
   margin-bottom: 0;
+}
+
+.ui-hidden {
+  display: none;
 }
 
 .status-pill {
@@ -274,6 +278,12 @@ p {
   gap: 8px;
 }
 
+.party-tools {
+  align-items: center;
+  flex-wrap: nowrap;
+  width: 100%;
+}
+
 .actions {
   width: 100%;
 }
@@ -351,6 +361,51 @@ dd {
   overflow-wrap: anywhere;
 }
 
+.access-sections {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.access-section {
+  display: grid;
+  gap: 10px;
+}
+
+.access-section h3 {
+  font-size: 14px;
+}
+
+.party-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.party-list {
+  display: grid;
+  gap: 6px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.party-list li {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--slate-700);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.party-list li::before {
+  content: "-";
+  flex: 0 0 auto;
+  color: var(--muted);
+}
+
 .party-tools input,
 .settings-form input {
   width: 100%;
@@ -363,8 +418,35 @@ dd {
 }
 
 .party-tools input {
-  min-width: 180px;
-  flex: 1;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.party-tools input:disabled {
+  border-color: #94a3b8;
+  background: #e2e8f0;
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.party-tools button {
+  border-color: var(--sky-2);
+  background: var(--sky-2);
+  color: #ffffff;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.party-tools button:hover {
+  border-color: var(--sky-2);
+  background: #006a62;
+}
+
+.party-tools button:disabled {
+  border-color: #cbd5e1;
+  background: #e2e8f0;
+  color: var(--slate-500);
+  opacity: 1;
 }
 
 label {
@@ -453,16 +535,6 @@ pre {
   dl div {
     grid-template-columns: 1fr;
     gap: 3px;
-  }
-
-  .party-tools {
-    display: grid;
-    grid-template-columns: 1fr;
-  }
-
-  .party-tools input,
-  .party-tools button {
-    width: 100%;
   }
 
 }
