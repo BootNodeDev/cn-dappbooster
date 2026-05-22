@@ -33,7 +33,7 @@ This file applies only to `carpincho-wallet/`. For monorepo-wide rules (commit s
 - Use **npm** only (never pnpm or yarn)
 - Use the `@/*` alias for every import that resolves inside `src/`. Relative `./` / `../` paths are linter errors
 - Build outputs: `dist/` (web), `dist-extension/` (Chrome extension -- `npm run build:extension`)
-- Dev server runs at `http://localhost:3011`. Daily wallet-only work uses `npm run dev:wallet-mock` from the monorepo root (carpincho + mocked wallet-service, no Docker). Reach for `npm run dev:full` when you need the real Canton round-trip; `npm run wallet:dev` is the bare wallet alone.
+- Build outputs: `dist/` for the web build and `dist-extension/` for the Chrome extension (`npm run build:extension` locally, or `npm run carpincho:build:extension` from the repo root).
 
 ## Architecture
 
