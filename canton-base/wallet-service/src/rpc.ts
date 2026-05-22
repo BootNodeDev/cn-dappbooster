@@ -333,7 +333,7 @@ export const createRpc = (config: WalletServiceConfig): Rpc => {
           return rpcError(id, -32601, 'Method not found', { method: request.method })
       }
     } catch (error) {
-      console.error('[counter-wallet-service] rpc failed', {
+      console.error('[wallet-service] rpc failed', {
         id,
         method: request.method,
         error: errorData(error)
@@ -353,7 +353,7 @@ export const createRpc = (config: WalletServiceConfig): Rpc => {
   }
 
   const serviceInfo = (): Record<string, unknown> => ({
-    service: 'counter-wallet-service',
+    service: 'wallet-service',
     rpcEndpoint: '/rpc',
     api: 'Carpincho service bridge over JSON-RPC 2.0',
     dappApi: 'CIP-0103 is exposed by Carpincho over WalletConnect; this service has no signer.',

@@ -13,7 +13,7 @@ const baseConfig = () => ({
   corsOrigins: ['http://localhost:3011'],
   network: 'canton:local',
   provider: {
-    id: 'counter-wallet-service',
+    id: 'wallet-service',
     version: '0.1.0',
     url: 'http://localhost:3010',
     userUrl: 'http://localhost:3010'
@@ -55,7 +55,7 @@ describe('createMockRpc', () => {
     const res = (await rpc.handle({ jsonrpc: '2.0', id: 1, method: 'status' })) as JsonRpcResponse
     assert.ok('result' in res)
     const status = res.result as { provider: { id: string }; connection: { isNetworkConnected: boolean }; network: { networkId: string } }
-    assert.equal(status.provider.id, 'counter-wallet-service')
+    assert.equal(status.provider.id, 'wallet-service')
     assert.equal(status.connection.isNetworkConnected, true)
     assert.equal(status.network.networkId, 'canton:local-mock')
   })

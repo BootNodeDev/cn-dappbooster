@@ -42,7 +42,7 @@ export const loadConfig = (): WalletServiceConfig => ({
     .filter(origin => origin.length > 0),
   network: optional('NETWORK') ?? 'canton:local',
   provider: {
-    id: optional('WALLET_PROVIDER_ID') ?? 'counter-wallet-service',
+    id: optional('WALLET_PROVIDER_ID') ?? 'wallet-service',
     version: optional('WALLET_PROVIDER_VERSION') ?? '0.1.0',
     url: optional('WALLET_PROVIDER_URL') ?? 'http://localhost:3010',
     userUrl: optional('WALLET_PROVIDER_USER_URL') ?? 'http://localhost:3010'

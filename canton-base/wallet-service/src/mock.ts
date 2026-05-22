@@ -202,7 +202,7 @@ export const createMockRpc = (config: WalletServiceConfig, state: MockState = cr
   }
 
   const serviceInfo = (): Record<string, unknown> => ({
-    service: 'counter-wallet-service',
+    service: 'wallet-service',
     rpcEndpoint: '/rpc',
     api: 'Carpincho service bridge over JSON-RPC 2.0 (MOCK MODE)',
     dappApi: 'CIP-0103 mock — short-circuits before any Canton SDK call.',

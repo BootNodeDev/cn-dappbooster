@@ -8,6 +8,6 @@ describe('config loader', () => {
     assert.equal(config.port, 3010)
     assert.deepEqual(config.corsOrigins, ['http://localhost:3011'])
     assert.equal(config.network, 'canton:local')
-    assert.equal(config.provider.id, 'counter-wallet-service')
+    assert.equal(config.provider.id, 'wallet-service')
   })
 })
