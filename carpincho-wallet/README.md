@@ -10,30 +10,28 @@ dApp frontend -> WalletConnect -> carpincho-wallet -> wallet-service /rpc -> Can
 
 ## Run
 
-For day-to-day wallet work, prefer the root-level mock script. It starts
-Carpincho plus an in-process mocked `counter/wallet-service`, no Docker, no
-Canton:
+Build the Chrome extension from the repository root:
 
 ```bash
-npm --prefix .. run dev:wallet-mock
+npm --prefix .. run carpincho:build:extension
 ```
 
-For the full participant-backed loop (needed when changes touch DAR-level
-shape or the real `counter/wallet-service`):
-
-```bash
-npm --prefix .. run dev:full
-```
-
-To run only Carpincho's dev server (against whatever wallet-service is already
-listening on `http://localhost:3010/rpc`):
+Build the Chrome extension from this package:
 
 ```bash
 npm install
-npm run dev
+npm run build:extension
 ```
 
-Dev server:
+Load the extension in Chrome from:
+
+```text
+dist-extension/
+```
+
+For the full local flow, follow the root [`README.md`](../README.md).
+
+Optional dev server:
 
 ```text
 http://localhost:3011

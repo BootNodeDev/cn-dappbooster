@@ -1,0 +1,76 @@
+{
+  "kernel": {
+    "id": "canton-base-wallet-gateway",
+    "clientType": "remote"
+  },
+  "logging": {
+    "level": "info",
+    "format": "json"
+  },
+  "server": {
+    "port": 3010,
+    "dappPath": "/api/v0/dapp",
+    "userPath": "/api/v0/user",
+    "allowedOrigins": ["http://localhost:3011", "http://localhost:3012"],
+    "requestSizeLimit": "5mb",
+    "requestRateLimit": 10000,
+    "trustProxy": false,
+    "admin": "wallet-service"
+  },
+  "store": {
+    "connection": {
+      "type": "postgres",
+      "host": "postgres",
+      "port": 5432,
+      "user": "canton",
+      "password": "canton",
+      "database": "wallet_gateway"
+    }
+  },
+  "signingStore": {
+    "connection": {
+      "type": "postgres",
+      "host": "postgres",
+      "port": 5432,
+      "user": "canton",
+      "password": "canton",
+      "database": "wallet_gateway_signing"
+    }
+  },
+  "bootstrap": {
+    "idps": [
+      {
+        "id": "canton-base-self-signed",
+        "type": "self_signed",
+        "issuer": "canton-wallet-gateway"
+      }
+    ],
+    "networks": [
+      {
+        "id": "canton:local",
+        "name": "Canton Base Local",
+        "description": "Local canton-base participant through wallet-gateway",
+        "identityProviderId": "canton-base-self-signed",
+        "auth": {
+          "method": "self_signed",
+          "issuer": "canton-wallet-gateway",
+          "audience": "https://canton-base.local",
+          "scope": "openid daml_ledger_api offline_access",
+          "clientId": "external-wallet",
+          "clientSecret": "unsafe"
+        },
+        "adminAuth": {
+          "method": "self_signed",
+          "issuer": "canton-wallet-gateway",
+          "audience": "https://canton-base.local",
+          "scope": "openid daml_ledger_api offline_access",
+          "clientId": "wallet-service",
+          "clientSecret": "unsafe"
+        },
+        "ledgerApi": {
+          "baseUrl": "http://canton:7575"
+        }
+      }
+    ]
+  }
+}
