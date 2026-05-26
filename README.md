@@ -6,8 +6,8 @@ Minimal local stack:
 flowchart TD
   fe["counter/frontend<br/>Counter dApp<br/>http://localhost:3012"]
   wallet["carpincho-wallet<br/>Vault + signer<br/>http://localhost:3011"]
-  ws["canton-base/wallet-service<br/>Canton bridge<br/>http://localhost:3010"]
-  cb["canton-base<br/>Participant JSON API http://localhost:3013<br/>Ledger/Admin gRPC localhost:3014 / 3015"]
+  ws["canton-barebones/wallet-service<br/>Canton bridge<br/>http://localhost:3010"]
+  cb["canton-barebones<br/>Participant JSON API http://localhost:3013<br/>Ledger/Admin gRPC localhost:3014 / 3015"]
   dar["counter/daml<br/>quickstart-counter DAR<br/>.daml/dist/*.dar"]
 
   fe <-->|"WalletConnect / CIP-0103"| wallet
@@ -22,12 +22,12 @@ The frontend knows the Counter DAML signature and talks to Carpincho through Wal
 
 Run the packages in this order for the local Counter flow.
 
-## canton-base
+## canton-barebones
 
 Configure envs:
 
 ```bash
-cp canton-base/.env.example canton-base/.env
+cp canton-barebones/.env.example canton-barebones/.env
 ```
 
 Start Canton:
@@ -74,7 +74,7 @@ Already started by `npm run canton:up`. Verify with:
 npm run wallet-service:health
 ```
 
-The service self-mints its Canton JWT from `CANTON_AUTH_AUDIENCE` / `CANTON_AUTH_SECRET` / `CANTON_BACKEND_USER_ID` in `canton-base/.env`, so there is no token copy-paste step.
+The service self-mints its Canton JWT from `CANTON_AUTH_AUDIENCE` / `CANTON_AUTH_SECRET` / `CANTON_BACKEND_USER_ID` in `canton-barebones/.env`, so there is no token copy-paste step.
 
 For host-side iteration (mock mode, no Docker required):
 

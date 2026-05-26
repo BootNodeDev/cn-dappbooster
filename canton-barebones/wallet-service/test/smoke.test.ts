@@ -53,7 +53,7 @@ describe('config loader', () => {
 
   it('tokenSource is "env" when CANTON_BACKEND_TOKEN is set', () => {
     process.env.CANTON_BACKEND_TOKEN = 'explicit.jwt.value'
-    process.env.CANTON_AUTH_AUDIENCE = 'https://canton-base.local'
+    process.env.CANTON_AUTH_AUDIENCE = 'https://canton-barebones.local'
     process.env.CANTON_AUTH_SECRET = 'unsafe'
     const config = loadConfig()
     assert.equal(config.canton.tokenSource, 'env')
@@ -61,18 +61,18 @@ describe('config loader', () => {
   })
 
   it('tokenSource is "mint" when audience + secret are set but no explicit token', () => {
-    process.env.CANTON_AUTH_AUDIENCE = 'https://canton-base.local'
+    process.env.CANTON_AUTH_AUDIENCE = 'https://canton-barebones.local'
     process.env.CANTON_AUTH_SECRET = 'unsafe'
     const config = loadConfig()
     assert.equal(config.canton.tokenSource, 'mint')
     assert.equal(
       config.canton.backendToken,
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ3YWxsZXQtc2VydmljZSIsImF1ZCI6Imh0dHBzOi8vY2FudG9uLWJhc2UubG9jYWwifQ.ecGaga18iUJBlhKatz-7sW2sXv-Oua9sw4NV0M1yse0'
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ3YWxsZXQtc2VydmljZSIsImF1ZCI6Imh0dHBzOi8vY2FudG9uLWJhcmVib25lcy5sb2NhbCJ9.-3Xq4rrhJliXWkrqPNXid5_YuuTk3E6EDtQYux-ULiI'
     )
   })
 
   it('honours CANTON_BACKEND_USER_ID as the JWT subject when minting', () => {
-    process.env.CANTON_AUTH_AUDIENCE = 'https://canton-base.local'
+    process.env.CANTON_AUTH_AUDIENCE = 'https://canton-barebones.local'
     process.env.CANTON_AUTH_SECRET = 'unsafe'
     process.env.CANTON_BACKEND_USER_ID = 'custom-subject'
     const config = loadConfig()
@@ -89,7 +89,7 @@ describe('config loader', () => {
 
   it('mock mode skips minting and leaves backendToken undefined', () => {
     process.env.WALLET_SERVICE_MOCK = '1'
-    process.env.CANTON_AUTH_AUDIENCE = 'https://canton-base.local'
+    process.env.CANTON_AUTH_AUDIENCE = 'https://canton-barebones.local'
     process.env.CANTON_AUTH_SECRET = 'unsafe'
     const config = loadConfig()
     assert.equal(config.canton.tokenSource, 'none')

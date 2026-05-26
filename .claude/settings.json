@@ -6,7 +6,7 @@
       "Bash(npm install *)",
       "Bash(npm --prefix carpincho-wallet *)",
       "Bash(npm --prefix counter/* *)",
-      "Bash(npm --prefix canton-base *)",
+      "Bash(npm --prefix canton-barebones *)",
       "Bash(sh .husky/pre-push)",
       "Bash(docker info *)",
       "Bash(curl -sf -o /dev/null --max-time 1 http://localhost:__TRACKED_VAR__/)",
