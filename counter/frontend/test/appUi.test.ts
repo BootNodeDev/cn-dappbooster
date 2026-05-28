@@ -19,14 +19,16 @@ describe('counter app UI shell', () => {
     assert.doesNotMatch(app, /className="error dismissible"/)
   })
 
-  it('renders the network selector without the old separator or cross icon', () => {
+  it('keeps the old network selector chrome out of the shell', () => {
+    // Scenario: the network selector was removed from the shell. The old
+    // separator, cross icon, and dot indicator must not reappear.
     const app = readText('src/App.tsx')
     const css = readText('src/index.css')
 
     assert.doesNotMatch(app, /network-separator/)
     assert.doesNotMatch(app, /&gt;/)
     assert.doesNotMatch(css, /\.network-icon/)
-    assert.match(app, /network-dot/)
+    assert.doesNotMatch(app, /network-dot/)
   })
 
   it('renders viewer and incrementor access controls as separate sections', () => {
