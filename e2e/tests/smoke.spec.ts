@@ -9,7 +9,7 @@
 // A failing smoke means the integration boundary is broken. Each test runs in
 // well under a second once the stack is up.
 
-import { test, expect, WALLET_SERVICE_URL, DAPP_URL } from '../fixtures/stack.ts'
+import { DAPP_URL, expect, test, WALLET_SERVICE_URL } from '../fixtures/stack.ts'
 
 test.describe('canton-counter integration smoke', () => {
   test('wallet-service /health responds with the configured service', async ({ request }) => {
@@ -19,14 +19,16 @@ test.describe('canton-counter integration smoke', () => {
     expect(body).toMatchObject({
       ok: true,
       service: 'counter-wallet-service',
-      network: 'canton:local'
+      network: 'canton:local',
     })
   })
 
-  test('wallet-service /wallet-service/info exposes the post-Phase-1 surface', async ({ request }) => {
+  test('wallet-service /wallet-service/info exposes the post-Phase-1 surface', async ({
+    request,
+  }) => {
     const response = await request.get(`${WALLET_SERVICE_URL}/wallet-service/info`)
     expect(response.ok()).toBe(true)
-    const body = await response.json() as Record<string, unknown>
+    const body = (await response.json()) as Record<string, unknown>
     expect(body.supportedMethods).toEqual([
       'status',
       'connect',
@@ -37,17 +39,10 @@ test.describe('canton-counter integration smoke', () => {
       'getPrimaryAccount',
       'ledgerApi',
       'prepareTransaction',
-      'executePrepared'
+      'executePrepared',
     ])
-    expect(body.adminEndpoints).toEqual([
-      'POST /admin/party/prepare',
-      'POST /admin/party/complete'
-    ])
-    expect(body.reservedMethods).toEqual([
-      'prepareExecute',
-      'prepareExecuteAndWait',
-      'signMessage'
-    ])
+    expect(body.adminEndpoints).toEqual(['POST /admin/party/prepare', 'POST /admin/party/complete'])
+    expect(body.reservedMethods).toEqual(['prepareExecute', 'prepareExecuteAndWait', 'signMessage'])
   })
 
   test('counter dApp loads and offers both connect paths', async ({ context }) => {
@@ -57,20 +52,32 @@ test.describe('canton-counter integration smoke', () => {
     await expect(page.getByTestId('connect-walletconnect')).toBeVisible()
   })
 
-  test('Carpincho extension is discoverable from a dApp page via canton:requestProvider', async ({ context }) => {
+  test('Carpincho extension is discoverable from a dApp page via canton:requestProvider', async ({
+    context,
+  }) => {
     const page = await context.newPage()
     await page.goto(DAPP_URL)
-    const announcement = await page.evaluate(() => new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error('extension did not announce within 3s')), 3_000)
-      window.addEventListener('canton:announceProvider', (event) => {
-        clearTimeout(timeout)
-        resolve((event as CustomEvent<unknown>).detail)
-      }, { once: true })
-      window.dispatchEvent(new CustomEvent('canton:requestProvider'))
-    }))
+    const announcement = await page.evaluate(
+      () =>
+        new Promise((resolve, reject) => {
+          const timeout = setTimeout(
+            () => reject(new Error('extension did not announce within 3s')),
+            3_000,
+          )
+          window.addEventListener(
+            'canton:announceProvider',
+            (event) => {
+              clearTimeout(timeout)
+              resolve((event as CustomEvent<unknown>).detail)
+            },
+            { once: true },
+          )
+          window.dispatchEvent(new CustomEvent('canton:requestProvider'))
+        }),
+    )
     expect(announcement).toMatchObject({
       id: 'carpincho-wallet',
-      name: 'Carpincho Wallet'
+      name: 'Carpincho Wallet',
     })
   })
 })

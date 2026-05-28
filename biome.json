@@ -1,15 +1,21 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.4.15/schema.json",
   "assist": { "actions": { "source": { "organizeImports": "on" } } },
+  "vcs": {
+    "clientKind": "git",
+    "enabled": true,
+    "useIgnoreFile": true
+  },
   "files": {
     "ignoreUnknown": true,
     "includes": [
       "carpincho-wallet/**",
       "canton-connect-kit/**",
       "counter/frontend/**",
-      "!**/node_modules",
-      "!**/dist",
-      "!**/dist-extension"
+      "counter/wallet-service/**",
+      "e2e/**",
+      "canton-base/**",
+      "!**/api-specs"
     ]
   },
   "formatter": {
@@ -71,6 +77,29 @@
         "rules": {
           "style": {
             "noDescendingSpecificity": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["e2e/**"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noEmptyPattern": "off"
+          },
+          "style": {
+            "noNonNullAssertion": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["counter/wallet-service/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noNonNullAssertion": "off"
           }
         }
       }
