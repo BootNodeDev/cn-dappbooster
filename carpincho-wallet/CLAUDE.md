@@ -32,8 +32,8 @@ This file applies only to `carpincho-wallet/`. For monorepo-wide rules (commit s
 
 - Use **npm** only (never pnpm or yarn)
 - Use the `@/*` alias for every import that resolves inside `src/`. Relative `./` / `../` paths are linter errors
-- Build outputs: `dist/` (web), `dist-extension/` (Chrome extension -- `npm run build:extension`)
-- Build outputs: `dist/` for the web build and `dist-extension/` for the Chrome extension (`npm run build:extension` locally, or `npm run carpincho:build:extension` from the repo root).
+- Build outputs: `dist/` for the web build and `dist-extension/` for the Chrome extension (`npm run build:extension` locally, or `npm run carpincho:build:extension` from the repo root)
+- Dev server: `http://localhost:3011`
 
 ## Architecture
 
