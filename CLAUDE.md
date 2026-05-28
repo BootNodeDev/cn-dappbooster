@@ -45,7 +45,7 @@ For the system shape (data flow, components, ports), see [`architecture.md`](arc
 - Use **npm** only (never pnpm or yarn).
 - Install / run inside a subproject either by `cd <subproject>` or by using `npm --prefix <subproject> run <script>`. The root `package.json` exposes orchestration shortcuts:
   - `npm run canton:up` / `canton:down` / `canton:health` / `canton:token`
-  - `npm run build-dar -- <daml-project>` / `deploy-dar -- <dar>`
+  - `npm run build-dar -- <daml-project>` / `npm run deploy-dar -- <dar>`
   - `npm run carpincho:build:extension`
   - `npm run app:dev`
 - Local ports are intentionally assigned in the `3010+` range (see table above). Do not change them without updating every subproject's defaults.
