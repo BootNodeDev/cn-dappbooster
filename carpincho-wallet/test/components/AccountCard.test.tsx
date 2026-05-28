@@ -35,7 +35,6 @@ const SECONDARY_ACCOUNT: AccountPublic = {
 const ACCOUNT_SECTION_WIDTH = 348
 const ACCOUNT_SECTION_RIGHT = 400
 const ACCOUNT_MENU_TRIGGER_RIGHT = 390
-const ACCOUNT_MENU_ALIGN_OFFSET = ACCOUNT_MENU_TRIGGER_RIGHT - ACCOUNT_SECTION_RIGHT
 
 const originalResizeObserver = globalThis.ResizeObserver
 const originalGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect
@@ -130,7 +129,6 @@ describe('AccountCard account menu layout', () => {
     // Assertion: the menu uses the measured account section width, not the default fixed menu width.
     const menu = await screen.findByRole('menu')
     assert.equal((menu as HTMLElement).style.width, `${ACCOUNT_SECTION_WIDTH}px`)
-    assert.equal(menu.getAttribute('data-align-offset'), String(ACCOUNT_MENU_ALIGN_OFFSET))
   })
 
   // Scenario: the opened account menu should reuse the same visual row contract as the active account

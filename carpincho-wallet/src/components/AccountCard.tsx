@@ -158,7 +158,6 @@ export const AccountCard = ({
                   align="end"
                   alignOffset={accountMenuMetrics.alignOffset}
                   sideOffset={8}
-                  data-align-offset={accountMenuMetrics.alignOffset}
                   style={{ width: accountMenuMetrics.width }}
                   className="z-[12] p-2 border border-border-strong rounded-lg bg-surface shadow-popover data-[state=open]:animate-slide-down-and-fade"
                 >
