@@ -2,6 +2,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 import { AccountRow } from '@/components/AccountRow.tsx'
 import { ICON_BUTTON_CLASS, PrimaryButton } from '@/components/ui/Button.tsx'
+import { COPY_ICON } from '@/components/ui/icons.tsx'
 import { cn } from '@/utils/cn.ts'
 import type { AccountPublic } from '@/vault/types.ts'
 
@@ -118,76 +119,101 @@ export const AccountCard = ({
             </PrimaryButton>
           </div>
         ) : (
-          <AccountRow
-            account={primary}
-            onCopyPartyId={onCopyPartyId}
-            trailingAction={
-              <DropdownMenu.Root onOpenChange={handleAccountMenuOpenChange}>
-                <DropdownMenu.Trigger asChild>
-                  <button
-                    ref={accountMenuTriggerRef}
+          <div className="flex w-full items-center gap-2">
+            <AccountRow account={primary} />
+            <button
+              type="button"
+              data-testid="account-copy-party-id"
+              onClick={() => onCopyPartyId(primary.partyId)}
+              aria-label="Copy party ID"
+              className={cn(ICON_BUTTON_CLASS, 'size-8 shrink-0 rounded-sm text-muted-foreground')}
+            >
+              {COPY_ICON}
+            </button>
+            <DropdownMenu.Root onOpenChange={handleAccountMenuOpenChange}>
+              <DropdownMenu.Trigger asChild>
+                <button
+                  ref={accountMenuTriggerRef}
+                  className={cn(
+                    ICON_BUTTON_CLASS,
+                    'size-8 shrink-0 rounded-sm text-muted-foreground transition-colors',
+                  )}
+                  data-testid="home-active-account"
+                  data-party-id={primary.partyId}
+                  type="button"
+                  aria-label="Open account menu"
+                >
+                  <span
+                    data-testid="account-menu-caret"
                     className={cn(
-                      ICON_BUTTON_CLASS,
-                      'size-8 rounded-sm text-muted-foreground transition-colors',
+                      'size-[10px] border-r-2 border-b-2 border-current transition-transform duration-200 ease-out',
+                      accountMenuOpen ? 'rotate-45' : 'rotate-[-45deg]',
                     )}
-                    data-testid="home-active-account"
-                    data-party-id={primary.partyId}
-                    type="button"
-                    aria-label="Open account menu"
-                  >
-                    <span
-                      data-testid="account-menu-caret"
+                    aria-hidden="true"
+                  />
+                </button>
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content
+                  align="end"
+                  alignOffset={accountMenuMetrics.alignOffset}
+                  sideOffset={8}
+                  data-align-offset={accountMenuMetrics.alignOffset}
+                  style={{ width: accountMenuMetrics.width }}
+                  className="z-[12] p-2 border border-border-strong rounded-lg bg-surface shadow-popover data-[state=open]:animate-slide-down-and-fade"
+                >
+                  <div className="font-mono text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground px-2 pt-1 pb-2">
+                    Accounts
+                  </div>
+                  {accountsSorted.map((a) => (
+                    <div
+                      key={a.id}
                       className={cn(
-                        'size-[10px] border-r-2 border-b-2 border-current transition-transform duration-200 ease-out',
-                        accountMenuOpen ? 'rotate-45' : 'rotate-[-45deg]',
+                        'group/item relative flex w-full items-center gap-1 rounded-sm transition-colors',
+                        a.isPrimary &&
+                          'before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-primary',
                       )}
-                      aria-hidden="true"
-                    />
-                  </button>
-                </DropdownMenu.Trigger>
-                <DropdownMenu.Portal>
-                  <DropdownMenu.Content
-                    align="end"
-                    alignOffset={accountMenuMetrics.alignOffset}
-                    sideOffset={8}
-                    data-align-offset={accountMenuMetrics.alignOffset}
-                    style={{ width: accountMenuMetrics.width }}
-                    className="z-[12] p-2 border border-border-strong rounded-lg bg-surface shadow-popover data-[state=open]:animate-slide-down-and-fade"
-                  >
-                    <div className="font-mono text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground px-2 pt-1 pb-2">
-                      Accounts
-                    </div>
-                    {accountsSorted.map((a) => (
+                    >
                       <DropdownMenu.Item
-                        key={a.id}
                         data-testid="account-item"
                         data-party-id={a.partyId}
                         onSelect={() => onSelectAccount(a.id)}
+                        aria-label={a.name}
+                        aria-current={a.isPrimary ? true : undefined}
+                        className="flex min-w-0 flex-1 items-center gap-2 rounded-sm p-2 text-foreground text-left outline-none cursor-pointer transition-colors data-[highlighted]:bg-primary-soft"
+                      >
+                        <AccountRow account={a} />
+                        {a.isPrimary && (
+                          <span className="shrink-0 font-mono text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-primary">
+                            active
+                          </span>
+                        )}
+                      </DropdownMenu.Item>
+                      <button
+                        type="button"
+                        data-testid="account-copy-party-id"
+                        onClick={() => onCopyPartyId(a.partyId)}
+                        aria-label="Copy party ID"
                         className={cn(
-                          'group/item relative w-full rounded-sm p-2 text-foreground text-left outline-none cursor-pointer transition-colors',
-                          'data-[highlighted]:bg-primary-soft',
-                          a.isPrimary &&
-                            'before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-primary',
+                          ICON_BUTTON_CLASS,
+                          'size-8 shrink-0 rounded-sm text-muted-foreground',
                         )}
                       >
-                        <AccountRow
-                          account={a}
-                          onCopyPartyId={onCopyPartyId}
-                        />
-                      </DropdownMenu.Item>
-                    ))}
-                    <DropdownMenu.Item
-                      data-testid="menu-add-account"
-                      onSelect={onAddAccount}
-                      className="w-full flex justify-center items-center gap-2 border border-dashed border-border rounded-sm p-2 text-primary font-semibold mt-2 outline-none cursor-pointer transition-colors data-[highlighted]:bg-primary-soft data-[highlighted]:border-primary/40"
-                    >
-                      <span aria-hidden="true">+</span> Add account
-                    </DropdownMenu.Item>
-                  </DropdownMenu.Content>
-                </DropdownMenu.Portal>
-              </DropdownMenu.Root>
-            }
-          />
+                        {COPY_ICON}
+                      </button>
+                    </div>
+                  ))}
+                  <DropdownMenu.Item
+                    data-testid="menu-add-account"
+                    onSelect={onAddAccount}
+                    className="w-full flex justify-center items-center gap-2 border border-dashed border-border rounded-sm p-2 text-primary font-semibold mt-2 outline-none cursor-pointer transition-colors data-[highlighted]:bg-primary-soft data-[highlighted]:border-primary/40"
+                  >
+                    <span aria-hidden="true">+</span> Add account
+                  </DropdownMenu.Item>
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
+          </div>
         )}
       </div>
     </section>
