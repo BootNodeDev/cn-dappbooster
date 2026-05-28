@@ -8,8 +8,7 @@ describe('party id formatting', () => {
     // Scenario: Canton parties are displayed as name::namespace. The name is
     // meaningful to users, while the namespace is long identity material that
     // should remain recognizable without taking over the UI.
-    const partyId =
-      'nico::1220df946c5b01ad0f2d2b480f1f43b1d1f2e498f5a49c2f0b1cbb46'
+    const partyId = 'nico::1220df946c5b01ad0f2d2b480f1f43b1d1f2e498f5a49c2f0b1cbb46'
 
     // The formatted value should preserve the name and show enough namespace
     // prefix/suffix to distinguish parties that share a visible name.
