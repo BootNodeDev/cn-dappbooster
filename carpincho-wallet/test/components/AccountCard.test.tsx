@@ -107,6 +107,8 @@ describe('AccountCard account menu layout', () => {
   // Scenario: the user opens the account dropdown from the caret on a rendered account card; the
   // expected result is a menu whose inline width matches the full account section width.
   it('sizes the account menu to match the current account section', async () => {
+    const user = userEvent.setup()
+
     // Setup: happy-dom has no real layout, so the account card reports a known popup-width
     // measurement through both ResizeObserver and getBoundingClientRect.
     installAccountLayoutShims()
@@ -124,7 +126,7 @@ describe('AccountCard account menu layout', () => {
     )
 
     // Action: opening the caret menu should render the Radix dropdown content into the portal.
-    await userEvent.click(screen.getByRole('button', { name: /open account menu/i }))
+    await user.click(screen.getByRole('button', { name: /open account menu/i }))
 
     // Assertion: the menu uses the measured account section width, not the default fixed menu width.
     const menu = await screen.findByRole('menu')
