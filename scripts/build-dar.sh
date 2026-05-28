@@ -13,5 +13,7 @@ if [ ! -d "$PROJECT_DIR" ]; then
   exit 1
 fi
 
+command -v dpm >/dev/null 2>&1 || { echo "dpm not found on PATH" >&2; exit 1; }
+
 cd "$PROJECT_DIR"
 dpm build
