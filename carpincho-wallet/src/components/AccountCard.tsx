@@ -72,6 +72,11 @@ export const AccountCard = ({
   )
 
   useLayoutEffect(() => {
+    // No primary account means no trigger or menu is rendered, so there is nothing to measure.
+    if (primary === undefined) {
+      return undefined
+    }
+
     const accountSection = accountSectionRef.current
 
     if (accountSection === null) {
@@ -90,7 +95,7 @@ export const AccountCard = ({
     return () => {
       resizeObserver.disconnect()
     }
-  }, [syncAccountMenuMetrics])
+  }, [primary, syncAccountMenuMetrics])
 
   return (
     <section
