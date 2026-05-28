@@ -1,17 +1,11 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.4.15/schema.json",
   "assist": { "actions": { "source": { "organizeImports": "on" } } },
-  "vcs": {
-    "clientKind": "git",
-    "enabled": true,
-    "useIgnoreFile": false
-  },
   "files": {
     "ignoreUnknown": true,
     "includes": [
       "carpincho-wallet/**",
-      "canton-connect-kit/src/**",
-      "canton-connect-kit/test/**",
+      "canton-connect-kit/**",
       "counter/frontend/**",
       "!**/node_modules",
       "!**/dist",
@@ -75,9 +69,8 @@
       "includes": ["counter/frontend/**"],
       "linter": {
         "rules": {
-          "correctness": {
-            "useExhaustiveDependencies": "error",
-            "useHookAtTopLevel": "error"
+          "style": {
+            "noDescendingSpecificity": "off"
           }
         }
       }

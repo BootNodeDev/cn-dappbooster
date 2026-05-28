@@ -352,7 +352,6 @@ dl {
   margin: 18px 0;
 }
 
-/* biome-ignore lint/style/noDescendingSpecificity: targets dl rows, not the higher-specificity .connected-card > div */
 dl div {
   display: grid;
   grid-template-columns: 110px minmax(0, 1fr);
@@ -535,7 +534,6 @@ pre {
     width: 100%;
   }
 
-  /* biome-ignore lint/style/noDescendingSpecificity: targets dl rows, not the higher-specificity .connected-card > div */
   dl div {
     grid-template-columns: 1fr;
     gap: 3px;
