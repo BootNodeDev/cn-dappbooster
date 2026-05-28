@@ -19,17 +19,18 @@ describe('counter contract normalization', () => {
               offset: 305,
               nodeId: 0,
               contractId: '00773a63632467baef162a93681abe9635de0f53eb82b3c6b96b1340350b0c6ffbca',
-              templateId: 'b2e6c414cdb2341b2ae1167fdce0930291fec5ab4794fea436821109df54db99:Counter.Counter:Counter',
+              templateId:
+                'b2e6c414cdb2341b2ae1167fdce0930291fec5ab4794fea436821109df54db99:Counter.Counter:Counter',
               createArgument: {
                 issuer: 'fer::1220b218',
                 count: '0',
                 incrementors: [],
-                viewers: { map: [] }
+                viewers: { map: [] },
               },
-              createdAt: '2026-05-21T10:00:00Z'
-            }
-          }
-        }
+              createdAt: '2026-05-21T10:00:00Z',
+            },
+          },
+        },
       }),
       {
         contractId: '00773a63632467baef162a93681abe9635de0f53eb82b3c6b96b1340350b0c6ffbca',
@@ -37,8 +38,8 @@ describe('counter contract normalization', () => {
         count: 0,
         incrementors: [],
         viewers: [],
-        createdAt: '2026-05-21T10:00:00Z'
-      }
+        createdAt: '2026-05-21T10:00:00Z',
+      },
     )
   })
 
@@ -53,11 +54,11 @@ describe('counter contract normalization', () => {
                 issuer: 'alice::fp',
                 count: '3',
                 incrementors: [['bob::fp', 'delegation-1']],
-                viewers: { map: [['viewer::fp', {}]] }
-              }
-            }
-          }
-        }
+                viewers: { map: [['viewer::fp', {}]] },
+              },
+            },
+          },
+        },
       }),
       {
         contractId: 'contract-2',
@@ -65,8 +66,8 @@ describe('counter contract normalization', () => {
         count: 3,
         incrementors: [['bob::fp', 'delegation-1']],
         viewers: ['viewer::fp'],
-        createdAt: undefined
-      }
+        createdAt: undefined,
+      },
     )
   })
 
@@ -74,10 +75,12 @@ describe('counter contract normalization', () => {
     assert.equal(
       normalizeCounterContract({
         contractEntry: {
-          JsIncompleteAssigned: { createdEvent: { contractId: 'c', createArgument: { issuer: 'x' } } }
-        }
+          JsIncompleteAssigned: {
+            createdEvent: { contractId: 'c', createArgument: { issuer: 'x' } },
+          },
+        },
       }),
-      undefined
+      undefined,
     )
   })
 

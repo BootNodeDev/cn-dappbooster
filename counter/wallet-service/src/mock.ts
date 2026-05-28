@@ -11,8 +11,8 @@
 import crypto from 'node:crypto'
 import type { WalletServiceConfig } from './config.ts'
 import type { PartyApi } from './party.ts'
-import { InvalidParams } from './rpc.ts'
 import type { Rpc, WalletSdk } from './rpc.ts'
+import { InvalidParams } from './rpc.ts'
 import type {
   ConnectResult,
   JsonRpcError,
@@ -22,7 +22,7 @@ import type {
   JsonRpcSuccess,
   Network,
   Provider,
-  StatusEvent
+  StatusEvent,
 } from './types.ts'
 
 export interface MockState {
@@ -44,13 +44,13 @@ export const isMockEnabled = (): boolean => {
 const rpcResult = (id: JsonRpcId, result: unknown): JsonRpcSuccess => ({
   jsonrpc: '2.0',
   id,
-  result
+  result,
 })
 
 const rpcError = (id: JsonRpcId, code: number, message: string, data?: unknown): JsonRpcError => ({
   jsonrpc: '2.0',
   id,
-  error: data === undefined ? { code, message } : { code, message, data }
+  error: data === undefined ? { code, message } : { code, message, data },
 })
 
 const objectParam = <T>(params: unknown, name: string): T => {
@@ -73,14 +73,14 @@ const mockProvider = (config: WalletServiceConfig): Provider => ({
   version: config.provider.version,
   providerType: 'remote',
   ...(config.provider.url === undefined ? {} : { url: config.provider.url }),
-  ...(config.provider.userUrl === undefined ? {} : { userUrl: config.provider.userUrl })
+  ...(config.provider.userUrl === undefined ? {} : { userUrl: config.provider.userUrl }),
 })
 
 const mockConnection = (): ConnectResult => ({
   isConnected: false,
   reason: 'wallet-service mock: no real Canton participant attached.',
   isNetworkConnected: true,
-  networkReason: 'mock backend always reports ready'
+  networkReason: 'mock backend always reports ready',
 })
 
 const mockNetwork = (config: WalletServiceConfig): Network => ({ networkId: mockNetworkId(config) })
@@ -88,7 +88,7 @@ const mockNetwork = (config: WalletServiceConfig): Network => ({ networkId: mock
 const mockStatus = (config: WalletServiceConfig): StatusEvent => ({
   provider: mockProvider(config),
   connection: mockConnection(),
-  network: mockNetwork(config)
+  network: mockNetwork(config),
 })
 
 const pickPartyId = (p: Record<string, unknown>): string | undefined => {
@@ -101,7 +101,10 @@ const pickPartyId = (p: Record<string, unknown>): string | undefined => {
   return undefined
 }
 
-export const createMockRpc = (config: WalletServiceConfig, state: MockState = createMockState()): Rpc => {
+export const createMockRpc = (
+  config: WalletServiceConfig,
+  state: MockState = createMockState(),
+): Rpc => {
   const prepareTransaction = (params: unknown): unknown => {
     const p = objectParam<Record<string, unknown>>(params, 'prepareTransaction')
     const partyId = pickPartyId(p)
@@ -114,13 +117,16 @@ export const createMockRpc = (config: WalletServiceConfig, state: MockState = cr
     return {
       preparedTransaction: randomBase64(64),
       preparedTransactionHash: randomBase64(32),
-      hashingSchemeVersion: 'HASHING_SCHEME_VERSION_V2'
+      hashingSchemeVersion: 'HASHING_SCHEME_VERSION_V2',
     }
   }
 
   const executePrepared = (params: unknown): unknown => {
     const p = objectParam<Record<string, unknown>>(params, 'executePrepared')
-    if (typeof p.preparedTransaction !== 'string' || typeof p.preparedTransactionHash !== 'string') {
+    if (
+      typeof p.preparedTransaction !== 'string' ||
+      typeof p.preparedTransactionHash !== 'string'
+    ) {
       throw new InvalidParams('preparedTransaction and preparedTransactionHash are required')
     }
     if (typeof p.signatureBase64 !== 'string' || p.signatureBase64.length === 0) {
@@ -129,7 +135,7 @@ export const createMockRpc = (config: WalletServiceConfig, state: MockState = cr
     state.offset += 1
     return {
       updateId: `mock-update-${crypto.randomBytes(6).toString('hex')}`,
-      completionOffset: state.offset
+      completionOffset: state.offset,
     }
   }
 
@@ -163,7 +169,7 @@ export const createMockRpc = (config: WalletServiceConfig, state: MockState = cr
           return rpcResult(id, [])
         case 'getPrimaryAccount':
           return rpcError(id, -32001, 'Resource not found', {
-            reason: 'mock has no primary account configured.'
+            reason: 'mock has no primary account configured.',
           })
         case 'prepareTransaction':
           return rpcResult(id, prepareTransaction(request.params))
@@ -176,7 +182,7 @@ export const createMockRpc = (config: WalletServiceConfig, state: MockState = cr
         case 'signMessage':
           return rpcError(id, -32004, 'Method not supported', {
             method: request.method,
-            reason: 'mock has no signer; use Carpincho over WalletConnect for these methods.'
+            reason: 'mock has no signer; use Carpincho over WalletConnect for these methods.',
           })
         default:
           return rpcError(id, -32601, 'Method not found', { method: request.method })
@@ -198,7 +204,9 @@ export const createMockRpc = (config: WalletServiceConfig, state: MockState = cr
   }
 
   const getSdk = async (): Promise<WalletSdk> => {
-    throw new Error('mock mode: SDK is not available — set WALLET_SERVICE_MOCK=0 for real Canton calls')
+    throw new Error(
+      'mock mode: SDK is not available — set WALLET_SERVICE_MOCK=0 for real Canton calls',
+    )
   }
 
   const serviceInfo = (): Record<string, unknown> => ({
@@ -217,11 +225,11 @@ export const createMockRpc = (config: WalletServiceConfig, state: MockState = cr
       'getPrimaryAccount',
       'ledgerApi',
       'prepareTransaction',
-      'executePrepared'
+      'executePrepared',
     ],
     reservedMethods: ['prepareExecute', 'prepareExecuteAndWait', 'signMessage'],
     network: mockNetworkId(config),
-    provider: mockProvider(config)
+    provider: mockProvider(config),
   })
 
   return { handle, serviceInfo, getSdk }
@@ -229,9 +237,12 @@ export const createMockRpc = (config: WalletServiceConfig, state: MockState = cr
 
 export const createMockPartyApi = (
   _config: WalletServiceConfig,
-  state: MockState = createMockState()
+  state: MockState = createMockState(),
 ): PartyApi => {
-  const prepare = async (params: { publicKeyBase64?: string; partyHint?: string }): Promise<unknown> => {
+  const prepare = async (params: {
+    publicKeyBase64?: string
+    partyHint?: string
+  }): Promise<unknown> => {
     if (params.publicKeyBase64 === undefined || params.publicKeyBase64.trim() === '') {
       throw new InvalidParams('publicKeyBase64 is required')
     }
@@ -247,7 +258,7 @@ export const createMockPartyApi = (
       onboardingId,
       partyId,
       multiHash: randomBase64(32),
-      topologyTransactions: []
+      topologyTransactions: [],
     }
   }
 

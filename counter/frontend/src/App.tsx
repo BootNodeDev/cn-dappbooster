@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react'
 import {
   ConnectKitProvider,
   useConnect,
@@ -8,13 +7,14 @@ import {
   useSignMessage,
   useWalletStatus,
 } from 'canton-connect-kit'
+import { useEffect, useState } from 'react'
 import { Toaster, toast } from 'sonner'
 import {
+  addUserCommand,
+  addViewerCommand,
   COUNTER_PACKAGE_ID,
   COUNTER_TEMPLATE_ID,
   type CounterContract,
-  addUserCommand,
-  addViewerCommand,
   createCounterCommand,
   incrementCounterCommand,
   normalizeCounterContract,
@@ -29,8 +29,7 @@ const commandId = (prefix: string): string =>
   `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`
 
 const canIncrement = (counter: CounterContract, partyId: string): boolean =>
-  counter.issuer === partyId ||
-  counter.incrementors.some(([party]) => party === partyId)
+  counter.issuer === partyId || counter.incrementors.some(([party]) => party === partyId)
 
 const envString = (name: string): string =>
   ((import.meta.env[name] as string | undefined) ?? '').trim()
@@ -86,6 +85,7 @@ const AccessSection = ({
         disabled={disabled}
       />
       <button
+        type="button"
         data-testid={addTestId}
         onClick={onAdd}
         disabled={disabled || draft.trim() === ''}
@@ -113,25 +113,19 @@ export const App = (): JSX.Element => {
 }
 
 const Counter = (): JSX.Element => {
-  const { connect, disconnect, isConnecting, isConnected, pairingUri } =
-    useConnect()
+  const { connect, disconnect, isConnecting, isConnected, pairingUri } = useConnect()
   const { party } = useParty()
   const { isLocked } = useWalletStatus()
-  const {
-    signMessage,
-    signature,
-    isSigning,
-    reset: resetSignature,
-  } = useSignMessage()
+  const { signMessage, signature, isSigning, reset: resetSignature } = useSignMessage()
   const { execute, lastTx, isExecuting } = useExecute()
   const { ledgerApi } = useLedger()
 
   const [counters, setCounters] = useState<CounterContract[]>([])
   const [partyDrafts, setPartyDrafts] = useState<PartyDrafts>({})
   const [pairingCopied, setPairingCopied] = useState(false)
-  const [connectMode, setConnectMode] = useState<
-    'extension' | 'walletconnect' | undefined
-  >(undefined)
+  const [connectMode, setConnectMode] = useState<'extension' | 'walletconnect' | undefined>(
+    undefined,
+  )
   const [signInput, setSignInput] = useState<string>('hello canton')
 
   const busy = isConnecting || isExecuting
@@ -140,13 +134,13 @@ const Counter = (): JSX.Element => {
   // accountsChanged). The kit reacts to accountsChanged internally and shifts
   // useParty().party.partyId; this effect just re-reads the ACS for the new
   // primary.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: re-read the ACS only when the active party identity changes, not on every loadCountersFor identity churn
   useEffect(() => {
     if (!isConnected || party === undefined) {
       setCounters([])
       return
     }
     void loadCountersFor(party.partyId)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isConnected, party?.partyId])
 
   const loadCountersFor = async (partyId: string): Promise<void> => {
@@ -199,10 +193,7 @@ const Counter = (): JSX.Element => {
     }
   }
 
-  const runCommand = async (
-    prefix: string,
-    command: unknown,
-  ): Promise<void> => {
+  const runCommand = async (prefix: string, command: unknown): Promise<void> => {
     if (party === undefined) {
       return
     }
@@ -221,9 +212,7 @@ const Counter = (): JSX.Element => {
     }
   }
 
-  const onConnect = async (
-    mode: 'extension' | 'walletconnect',
-  ): Promise<void> => {
+  const onConnect = async (mode: 'extension' | 'walletconnect'): Promise<void> => {
     setConnectMode(mode)
     try {
       await connect(mode)
@@ -266,11 +255,7 @@ const Counter = (): JSX.Element => {
 
   const draftFor = (contractId: string, role: AccessRole): string =>
     partyDrafts[contractId]?.[role] ?? ''
-  const updateDraft = (
-    contractId: string,
-    role: AccessRole,
-    value: string,
-  ): void => {
+  const updateDraft = (contractId: string, role: AccessRole, value: string): void => {
     setPartyDrafts((prev) => ({
       ...prev,
       [contractId]: {
@@ -286,7 +271,7 @@ const Counter = (): JSX.Element => {
       <h1 className="app-title">Canton Counter</h1>
 
       {!isConnected ? (
-        <div className="session-controls" aria-label="Connect wallet">
+        <section className="session-controls" aria-label="Connect wallet">
           <button
             className="connect-chip carpincho-connect"
             data-testid="connect-extension"
@@ -299,9 +284,7 @@ const Counter = (): JSX.Element => {
             <span className="connect-glyph" aria-hidden="true">
               C
             </span>
-            <span>
-              {busy && connectMode === 'extension' ? 'Connecting' : 'Carpincho'}
-            </span>
+            <span>{busy && connectMode === 'extension' ? 'Connecting' : 'Carpincho'}</span>
           </button>
           <button
             className="connect-chip"
@@ -313,11 +296,9 @@ const Counter = (): JSX.Element => {
             disabled={busy}
           >
             <img src="/Walletconnect-logo.png" alt="" aria-hidden="true" />
-            <span>
-              {busy && connectMode === 'walletconnect' ? 'Pairing' : 'WC'}
-            </span>
+            <span>{busy && connectMode === 'walletconnect' ? 'Pairing' : 'WC'}</span>
           </button>
-        </div>
+        </section>
       ) : (
         <div className="session-controls">
           <span
@@ -386,8 +367,8 @@ const Counter = (): JSX.Element => {
             </div>
           </div>
           <p>
-            Your wallet is locked. Open Carpincho and enter your password — this
-            dApp will resume automatically.
+            Your wallet is locked. Open Carpincho and enter your password — this dApp will resume
+            automatically.
           </p>
         </section>
       )}
@@ -399,21 +380,17 @@ const Counter = (): JSX.Element => {
           </div>
         ) : isLocked ? (
           <div className="empty">
-            <p className="empty-title">
-              Wallet locked — unlock Carpincho to continue.
-            </p>
+            <p className="empty-title">Wallet locked — unlock Carpincho to continue.</p>
           </div>
         ) : (
           <>
             <div className="actions">
               <button
+                type="button"
                 className="primary"
                 data-testid="new-counter"
                 onClick={() => {
-                  void runCommand(
-                    'create-counter',
-                    createCounterCommand(party.partyId),
-                  )
+                  void runCommand('create-counter', createCounterCommand(party.partyId))
                 }}
                 disabled={busy}
               >
@@ -435,13 +412,8 @@ const Counter = (): JSX.Element => {
                 {counters.map((counter) => {
                   const isIssuer = counter.issuer === party.partyId
                   const viewerDraft = draftFor(counter.contractId, 'viewer')
-                  const incrementorDraft = draftFor(
-                    counter.contractId,
-                    'incrementor',
-                  )
-                  const incrementors = counter.incrementors.map(
-                    ([incrementor]) => incrementor,
-                  )
+                  const incrementorDraft = draftFor(counter.contractId, 'incrementor')
+                  const incrementors = counter.incrementors.map(([incrementor]) => incrementor)
                   return (
                     <article
                       className="counter-card"
@@ -459,6 +431,7 @@ const Counter = (): JSX.Element => {
                           <strong>{counter.count}</strong>
                         </div>
                         <button
+                          type="button"
                           className="primary"
                           data-testid="increment"
                           onClick={() => {
@@ -467,9 +440,7 @@ const Counter = (): JSX.Element => {
                               incrementCounterCommand(counter, party.partyId),
                             )
                           }}
-                          disabled={
-                            busy || !canIncrement(counter, party.partyId)
-                          }
+                          disabled={busy || !canIncrement(counter, party.partyId)}
                         >
                           Increment
                         </button>
@@ -528,11 +499,7 @@ const Counter = (): JSX.Element => {
                             )
                           }}
                           onDraftChange={(value) =>
-                            updateDraft(
-                              counter.contractId,
-                              'incrementor',
-                              value,
-                            )
+                            updateDraft(counter.contractId, 'incrementor', value)
                           }
                           parties={incrementors}
                           title="Incrementors"
@@ -576,10 +543,9 @@ const Counter = (): JSX.Element => {
           </div>
           <div className="counter-card">
             <p>
-              Exercises CIP-0103 <code>signMessage</code> against the connected
-              wallet. The wallet asks for approval, signs with the active
-              party's key, and returns the Ed25519 signature in base64. Useful
-              for "prove you own this party" challenges from a backend.
+              Exercises CIP-0103 <code>signMessage</code> against the connected wallet. The wallet
+              asks for approval, signs with the active party's key, and returns the Ed25519
+              signature in base64. Useful for "prove you own this party" challenges from a backend.
             </p>
             <input
               type="text"

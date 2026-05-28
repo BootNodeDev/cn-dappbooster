@@ -1,14 +1,13 @@
-import { describe, it } from 'node:test'
 import { strict as assert } from 'node:assert'
+import { describe, it } from 'node:test'
 import type {
+  ConnectResult,
   JsonRpcRequest,
   JsonRpcResponse,
   JsPrepareSubmissionRequest,
-  ConnectResult,
-  Network,
   LedgerApiRequest,
+  ListAccountsResult,
   Wallet,
-  ListAccountsResult
 } from '../src/types.ts'
 
 describe('dapp-api type aliases', () => {
@@ -27,7 +26,7 @@ describe('dapp-api type aliases', () => {
     const req: LedgerApiRequest = {
       requestMethod: 'post',
       resource: '/v2/state/active-contracts',
-      body: { parties: ['alice::fp'] }
+      body: { parties: ['alice::fp'] },
     }
     assert.equal(req.requestMethod, 'post')
   })
@@ -41,7 +40,7 @@ describe('dapp-api type aliases', () => {
       namespace: 'ns',
       networkId: 'canton:local',
       hint: 'alice',
-      signingProviderId: 'carpincho'
+      signingProviderId: 'carpincho',
     }
     assert.equal(w.primary, true)
   })
