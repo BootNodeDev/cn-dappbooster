@@ -17,9 +17,10 @@ import {
   addViewerCommand,
   createCounterCommand,
   incrementCounterCommand,
-  normalizeCounterContract
+  normalizeCounterContract,
 } from './counterSignature.js'
 import { loadRuntimeConfig } from './runtimeConfig.js'
+import { formatPartyId } from './utils/formatPartyId.js'
 
 const short = (value: string): string =>
   value.length <= 22 ? value : `${value.slice(0, 12)}...${value.slice(-8)}`
@@ -28,10 +29,72 @@ const commandId = (prefix: string): string =>
   `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`
 
 const canIncrement = (counter: CounterContract, partyId: string): boolean =>
-  counter.issuer === partyId || counter.incrementors.some(([party]) => party === partyId)
+  counter.issuer === partyId ||
+  counter.incrementors.some(([party]) => party === partyId)
 
 const envString = (name: string): string =>
   ((import.meta.env[name] as string | undefined) ?? '').trim()
+
+type AccessRole = 'viewer' | 'incrementor'
+
+type PartyDrafts = Record<string, Partial<Record<AccessRole, string>>>
+
+type AccessSectionProps = {
+  addTestId: string
+  buttonLabel: string
+  disabled: boolean
+  draft: string
+  emptyMessage: string
+  inputTestId: string
+  onAdd: () => void
+  onDraftChange: (value: string) => void
+  parties: string[]
+  title: string
+}
+
+// Renders one access role for a counter so viewers and incrementors keep separate
+// lists, empty states, draft inputs, and submit actions.
+const AccessSection = ({
+  addTestId,
+  buttonLabel,
+  disabled,
+  draft,
+  emptyMessage,
+  inputTestId,
+  onAdd,
+  onDraftChange,
+  parties,
+  title,
+}: AccessSectionProps): JSX.Element => (
+  <section className="access-section">
+    <h3>{title}</h3>
+    {parties.length === 0 ? (
+      <p className="party-empty">{emptyMessage}</p>
+    ) : (
+      <ul className="party-list">
+        {parties.map((partyId) => (
+          <li key={partyId}>{formatPartyId(partyId)}</li>
+        ))}
+      </ul>
+    )}
+    <div className="party-tools">
+      <input
+        data-testid={inputTestId}
+        value={draft}
+        onChange={(event) => onDraftChange(event.target.value)}
+        placeholder="party id"
+        disabled={disabled}
+      />
+      <button
+        data-testid={addTestId}
+        onClick={onAdd}
+        disabled={disabled || draft.trim() === ''}
+      >
+        {buttonLabel}
+      </button>
+    </div>
+  </section>
+)
 
 export const App = (): JSX.Element => {
   const [runtimeConfig] = useState(() => loadRuntimeConfig())
@@ -50,17 +113,25 @@ export const App = (): JSX.Element => {
 }
 
 const Counter = (): JSX.Element => {
-  const { connect, disconnect, isConnecting, isConnected, pairingUri } = useConnect()
+  const { connect, disconnect, isConnecting, isConnected, pairingUri } =
+    useConnect()
   const { party } = useParty()
   const { isLocked } = useWalletStatus()
-  const { signMessage, signature, isSigning, reset: resetSignature } = useSignMessage()
+  const {
+    signMessage,
+    signature,
+    isSigning,
+    reset: resetSignature,
+  } = useSignMessage()
   const { execute, lastTx, isExecuting } = useExecute()
   const { ledgerApi } = useLedger()
 
   const [counters, setCounters] = useState<CounterContract[]>([])
-  const [partyDrafts, setPartyDrafts] = useState<Record<string, string>>({})
+  const [partyDrafts, setPartyDrafts] = useState<PartyDrafts>({})
   const [pairingCopied, setPairingCopied] = useState(false)
-  const [connectMode, setConnectMode] = useState<'extension' | 'walletconnect' | undefined>(undefined)
+  const [connectMode, setConnectMode] = useState<
+    'extension' | 'walletconnect' | undefined
+  >(undefined)
   const [signInput, setSignInput] = useState<string>('hello canton')
 
   const busy = isConnecting || isExecuting
@@ -121,14 +192,17 @@ const Counter = (): JSX.Element => {
         (Array.isArray(response) ? response : []).flatMap((row) => {
           const counter = normalizeCounterContract(row)
           return counter === undefined ? [] : [counter]
-        })
+        }),
       )
     } catch (err) {
       toast.error((err as Error).message)
     }
   }
 
-  const runCommand = async (prefix: string, command: unknown): Promise<void> => {
+  const runCommand = async (
+    prefix: string,
+    command: unknown,
+  ): Promise<void> => {
     if (party === undefined) {
       return
     }
@@ -147,12 +221,14 @@ const Counter = (): JSX.Element => {
     }
   }
 
-  const onConnect = async (mode: 'extension' | 'walletconnect'): Promise<void> => {
+  const onConnect = async (
+    mode: 'extension' | 'walletconnect',
+  ): Promise<void> => {
     setConnectMode(mode)
     try {
       await connect(mode)
       if (party !== undefined) {
-        toast.success(`Connected as ${short(party.partyId)}`)
+        toast.success(`Connected as ${formatPartyId(party.partyId)}`)
       }
     } catch (err) {
       toast.error((err as Error).message)
@@ -188,9 +264,20 @@ const Counter = (): JSX.Element => {
     window.setTimeout(() => setPairingCopied(false), 1400)
   }
 
-  const draftFor = (contractId: string): string => partyDrafts[contractId] ?? ''
-  const updateDraft = (contractId: string, value: string): void => {
-    setPartyDrafts((prev) => ({ ...prev, [contractId]: value }))
+  const draftFor = (contractId: string, role: AccessRole): string =>
+    partyDrafts[contractId]?.[role] ?? ''
+  const updateDraft = (
+    contractId: string,
+    role: AccessRole,
+    value: string,
+  ): void => {
+    setPartyDrafts((prev) => ({
+      ...prev,
+      [contractId]: {
+        ...prev[contractId],
+        [role]: value,
+      },
+    }))
   }
 
   return (
@@ -204,21 +291,31 @@ const Counter = (): JSX.Element => {
             className="connect-chip carpincho-connect"
             data-testid="connect-extension"
             type="button"
-            onClick={() => { void onConnect('extension') }}
+            onClick={() => {
+              void onConnect('extension')
+            }}
             disabled={busy}
           >
-            <span className="connect-glyph" aria-hidden="true">C</span>
-            <span>{busy && connectMode === 'extension' ? 'Connecting' : 'Carpincho'}</span>
+            <span className="connect-glyph" aria-hidden="true">
+              C
+            </span>
+            <span>
+              {busy && connectMode === 'extension' ? 'Connecting' : 'Carpincho'}
+            </span>
           </button>
           <button
             className="connect-chip"
             data-testid="connect-walletconnect"
             type="button"
-            onClick={() => { void onConnect('walletconnect') }}
+            onClick={() => {
+              void onConnect('walletconnect')
+            }}
             disabled={busy}
           >
             <img src="/Walletconnect-logo.png" alt="" aria-hidden="true" />
-            <span>{busy && connectMode === 'walletconnect' ? 'Pairing' : 'WC'}</span>
+            <span>
+              {busy && connectMode === 'walletconnect' ? 'Pairing' : 'WC'}
+            </span>
           </button>
         </div>
       ) : (
@@ -227,12 +324,16 @@ const Counter = (): JSX.Element => {
             className="connected-party"
             data-testid="connected-party"
             data-party-id={party?.partyId ?? ''}
-          >party:{short(party?.partyId ?? '')}</span>
+          >
+            party:{formatPartyId(party?.partyId ?? '')}
+          </span>
           <button
             className="logout-icon"
             data-testid="logout"
             type="button"
-            onClick={() => { void onDisconnect() }}
+            onClick={() => {
+              void onDisconnect()
+            }}
             aria-label="Disconnect wallet"
             title="Disconnect wallet"
           >
@@ -250,7 +351,11 @@ const Counter = (): JSX.Element => {
           {pairingUri === undefined ? (
             <div className="pairing-loading">
               <span className="spinner" />
-              <span>{connectMode === 'walletconnect' ? 'Preparing WalletConnect...' : 'Waiting for Carpincho...'}</span>
+              <span>
+                {connectMode === 'walletconnect'
+                  ? 'Preparing WalletConnect...'
+                  : 'Waiting for Carpincho...'}
+              </span>
             </div>
           ) : (
             <>
@@ -260,7 +365,9 @@ const Counter = (): JSX.Element => {
                 <button
                   className={pairingCopied ? 'copied' : undefined}
                   type="button"
-                  onClick={() => { void copyPairingUri() }}
+                  onClick={() => {
+                    void copyPairingUri()
+                  }}
                 >
                   {pairingCopied ? 'Copied' : 'Copy'}
                 </button>
@@ -279,8 +386,8 @@ const Counter = (): JSX.Element => {
             </div>
           </div>
           <p>
-            Your wallet is locked. Open Carpincho and enter your password —
-            this dApp will resume automatically.
+            Your wallet is locked. Open Carpincho and enter your password — this
+            dApp will resume automatically.
           </p>
         </section>
       )}
@@ -292,7 +399,9 @@ const Counter = (): JSX.Element => {
           </div>
         ) : isLocked ? (
           <div className="empty">
-            <p className="empty-title">Wallet locked — unlock Carpincho to continue.</p>
+            <p className="empty-title">
+              Wallet locked — unlock Carpincho to continue.
+            </p>
           </div>
         ) : (
           <>
@@ -300,7 +409,12 @@ const Counter = (): JSX.Element => {
               <button
                 className="primary"
                 data-testid="new-counter"
-                onClick={() => { void runCommand('create-counter', createCounterCommand(party.partyId)) }}
+                onClick={() => {
+                  void runCommand(
+                    'create-counter',
+                    createCounterCommand(party.partyId),
+                  )
+                }}
                 disabled={busy}
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -320,7 +434,14 @@ const Counter = (): JSX.Element => {
               <section className="counter-grid">
                 {counters.map((counter) => {
                   const isIssuer = counter.issuer === party.partyId
-                  const draft = draftFor(counter.contractId)
+                  const viewerDraft = draftFor(counter.contractId, 'viewer')
+                  const incrementorDraft = draftFor(
+                    counter.contractId,
+                    'incrementor',
+                  )
+                  const incrementors = counter.incrementors.map(
+                    ([incrementor]) => incrementor,
+                  )
                   return (
                     <article
                       className="counter-card"
@@ -340,8 +461,15 @@ const Counter = (): JSX.Element => {
                         <button
                           className="primary"
                           data-testid="increment"
-                          onClick={() => { void runCommand('increment-counter', incrementCounterCommand(counter, party.partyId)) }}
-                          disabled={busy || !canIncrement(counter, party.partyId)}
+                          onClick={() => {
+                            void runCommand(
+                              'increment-counter',
+                              incrementCounterCommand(counter, party.partyId),
+                            )
+                          }}
+                          disabled={
+                            busy || !canIncrement(counter, party.partyId)
+                          }
                         >
                           Increment
                         </button>
@@ -354,7 +482,7 @@ const Counter = (): JSX.Element => {
                         </div>
                         <div>
                           <dt>Issuer</dt>
-                          <dd>{short(counter.issuer)}</dd>
+                          <dd>{formatPartyId(counter.issuer)}</dd>
                         </div>
                         <div>
                           <dt>Incrementors</dt>
@@ -366,28 +494,49 @@ const Counter = (): JSX.Element => {
                         </div>
                       </dl>
 
-                      <div className="party-tools">
-                        <input
-                          data-testid="party-id-input"
-                          value={draft}
-                          onChange={(event) => updateDraft(counter.contractId, event.target.value)}
-                          placeholder="party id"
+                      <div className="access-sections">
+                        <AccessSection
+                          addTestId="add-viewer"
+                          buttonLabel="Add viewer"
                           disabled={!isIssuer || busy}
+                          draft={viewerDraft}
+                          emptyMessage="There are no viewers."
+                          inputTestId="viewer-party-id-input"
+                          onAdd={() => {
+                            void runCommand(
+                              'add-viewer',
+                              addViewerCommand(counter, viewerDraft.trim()),
+                            )
+                          }}
+                          onDraftChange={(value) =>
+                            updateDraft(counter.contractId, 'viewer', value)
+                          }
+                          parties={counter.viewers}
+                          title="Viewers"
                         />
-                        <button
-                          data-testid="add-user"
-                          onClick={() => { void runCommand('add-user', addUserCommand(counter, draft.trim())) }}
-                          disabled={!isIssuer || busy || draft.trim() === ''}
-                        >
-                          Add user
-                        </button>
-                        <button
-                          data-testid="add-viewer"
-                          onClick={() => { void runCommand('add-viewer', addViewerCommand(counter, draft.trim())) }}
-                          disabled={!isIssuer || busy || draft.trim() === ''}
-                        >
-                          Add viewer
-                        </button>
+                        <AccessSection
+                          addTestId="add-incrementor"
+                          buttonLabel="Add incrementor"
+                          disabled={!isIssuer || busy}
+                          draft={incrementorDraft}
+                          emptyMessage="There are no incrementors."
+                          inputTestId="incrementor-party-id-input"
+                          onAdd={() => {
+                            void runCommand(
+                              'add-incrementor',
+                              addUserCommand(counter, incrementorDraft.trim()),
+                            )
+                          }}
+                          onDraftChange={(value) =>
+                            updateDraft(
+                              counter.contractId,
+                              'incrementor',
+                              value,
+                            )
+                          }
+                          parties={incrementors}
+                          title="Incrementors"
+                        />
                       </div>
                     </article>
                   )
@@ -400,7 +549,7 @@ const Counter = (): JSX.Element => {
 
       {lastTx !== undefined && (
         <section
-          className="workspace-panel"
+          className="workspace-panel ui-hidden"
           data-testid="tx-status"
           data-tx-status={lastTx.status}
           data-tx-command-id={lastTx.commandId ?? ''}
@@ -418,7 +567,7 @@ const Counter = (): JSX.Element => {
       )}
 
       {isConnected && !isLocked && (
-        <section className="workspace-panel" data-testid="signing-panel">
+        <section className="workspace-panel ui-hidden" data-testid="signing-panel">
           <div className="panel-title-row">
             <div>
               <span className="section-kicker">Wallet capability</span>
@@ -427,10 +576,10 @@ const Counter = (): JSX.Element => {
           </div>
           <div className="counter-card">
             <p>
-              Exercises CIP-0103 <code>signMessage</code> against the connected wallet.
-              The wallet asks for approval, signs with the active party's key, and returns
-              the Ed25519 signature in base64. Useful for "prove you own this party"
-              challenges from a backend.
+              Exercises CIP-0103 <code>signMessage</code> against the connected
+              wallet. The wallet asks for approval, signs with the active
+              party's key, and returns the Ed25519 signature in base64. Useful
+              for "prove you own this party" challenges from a backend.
             </p>
             <input
               type="text"
@@ -443,7 +592,9 @@ const Counter = (): JSX.Element => {
             <button
               data-testid="sign-message"
               type="button"
-              onClick={() => { void onSignMessage() }}
+              onClick={() => {
+                void onSignMessage()
+              }}
               disabled={isSigning}
             >
               Sign with active party
