@@ -41,14 +41,14 @@ describe('counter app UI shell', () => {
     assert.match(app, /title="Viewers"/)
     assert.match(app, /There are no viewers\./)
     assert.match(app, /addTestId="add-viewer"/)
-    assert.match(app, /buttonLabel="Add"/)
+    assert.match(app, /buttonLabel="Add viewer"/)
 
     // The counter card should present incrementor access separately from viewers,
     // backed by the incrementor command that grants write capability.
     assert.match(app, /title="Incrementors"/)
     assert.match(app, /There are no incrementors\./)
     assert.match(app, /addTestId="add-incrementor"/)
-    assert.match(app, /buttonLabel="Add"/)
+    assert.match(app, /buttonLabel="Add incrementor"/)
 
     // Reader and writer forms should keep their input and button on the same
     // row; the input shrinks instead of forcing the button onto a second line.

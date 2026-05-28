@@ -497,7 +497,7 @@ const Counter = (): JSX.Element => {
                       <div className="access-sections">
                         <AccessSection
                           addTestId="add-viewer"
-                          buttonLabel="Add"
+                          buttonLabel="Add viewer"
                           disabled={!isIssuer || busy}
                           draft={viewerDraft}
                           emptyMessage="There are no viewers."
@@ -516,7 +516,7 @@ const Counter = (): JSX.Element => {
                         />
                         <AccessSection
                           addTestId="add-incrementor"
-                          buttonLabel="Add"
+                          buttonLabel="Add incrementor"
                           disabled={!isIssuer || busy}
                           draft={incrementorDraft}
                           emptyMessage="There are no incrementors."
