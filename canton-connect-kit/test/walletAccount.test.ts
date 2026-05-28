@@ -17,10 +17,7 @@ describe('selectPrimaryAccount', () => {
   })
 
   it('falls back to the first entry when nothing is flagged primary', () => {
-    const primary = selectPrimaryAccount([
-      { partyId: 'a::fp' },
-      { partyId: 'b::fp' },
-    ])
+    const primary = selectPrimaryAccount([{ partyId: 'a::fp' }, { partyId: 'b::fp' }])
     assert.equal(primary?.partyId, 'a::fp')
   })
 })

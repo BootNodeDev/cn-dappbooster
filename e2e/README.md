@@ -44,9 +44,9 @@ npm run --silent canton:token > /tmp/canton.token
 sed -i '' "s|^CANTON_BACKEND_TOKEN=.*|CANTON_BACKEND_TOKEN=$(cat /tmp/canton.token)|" counter/wallet-service/.env
 ./canton-base/scripts/deploy-dar.sh counter/daml/.daml/dist/quickstart-counter-0.0.1.dar
 npm --prefix carpincho-wallet run build:extension
-npm run wallet-service:dev      # terminal 1
-npm run wallet:dev              # terminal 2
-npm run app:dev                 # terminal 3
+npm run wallet-service:dev               # terminal 1
+npm --prefix carpincho-wallet run dev    # terminal 2
+npm run app:dev                          # terminal 3
 ```
 
 ### First-time setup

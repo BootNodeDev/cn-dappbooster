@@ -11,11 +11,11 @@
 // suite at NPM-installed `node_modules/@canton-counter/*` paths without touching
 // this file.
 
-import { test as base, chromium, type BrowserContext, type Worker } from '@playwright/test'
-import { fileURLToPath } from 'node:url'
-import path from 'node:path'
-import os from 'node:os'
 import fs from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { type BrowserContext, test as base, chromium, type Worker } from '@playwright/test'
 
 const moduleDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -34,21 +34,21 @@ type StackFixtures = {
 
 export const test = base.extend<StackFixtures>({
   context: async ({}, use) => {
-    const exists = await fs.stat(EXTENSION_PATH).then(() => true).catch(() => false)
+    const exists = await fs
+      .stat(EXTENSION_PATH)
+      .then(() => true)
+      .catch(() => false)
     if (!exists) {
       throw new Error(
         `Carpincho extension build not found at ${EXTENSION_PATH}.\n` +
-        'Run `npm --prefix carpincho-wallet run build:extension` first, ' +
-        'or set EXTENSION_PATH to point at a published artifact.'
+          'Run `npm --prefix carpincho-wallet run build:extension` first, ' +
+          'or set EXTENSION_PATH to point at a published artifact.',
       )
     }
     const userDataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'canton-counter-e2e-'))
     const context = await chromium.launchPersistentContext(userDataDir, {
       headless: false,
-      args: [
-        `--disable-extensions-except=${EXTENSION_PATH}`,
-        `--load-extension=${EXTENSION_PATH}`
-      ]
+      args: [`--disable-extensions-except=${EXTENSION_PATH}`, `--load-extension=${EXTENSION_PATH}`],
     })
     await use(context)
     await context.close()
@@ -61,7 +61,7 @@ export const test = base.extend<StackFixtures>({
     }
     const id = serviceWorker.url().split('/')[2]
     await use(id)
-  }
+  },
 })
 
 export { expect } from '@playwright/test'

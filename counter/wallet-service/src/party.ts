@@ -1,14 +1,18 @@
-import { SDK } from '@canton-network/wallet-sdk'
-import { InvalidParams, createPendingStore } from './rpc.ts'
-import type { PendingStore } from './rpc.ts'
+import type { SDK } from '@canton-network/wallet-sdk'
 import type { WalletServiceConfig } from './config.ts'
+import type { PendingStore } from './rpc.ts'
+import { createPendingStore, InvalidParams } from './rpc.ts'
 
 type WalletSdk = Awaited<ReturnType<typeof SDK.create>>
 type PreparedExternalPartyCreation = ReturnType<WalletSdk['party']['external']['create']>
 
 export type PartyApi = {
   prepare: (params: { publicKeyBase64?: string; partyHint?: string }) => Promise<unknown>
-  complete: (params: { onboardingId?: string; signatureBase64?: string; expectHeavyLoad?: boolean }) => Promise<unknown>
+  complete: (params: {
+    onboardingId?: string
+    signatureBase64?: string
+    expectHeavyLoad?: boolean
+  }) => Promise<unknown>
   pendingSize: () => number
 }
 
@@ -18,12 +22,17 @@ type PartyApiDeps = {
 }
 
 export const createPartyApi = (_config: WalletServiceConfig, deps: PartyApiDeps): PartyApi => {
-  const store = deps.store ?? createPendingStore<PreparedExternalPartyCreation>({
-    ttlMs: 5 * 60_000,
-    maxSize: 32
-  })
+  const store =
+    deps.store ??
+    createPendingStore<PreparedExternalPartyCreation>({
+      ttlMs: 5 * 60_000,
+      maxSize: 32,
+    })
 
-  const prepare = async (params: { publicKeyBase64?: string; partyHint?: string }): Promise<unknown> => {
+  const prepare = async (params: {
+    publicKeyBase64?: string
+    partyHint?: string
+  }): Promise<unknown> => {
     if (params.publicKeyBase64 === undefined || params.publicKeyBase64.trim() === '') {
       throw new InvalidParams('publicKeyBase64 is required')
     }
@@ -33,7 +42,7 @@ export const createPartyApi = (_config: WalletServiceConfig, deps: PartyApiDeps)
     }
     const sdk = await deps.getSdk()
     const prepared = sdk.party.external.create(params.publicKeyBase64, {
-      ...(partyHint === undefined ? {} : { partyHint })
+      ...(partyHint === undefined ? {} : { partyHint }),
     })
     const topology = await prepared.topology()
     const onboardingId = crypto.randomUUID()
@@ -41,7 +50,11 @@ export const createPartyApi = (_config: WalletServiceConfig, deps: PartyApiDeps)
     return { onboardingId, ...topology }
   }
 
-  const complete = async (params: { onboardingId?: string; signatureBase64?: string; expectHeavyLoad?: boolean }): Promise<unknown> => {
+  const complete = async (params: {
+    onboardingId?: string
+    signatureBase64?: string
+    expectHeavyLoad?: boolean
+  }): Promise<unknown> => {
     if (params.onboardingId === undefined || params.onboardingId.length === 0) {
       throw new InvalidParams('onboardingId is required')
     }
@@ -55,7 +68,7 @@ export const createPartyApi = (_config: WalletServiceConfig, deps: PartyApiDeps)
     try {
       return await prepared.execute(params.signatureBase64, {
         expectHeavyLoad: params.expectHeavyLoad,
-        grantUserRights: true
+        grantUserRights: true,
       })
     } finally {
       store.delete(params.onboardingId)
