@@ -14,7 +14,7 @@ export const formatPartyId = (partyId: string): string => {
   const name = partyId.slice(0, separator)
   const namespace = partyId.slice(separator + 2)
   const formattedNamespace =
-    namespace.length <= 17 ? namespace : `${namespace.slice(0, 6)}...${namespace.slice(-8)}`
+    namespace.length <= 22 ? namespace : `${namespace.slice(0, 6)}...${namespace.slice(-8)}`
 
   return `${name}::${formattedNamespace}`
 }
