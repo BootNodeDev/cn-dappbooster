@@ -7,11 +7,11 @@ const STORAGE_KEY = 'counter.frontend.runtime-config.v1'
 
 const DEFAULT_RUNTIME_CONFIG: RuntimeConfig = {
   cantonNetwork: 'canton:local',
-  walletCompanionUrl: 'http://localhost:3011'
+  walletCompanionUrl: 'http://localhost:3011',
 }
 
 export const defaultRuntimeConfig = (): RuntimeConfig => ({
-  ...DEFAULT_RUNTIME_CONFIG
+  ...DEFAULT_RUNTIME_CONFIG,
 })
 
 const normalizeNetwork = (value: string): string => {
@@ -24,9 +24,10 @@ const normalizeNetwork = (value: string): string => {
 
 const sanitizeRuntimeConfig = (raw: Partial<RuntimeConfig>): RuntimeConfig => ({
   cantonNetwork: normalizeNetwork(raw.cantonNetwork ?? DEFAULT_RUNTIME_CONFIG.cantonNetwork),
-  walletCompanionUrl: raw.walletCompanionUrl?.trim() === ''
-    ? DEFAULT_RUNTIME_CONFIG.walletCompanionUrl
-    : raw.walletCompanionUrl?.trim() ?? DEFAULT_RUNTIME_CONFIG.walletCompanionUrl
+  walletCompanionUrl:
+    raw.walletCompanionUrl?.trim() === ''
+      ? DEFAULT_RUNTIME_CONFIG.walletCompanionUrl
+      : (raw.walletCompanionUrl?.trim() ?? DEFAULT_RUNTIME_CONFIG.walletCompanionUrl),
 })
 
 export const loadRuntimeConfig = (): RuntimeConfig => {

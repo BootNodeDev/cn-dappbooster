@@ -8,36 +8,32 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const root = path.resolve(__dirname, '..')
 
 const b64url = (input) =>
-  Buffer.from(input)
-    .toString('base64')
-    .replace(/=/g, '')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
+  Buffer.from(input).toString('base64').replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')
 
 const parseEnvFile = (filePath) => {
   if (!fs.existsSync(filePath)) {
     return {}
   }
   return Object.fromEntries(
-    fs.readFileSync(filePath, 'utf8')
+    fs
+      .readFileSync(filePath, 'utf8')
       .split(/\r?\n/)
-      .map(line => line.trim())
-      .filter(line => line !== '' && !line.startsWith('#'))
-      .flatMap(line => {
+      .map((line) => line.trim())
+      .filter((line) => line !== '' && !line.startsWith('#'))
+      .flatMap((line) => {
         const separator = line.indexOf('=')
         if (separator === -1) {
           return []
         }
         const key = line.slice(0, separator).trim()
         const rawValue = line.slice(separator + 1).trim()
-        const value = (
+        const value =
           (rawValue.startsWith('"') && rawValue.endsWith('"')) ||
           (rawValue.startsWith("'") && rawValue.endsWith("'"))
-        )
-          ? rawValue.slice(1, -1)
-          : rawValue
+            ? rawValue.slice(1, -1)
+            : rawValue
         return [[key, value]]
-      })
+      }),
   )
 }
 
@@ -62,14 +58,16 @@ export const createCantonToken = ({ subject, audience, secret }) => {
 const main = () => {
   const env = {
     ...parseEnvFile(path.join(root, '.env')),
-    ...process.env
+    ...process.env,
   }
   const subject = process.argv[2] ?? env.CANTON_ADMIN_USER_ID
-  process.stdout.write(`${createCantonToken({
-    subject,
-    audience: env.CANTON_AUTH_AUDIENCE,
-    secret: env.CANTON_AUTH_SECRET
-  })}\n`)
+  process.stdout.write(
+    `${createCantonToken({
+      subject,
+      audience: env.CANTON_AUTH_AUDIENCE,
+      secret: env.CANTON_AUTH_SECRET,
+    })}\n`,
+  )
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

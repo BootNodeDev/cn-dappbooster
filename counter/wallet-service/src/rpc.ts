@@ -1,4 +1,5 @@
 import { SDK } from '@canton-network/wallet-sdk'
+import type { WalletServiceConfig } from './config.ts'
 import type {
   ConnectResult,
   JsonRpcError,
@@ -10,9 +11,8 @@ import type {
   LedgerApiRequest,
   Network,
   Provider,
-  StatusEvent
+  StatusEvent,
 } from './types.ts'
-import type { WalletServiceConfig } from './config.ts'
 
 export class InvalidParams extends Error {
   readonly code = -32602
@@ -70,7 +70,7 @@ export const createPendingStore = <T>(opts: PendingStoreOptions): PendingStore<T
     size: () => {
       reap()
       return entries.size
-    }
+    },
   }
 }
 
@@ -81,30 +81,32 @@ type ExecutePreparedParams = {
   actAs?: string[]
   preparedTransaction?: string
   preparedTransactionHash?: string
-  hashingSchemeVersion?: 'HASHING_SCHEME_VERSION_UNSPECIFIED' | 'HASHING_SCHEME_VERSION_V2' | 'HASHING_SCHEME_VERSION_V3'
+  hashingSchemeVersion?:
+    | 'HASHING_SCHEME_VERSION_UNSPECIFIED'
+    | 'HASHING_SCHEME_VERSION_V2'
+    | 'HASHING_SCHEME_VERSION_V3'
   hashingDetails?: string
   costEstimation?: unknown
   signatureBase64?: string
   submissionId?: string
 }
 
-
 const rpcResult = (id: JsonRpcId, result: unknown): JsonRpcSuccess => ({
   jsonrpc: '2.0',
   id,
-  result
+  result,
 })
 
 const rpcError = (id: JsonRpcId, code: number, message: string, data?: unknown): JsonRpcError => ({
   jsonrpc: '2.0',
   id,
-  error: data === undefined ? { code, message } : { code, message, data }
+  error: data === undefined ? { code, message } : { code, message, data },
 })
 
 const unsupported = (id: JsonRpcId, method: string): JsonRpcError =>
   rpcError(id, -32004, 'Method not supported', {
     method,
-    reason: 'This wallet-service has no private keys. Carpincho signs.'
+    reason: 'This wallet-service has no private keys. Carpincho signs.',
   })
 
 const errorMessage = (error: unknown): string =>
@@ -151,7 +153,7 @@ export const createRpc = (config: WalletServiceConfig): Rpc => {
     sdkPromise ??= SDK.create({
       auth: { method: 'static', token: config.canton.backendToken },
       ledgerClientUrl: config.canton.jsonApiUrl,
-      logAdapter: 'console'
+      logAdapter: 'console',
     }).catch((cause: unknown) => {
       sdkPromise = undefined
       throw new Error('Canton wallet SDK failed to initialize', { cause })
@@ -162,7 +164,7 @@ export const createRpc = (config: WalletServiceConfig): Rpc => {
   const ledgerJsonApiVersion = async (): Promise<{ connected: boolean; reason?: string }> => {
     try {
       const response = await fetch(`${config.canton.jsonApiUrl.replace(/\/$/, '')}/v2/version`, {
-        signal: AbortSignal.timeout(3000)
+        signal: AbortSignal.timeout(3000),
       })
       return response.ok
         ? { connected: true }
@@ -179,7 +181,7 @@ export const createRpc = (config: WalletServiceConfig): Rpc => {
       reason: 'No wallet session/account implementation yet.',
       isNetworkConnected: networkStatus.connected,
       ...(networkStatus.reason === undefined ? {} : { networkReason: networkStatus.reason }),
-      ...(config.provider.userUrl === undefined ? {} : { userUrl: config.provider.userUrl })
+      ...(config.provider.userUrl === undefined ? {} : { userUrl: config.provider.userUrl }),
     }
   }
 
@@ -191,17 +193,20 @@ export const createRpc = (config: WalletServiceConfig): Rpc => {
     version: config.provider.version,
     providerType: 'remote',
     ...(config.provider.url === undefined ? {} : { url: config.provider.url }),
-    ...(config.provider.userUrl === undefined ? {} : { userUrl: config.provider.userUrl })
+    ...(config.provider.userUrl === undefined ? {} : { userUrl: config.provider.userUrl }),
   })
 
   const status = async (): Promise<StatusEvent> => ({
     provider: provider(),
     connection: await connectResult(),
-    network: network()
+    network: network(),
   })
 
   const prepareTransaction = async (params: unknown): Promise<unknown> => {
-    const p = objectParam<JsPrepareSubmissionRequest & { partyId?: string }>(params, 'prepareTransaction')
+    const p = objectParam<JsPrepareSubmissionRequest & { partyId?: string }>(
+      params,
+      'prepareTransaction',
+    )
     const partyId = firstParty(p)
     if (p.commands === undefined) {
       throw new InvalidParams('commands is required')
@@ -213,7 +218,7 @@ export const createRpc = (config: WalletServiceConfig): Rpc => {
       commandId: p.commandId,
       synchronizerId: p.synchronizerId,
       // SDK accepts the spec's DisclosedContract shape; cast preserved across SDK type drift.
-      disclosedContracts: p.disclosedContracts as never
+      disclosedContracts: p.disclosedContracts as never,
     })
     const json = await prepared.toJSON()
     return json.response
@@ -222,8 +227,9 @@ export const createRpc = (config: WalletServiceConfig): Rpc => {
   const executePrepared = async (params: unknown): Promise<unknown> => {
     const p = objectParam<ExecutePreparedParams>(params, 'executePrepared')
     const partyId = firstParty(p)
-    const missing = (['preparedTransaction', 'preparedTransactionHash', 'hashingSchemeVersion'] as const)
-      .filter((key) => p[key] === undefined)
+    const missing = (
+      ['preparedTransaction', 'preparedTransactionHash', 'hashingSchemeVersion'] as const
+    ).filter((key) => p[key] === undefined)
     if (missing.length > 0) {
       throw new InvalidParams(`missing required fields: ${missing.join(', ')}`)
     }
@@ -237,7 +243,7 @@ export const createRpc = (config: WalletServiceConfig): Rpc => {
       preparedTransactionHash: p.preparedTransactionHash!,
       hashingSchemeVersion: p.hashingSchemeVersion!,
       ...(p.hashingDetails === undefined ? {} : { hashingDetails: p.hashingDetails }),
-      ...(p.costEstimation === undefined ? {} : { costEstimation: p.costEstimation as never })
+      ...(p.costEstimation === undefined ? {} : { costEstimation: p.costEstimation as never }),
     }
     const signed = sdk.ledger.fromSignature(response, p.signatureBase64)
     return await sdk.ledger.execute(signed, { partyId, submissionId: p.submissionId })
@@ -277,20 +283,23 @@ export const createRpc = (config: WalletServiceConfig): Rpc => {
       method,
       headers: {
         'content-type': 'application/json',
-        authorization: `Bearer ${config.canton.backendToken}`
+        authorization: `Bearer ${config.canton.backendToken}`,
       },
-      signal: AbortSignal.timeout(15_000)
+      signal: AbortSignal.timeout(15_000),
     }
     if (method !== 'GET' && method !== 'HEAD' && p.body !== undefined) {
       init.body = JSON.stringify(p.body)
     }
     const response = await fetch(url, init)
     const text = await response.text()
-    const isJson = text.length > 0 && response.headers.get('content-type')?.includes('json') === true
+    const isJson =
+      text.length > 0 && response.headers.get('content-type')?.includes('json') === true
     const parsed: unknown = isJson ? safeJsonParse(text) : text
     if (!response.ok) {
       const detail = typeof parsed === 'string' ? parsed : JSON.stringify(parsed)
-      throw new Error(`Canton JSON API ${method} ${p.resource} → HTTP ${response.status}: ${detail}`)
+      throw new Error(
+        `Canton JSON API ${method} ${p.resource} → HTTP ${response.status}: ${detail}`,
+      )
     }
     return parsed
   }
@@ -317,7 +326,7 @@ export const createRpc = (config: WalletServiceConfig): Rpc => {
           return rpcResult(id, [])
         case 'getPrimaryAccount':
           return rpcError(id, -32001, 'Resource not found', {
-            reason: 'No primary account configured yet.'
+            reason: 'No primary account configured yet.',
           })
         case 'prepareTransaction':
           return rpcResult(id, await prepareTransaction(request.params))
@@ -336,7 +345,7 @@ export const createRpc = (config: WalletServiceConfig): Rpc => {
       console.error('[counter-wallet-service] rpc failed', {
         id,
         method: request.method,
-        error: errorData(error)
+        error: errorData(error),
       })
       if (error instanceof InvalidParams) {
         return rpcError(id, -32602, error.message, { method: request.method })
@@ -367,7 +376,7 @@ export const createRpc = (config: WalletServiceConfig): Rpc => {
       'getPrimaryAccount',
       'ledgerApi',
       'prepareTransaction',
-      'executePrepared'
+      'executePrepared',
     ],
     reservedMethods: ['prepareExecute', 'prepareExecuteAndWait', 'signMessage'],
     adminEndpoints: ['POST /admin/party/prepare', 'POST /admin/party/complete'],
@@ -378,8 +387,8 @@ export const createRpc = (config: WalletServiceConfig): Rpc => {
       ledgerApiUrl: config.canton.ledgerApiUrl,
       adminApiUrl: config.canton.adminApiUrl,
       backendUserId: config.canton.backendUserId,
-      hasBackendToken: config.canton.backendToken !== undefined
-    }
+      hasBackendToken: config.canton.backendToken !== undefined,
+    },
   })
 
   return { handle, serviceInfo, getSdk }

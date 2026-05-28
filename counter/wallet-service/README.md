@@ -124,8 +124,8 @@ iteration with no Docker / Canton / DAML SDK running.
 WALLET_SERVICE_MOCK=1 npm run dev
 ```
 
-From the repository root, `npm run dev:wallet-mock` wraps this and also
-launches carpincho-wallet against the mocked service.
+To exercise carpincho-wallet against the mocked service, run the wallet
+separately with `npm --prefix carpincho-wallet run dev`.
 
 ## References
 
