@@ -138,10 +138,10 @@ describe('counter app UI shell', () => {
 
     // The app should import the shared party formatter and use it for visible
     // party values instead of calling the generic non-party shortener directly.
-    assert.match(app, /import \{ formatPartyId \} from "\.\/utils\/formatPartyId\.js"/)
+    assert.match(app, /import \{ formatPartyId \} from '\.\/utils\/formatPartyId\.js'/)
     assert.match(app, /formatPartyId\(partyId\)/)
     assert.match(app, /formatPartyId\(party\.partyId\)/)
-    assert.match(app, /formatPartyId\(party\?\.partyId \?\? ""\)/)
+    assert.match(app, /formatPartyId\(party\?\.partyId \?\? ''\)/)
     assert.match(app, /formatPartyId\(counter\.issuer\)/)
     assert.doesNotMatch(app, /short\(counter\.issuer\)/)
   })
