@@ -11,17 +11,20 @@ import type { JsonRpcRequest, JsonRpcResponse } from './types.ts'
 const config = loadConfig()
 const mockEnabled = isMockEnabled()
 const mockState = mockEnabled ? createMockState() : undefined
-const rpc = mockEnabled && mockState !== undefined ? createMockRpc(config, mockState) : createRpc(config)
+const rpc =
+  mockEnabled && mockState !== undefined ? createMockRpc(config, mockState) : createRpc(config)
 const adminParty =
   mockEnabled && mockState !== undefined
     ? createMockPartyApi(config, mockState)
     : createPartyApi(config, { getSdk: () => rpc.getSdk() })
 const app = express()
 
-app.use(cors({
-  origin: config.corsOrigins.includes('*') ? true : config.corsOrigins,
-  credentials: true
-}))
+app.use(
+  cors({
+    origin: config.corsOrigins.includes('*') ? true : config.corsOrigins,
+    credentials: true,
+  }),
+)
 app.use(express.json({ limit: '1mb' }))
 
 app.get('/health', (_req, res) => {
@@ -55,7 +58,11 @@ app.post('/admin/party/prepare', async (req, res) => {
 })
 
 app.post('/admin/party/complete', async (req, res) => {
-  const body = req.body as { onboardingId?: string; signatureBase64?: string; expectHeavyLoad?: boolean }
+  const body = req.body as {
+    onboardingId?: string
+    signatureBase64?: string
+    expectHeavyLoad?: boolean
+  }
   try {
     res.json(await adminParty.complete(body))
   } catch (error) {
@@ -69,7 +76,11 @@ app.post('/rpc', async (req, res) => {
     const response: JsonRpcResponse = {
       jsonrpc: '2.0',
       id: null,
-      error: { code: -32600, message: 'Invalid request', data: { reason: 'JSON-RPC body must be an object' } }
+      error: {
+        code: -32600,
+        message: 'Invalid request',
+        data: { reason: 'JSON-RPC body must be an object' },
+      },
     }
     res.json(response)
     return
@@ -84,5 +95,7 @@ app.post('/rpc', async (req, res) => {
 
 app.listen(config.port, () => {
   const suffix = mockEnabled ? ' (MOCK MODE — no Canton calls)' : ''
-  console.log(`wallet-service listening on ${config.port}${suffix} (token: ${config.canton.tokenSource})`)
+  console.log(
+    `wallet-service listening on ${config.port}${suffix} (token: ${config.canton.tokenSource})`,
+  )
 })

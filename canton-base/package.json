@@ -7,6 +7,9 @@
     "down": "docker compose down",
     "health": "./scripts/health-check.sh",
     "token": "node ./scripts/mint-token.mjs wallet-service",
+    "lint": "biome check",
+    "lint:fix": "biome check --write",
+    "format": "biome format --write",
     "test": "node --test",
     "wallet-service:logs": "docker compose logs -f wallet-service"
   }

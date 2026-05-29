@@ -1,31 +1,6 @@
-const stripPrefix = (files, prefix) =>
-  files.map(f => f.replace(new RegExp(`.*/${prefix}/`), ''))
-
 export default {
-  'carpincho-wallet/src/**/*.{ts,tsx,js,jsx}': files => {
-    const rels = stripPrefix(files, 'carpincho-wallet')
-    return [
-      `cd carpincho-wallet && biome check --write --no-errors-on-unmatched ${rels.join(' ')}`,
-      'npm --prefix carpincho-wallet test',
-    ]
-  },
-  'carpincho-wallet/src/**/*.{json,jsonc,mjs,cjs}': files => {
-    const rels = stripPrefix(files, 'carpincho-wallet')
-    return [`cd carpincho-wallet && biome check --write --no-errors-on-unmatched ${rels.join(' ')}`]
-  },
-  'counter/frontend/src/**/*.{ts,tsx,js,jsx}': files => {
-    const rels = stripPrefix(files, 'counter/frontend')
-    return [`cd counter/frontend && eslint --fix ${rels.join(' ')}`]
-  },
-  'canton-connect-kit/src/**/*.{ts,tsx,js,jsx}': files => {
-    const rels = stripPrefix(files, 'canton-connect-kit')
-    return [
-      `cd canton-connect-kit && biome check --write --no-errors-on-unmatched ${rels.join(' ')}`,
-      'npm --prefix canton-connect-kit test',
-    ]
-  },
-  'canton-connect-kit/src/**/*.{json,jsonc,mjs,cjs}': files => {
-    const rels = stripPrefix(files, 'canton-connect-kit')
-    return [`cd canton-connect-kit && biome check --write --no-errors-on-unmatched ${rels.join(' ')}`]
-  },
+  '{carpincho-wallet,canton-connect-kit,counter/frontend,counter/wallet-service,e2e,canton-base}/**/*.{ts,tsx,js,jsx,json,jsonc,mjs,cjs,css}':
+    'biome check --write --no-errors-on-unmatched',
+  'carpincho-wallet/src/**/*.{ts,tsx,js,jsx}': () => 'npm --prefix carpincho-wallet test',
+  'canton-connect-kit/src/**/*.{ts,tsx,js,jsx}': () => 'npm --prefix canton-connect-kit test',
 }

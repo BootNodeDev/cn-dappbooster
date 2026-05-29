@@ -19,7 +19,8 @@ For the system shape (data flow, components, ports), see [`architecture.md`](arc
 | Node | 24 | Pinned via root `.nvmrc`; inherits to every Node subproject |
 | Container runtime | Docker | Used by `canton-base/` for the local participant + Postgres |
 | Commit linting | commitlint + husky | Enforced via root `.husky/commit-msg` |
-| Pre-commit | lint-staged | Root `.lintstagedrc.mjs` dispatches per subproject (Biome for `carpincho-wallet/`, ESLint for `counter/frontend/`) |
+| Lint / format | Biome | One root `biome.json` and a single root `@biomejs/biome`; per-project specifics live in `overrides`. No per-subproject Biome install or config |
+| Pre-commit | lint-staged | Root `.lintstagedrc.mjs` runs root Biome (`biome check --write`) across `carpincho-wallet/`, `canton-connect-kit/`, and `counter/frontend/` |
 | Pre-push | tsc | Root `.husky/pre-push` runs `tsc --noEmit` per Node subproject |
 
 ## Subprojects
@@ -30,7 +31,7 @@ For the system shape (data flow, components, ports), see [`architecture.md`](arc
 | [`counter/daml/`](counter/daml/) | `quickstart-counter` DAML model | DAML | n/a (DAR artifact) |
 | [`canton-base/wallet-service/`](canton-base/wallet-service/) | JSON-RPC bridge between the wallet and the Canton participant. Started by `npm run canton:up`. Self-mints its Canton JWT. | Node + Express + TypeScript | 3010 |
 | [`carpincho-wallet/`](carpincho-wallet/) | CIP-0103 wallet — vault, signing, WalletConnect, Chrome extension | Vite 6 + React 18 + Tailwind v4 + Biome | 3011 |
-| [`counter/frontend/`](counter/frontend/) | Counter dApp UI | Vite + React + ESLint | 3012 |
+| [`counter/frontend/`](counter/frontend/) | Counter dApp UI | Vite + React + Biome | 3012 |
 | [`canton-connect-kit/`](canton-connect-kit/) | wagmi-style React hooks for connecting Canton dApps to CIP-0103 wallets | TypeScript + React 18 + Biome | n/a (library) |
 
 ## Code Style
@@ -38,14 +39,14 @@ For the system shape (data flow, components, ports), see [`architecture.md`](arc
 - All source code in English regardless of conversation language.
 - TypeScript preferred over JavaScript across Node subprojects.
 - **No semicolons** in TypeScript / JavaScript across the repo.
-- Defer formatting rules to each subproject's linter config (Biome for the wallet, ESLint for the counter frontend). Do not override at root.
+- Lint and formatting are centralized in the root `biome.json`. Add project-specific rules under `overrides` keyed by path; do not create per-subproject Biome configs.
 
 ## Working Rules
 
 - Use **npm** only (never pnpm or yarn).
 - Install / run inside a subproject either by `cd <subproject>` or by using `npm --prefix <subproject> run <script>`. The root `package.json` exposes orchestration shortcuts:
   - `npm run canton:up` / `canton:down` / `canton:health` / `canton:token`
-  - `npm run build-dar -- <daml-project>` / `deploy-dar -- <dar>`
+  - `npm run build-dar -- <daml-project>` / `npm run deploy-dar -- <dar>`
   - `npm run carpincho:build:extension`
   - `npm run app:dev`
 - Local ports are intentionally assigned in the `3010+` range (see table above). Do not change them without updating every subproject's defaults.

@@ -140,6 +140,21 @@ In the frontend:
 2. Click `Connect with Carpincho`.
 3. Approve the request in Carpincho.
 
+### Optional: WalletConnect connect path
+
+The Carpincho extension path above works out of the box. The `Connect with WalletConnect` button is also available, but it requires a Reown project id. Without it, connecting via WalletConnect throws.
+
+Get a project id from https://cloud.reown.com, then set `VITE_WC_PROJECT_ID` in both:
+
+```text
+counter/frontend/.env.local
+carpincho-wallet/.env.local
+```
+
+```bash
+VITE_WC_PROJECT_ID=your_reown_project_id
+```
+
 ## Ports
 
 Local ports are intentionally assigned in the `3010+` range:

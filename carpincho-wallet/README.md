@@ -33,8 +33,9 @@ For the full local flow, follow the root [`README.md`](../README.md).
 
 Optional dev server:
 
-```text
-http://localhost:3011
+```bash
+npm run dev
+# serves on http://localhost:3011
 ```
 
 ## Local Browser Extension

@@ -1,6 +1,7 @@
 export const COUNTER_PACKAGE_ID = 'b2e6c414cdb2341b2ae1167fdce0930291fec5ab4794fea436821109df54db99'
 export const COUNTER_TEMPLATE_ID = '#quickstart-counter:Counter.Counter:Counter'
-export const COUNTER_INCREMENTOR_TEMPLATE_ID = '#quickstart-counter:Counter.Counter:CounterIncrementor'
+export const COUNTER_INCREMENTOR_TEMPLATE_ID =
+  '#quickstart-counter:Counter.Counter:CounterIncrementor'
 
 export interface CounterContract {
   contractId: string
@@ -21,7 +22,7 @@ interface RawContract {
 
 const asRecord = (value: unknown): JsonRecord | undefined =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
-    ? value as JsonRecord
+    ? (value as JsonRecord)
     : undefined
 
 const recordArgument = (value: unknown): JsonRecord | undefined => {
@@ -32,12 +33,12 @@ const recordArgument = (value: unknown): JsonRecord | undefined => {
   if (!Array.isArray(raw.fields)) {
     return raw
   }
-  return Object.fromEntries(raw.fields.flatMap(field => {
-    const row = asRecord(field)
-    return typeof row?.label === 'string'
-      ? [[row.label, row.value]]
-      : []
-  }))
+  return Object.fromEntries(
+    raw.fields.flatMap((field) => {
+      const row = asRecord(field)
+      return typeof row?.label === 'string' ? [[row.label, row.value]] : []
+    }),
+  )
 }
 
 const mapEntries = (value: unknown): unknown[] => {
@@ -46,7 +47,7 @@ const mapEntries = (value: unknown): unknown[] => {
   }
   const row = asRecord(value)
   if (Array.isArray(row?.map)) {
-    return row.map.flatMap(entry => {
+    return row.map.flatMap((entry) => {
       if (Array.isArray(entry)) {
         return [entry]
       }
@@ -90,21 +91,22 @@ export const normalizeCounterContract = (raw: unknown): CounterContract | undefi
     return undefined
   }
   const countRaw = args.count
-  const incrementors = mapEntries(args.incrementors).flatMap(entry =>
+  const incrementors = mapEntries(args.incrementors).flatMap((entry) =>
     Array.isArray(entry) && typeof entry[0] === 'string' && typeof entry[1] === 'string'
       ? [[entry[0], entry[1]] as [string, string]]
-      : []
+      : [],
   )
-  const viewers = mapEntries(args.viewers).flatMap(entry =>
-    Array.isArray(entry) && typeof entry[0] === 'string' ? [entry[0]] : []
+  const viewers = mapEntries(args.viewers).flatMap((entry) =>
+    Array.isArray(entry) && typeof entry[0] === 'string' ? [entry[0]] : [],
   )
   return {
     contractId: row.contractId,
     issuer: typeof args.issuer === 'string' ? args.issuer : '',
-    count: typeof countRaw === 'string' ? Number(countRaw) : typeof countRaw === 'number' ? countRaw : 0,
+    count:
+      typeof countRaw === 'string' ? Number(countRaw) : typeof countRaw === 'number' ? countRaw : 0,
     incrementors,
     viewers,
-    createdAt: typeof row.createdAt === 'string' ? row.createdAt : undefined
+    createdAt: typeof row.createdAt === 'string' ? row.createdAt : undefined,
   }
 }
 
@@ -115,9 +117,9 @@ export const createCounterCommand = (partyId: string): unknown => ({
       issuer: partyId,
       count: '0',
       incrementors: [],
-      viewers: { map: [] }
-    }
-  }
+      viewers: { map: [] },
+    },
+  },
 })
 
 export const incrementCounterCommand = (counter: CounterContract, partyId: string): unknown => {
@@ -128,8 +130,8 @@ export const incrementCounterCommand = (counter: CounterContract, partyId: strin
         templateId: COUNTER_INCREMENTOR_TEMPLATE_ID,
         contractId: delegation,
         choice: 'CounterIncrementor_Increment',
-        choiceArgument: { counterId: counter.contractId }
-      }
+        choiceArgument: { counterId: counter.contractId },
+      },
     }
   }
   return {
@@ -137,8 +139,8 @@ export const incrementCounterCommand = (counter: CounterContract, partyId: strin
       templateId: COUNTER_TEMPLATE_ID,
       contractId: counter.contractId,
       choice: 'Counter_Increment',
-      choiceArgument: {}
-    }
+      choiceArgument: {},
+    },
   }
 }
 
@@ -147,8 +149,8 @@ export const addUserCommand = (counter: CounterContract, newUser: string): unkno
     templateId: COUNTER_TEMPLATE_ID,
     contractId: counter.contractId,
     choice: 'Counter_AddUser',
-    choiceArgument: { newUser }
-  }
+    choiceArgument: { newUser },
+  },
 })
 
 export const addViewerCommand = (counter: CounterContract, newViewer: string): unknown => ({
@@ -156,6 +158,6 @@ export const addViewerCommand = (counter: CounterContract, newViewer: string): u
     templateId: COUNTER_TEMPLATE_ID,
     contractId: counter.contractId,
     choice: 'Counter_AddViewer',
-    choiceArgument: { newViewer }
-  }
+    choiceArgument: { newViewer },
+  },
 })

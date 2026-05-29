@@ -13,7 +13,7 @@
 // This test drives a manual lock from Carpincho's burger menu rather than
 // the idle timeout (faster, deterministic).
 
-import { test, expect, DAPP_URL } from '../fixtures/stack.ts'
+import { DAPP_URL, expect, test } from '../fixtures/stack.ts'
 
 const STRONG_PASSWORD = 'correct-horse-battery-staple-2025!'
 const PARTY_HINT = `e2e-lock-${Date.now().toString(36)}`
@@ -34,7 +34,7 @@ test('wallet lock surfaces in the dApp and unlock recovers', async ({ context, e
   await expect(wallet.getByTestId('add-account-hint-input')).toBeHidden({ timeout: 15_000 })
   await expect(wallet.getByTestId('home-active-account')).toHaveAttribute(
     'data-party-id',
-    new RegExp(`^${PARTY_HINT}::`)
+    new RegExp(`^${PARTY_HINT}::`),
   )
 
   // dApp connect via the injected provider.

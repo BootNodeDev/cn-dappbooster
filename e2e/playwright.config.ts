@@ -18,10 +18,10 @@ export default defineConfig({
     actionTimeout: 10_000,
     navigationTimeout: 15_000,
     trace: 'retain-on-failure',
-    screenshot: 'only-on-failure'
+    screenshot: 'only-on-failure',
   },
   expect: {
-    timeout: 5_000
+    timeout: 5_000,
   },
   projects: [
     {
@@ -33,8 +33,8 @@ export default defineConfig({
       metadata: {
         walletServiceUrl: WALLET_SERVICE_URL,
         carpinchoUrl: CARPINCHO_URL,
-        dappUrl: DAPP_URL
-      }
-    }
-  ]
+        dappUrl: DAPP_URL,
+      },
+    },
+  ],
 })

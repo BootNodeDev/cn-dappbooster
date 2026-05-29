@@ -13,7 +13,7 @@
 | `counter/daml/` | DAML (`dpm` build) | `quickstart-counter` model — DAR consumed by Canton |
 | `canton-base/wallet-service/` | Node 24 + Express 5 + TypeScript + `@canton-network/wallet-sdk` | JSON-RPC bridge between the wallet and the Canton participant JSON API. Started by `npm run canton:up` as a docker-compose service. Self-mints its Canton JWT at boot from `CANTON_AUTH_AUDIENCE` / `CANTON_AUTH_SECRET`. `WALLET_SERVICE_MOCK=1` (`src/mock.ts`) short-circuits the dispatcher with canned responses. |
 | `carpincho-wallet/` | Vite 6 + React 18 + Tailwind v4 + Radix UI + Biome + WalletConnect Sign Client 2.x + `@noble/ed25519` | CIP-0103 wallet (web + Chrome extension), encrypted local vault, signing |
-| `counter/frontend/` | Vite + React + `@canton-network/dapp-sdk` + ESLint | Counter dApp UI that talks to the wallet over WalletConnect |
+| `counter/frontend/` | Vite + React + `@canton-network/dapp-sdk` + Biome | Counter dApp UI that talks to the wallet over WalletConnect |
 
 ## Project Structure
 

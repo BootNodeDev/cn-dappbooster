@@ -1,5 +1,5 @@
-import { describe, it, beforeEach, afterEach } from 'node:test'
 import { strict as assert } from 'node:assert'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 import { loadConfig } from '../src/config.ts'
 
 const CANTON_VARS = [
@@ -7,7 +7,7 @@ const CANTON_VARS = [
   'CANTON_AUTH_AUDIENCE',
   'CANTON_AUTH_SECRET',
   'CANTON_BACKEND_USER_ID',
-  'WALLET_SERVICE_MOCK'
+  'WALLET_SERVICE_MOCK',
 ] as const
 
 const snapshot = (): Record<string, string | undefined> =>
@@ -67,7 +67,7 @@ describe('config loader', () => {
     assert.equal(config.canton.tokenSource, 'mint')
     assert.equal(
       config.canton.backendToken,
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ3YWxsZXQtc2VydmljZSIsImF1ZCI6Imh0dHBzOi8vY2FudG9uLWJhc2UubG9jYWwifQ.ecGaga18iUJBlhKatz-7sW2sXv-Oua9sw4NV0M1yse0'
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ3YWxsZXQtc2VydmljZSIsImF1ZCI6Imh0dHBzOi8vY2FudG9uLWJhc2UubG9jYWwifQ.ecGaga18iUJBlhKatz-7sW2sXv-Oua9sw4NV0M1yse0',
     )
   })
 
@@ -80,9 +80,10 @@ describe('config loader', () => {
     const payload = JSON.parse(
       Buffer.from(
         `${(config.canton.backendToken ?? '').split('.')[1]}${'==='.slice((config.canton.backendToken ?? '').split('.')[1].length % 4)}`
-          .replace(/-/g, '+').replace(/_/g, '/'),
-        'base64'
-      ).toString('utf8')
+          .replace(/-/g, '+')
+          .replace(/_/g, '/'),
+        'base64',
+      ).toString('utf8'),
     )
     assert.equal(payload.sub, 'custom-subject')
   })
