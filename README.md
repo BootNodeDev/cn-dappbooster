@@ -10,13 +10,13 @@ flowchart TD
   cb["canton-barebones<br/>Participant JSON API http://localhost:3013<br/>Ledger/Admin gRPC localhost:3014 / 3015"]
   dar["counter/daml<br/>quickstart-counter DAR<br/>.daml/dist/*.dar"]
 
-  fe <-->|"WalletConnect / CIP-0103"| wallet
+  fe <-->|"Injected CIP-0103 provider<br/>optional WalletConnect"| wallet
   wallet -->|"JSON-RPC /rpc<br/>prepare, execute, read, onboard"| ws
   ws -->|"Canton JSON API<br/>Bearer CANTON_BACKEND_TOKEN"| cb
   dar -->|"deploy DAR package"| cb
 ```
 
-The frontend knows the Counter DAML signature and talks to Carpincho through WalletConnect. Carpincho owns the local signing key and uses the wallet service to prepare, read, and execute against the Canton participant.
+The frontend knows the Counter DAML signature and talks to Carpincho through the injected CIP-0103 browser provider. Carpincho owns the local signing key and uses the wallet service to prepare, read, and execute against the Canton participant. WalletConnect remains available as an optional fallback path.
 
 ## Quick Start
 
@@ -143,7 +143,7 @@ In the frontend:
 
 ### Optional: WalletConnect connect path
 
-The Carpincho extension path above works out of the box. The `Connect with WalletConnect` button is also available, but it requires a Reown project id. Without it, connecting via WalletConnect throws.
+The Carpincho extension path above works through the injected CIP-0103 provider and does not require a Reown project id. The `Connect with WalletConnect` button is also available, but it requires a Reown project id. Without it, connecting via WalletConnect throws.
 
 Get a project id from https://cloud.reown.com, then set `VITE_WC_PROJECT_ID` in both:
 
