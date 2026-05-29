@@ -6,6 +6,7 @@ import {
 } from '@/extension/directConnections.ts'
 import { createDirectProviderResponse } from '@/extension/directProvider.ts'
 import {
+  type JsonRpcRequest,
   type JsonRpcResponse,
   jsonRpcError,
   type RuntimeBroadcastEvent,
@@ -138,12 +139,12 @@ const notifyConnectedOriginsChanged = async (origins: string[]): Promise<void> =
 
 // Applies a provider response to the direct dApp origin registry used by the footer.
 const applyDirectConnectionUpdate = async (
-  pending: RuntimePendingRequest,
+  { origin, request }: { origin: string; request: JsonRpcRequest },
   response: JsonRpcResponse,
 ): Promise<void> => {
   const update = directConnectionUpdateFromProviderResponse({
-    origin: pending.origin,
-    request: pending.request,
+    origin,
+    request,
     response,
   })
   if (update.action === 'none') {
@@ -200,12 +201,7 @@ const handleProviderRequest = async (
   )
   if (directResponse !== undefined) {
     await applyDirectConnectionUpdate(
-      {
-        requestId: requestId(message.request),
-        request: message.request,
-        origin: message.origin,
-        createdAt: Date.now(),
-      },
+      { origin: message.origin, request: message.request },
       directResponse,
     ).catch(() => undefined)
     sendResponse(directResponse)
@@ -246,7 +242,10 @@ chromeApi?.runtime?.onMessage.addListener((message, _sender, sendResponse) => {
     }
     pendingRequests.delete(message.requestId)
     pending.sendResponse(message.response)
-    void applyDirectConnectionUpdate(pending.pending, message.response).catch(() => undefined)
+    void applyDirectConnectionUpdate(
+      { origin: pending.pending.origin, request: pending.pending.request },
+      message.response,
+    ).catch(() => undefined)
     void updateActionBadge().catch(() => undefined)
     sendResponse({ ok: true })
     return false
