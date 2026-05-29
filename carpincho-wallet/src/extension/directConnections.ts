@@ -1,6 +1,6 @@
 import { normalizeDirectConnectionOrigin } from '@/extension/directConnectionState.ts'
 
-const DIRECT_CONNECTED_ORIGINS_KEY = 'carpincho.direct.connectedOrigins'
+export const DIRECT_CONNECTED_ORIGINS_KEY = 'carpincho.direct.connectedOrigins'
 
 type ChromeSessionStorage = {
   set: (items: Record<string, unknown>) => Promise<void> | void
@@ -30,7 +30,7 @@ const chromeSessionStorage = (): ChromeSessionStorage | undefined =>
   ).chrome?.storage?.session
 
 // Returns only string origins from untyped Chrome storage payloads.
-const storedOrigins = (value: unknown): string[] =>
+export const storedOrigins = (value: unknown): string[] =>
   Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
 
 // Deduplicates and sorts normalized origins so footer state is stable across writes.

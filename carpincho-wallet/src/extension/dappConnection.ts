@@ -152,14 +152,21 @@ export const useExtensionDappConnection = (
       return
     }
     let mounted = true
+    let changeSeq = 0
+    const seqAtRequest = changeSeq
+    const unsubscribe = subscribeToDirectConnectedOrigins((origins) => {
+      changeSeq += 1
+      if (mounted) {
+        setRuntimeConnectedOrigins(origins)
+      }
+    })
     void getDirectConnectedOrigins()
       .then((origins) => {
-        if (mounted) {
+        if (mounted && changeSeq === seqAtRequest) {
           setRuntimeConnectedOrigins(origins)
         }
       })
       .catch(() => undefined)
-    const unsubscribe = subscribeToDirectConnectedOrigins(setRuntimeConnectedOrigins)
     return () => {
       mounted = false
       unsubscribe()

@@ -10,7 +10,6 @@ import {
   type JsonRpcResponse,
   jsonRpcError,
   type RuntimeBroadcastEvent,
-  type RuntimeConnectedOriginsChangedMessage,
   type RuntimeEventRelay,
   type RuntimeGetConnectedOrigins,
   type RuntimeGetPendingRequests,
@@ -50,9 +49,7 @@ type RuntimeApi = {
       ) => boolean | undefined,
     ) => void
   }
-  sendMessage: (
-    message: RuntimePendingRequestMessage | RuntimeConnectedOriginsChangedMessage,
-  ) => Promise<unknown>
+  sendMessage: (message: RuntimePendingRequestMessage) => Promise<unknown>
 }
 
 type ActionApi = {
@@ -127,34 +124,20 @@ const notifyWalletViews = async (pending: RuntimePendingRequest): Promise<void> 
     .catch(() => undefined)
 }
 
-// Pushes direct dApp connection changes to any open wallet popup views.
-const notifyConnectedOriginsChanged = async (origins: string[]): Promise<void> => {
-  await chromeApi?.runtime
-    ?.sendMessage({
-      type: 'CARPINCHO_CONNECTED_ORIGINS_CHANGED',
-      origins,
-    })
-    .catch(() => undefined)
-}
-
 // Applies a provider response to the direct dApp origin registry used by the footer.
 const applyDirectConnectionUpdate = async (
   { origin, request }: { origin: string; request: JsonRpcRequest },
   response: JsonRpcResponse,
 ): Promise<void> => {
-  const update = directConnectionUpdateFromProviderResponse({
-    origin,
-    request,
-    response,
-  })
+  const update = directConnectionUpdateFromProviderResponse({ origin, request, response })
   if (update.action === 'none') {
     return
   }
-  const origins =
-    update.action === 'remember'
-      ? await rememberDirectConnectedOrigin(update.origin)
-      : await forgetDirectConnectedOrigin(update.origin)
-  await notifyConnectedOriginsChanged(origins)
+  if (update.action === 'remember') {
+    await rememberDirectConnectedOrigin(update.origin)
+  } else {
+    await forgetDirectConnectedOrigin(update.origin)
+  }
 }
 
 const updateActionBadge = async (): Promise<void> => {

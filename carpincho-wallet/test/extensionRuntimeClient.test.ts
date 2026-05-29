@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 import type {
-  RuntimeConnectedOriginsChangedMessage,
   RuntimePendingRequest,
   RuntimePendingRequestMessage,
   RuntimeProviderResponse,
@@ -29,7 +28,7 @@ const pending: RuntimePendingRequest = {
 
 const installChromeRuntime = (): {
   sent: unknown[]
-  emit: (message: RuntimePendingRequestMessage | RuntimeConnectedOriginsChangedMessage) => void
+  emit: (message: RuntimePendingRequestMessage) => void
 } => {
   const sent: unknown[] = []
   const listeners = new Set<(message: unknown) => void>()
@@ -140,27 +139,45 @@ describe('extension runtime client', () => {
     assert.deepEqual(received, [pending])
   })
 
-  it('subscribes to direct connected origin changes', () => {
-    // Scenario: while the popup is open, direct connect or disconnect changes the footer state.
-    const runtime = installChromeRuntime()
+  it('subscribes to direct connected origin changes from session storage', () => {
+    // Scenario: the popup footer tracks direct dApp connection state from session-storage writes.
+    const listeners = new Set<(changes: Record<string, { newValue?: unknown }>) => void>()
+    Object.defineProperty(globalThis, 'chrome', {
+      configurable: true,
+      value: {
+        storage: {
+          session: {
+            onChanged: {
+              addListener: (
+                listener: (changes: Record<string, { newValue?: unknown }>) => void,
+              ) => {
+                listeners.add(listener)
+              },
+              removeListener: (
+                listener: (changes: Record<string, { newValue?: unknown }>) => void,
+              ) => {
+                listeners.delete(listener)
+              },
+            },
+          },
+        },
+      },
+    })
     const received: string[][] = []
 
-    // Subscribe to origin-change messages emitted by the background worker.
     const unsubscribe = subscribeToDirectConnectedOrigins((origins) => {
       received.push(origins)
     })
 
-    runtime.emit({
-      type: 'CARPINCHO_CONNECTED_ORIGINS_CHANGED',
-      origins: ['http://localhost:3012'],
-    })
+    for (const listener of listeners) {
+      listener({ 'carpincho.direct.connectedOrigins': { newValue: ['http://localhost:3012'] } })
+    }
     unsubscribe()
-    runtime.emit({
-      type: 'CARPINCHO_CONNECTED_ORIGINS_CHANGED',
-      origins: ['http://localhost:3013'],
-    })
+    for (const listener of listeners) {
+      listener({ 'carpincho.direct.connectedOrigins': { newValue: ['http://localhost:3013'] } })
+    }
 
-    // The footer should receive the current connected origins until it unsubscribes.
+    // The footer receives the new origins until it unsubscribes.
     assert.deepEqual(received, [['http://localhost:3012']])
   })
 })

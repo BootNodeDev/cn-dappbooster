@@ -1,7 +1,7 @@
+import { DIRECT_CONNECTED_ORIGINS_KEY, storedOrigins } from '@/extension/directConnections.ts'
 import {
   jsonRpcError,
   jsonRpcResult,
-  type RuntimeConnectedOriginsChangedMessage,
   type RuntimeGetConnectedOrigins,
   type RuntimeGetPendingRequests,
   type RuntimePendingRequest,
@@ -9,6 +9,20 @@ import {
   type RuntimeProviderResponse,
 } from '@/extension/messages.ts'
 import type { ProviderResponder } from '@/provider/dispatch.ts'
+
+type SessionStorageChange = { newValue?: unknown }
+type SessionStorageChangeListener = (changes: Record<string, SessionStorageChange>) => void
+type SessionStorageChangedEvent = {
+  addListener: (listener: SessionStorageChangeListener) => void
+  removeListener: (listener: SessionStorageChangeListener) => void
+}
+
+const sessionStorageOnChanged = (): SessionStorageChangedEvent | undefined =>
+  (
+    globalThis as {
+      chrome?: { storage?: { session?: { onChanged?: SessionStorageChangedEvent } } }
+    }
+  ).chrome?.storage?.session?.onChanged
 
 type RuntimeListener = (message: unknown) => void
 
@@ -96,26 +110,20 @@ export const subscribeToPendingProviderRequests = (
   return () => onMessage.removeListener(listener)
 }
 
-// Subscribes to background pushes when direct dApp connection origins change.
+// Subscribes to session-storage writes so the popup footer tracks direct dApp connection state.
 export const subscribeToDirectConnectedOrigins = (
   cb: (origins: string[]) => void,
 ): (() => void) => {
-  const api = runtime()
-  const onMessage = api?.onMessage
-  if (onMessage === undefined) {
+  const onChanged = sessionStorageOnChanged()
+  if (onChanged === undefined) {
     return () => undefined
   }
-  const listener = (message: unknown): void => {
-    if (
-      typeof message === 'object' &&
-      message !== null &&
-      (message as RuntimeConnectedOriginsChangedMessage).type ===
-        'CARPINCHO_CONNECTED_ORIGINS_CHANGED' &&
-      Array.isArray((message as RuntimeConnectedOriginsChangedMessage).origins)
-    ) {
-      cb((message as RuntimeConnectedOriginsChangedMessage).origins)
+  const listener: SessionStorageChangeListener = (changes) => {
+    const change = changes[DIRECT_CONNECTED_ORIGINS_KEY]
+    if (change !== undefined) {
+      cb(storedOrigins(change.newValue))
     }
   }
-  onMessage.addListener(listener)
-  return () => onMessage.removeListener(listener)
+  onChanged.addListener(listener)
+  return () => onChanged.removeListener(listener)
 }
