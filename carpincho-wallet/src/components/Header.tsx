@@ -20,7 +20,7 @@ export const Header = ({ onOpenMenu }: HeaderProps): JSX.Element => {
         <h1 className="font-display text-[1.55rem] font-semibold m-0 text-foreground tracking-[-0.025em] lowercase">
           carpincho
         </h1>
-        <div className="mt-1 font-mono text-[0.72rem] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+        <div className="mt-1 font-mono text-[0.72rem] font-medium uppercase tracking-[0.1em] text-muted-foreground">
           {v.isLocked ? 'locked' : 'canton · signer'}
         </div>
       </div>

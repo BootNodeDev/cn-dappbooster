@@ -166,7 +166,7 @@ export const AccountCard = ({
                   style={{ width: accountMenuMetrics.width }}
                   className="z-[12] p-2 border border-border-strong rounded-lg bg-surface shadow-popover data-[state=open]:animate-slide-down-and-fade"
                 >
-                  <div className="font-mono text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground px-2 pt-1 pb-2">
+                  <div className="font-mono text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground px-2 pt-1 pb-2">
                     Accounts
                   </div>
                   {accountsSorted.map((a) => (
@@ -188,7 +188,7 @@ export const AccountCard = ({
                       >
                         <AccountRow account={a} />
                         {a.isPrimary && (
-                          <span className="shrink-0 font-mono text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-primary">
+                          <span className="shrink-0 font-mono text-[0.68rem] font-semibold uppercase tracking-[0.1em] text-primary">
                             active
                           </span>
                         )}

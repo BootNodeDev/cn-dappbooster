@@ -58,7 +58,7 @@ export const PairOrConnectedCard = ({
         </div>
       ) : (
         <div>
-          <div className="font-mono text-[0.74rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-2">
+          <div className="font-mono text-[0.74rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground mb-2">
             Pair a dApp
           </div>
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-stretch gap-2">

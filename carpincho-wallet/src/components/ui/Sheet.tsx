@@ -15,7 +15,7 @@ const CONTENT_CLASS_BY_SIDE: Record<Side, string> = {
   bottom: cn(
     CONTENT_BASE_CLASS,
     'left-1/2 -translate-x-1/2 bottom-0 w-popup max-h-sheet',
-    'rounded-t-2xl border-t border-x data-[state=open]:animate-sheet-up',
+    'rounded-t-xl border-t border-x data-[state=open]:animate-sheet-up',
   ),
   right: cn(
     CONTENT_BASE_CLASS,
@@ -64,7 +64,7 @@ export const Sheet = ({
                 {BACK_ICON}
               </button>
             )}
-            <Dialog.Title className="m-0 font-display text-[1.55rem] font-semibold tracking-[-0.02em] text-foreground truncate">
+            <Dialog.Title className="m-0 font-display text-[1.55rem] font-semibold tracking-[-0.02em] leading-tight text-foreground truncate">
               {title}
             </Dialog.Title>
           </div>

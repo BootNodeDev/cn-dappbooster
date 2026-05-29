@@ -30,7 +30,7 @@ export const PendingActionCard = ({
     data-pending-kind={method}
   >
     <div className="min-w-0 shrink-0">
-      <div className="font-mono text-[0.72rem] font-semibold tracking-[0.14em] uppercase text-success">
+      <div className="font-mono text-[0.72rem] font-semibold tracking-[0.1em] uppercase text-success">
         awaiting approval
       </div>
       <div className="mt-1 font-mono text-[0.84rem] font-medium text-muted-foreground">
