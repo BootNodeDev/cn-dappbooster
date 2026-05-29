@@ -49,7 +49,7 @@ src/
 public/
   manifest.json     Chrome extension manifest (consumed during extension build)
   icons/            Extension icons (16, 32, 48, 128 px)
-test/               Node test runner suite (14 test files)
+test/               Node test runner suite (11 test files)
 ```
 
 ## Key Abstractions
@@ -94,11 +94,13 @@ Manages the WalletConnect sign client lifecycle and session event handling.
 
 Connects the extension popup UI to web pages and the extension background.
 
-- **`background.ts`** — Persistent service worker. Maintains a queue of pending dApp requests, updates the action badge with the count, and caches a wallet snapshot for the popup.
+- **`background.ts`** — Persistent service worker. Maintains a queue of pending dApp requests, updates the action badge with the count, and caches a wallet snapshot for the popup. Also records the set of direct (injected-provider) dApp origins that have connected to `chrome.storage.session`, which the popup reads and watches via `storage.session.onChanged` to drive the footer's connection state.
 - **`contentScript.ts`** — Injected into every page; bridges `window.postMessage` events to the extension runtime.
 - **`directProvider.ts`** — Injects a synchronous `window.carpincho` provider object into pages for dApps that do not use WalletConnect.
 - **`messages.ts`** — Shared message-type constants and type guards used by all three extension scripts.
 - **`runtimeClient.ts`** — Popup-side client for sending requests to the background and receiving responses.
+- **`directConnections.ts`** — Persists the set of direct injected-provider dApp origins that have completed a connect (and removes them on disconnect) in `chrome.storage.session`, with an in-memory fallback when not running as an extension, so the popup footer can show connection state for non-WalletConnect dApps.
+- **`directConnectionState.ts`** — Pure helper that normalizes page URLs to stable http(s) origins and derives a remember/forget/none update from a provider request/response pair: remembers on a successful `connect` whose result reports `isConnected: true`, forgets on `disconnect`.
 - **`walletSnapshot.ts`** — Serialises the current wallet state (accounts, network, lock status) into a plain object the background caches so the popup can render without unlocking the vault.
 
 ### Data Access Layer
