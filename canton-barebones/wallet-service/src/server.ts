@@ -11,10 +11,9 @@ import type { JsonRpcRequest, JsonRpcResponse } from './types.ts'
 const config = loadConfig()
 const mockEnabled = isMockEnabled()
 const mockState = mockEnabled ? createMockState() : undefined
-const rpc =
-  mockEnabled && mockState !== undefined ? createMockRpc(config, mockState) : createRpc(config)
+const rpc = mockState !== undefined ? createMockRpc(config, mockState) : createRpc(config)
 const adminParty =
-  mockEnabled && mockState !== undefined
+  mockState !== undefined
     ? createMockPartyApi(config, mockState)
     : createPartyApi(config, { getSdk: () => rpc.getSdk() })
 const app = express()
@@ -28,12 +27,7 @@ app.use(
 app.use(express.json({ limit: '1mb' }))
 
 app.get('/health', (_req, res) => {
-  res.json({
-    ok: true,
-    service: 'counter-wallet-service',
-    network: config.network,
-    mock: mockEnabled,
-  })
+  res.json({ ok: true, service: 'wallet-service', network: config.network, mock: mockEnabled })
 })
 
 app.get('/', (_req, res) => {
@@ -49,7 +43,7 @@ const handleAdminError = (res: express.Response, error: unknown): void => {
     res.status(400).json({ error: error.message })
     return
   }
-  console.error('[counter-wallet-service] admin failed', error)
+  console.error('[wallet-service] admin failed', error)
   res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
 }
 
@@ -100,5 +94,7 @@ app.post('/rpc', async (req, res) => {
 
 app.listen(config.port, () => {
   const suffix = mockEnabled ? ' (MOCK MODE — no Canton calls)' : ''
-  console.log(`counter-wallet-service listening on ${config.port}${suffix}`)
+  console.log(
+    `wallet-service listening on ${config.port}${suffix} (token: ${config.canton.tokenSource})`,
+  )
 })

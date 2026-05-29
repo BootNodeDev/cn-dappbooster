@@ -39,13 +39,16 @@ export const createPendingStore = <T>(opts: PendingStoreOptions): PendingStore<T
   const now = opts.now ?? (() => Date.now())
   const entries = new Map<string, { value: T; expiresAt: number }>()
 
-  const reap = (): void => {
+  const evictExpired = (): void => {
     const current = now()
     for (const [key, entry] of entries) {
       if (entry.expiresAt <= current) {
         entries.delete(key)
       }
     }
+  }
+
+  const evictOverflow = (): void => {
     while (entries.size > opts.maxSize) {
       const oldest = entries.keys().next().value
       if (oldest === undefined) {
@@ -57,20 +60,26 @@ export const createPendingStore = <T>(opts: PendingStoreOptions): PendingStore<T
 
   return {
     set: (id, value) => {
-      reap()
+      evictExpired()
       entries.set(id, { value, expiresAt: now() + opts.ttlMs })
+      evictOverflow()
     },
     get: (id) => {
-      reap()
-      return entries.get(id)?.value
+      const entry = entries.get(id)
+      if (entry === undefined) {
+        return undefined
+      }
+      if (entry.expiresAt <= now()) {
+        entries.delete(id)
+        return undefined
+      }
+      return entry.value
     },
     delete: (id) => {
       entries.delete(id)
     },
-    size: () => {
-      reap()
-      return entries.size
-    },
+    // upper bound: expired-but-unaccessed entries are counted until the next set() eviction
+    size: () => entries.size,
   }
 }
 
@@ -91,13 +100,18 @@ type ExecutePreparedParams = {
   submissionId?: string
 }
 
-const rpcResult = (id: JsonRpcId, result: unknown): JsonRpcSuccess => ({
+export const rpcResult = (id: JsonRpcId, result: unknown): JsonRpcSuccess => ({
   jsonrpc: '2.0',
   id,
   result,
 })
 
-const rpcError = (id: JsonRpcId, code: number, message: string, data?: unknown): JsonRpcError => ({
+export const rpcError = (
+  id: JsonRpcId,
+  code: number,
+  message: string,
+  data?: unknown,
+): JsonRpcError => ({
   jsonrpc: '2.0',
   id,
   error: data === undefined ? { code, message } : { code, message, data },
@@ -112,20 +126,33 @@ const unsupported = (id: JsonRpcId, method: string): JsonRpcError =>
 const errorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error)
 
-// dev-only — production must redact stack/cause
 const errorData = (error: unknown): Record<string, unknown> => {
   if (!(error instanceof Error)) {
     return { raw: String(error) }
   }
-  return { name: error.name, message: error.message, stack: error.stack, cause: error.cause }
+  const base: Record<string, unknown> = { name: error.name, message: error.message }
+  if (process.env.NODE_ENV !== 'production') {
+    base.stack = error.stack
+    base.cause = error.cause
+  }
+  return base
 }
 
-const objectParam = <T>(params: unknown, name: string): T => {
+export const objectParam = <T>(params: unknown, name: string): T => {
   if (typeof params !== 'object' || params === null || Array.isArray(params)) {
     throw new InvalidParams(`${name} params must be an object`)
   }
   return params as T
 }
+
+export const buildProvider = (p: WalletServiceConfig['provider']): Provider => ({
+  id: p.id,
+  clientType: 'remote',
+  version: p.version,
+  providerType: 'remote',
+  ...(p.url === undefined ? {} : { url: p.url }),
+  ...(p.userUrl === undefined ? {} : { userUrl: p.userUrl }),
+})
 
 const firstParty = (params: { partyId?: string; actAs?: string[] }): string => {
   if (typeof params.partyId === 'string' && params.partyId.length > 0) {
@@ -187,14 +214,7 @@ export const createRpc = (config: WalletServiceConfig): Rpc => {
 
   const network = (): Network => ({ networkId: config.network })
 
-  const provider = (): Provider => ({
-    id: config.provider.id,
-    clientType: 'remote',
-    version: config.provider.version,
-    providerType: 'remote',
-    ...(config.provider.url === undefined ? {} : { url: config.provider.url }),
-    ...(config.provider.userUrl === undefined ? {} : { userUrl: config.provider.userUrl }),
-  })
+  const provider = (): Provider => buildProvider(config.provider)
 
   const status = async (): Promise<StatusEvent> => ({
     provider: provider(),
@@ -342,7 +362,7 @@ export const createRpc = (config: WalletServiceConfig): Rpc => {
           return rpcError(id, -32601, 'Method not found', { method: request.method })
       }
     } catch (error) {
-      console.error('[counter-wallet-service] rpc failed', {
+      console.error('[wallet-service] rpc failed', {
         id,
         method: request.method,
         error: errorData(error),
@@ -362,7 +382,7 @@ export const createRpc = (config: WalletServiceConfig): Rpc => {
   }
 
   const serviceInfo = (): Record<string, unknown> => ({
-    service: 'counter-wallet-service',
+    service: 'wallet-service',
     rpcEndpoint: '/rpc',
     api: 'Carpincho service bridge over JSON-RPC 2.0',
     dappApi: 'CIP-0103 is exposed by Carpincho over WalletConnect; this service has no signer.',

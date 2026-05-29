@@ -12,14 +12,12 @@ import crypto from 'node:crypto'
 import type { WalletServiceConfig } from './config.ts'
 import type { PartyApi } from './party.ts'
 import type { Rpc, WalletSdk } from './rpc.ts'
-import { InvalidParams } from './rpc.ts'
+import { buildProvider, InvalidParams, objectParam, rpcError, rpcResult } from './rpc.ts'
 import type {
   ConnectResult,
-  JsonRpcError,
   JsonRpcId,
   JsonRpcRequest,
   JsonRpcResponse,
-  JsonRpcSuccess,
   Network,
   Provider,
   StatusEvent,
@@ -41,25 +39,6 @@ export const isMockEnabled = (): boolean => {
   return normalized === '1' || normalized === 'true' || normalized === 'yes' || normalized === 'on'
 }
 
-const rpcResult = (id: JsonRpcId, result: unknown): JsonRpcSuccess => ({
-  jsonrpc: '2.0',
-  id,
-  result,
-})
-
-const rpcError = (id: JsonRpcId, code: number, message: string, data?: unknown): JsonRpcError => ({
-  jsonrpc: '2.0',
-  id,
-  error: data === undefined ? { code, message } : { code, message, data },
-})
-
-const objectParam = <T>(params: unknown, name: string): T => {
-  if (typeof params !== 'object' || params === null || Array.isArray(params)) {
-    throw new InvalidParams(`${name} params must be an object`)
-  }
-  return params as T
-}
-
 const randomBase64 = (bytes: number): string => crypto.randomBytes(bytes).toString('base64')
 
 const slugify = (value: string): string =>
@@ -67,14 +46,7 @@ const slugify = (value: string): string =>
 
 const mockNetworkId = (config: WalletServiceConfig): string => `${config.network}-mock`
 
-const mockProvider = (config: WalletServiceConfig): Provider => ({
-  id: config.provider.id,
-  clientType: 'remote',
-  version: config.provider.version,
-  providerType: 'remote',
-  ...(config.provider.url === undefined ? {} : { url: config.provider.url }),
-  ...(config.provider.userUrl === undefined ? {} : { userUrl: config.provider.userUrl }),
-})
+const mockProvider = (config: WalletServiceConfig): Provider => buildProvider(config.provider)
 
 const mockConnection = (): ConnectResult => ({
   isConnected: false,
@@ -210,7 +182,7 @@ export const createMockRpc = (
   }
 
   const serviceInfo = (): Record<string, unknown> => ({
-    service: 'counter-wallet-service',
+    service: 'wallet-service',
     rpcEndpoint: '/rpc',
     api: 'Carpincho service bridge over JSON-RPC 2.0 (MOCK MODE)',
     dappApi: 'CIP-0103 mock — short-circuits before any Canton SDK call.',

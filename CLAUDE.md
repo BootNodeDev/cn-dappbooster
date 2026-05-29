@@ -4,7 +4,7 @@ This file defines monorepo-wide rules for agents working in this repository. Eac
 
 - [`carpincho-wallet/CLAUDE.md`](carpincho-wallet/CLAUDE.md) — CIP-0103 wallet (Vite + React + Biome)
 - [`canton-connect-kit/README.md`](canton-connect-kit/README.md) — wagmi-style React hooks for Canton dApps
-- `canton-base/`, `counter/daml/`, `counter/wallet-service/`, `counter/frontend/` — see each subproject's `README.md`
+- `canton-barebones/`, `counter/daml/`, `counter/frontend/` — see each subproject's `README.md`
 
 For the system shape (data flow, components, ports), see [`architecture.md`](architecture.md).
 
@@ -14,10 +14,10 @@ For the system shape (data flow, components, ports), see [`architecture.md`](arc
 
 | Category | Technology | Notes |
 |----------|-----------|-------|
-| Languages | TypeScript, DAML, Bash | TypeScript across the JS subprojects; DAML in `counter/daml/`; Bash for canton-base scripts |
+| Languages | TypeScript, DAML, Bash | TypeScript across the JS subprojects; DAML in `counter/daml/`; Bash for canton-barebones scripts |
 | Package manager | npm | One `package-lock.json` per Node subproject; root `package.json` orchestrates via `npm --prefix <dir>` |
 | Node | 24 | Pinned via root `.nvmrc`; inherits to every Node subproject |
-| Container runtime | Docker | Used by `canton-base/` for the local participant + Postgres |
+| Container runtime | Docker | Used by `canton-barebones/` for the local participant + Postgres |
 | Commit linting | commitlint + husky | Enforced via root `.husky/commit-msg` |
 | Lint / format | Biome | One root `biome.json` and a single root `@biomejs/biome`; per-project specifics live in `overrides`. No per-subproject Biome install or config |
 | Pre-commit | lint-staged | Root `.lintstagedrc.mjs` runs root Biome (`biome check --write`) across `carpincho-wallet/`, `canton-connect-kit/`, and `counter/frontend/` |
@@ -27,9 +27,9 @@ For the system shape (data flow, components, ports), see [`architecture.md`](arc
 
 | Path | Purpose | Stack | Port |
 |------|---------|-------|------|
-| [`canton-base/`](canton-base/) | Local Canton participant + Postgres via docker-compose; deploy + health + token scripts | Docker, Bash, Node scripts | 3013/3014/3015/3016/3017/3018 |
+| [`canton-barebones/`](canton-barebones/) | Local Canton participant + Postgres via docker-compose; deploy + health + token scripts | Docker, Bash, Node scripts | 3013/3014/3015/3016/3017/3018 |
 | [`counter/daml/`](counter/daml/) | `quickstart-counter` DAML model | DAML | n/a (DAR artifact) |
-| [`counter/wallet-service/`](counter/wallet-service/) | JSON-RPC bridge between the wallet and the Canton participant | Node + Express + TypeScript | 3010 |
+| [`canton-barebones/wallet-service/`](canton-barebones/wallet-service/) | JSON-RPC bridge between the wallet and the Canton participant. Started by `npm run canton:up`. Self-mints its Canton JWT. | Node + Express + TypeScript | 3010 |
 | [`carpincho-wallet/`](carpincho-wallet/) | CIP-0103 wallet — vault, signing, WalletConnect, Chrome extension | Vite 6 + React 18 + Tailwind v4 + Biome | 3011 |
 | [`counter/frontend/`](counter/frontend/) | Counter dApp UI | Vite + React + Biome | 3012 |
 | [`canton-connect-kit/`](canton-connect-kit/) | wagmi-style React hooks for connecting Canton dApps to CIP-0103 wallets | TypeScript + React 18 + Biome | n/a (library) |
@@ -62,7 +62,7 @@ See [`architecture.md`](architecture.md) for the system shape, subproject layout
 - Each subproject owns its own test runner. Run from the subproject directory or via `npm --prefix`:
   - `carpincho-wallet`: `npm test` (Node `node:test` + `tsx` + happy-dom)
   - `counter/frontend`: `npm test` (Node `node:test` with `--experimental-strip-types`)
-  - `canton-base`: `npm test` (Node `node:test` against the scripts)
+  - `canton-barebones`: `npm test` (Node `node:test` against the scripts)
 - Cover the paths that matter — business logic, API integrations, component behaviour. Skip styling, third-party library internals, trivial getters/setters.
 
 ## Commit Standards

@@ -18,7 +18,7 @@ test.describe('canton-counter integration smoke', () => {
     const body = await response.json()
     expect(body).toMatchObject({
       ok: true,
-      service: 'counter-wallet-service',
+      service: 'wallet-service',
       network: 'canton:local',
     })
   })

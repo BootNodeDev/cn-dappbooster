@@ -8,7 +8,7 @@ const baseConfig = () => ({
   corsOrigins: ['http://localhost:3011'],
   network: 'canton:local',
   provider: {
-    id: 'counter-wallet-service',
+    id: 'wallet-service',
     version: '0.1.0',
     url: 'http://localhost:3010',
     userUrl: 'http://localhost:3010',
@@ -19,6 +19,7 @@ const baseConfig = () => ({
     adminApiUrl: 'grpc://localhost:3015',
     backendUserId: 'wallet-service',
     backendToken: undefined as string | undefined,
+    tokenSource: 'none' as const,
   },
 })
 

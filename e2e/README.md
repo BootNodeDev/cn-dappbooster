@@ -38,15 +38,18 @@ When the four packages publish independently and the dev kit becomes a monorepo 
 The full local stack must be running. From the repo root:
 
 ```bash
-# In four terminals — see the root README §1–6 for the canonical bring-up
+# Start the canton stack (postgres + canton + wallet-service)
 npm run canton:up && npm run canton:health
-npm run --silent canton:token > /tmp/canton.token
-sed -i '' "s|^CANTON_BACKEND_TOKEN=.*|CANTON_BACKEND_TOKEN=$(cat /tmp/canton.token)|" counter/wallet-service/.env
-./canton-base/scripts/deploy-dar.sh counter/daml/.daml/dist/quickstart-counter-0.0.1.dar
+
+# Deploy the Counter DAR
+./canton-barebones/scripts/deploy-dar.sh counter/daml/.daml/dist/quickstart-counter-0.0.1.dar
+
+# Build the Carpincho extension
 npm --prefix carpincho-wallet run build:extension
-npm run wallet-service:dev               # terminal 1
-npm --prefix carpincho-wallet run dev    # terminal 2
-npm run app:dev                          # terminal 3
+
+# In separate terminals:
+npm run wallet:dev              # terminal 1 — Carpincho web UI on :3011
+npm run app:dev                 # terminal 2 — Counter dApp on :3012
 ```
 
 ### First-time setup

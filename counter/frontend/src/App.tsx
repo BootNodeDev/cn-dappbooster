@@ -102,7 +102,7 @@ export const App = (): JSX.Element => {
     <ConnectKitProvider
       config={{
         appName: 'Counter dApp',
-        appDescription: 'Counter app for the Canton base',
+        appDescription: 'Counter app for the Canton barebones',
         network: runtimeConfig.cantonNetwork,
         walletConnectProjectId: envString('VITE_WC_PROJECT_ID'),
       }}
