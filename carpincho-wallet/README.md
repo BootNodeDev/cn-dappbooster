@@ -2,10 +2,10 @@
 
 Standalone browser wallet for the Canton barebones.
 
-Carpincho is intentionally not the Counter backend and not a Canton participant. It is a wallet/provider UI with an encrypted local vault and WalletConnect support. A dApp pairs with Carpincho through WalletConnect; Carpincho answers wallet/provider requests and forwards Canton execution requests to the app's wallet-service JSON-RPC endpoint.
+Carpincho is intentionally not the Counter backend and not a Canton participant. It is a wallet/provider UI with an encrypted local vault, an injected CIP-0103 browser provider, and optional WalletConnect support. A dApp connects to Carpincho through the injected provider by default; Carpincho answers wallet/provider requests and forwards Canton execution requests to the app's wallet-service JSON-RPC endpoint.
 
 ```text
-dApp frontend -> WalletConnect -> carpincho-wallet -> wallet-service /rpc -> Canton participant
+dApp frontend -> injected CIP-0103 provider -> carpincho-wallet -> wallet-service /rpc -> Canton participant
 ```
 
 ## Run
@@ -51,7 +51,7 @@ Then install it locally:
 1. Open `chrome://extensions` or the equivalent Chromium extensions page.
 2. Enable Developer mode.
 3. Click `Load unpacked`.
-4. Select `carpincho-wallet-2/dist-extension`.
+4. Select `dist-extension`.
 5. Open the Carpincho Wallet extension from the browser toolbar.
 
 The extension uses its own `chrome-extension://` origin, so its encrypted vault
@@ -62,15 +62,15 @@ is separate from the development vault at `http://localhost:3011`.
 The wallet has a `Connection settings` panel in the UI. The wallet-service JSON-RPC endpoint is stored in browser `localStorage` and starts with this scaffold default:
 
 - Wallet-service JSON-RPC endpoint, for example `http://localhost:3010/rpc`.
-- WalletConnect Canton network, for example `canton:local`.
+- Canton network, for example `canton:local`.
 
-WalletConnect still uses `.env.local`:
+WalletConnect fallback still uses `.env.local`:
 
-- `VITE_WC_PROJECT_ID` - required WalletConnect/Reown project id.
+- `VITE_WC_PROJECT_ID` - optional WalletConnect/Reown project id.
 
 ## API Boundary
 
-WalletConnect is only the transport between the dApp and Carpincho. The provider method names follow the CIP-0103 shape:
+The injected extension provider is the primary transport between the dApp and Carpincho. WalletConnect is an optional fallback transport. The provider method names follow the CIP-0103 shape:
 
 - `connect`
 - `disconnect`
