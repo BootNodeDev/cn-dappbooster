@@ -33,7 +33,6 @@ AGENTS.local.md
 docs/
 
 # playwright (MCP browser artifacts + screenshots)
-.playwright-mcp/
 **/.playwright-mcp/
 test-results/
 playwright-report/

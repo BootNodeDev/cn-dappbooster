@@ -18,7 +18,7 @@ export const Tooltip = ({
       <button
         type="button"
         aria-label={label}
-        className="inline-flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground focus:outline-none focus-visible:text-foreground focus-visible:shadow-focus transition-colors"
+        className="inline-flex items-center justify-center rounded-sm text-muted-foreground hover:text-foreground focus:outline-none focus-visible:text-foreground focus-visible:shadow-focus transition-colors"
       >
         {INFO_ICON}
       </button>

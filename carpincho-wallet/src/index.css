@@ -40,7 +40,7 @@
   --color-warning: #8a6400;
   --color-warning-soft: #f6ecd2;
 
-  --color-form-placeholder: #9092a4;
+  --color-form-placeholder: #6f7185;
 
   --color-scrim: rgba(20, 21, 43, 0.42);
 
@@ -74,8 +74,8 @@
   --color-muted-foreground: #c5c2cb;
   --color-soft: #e2e0e7;
 
-  --color-primary: #8b46a4;
-  --color-primary-hover: #9d54b8;
+  --color-primary: #9d54b8;
+  --color-primary-hover: #b06cc9;
   --color-primary-soft: #2a1f3a;
   --color-primary-ink: #ecd9f5;
   --color-primary-foreground: #ffffff;

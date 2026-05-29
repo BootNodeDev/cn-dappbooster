@@ -58,10 +58,7 @@ const ToastItem = ({ entry }: ToastItemProps): JSX.Element => {
       </RadixToast.Description>
       <RadixToast.Close
         aria-label="Dismiss"
-        className={cn(
-          ICON_BUTTON_CLASS,
-          'shrink-0 size-7 rounded-full text-current bg-transparent',
-        )}
+        className={cn(ICON_BUTTON_CLASS, 'shrink-0 size-7 rounded-sm text-current bg-transparent')}
       >
         {X_ICON}
       </RadixToast.Close>
