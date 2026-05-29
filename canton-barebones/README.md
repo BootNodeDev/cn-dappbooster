@@ -14,7 +14,7 @@ docker compose up -d
 
 `docker compose up -d` (via `npm run canton:up`) brings up `wallet-service` alongside postgres + canton. Verify with `npm run wallet-service:health`.
 
-The wallet-service self-mints an HS256 JWT at boot from `CANTON_AUTH_AUDIENCE`, `CANTON_AUTH_SECRET`, and `CANTON_BACKEND_USER_ID`. Set `CANTON_BACKEND_TOKEN` explicitly in the compose env override (or this `.env`) to bypass the self-mint.
+The wallet-service self-mints an HS256 JWT at boot from `CANTON_AUTH_AUDIENCE`, `CANTON_AUTH_SECRET`, and `CANTON_ADMIN_USER_ID`. Set `CANTON_BACKEND_TOKEN` explicitly in the compose env override (or this `.env`) to bypass the self-mint.
 
 Set `WALLET_SERVICE_MOCK=1` in `.env` to short-circuit Canton calls; the service still starts but every `/rpc` method returns canned mock data.
 
@@ -24,7 +24,7 @@ The participant accepts HS256 JWTs configured by `.env`:
 
 - `CANTON_AUTH_AUDIENCE`
 - `CANTON_AUTH_SECRET`
-- `CANTON_BACKEND_USER_ID`
+- `CANTON_ADMIN_USER_ID`
 
 Generate a token from this package (useful for paste-into-curl debugging):
 

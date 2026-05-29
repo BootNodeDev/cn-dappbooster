@@ -14,7 +14,7 @@ Primary path — started for you by `npm run canton:up` at the repo root. Verify
 npm run wallet-service:health
 ```
 
-The service self-mints its Canton JWT at boot from `CANTON_AUTH_AUDIENCE`, `CANTON_AUTH_SECRET`, and `CANTON_BACKEND_USER_ID` (all in `canton-barebones/.env`). Set `CANTON_BACKEND_TOKEN` explicitly in the compose env or in this subproject's `.env` to bypass the self-mint.
+The service self-mints its Canton JWT at boot from `CANTON_AUTH_AUDIENCE`, `CANTON_AUTH_SECRET`, and `CANTON_ADMIN_USER_ID` (all in `canton-barebones/.env`). Set `CANTON_BACKEND_TOKEN` explicitly in the compose env or in this subproject's `.env` to bypass the self-mint.
 
 Host-side dev mode (for mock-mode iteration without Docker):
 

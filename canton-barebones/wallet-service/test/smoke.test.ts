@@ -1,13 +1,13 @@
-import { describe, it, beforeEach, afterEach } from 'node:test'
 import { strict as assert } from 'node:assert'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 import { loadConfig } from '../src/config.ts'
 
 const CANTON_VARS = [
   'CANTON_BACKEND_TOKEN',
   'CANTON_AUTH_AUDIENCE',
   'CANTON_AUTH_SECRET',
-  'CANTON_BACKEND_USER_ID',
-  'WALLET_SERVICE_MOCK'
+  'CANTON_ADMIN_USER_ID',
+  'WALLET_SERVICE_MOCK',
 ] as const
 
 const snapshot = (): Record<string, string | undefined> =>
@@ -67,22 +67,22 @@ describe('config loader', () => {
     assert.equal(config.canton.tokenSource, 'mint')
     assert.equal(
       config.canton.backendToken,
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ3YWxsZXQtc2VydmljZSIsImF1ZCI6Imh0dHBzOi8vY2FudG9uLWJhcmVib25lcy5sb2NhbCJ9.-3Xq4rrhJliXWkrqPNXid5_YuuTk3E6EDtQYux-ULiI'
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ3YWxsZXQtc2VydmljZSIsImF1ZCI6Imh0dHBzOi8vY2FudG9uLWJhcmVib25lcy5sb2NhbCJ9.-3Xq4rrhJliXWkrqPNXid5_YuuTk3E6EDtQYux-ULiI',
     )
   })
 
-  it('honours CANTON_BACKEND_USER_ID as the JWT subject when minting', () => {
+  it('honours CANTON_ADMIN_USER_ID as the JWT subject when minting', () => {
     process.env.CANTON_AUTH_AUDIENCE = 'https://canton-barebones.local'
     process.env.CANTON_AUTH_SECRET = 'unsafe'
-    process.env.CANTON_BACKEND_USER_ID = 'custom-subject'
+    process.env.CANTON_ADMIN_USER_ID = 'custom-subject'
     const config = loadConfig()
     assert.equal(config.canton.tokenSource, 'mint')
+    const seg = (config.canton.backendToken ?? '').split('.')[1]
     const payload = JSON.parse(
       Buffer.from(
-        `${(config.canton.backendToken ?? '').split('.')[1]}${'==='.slice((config.canton.backendToken ?? '').split('.')[1].length % 4)}`
-          .replace(/-/g, '+').replace(/_/g, '/'),
-        'base64'
-      ).toString('utf8')
+        `${seg}${'='.repeat((4 - (seg.length % 4)) % 4)}`.replace(/-/g, '+').replace(/_/g, '/'),
+        'base64',
+      ).toString('utf8'),
     )
     assert.equal(payload.sub, 'custom-subject')
   })

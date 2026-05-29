@@ -67,7 +67,8 @@ services:
     environment:
       CANTON_AUTH_AUDIENCE:   "${CANTON_AUTH_AUDIENCE}"
       CANTON_AUTH_SECRET:     "${CANTON_AUTH_SECRET}"
-      CANTON_BACKEND_USER_ID: "${CANTON_BACKEND_USER_ID:-wallet-service}"
+      CANTON_ADMIN_USER_ID:   "${CANTON_ADMIN_USER_ID:-wallet-service}"
+      CANTON_BACKEND_TOKEN:   "${CANTON_BACKEND_TOKEN:-}"
       CANTON_JSON_API_URL:   "http://canton:7575"
       CANTON_LEDGER_API_URL: "grpc://canton:5011"
       CANTON_ADMIN_API_URL:  "grpc://canton:5012"

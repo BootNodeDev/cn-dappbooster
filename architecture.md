@@ -87,7 +87,7 @@ Local ports are intentionally assigned in the `3010+` range so they collide with
 | Variable | Owner | Purpose |
 |----------|-------|---------|
 | `VITE_WC_PROJECT_ID` | `carpincho-wallet/.env.local`, `counter/frontend/.env.local` | WalletConnect / Reown project ID. Same value in both subprojects. |
-| `CANTON_BACKEND_TOKEN` | `canton-barebones/wallet-service` runtime env (compose) | Self-minted at boot from `CANTON_AUTH_AUDIENCE` / `CANTON_AUTH_SECRET` / `CANTON_BACKEND_USER_ID`. Set explicitly (e.g. via the compose env override) to bypass self-mint. Mint ad-hoc with `npm run canton:token`. |
+| `CANTON_BACKEND_TOKEN` | `canton-barebones/wallet-service` runtime env (compose) | Self-minted at boot from `CANTON_AUTH_AUDIENCE` / `CANTON_AUTH_SECRET` / `CANTON_ADMIN_USER_ID`. Set explicitly (e.g. via the compose env override) to bypass self-mint. Mint ad-hoc with `npm run canton:token`. |
 
 Runtime-only configuration that varies between sessions (RPC URL, Canton network name, Carpincho URL) is stored in `localStorage` inside the wallet and the frontend, configured from each UI — not from env files.
 

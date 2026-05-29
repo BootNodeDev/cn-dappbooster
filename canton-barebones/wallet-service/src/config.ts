@@ -60,7 +60,7 @@ const resolveToken = (backendUserId: string): { token?: string; source: TokenSou
 }
 
 export const loadConfig = (): WalletServiceConfig => {
-  const backendUserId = optional('CANTON_BACKEND_USER_ID') ?? 'wallet-service'
+  const backendUserId = optional('CANTON_ADMIN_USER_ID') ?? 'wallet-service'
   const resolved = resolveToken(backendUserId)
   return {
     port: optionalNumber('WALLET_SERVICE_PORT', 3010),

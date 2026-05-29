@@ -74,11 +74,12 @@ Already started by `npm run canton:up`. Verify with:
 npm run wallet-service:health
 ```
 
-The service self-mints its Canton JWT from `CANTON_AUTH_AUDIENCE` / `CANTON_AUTH_SECRET` / `CANTON_BACKEND_USER_ID` in `canton-barebones/.env`, so there is no token copy-paste step.
+The service self-mints its Canton JWT from `CANTON_AUTH_AUDIENCE` / `CANTON_AUTH_SECRET` / `CANTON_ADMIN_USER_ID` in `canton-barebones/.env`, so there is no token copy-paste step.
 
 For host-side iteration (mock mode, no Docker required):
 
 ```bash
+npm --prefix canton-barebones/wallet-service install
 WALLET_SERVICE_MOCK=1 npm run wallet-service:dev
 ```
 
