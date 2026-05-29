@@ -31,3 +31,9 @@ AGENTS.local.md
 
 # local design specs
 docs/
+
+# playwright (MCP browser artifacts + screenshots)
+.playwright-mcp/
+**/.playwright-mcp/
+test-results/
+playwright-report/
