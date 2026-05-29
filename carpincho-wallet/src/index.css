@@ -3,108 +3,112 @@
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 /*
- * Typography roles:
- *   font-display (Fraunces) — hero wordmarks, view-level headings, section markers
- *   font-sans    (Manrope)  — UI chrome, labels, body, buttons, inputs
- *   font-mono    (Roboto Mono) — party IDs, hashes, RPC URLs, JSON, amounts
+ * Typography roles (dappbooster brand — Manrope everywhere + JetBrains Mono):
+ *   font-display (Manrope, heavy) — hero wordmarks, view-level headings, section markers
+ *   font-sans    (Manrope)        — UI chrome, labels, body, buttons, inputs
+ *   font-mono    (JetBrains Mono) — party IDs, hashes, RPC URLs, JSON, amounts
  */
 
 :root {
   color-scheme: light;
 
-  --color-background: #f4ede4;
-  --color-surface: #fbf6ee;
-  --color-muted: #efe6da;
+  --color-background: #f7f7f7;
+  --color-surface: #ffffff;
+  --color-muted: #ececf0;
 
-  --color-border: #d8c9b8;
-  --color-border-strong: #b8a78f;
+  --color-border: #e2e2ea;
+  --color-border-strong: #ccccd6;
 
-  --color-foreground: #221a2c;
-  --color-muted-foreground: #574d63;
-  --color-soft: #3d3548;
+  --color-foreground: #2c2d40;
+  --color-muted-foreground: #4b4d60;
+  --color-soft: #6b6d80;
 
-  --color-primary: #5e1f76;
-  --color-primary-hover: #7d2d99;
-  --color-primary-soft: #f1e2f7;
-  --color-primary-ink: #3d1349;
+  --color-primary: #692581;
+  --color-primary-hover: #8b46a4;
+  --color-primary-soft: #f3e8f8;
+  --color-primary-ink: #4a1a5c;
   --color-primary-foreground: #ffffff;
 
   --color-accent: #c670e5;
 
   --color-success: #137047;
-  --color-success-soft: #dff1e6;
+  --color-success-soft: #e2f3ea;
 
-  --color-danger: #9a2a2a;
-  --color-danger-soft: #f5dcdc;
+  --color-danger: #a32626;
+  --color-danger-soft: #f6dede;
 
   --color-warning: #8a6400;
-  --color-warning-soft: #f6ead0;
+  --color-warning-soft: #f6ecd2;
 
-  --color-form-placeholder: #9c8e7f;
+  --color-form-placeholder: #6f7185;
 
-  --color-scrim: rgba(34, 26, 44, 0.42);
+  --color-scrim: rgba(20, 21, 43, 0.42);
 
-  --shadow-card: 0 12px 28px -16px rgba(45, 37, 53, 0.18);
-  --shadow-popover: 0 18px 36px -12px rgba(45, 37, 53, 0.22);
-  --shadow-focus: 0 0 0 3px rgba(198, 112, 229, 0.35);
-  --shadow-focus-danger: 0 0 0 3px rgba(154, 42, 42, 0.35);
+  --shadow-card: 0 12px 28px -16px rgba(28, 29, 46, 0.18);
+  --shadow-popover: 0 18px 36px -12px rgba(28, 29, 46, 0.22);
+  --shadow-focus: 0 0 0 3px rgba(105, 37, 129, 0.32);
+  --shadow-focus-danger: 0 0 0 3px rgba(163, 38, 38, 0.32);
+  --shadow-glow: 0 10px 26px rgba(198, 112, 229, 0.4);
+
+  --bg-gradient-brand: linear-gradient(135deg, #c670e5, #e71d73);
 
   --bg-radial: radial-gradient(
     ellipse 90% 60% at 50% 0%,
-    rgba(105, 37, 129, 0.16) 0%,
-    rgba(105, 37, 129, 0.05) 35%,
+    rgba(105, 37, 129, 0.1) 0%,
+    rgba(231, 29, 115, 0.04) 35%,
     transparent 70%
   );
-  --grain-opacity: 0.04;
 }
 
 [data-theme="dark"] {
   color-scheme: dark;
 
-  --color-background: #181420;
-  --color-surface: #221b2c;
-  --color-muted: #2a2236;
+  --color-background: #14152b;
+  --color-surface: #1c1d2e;
+  --color-muted: #232539;
 
-  --color-border: #3a2f48;
-  --color-border-strong: #564668;
+  --color-border: #2c2e46;
+  --color-border-strong: #5f6178;
 
-  --color-foreground: #f1eadd;
-  --color-muted-foreground: #b6aabf;
-  --color-soft: #d6cbde;
+  --color-foreground: #fafbfc;
+  --color-muted-foreground: #c5c2cb;
+  --color-soft: #e2e0e7;
 
-  --color-primary: #8d3eb0;
-  --color-primary-hover: #a155c2;
-  --color-primary-soft: #3a2348;
-  --color-primary-ink: #f1e5f6;
+  --color-primary: #9d54b8;
+  --color-primary-hover: #b06cc9;
+  --color-primary-soft: #2a1f3a;
+  --color-primary-ink: #ecd9f5;
   --color-primary-foreground: #ffffff;
 
-  --color-accent: #d488f0;
+  --color-accent: #c670e5;
 
   --color-success: #5fbf86;
-  --color-success-soft: #1a3326;
+  --color-success-soft: #16291f;
 
-  --color-danger: #c4524f;
-  --color-danger-soft: #3a1f1f;
+  --color-danger: #e57373;
+  --color-danger-soft: #331a1a;
 
   --color-warning: #d4a85a;
-  --color-warning-soft: #3a2e18;
+  --color-warning-soft: #332a16;
 
-  --color-form-placeholder: #7e7187;
+  --color-form-placeholder: #7a7c92;
 
-  --color-scrim: rgba(8, 5, 12, 0.65);
+  --color-scrim: rgba(8, 8, 18, 0.65);
 
   --shadow-card: 0 14px 32px -16px rgba(0, 0, 0, 0.55);
   --shadow-popover: 0 22px 44px -16px rgba(0, 0, 0, 0.7);
-  --shadow-focus: 0 0 0 3px rgba(212, 136, 240, 0.32);
-  --shadow-focus-danger: 0 0 0 3px rgba(196, 82, 79, 0.32);
+  --shadow-focus: 0 0 0 3px rgba(198, 112, 229, 0.4);
+  --shadow-focus-danger: 0 0 0 3px rgba(229, 115, 115, 0.4);
+  --shadow-glow: 0 10px 26px rgba(198, 112, 229, 0.4);
+
+  --bg-gradient-brand: linear-gradient(135deg, #c670e5, #e71d73);
 
   --bg-radial: radial-gradient(
     ellipse 90% 60% at 50% 0%,
-    rgba(165, 99, 191, 0.28) 0%,
-    rgba(165, 99, 191, 0.1) 35%,
+    rgba(198, 112, 229, 0.18) 0%,
+    rgba(231, 29, 115, 0.08) 35%,
     transparent 70%
   );
-  --grain-opacity: 0.06;
 }
 
 @theme inline {
@@ -131,19 +135,22 @@
   --color-form-placeholder: var(--color-form-placeholder);
   --color-scrim: var(--color-scrim);
 
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 22px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
 
-  --font-display: "Fraunces Variable", "Iowan Old Style", Georgia, serif;
+  --tracking-eyebrow: 0.1em;
+
+  --font-display: "Manrope Variable", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --font-sans: "Manrope Variable", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: "Roboto Mono Variable", ui-monospace, SFMono-Regular, monospace;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, monospace;
 
   --shadow-card: var(--shadow-card);
   --shadow-popover: var(--shadow-popover);
   --shadow-focus: var(--shadow-focus);
   --shadow-focus-danger: var(--shadow-focus-danger);
+  --shadow-glow: var(--shadow-glow);
 
   --animate-fade-in: fade-in 220ms cubic-bezier(0.2, 0.6, 0.2, 1);
   --animate-slide-down-and-fade: slide-down-and-fade 260ms cubic-bezier(0.16, 1, 0.3, 1);
@@ -290,22 +297,6 @@
     min-height: 100vh;
     transition: background-color 220ms ease;
     position: relative;
-  }
-
-  /* paper-grain texture overlay */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-    opacity: var(--grain-opacity);
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.92' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.55 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
-    mix-blend-mode: multiply;
-  }
-
-  [data-theme="dark"] body::before {
-    mix-blend-mode: screen;
   }
 
   #root {

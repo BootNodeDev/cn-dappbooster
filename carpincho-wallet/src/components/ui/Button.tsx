@@ -5,7 +5,7 @@ type ButtonProps = ComponentPropsWithoutRef<'button'>
 
 const BASE_INTERACTIVE =
   'inline-flex items-center justify-center gap-2 select-none transition ' +
-  'duration-180 ease-out active:scale-[0.98] disabled:active:scale-100 ' +
+  'duration-200 ease-out active:scale-[0.98] disabled:active:scale-100 ' +
   'focus-visible:outline-none focus-visible:shadow-focus'
 
 export const GHOST_BUTTON_CLASS = `${BASE_INTERACTIVE} border-0 bg-transparent text-primary hover:text-primary-hover text-[0.95rem] font-semibold p-0`
@@ -16,18 +16,20 @@ export const ICON_BUTTON_CLASS =
   'focus-visible:outline-none focus-visible:shadow-focus'
 
 export const ROUND_ICON_BUTTON_CHROME =
-  'rounded-full border border-border text-soft hover:border-border-strong'
+  'rounded-md border border-border text-soft hover:border-border-strong'
 
 const VARIANT_CLASS = {
   primary:
-    `${BASE_INTERACTIVE} py-[0.55rem] px-4 leading-none rounded-full font-semibold text-[0.98rem] text-primary-foreground ` +
-    'bg-primary border border-primary hover:bg-primary-hover hover:border-primary-hover',
+    `${BASE_INTERACTIVE} relative isolate overflow-hidden py-2.5 px-4 leading-none rounded-md font-semibold text-[0.94rem] text-primary-foreground ` +
+    'bg-primary border border-primary hover:border-transparent hover:shadow-glow ' +
+    'before:absolute before:inset-0 before:-z-10 before:rounded-[inherit] before:bg-[image:var(--bg-gradient-brand)] ' +
+    'before:opacity-0 before:transition-opacity before:duration-200 hover:before:opacity-100',
   secondary:
-    `${BASE_INTERACTIVE} py-[0.55rem] px-4 leading-none rounded-full font-semibold text-[0.98rem] text-foreground ` +
+    `${BASE_INTERACTIVE} py-2.5 px-4 leading-none rounded-md font-semibold text-[0.94rem] text-foreground ` +
     'bg-surface border border-border-strong hover:bg-muted hover:text-primary',
   ghost: GHOST_BUTTON_CLASS,
   pill:
-    `${BASE_INTERACTIVE} py-[6px] px-3.5 rounded-full text-soft text-[0.9rem] font-semibold ` +
+    `${BASE_INTERACTIVE} py-1.5 px-3 rounded-sm text-soft text-[0.9rem] font-semibold ` +
     'bg-surface/85 border border-border hover:bg-muted hover:text-primary hover:border-border-strong',
 } as const
 

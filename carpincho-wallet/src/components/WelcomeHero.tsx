@@ -14,7 +14,7 @@ export const WelcomeHero = ({ description, logoSize = 132 }: WelcomeHeroProps): 
         className="animate-drift"
       />
     </div>
-    <div className="mt-4 font-display text-[2.75rem] font-semibold text-foreground leading-[1.02] tracking-[-0.03em] lowercase animate-slide-up-and-fade [animation-delay:80ms] [animation-fill-mode:backwards]">
+    <div className="mt-4 font-display text-[2.75rem] font-semibold text-primary dark:bg-[image:var(--bg-gradient-brand)] dark:bg-clip-text dark:text-transparent leading-[1.02] tracking-[-0.03em] lowercase animate-slide-up-and-fade [animation-delay:80ms] [animation-fill-mode:backwards]">
       carpincho
     </div>
     {description !== undefined && (
