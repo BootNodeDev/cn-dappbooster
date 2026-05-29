@@ -42,7 +42,7 @@ The full local stack must be running. From the repo root:
 npm run canton:up && npm run canton:health
 
 # Deploy the Counter DAR
-./canton-base/scripts/deploy-dar.sh counter/daml/.daml/dist/quickstart-counter-0.0.1.dar
+./canton-barebones/scripts/deploy-dar.sh counter/daml/.daml/dist/quickstart-counter-0.0.1.dar
 
 # Build the Carpincho extension
 npm --prefix carpincho-wallet run build:extension

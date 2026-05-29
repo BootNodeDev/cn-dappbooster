@@ -6,6 +6,7 @@ dist/
 dist-extension/
 
 # env
+.env
 .env.local
 
 # typescript

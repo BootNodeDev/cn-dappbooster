@@ -9,7 +9,7 @@ vendored from https://github.com/canton-network/wallet/tree/main/api-specs.
 
 ## Why vendored?
 
-`canton-base/wallet-service` aligns its wire format with this spec but does not
+`canton-barebones/wallet-service` aligns its wire format with this spec but does not
 depend on the upstream codegen toolchain. The TS types in `src/types.ts` are
 hand-authored against the schemas in this file.
 
@@ -19,7 +19,7 @@ Replace the file from upstream with:
 
 ```bash
 gh api repos/canton-network/wallet/contents/api-specs/openrpc-dapp-api.json --jq '.content' \
-  | base64 -d > canton-base/wallet-service/api-specs/openrpc-dapp-api.json
+  | base64 -d > canton-barebones/wallet-service/api-specs/openrpc-dapp-api.json
 ```
 
 When refreshing, also re-verify `src/types.ts` matches the schema fields used.

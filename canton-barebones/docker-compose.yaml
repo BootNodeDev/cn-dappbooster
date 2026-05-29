@@ -1,7 +1,7 @@
 services:
   postgres:
     image: "${POSTGRES_IMAGE}"
-    container_name: canton-base-postgres
+    container_name: canton-barebones-postgres
     environment:
       POSTGRES_USER: "${POSTGRES_USER}"
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
@@ -19,7 +19,7 @@ services:
 
   canton:
     image: "${CANTON_IMAGE}"
-    container_name: canton-base-canton
+    container_name: canton-barebones-canton
     environment:
       DB_SERVER: postgres
       DB_USER: "${POSTGRES_USER}"
@@ -63,7 +63,7 @@ services:
 
   wallet-service:
     build: ./wallet-service
-    container_name: canton-base-wallet-service
+    container_name: canton-barebones-wallet-service
     environment:
       CANTON_AUTH_AUDIENCE:   "${CANTON_AUTH_AUDIENCE}"
       CANTON_AUTH_SECRET:     "${CANTON_AUTH_SECRET}"

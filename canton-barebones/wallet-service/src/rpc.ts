@@ -39,13 +39,16 @@ export const createPendingStore = <T>(opts: PendingStoreOptions): PendingStore<T
   const now = opts.now ?? (() => Date.now())
   const entries = new Map<string, { value: T; expiresAt: number }>()
 
-  const reap = (): void => {
+  const evictExpired = (): void => {
     const current = now()
     for (const [key, entry] of entries) {
       if (entry.expiresAt <= current) {
         entries.delete(key)
       }
     }
+  }
+
+  const evictOverflow = (): void => {
     while (entries.size > opts.maxSize) {
       const oldest = entries.keys().next().value
       if (oldest === undefined) {
@@ -57,20 +60,25 @@ export const createPendingStore = <T>(opts: PendingStoreOptions): PendingStore<T
 
   return {
     set: (id, value) => {
-      reap()
+      evictExpired()
       entries.set(id, { value, expiresAt: now() + opts.ttlMs })
+      evictOverflow()
     },
     get: (id) => {
-      reap()
-      return entries.get(id)?.value
+      const entry = entries.get(id)
+      if (entry === undefined) {
+        return undefined
+      }
+      if (entry.expiresAt <= now()) {
+        entries.delete(id)
+        return undefined
+      }
+      return entry.value
     },
     delete: (id) => {
       entries.delete(id)
     },
-    size: () => {
-      reap()
-      return entries.size
-    },
+    size: () => entries.size,
   }
 }
 
@@ -91,13 +99,18 @@ type ExecutePreparedParams = {
   submissionId?: string
 }
 
-const rpcResult = (id: JsonRpcId, result: unknown): JsonRpcSuccess => ({
+export const rpcResult = (id: JsonRpcId, result: unknown): JsonRpcSuccess => ({
   jsonrpc: '2.0',
   id,
   result,
 })
 
-const rpcError = (id: JsonRpcId, code: number, message: string, data?: unknown): JsonRpcError => ({
+export const rpcError = (
+  id: JsonRpcId,
+  code: number,
+  message: string,
+  data?: unknown,
+): JsonRpcError => ({
   jsonrpc: '2.0',
   id,
   error: data === undefined ? { code, message } : { code, message, data },
@@ -112,15 +125,19 @@ const unsupported = (id: JsonRpcId, method: string): JsonRpcError =>
 const errorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error)
 
-// dev-only — production must redact stack/cause
 const errorData = (error: unknown): Record<string, unknown> => {
   if (!(error instanceof Error)) {
     return { raw: String(error) }
   }
-  return { name: error.name, message: error.message, stack: error.stack, cause: error.cause }
+  const base: Record<string, unknown> = { name: error.name, message: error.message }
+  if (process.env.NODE_ENV !== 'production') {
+    base.stack = error.stack
+    base.cause = error.cause
+  }
+  return base
 }
 
-const objectParam = <T>(params: unknown, name: string): T => {
+export const objectParam = <T>(params: unknown, name: string): T => {
   if (typeof params !== 'object' || params === null || Array.isArray(params)) {
     throw new InvalidParams(`${name} params must be an object`)
   }

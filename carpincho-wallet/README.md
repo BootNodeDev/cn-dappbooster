@@ -1,6 +1,6 @@
 # Carpincho Wallet
 
-Standalone browser wallet for the Canton base.
+Standalone browser wallet for the Canton barebones.
 
 Carpincho is intentionally not the Counter backend and not a Canton participant. It is a wallet/provider UI with an encrypted local vault and WalletConnect support. A dApp pairs with Carpincho through WalletConnect; Carpincho answers wallet/provider requests and forwards Canton execution requests to the app's wallet-service JSON-RPC endpoint.
 

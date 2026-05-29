@@ -6,4 +6,4 @@ Minimal counter app split into:
 - `wallet-service`: Express bridge used by Carpincho to reach the participant.
 - `frontend`: React dApp that knows the Counter signature and talks to Carpincho through WalletConnect.
 
-The Canton base lives in `../canton-base`.
+The Canton barebones lives in `../canton-barebones`.
