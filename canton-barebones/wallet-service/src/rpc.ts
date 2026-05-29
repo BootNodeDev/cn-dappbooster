@@ -112,12 +112,16 @@ const unsupported = (id: JsonRpcId, method: string): JsonRpcError =>
 const errorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error)
 
-// dev-only — production must redact stack/cause
 const errorData = (error: unknown): Record<string, unknown> => {
   if (!(error instanceof Error)) {
     return { raw: String(error) }
   }
-  return { name: error.name, message: error.message, stack: error.stack, cause: error.cause }
+  const base: Record<string, unknown> = { name: error.name, message: error.message }
+  if (process.env.NODE_ENV !== 'production') {
+    base.stack = error.stack
+    base.cause = error.cause
+  }
+  return base
 }
 
 const objectParam = <T>(params: unknown, name: string): T => {

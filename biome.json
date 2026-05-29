@@ -12,9 +12,8 @@
       "carpincho-wallet/**",
       "canton-connect-kit/**",
       "counter/frontend/**",
-      "counter/wallet-service/**",
       "e2e/**",
-      "canton-base/**",
+      "canton-barebones/**",
       "!**/api-specs"
     ]
   },
@@ -95,7 +94,7 @@
       }
     },
     {
-      "includes": ["counter/wallet-service/**"],
+      "includes": ["canton-barebones/wallet-service/**"],
       "linter": {
         "rules": {
           "style": {

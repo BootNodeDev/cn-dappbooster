@@ -59,4 +59,4 @@ Compile a Daml project outside this base, then upload the DAR:
 ./scripts/deploy-dar.sh /path/to/app.dar
 ```
 
-This barebones intentionally does not include Keycloak, SV, PQS, frontend, backend, or wallet service.
+This barebones intentionally does not include Keycloak, SV, PQS, frontend, or backend.
