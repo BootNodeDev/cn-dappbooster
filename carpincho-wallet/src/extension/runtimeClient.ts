@@ -24,7 +24,7 @@ type RuntimeApi = {
 const runtime = (): RuntimeApi | undefined =>
   (globalThis as { chrome?: { runtime?: RuntimeApi } }).chrome?.runtime
 
-export const isExtensionRuntime = (): boolean => runtime() !== undefined
+export const isExtensionRuntime = (): boolean => runtime()?.sendMessage !== undefined
 
 const sendRuntimeMessage = async <T>(message: unknown): Promise<T> =>
   await new Promise<T>((resolve, reject) => {
@@ -37,6 +37,10 @@ const sendRuntimeMessage = async <T>(message: unknown): Promise<T> =>
       const lastError = api.lastError
       if (lastError !== undefined) {
         reject(new Error(lastError.message ?? 'Carpincho extension runtime failed'))
+        return
+      }
+      if (response === undefined) {
+        reject(new Error('Carpincho extension runtime returned no response'))
         return
       }
       resolve(response as T)
