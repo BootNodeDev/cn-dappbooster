@@ -12,7 +12,7 @@ import crypto from 'node:crypto'
 import type { WalletServiceConfig } from './config.ts'
 import type { PartyApi } from './party.ts'
 import type { Rpc, WalletSdk } from './rpc.ts'
-import { InvalidParams, objectParam, rpcError, rpcResult } from './rpc.ts'
+import { buildProvider, InvalidParams, objectParam, rpcError, rpcResult } from './rpc.ts'
 import type {
   ConnectResult,
   JsonRpcId,
@@ -46,14 +46,7 @@ const slugify = (value: string): string =>
 
 const mockNetworkId = (config: WalletServiceConfig): string => `${config.network}-mock`
 
-const mockProvider = (config: WalletServiceConfig): Provider => ({
-  id: config.provider.id,
-  clientType: 'remote',
-  version: config.provider.version,
-  providerType: 'remote',
-  ...(config.provider.url === undefined ? {} : { url: config.provider.url }),
-  ...(config.provider.userUrl === undefined ? {} : { userUrl: config.provider.userUrl }),
-})
+const mockProvider = (config: WalletServiceConfig): Provider => buildProvider(config.provider)
 
 const mockConnection = (): ConnectResult => ({
   isConnected: false,

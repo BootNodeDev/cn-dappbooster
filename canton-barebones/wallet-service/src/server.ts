@@ -11,10 +11,9 @@ import type { JsonRpcRequest, JsonRpcResponse } from './types.ts'
 const config = loadConfig()
 const mockEnabled = isMockEnabled()
 const mockState = mockEnabled ? createMockState() : undefined
-const rpc =
-  mockEnabled && mockState !== undefined ? createMockRpc(config, mockState) : createRpc(config)
+const rpc = mockState !== undefined ? createMockRpc(config, mockState) : createRpc(config)
 const adminParty =
-  mockEnabled && mockState !== undefined
+  mockState !== undefined
     ? createMockPartyApi(config, mockState)
     : createPartyApi(config, { getSdk: () => rpc.getSdk() })
 const app = express()

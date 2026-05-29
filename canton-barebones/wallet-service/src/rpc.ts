@@ -145,6 +145,15 @@ export const objectParam = <T>(params: unknown, name: string): T => {
   return params as T
 }
 
+export const buildProvider = (p: WalletServiceConfig['provider']): Provider => ({
+  id: p.id,
+  clientType: 'remote',
+  version: p.version,
+  providerType: 'remote',
+  ...(p.url === undefined ? {} : { url: p.url }),
+  ...(p.userUrl === undefined ? {} : { userUrl: p.userUrl }),
+})
+
 const firstParty = (params: { partyId?: string; actAs?: string[] }): string => {
   if (typeof params.partyId === 'string' && params.partyId.length > 0) {
     return params.partyId
@@ -205,14 +214,7 @@ export const createRpc = (config: WalletServiceConfig): Rpc => {
 
   const network = (): Network => ({ networkId: config.network })
 
-  const provider = (): Provider => ({
-    id: config.provider.id,
-    clientType: 'remote',
-    version: config.provider.version,
-    providerType: 'remote',
-    ...(config.provider.url === undefined ? {} : { url: config.provider.url }),
-    ...(config.provider.userUrl === undefined ? {} : { userUrl: config.provider.userUrl }),
-  })
+  const provider = (): Provider => buildProvider(config.provider)
 
   const status = async (): Promise<StatusEvent> => ({
     provider: provider(),
