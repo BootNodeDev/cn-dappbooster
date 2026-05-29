@@ -12,14 +12,12 @@ import crypto from 'node:crypto'
 import type { WalletServiceConfig } from './config.ts'
 import type { PartyApi } from './party.ts'
 import type { Rpc, WalletSdk } from './rpc.ts'
-import { InvalidParams } from './rpc.ts'
+import { InvalidParams, objectParam, rpcError, rpcResult } from './rpc.ts'
 import type {
   ConnectResult,
-  JsonRpcError,
   JsonRpcId,
   JsonRpcRequest,
   JsonRpcResponse,
-  JsonRpcSuccess,
   Network,
   Provider,
   StatusEvent,
@@ -39,25 +37,6 @@ export const isMockEnabled = (): boolean => {
   }
   const normalized = value.trim().toLowerCase()
   return normalized === '1' || normalized === 'true' || normalized === 'yes' || normalized === 'on'
-}
-
-const rpcResult = (id: JsonRpcId, result: unknown): JsonRpcSuccess => ({
-  jsonrpc: '2.0',
-  id,
-  result,
-})
-
-const rpcError = (id: JsonRpcId, code: number, message: string, data?: unknown): JsonRpcError => ({
-  jsonrpc: '2.0',
-  id,
-  error: data === undefined ? { code, message } : { code, message, data },
-})
-
-const objectParam = <T>(params: unknown, name: string): T => {
-  if (typeof params !== 'object' || params === null || Array.isArray(params)) {
-    throw new InvalidParams(`${name} params must be an object`)
-  }
-  return params as T
 }
 
 const randomBase64 = (bytes: number): string => crypto.randomBytes(bytes).toString('base64')
