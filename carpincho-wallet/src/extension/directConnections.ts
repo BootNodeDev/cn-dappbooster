@@ -9,6 +9,14 @@ type ChromeSessionStorage = {
 
 const fallbackOrigins = new Set<string>()
 
+// Serializes remember/forget read-modify-write sequences so concurrent calls cannot lose a write.
+let lastWrite: Promise<unknown> = Promise.resolve()
+const withWriteLock = <T>(fn: () => Promise<T>): Promise<T> => {
+  const next = lastWrite.then(fn, fn)
+  lastWrite = next.catch(() => undefined)
+  return next
+}
+
 // Reads Chrome session storage when the code is running in the extension background.
 const chromeSessionStorage = (): ChromeSessionStorage | undefined =>
   (
@@ -66,7 +74,9 @@ export const rememberDirectConnectedOrigin = async (origin: string): Promise<str
   if (normalized === undefined) {
     return await readDirectConnectedOrigins()
   }
-  return await writeDirectConnectedOrigins([...(await readDirectConnectedOrigins()), normalized])
+  return await withWriteLock(async () =>
+    writeDirectConnectedOrigins([...(await readDirectConnectedOrigins()), normalized]),
+  )
 }
 
 // Removes one direct dApp origin after an injected-provider disconnect response.
@@ -75,9 +85,11 @@ export const forgetDirectConnectedOrigin = async (origin: string): Promise<strin
   if (normalized === undefined) {
     return await readDirectConnectedOrigins()
   }
-  return await writeDirectConnectedOrigins(
-    (await readDirectConnectedOrigins()).filter(
-      (connectedOrigin) => connectedOrigin !== normalized,
+  return await withWriteLock(async () =>
+    writeDirectConnectedOrigins(
+      (await readDirectConnectedOrigins()).filter(
+        (connectedOrigin) => connectedOrigin !== normalized,
+      ),
     ),
   )
 }
