@@ -140,6 +140,8 @@
   --radius-lg: 10px;
   --radius-xl: 14px;
 
+  --tracking-eyebrow: 0.1em;
+
   --font-display: "Manrope Variable", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --font-sans: "Manrope Variable", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, monospace;

@@ -100,7 +100,7 @@ export const ActivityList = ({ transactions }: ActivityListProps): JSX.Element =
                 >
                   {txMethodLabel(tx.method)}
                 </span>
-                <span className="justify-self-end font-mono text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-primary group-open:text-muted-foreground transition-colors whitespace-nowrap">
+                <span className="justify-self-end font-mono text-[0.72rem] font-semibold uppercase tracking-eyebrow text-primary group-open:text-muted-foreground transition-colors whitespace-nowrap">
                   <span className="group-open:hidden">open</span>
                   <span className="hidden group-open:inline">close</span>
                 </span>
