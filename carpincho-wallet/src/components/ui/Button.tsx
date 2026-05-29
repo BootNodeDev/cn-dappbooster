@@ -20,8 +20,10 @@ export const ROUND_ICON_BUTTON_CHROME =
 
 const VARIANT_CLASS = {
   primary:
-    `${BASE_INTERACTIVE} py-[0.55rem] px-4 leading-none rounded-full font-semibold text-[0.98rem] text-primary-foreground ` +
-    'bg-primary border border-primary hover:bg-primary-hover hover:border-primary-hover',
+    `${BASE_INTERACTIVE} relative isolate overflow-hidden py-[0.55rem] px-4 leading-none rounded-full font-semibold text-[0.98rem] text-primary-foreground ` +
+    'bg-primary border border-primary hover:border-transparent hover:shadow-glow ' +
+    'before:absolute before:inset-0 before:-z-10 before:rounded-[inherit] before:bg-[image:var(--bg-gradient-brand)] ' +
+    'before:opacity-0 before:transition-opacity before:duration-200 hover:before:opacity-100',
   secondary:
     `${BASE_INTERACTIVE} py-[0.55rem] px-4 leading-none rounded-full font-semibold text-[0.98rem] text-foreground ` +
     'bg-surface border border-border-strong hover:bg-muted hover:text-primary',

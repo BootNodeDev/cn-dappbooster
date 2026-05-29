@@ -104,7 +104,7 @@ export const AccountCard = ({
     >
       <div
         aria-hidden="true"
-        className="absolute inset-x-0 top-0 h-14 bg-[linear-gradient(180deg,var(--color-primary-soft)_0%,transparent_100%)] opacity-70 pointer-events-none"
+        className="absolute inset-x-0 top-0 h-14 bg-[image:var(--bg-gradient-brand)] opacity-[0.16] [mask-image:linear-gradient(180deg,black_0%,transparent_100%)] pointer-events-none"
       />
       <div className="relative z-[1]">
         {primary === undefined ? (

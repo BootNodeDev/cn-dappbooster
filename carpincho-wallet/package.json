@@ -14,9 +14,8 @@
     "test": "TSX_TSCONFIG_PATH=./test/tsconfig.json node --import tsx --test --import ./test/setup-dom.ts \"test/**/*.test.ts\" \"test/**/*.test.tsx\""
   },
   "dependencies": {
-    "@fontsource-variable/fraunces": "^5.2.9",
+    "@fontsource-variable/jetbrains-mono": "^5.2.8",
     "@fontsource-variable/manrope": "^5.2.8",
-    "@fontsource-variable/roboto-mono": "^5.2.9",
     "@noble/ed25519": "^3.1.0",
     "@noble/hashes": "^1.7.0",
     "@radix-ui/react-dialog": "^1.1.15",
