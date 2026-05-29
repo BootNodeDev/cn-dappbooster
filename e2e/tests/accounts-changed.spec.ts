@@ -17,13 +17,16 @@
 // If anyone breaks the broadcast chain (vault → background → content script →
 // page → provider.emit), the dApp won't notice the switch and this test fails.
 
-import { test, expect, DAPP_URL } from '../fixtures/stack.ts'
+import { DAPP_URL, expect, test } from '../fixtures/stack.ts'
 
 const STRONG_PASSWORD = 'correct-horse-battery-staple-2025!'
 const FIRST_PARTY = `e2e-ac-first-${Date.now().toString(36)}`
 const SECOND_PARTY = `e2e-ac-second-${Date.now().toString(36)}`
 
-test('accountsChanged propagates from Carpincho setPrimary to the dApp', async ({ context, extensionId }) => {
+test('accountsChanged propagates from Carpincho setPrimary to the dApp', async ({
+  context,
+  extensionId,
+}) => {
   test.setTimeout(90_000)
 
   // 1. Vault setup
@@ -41,7 +44,7 @@ test('accountsChanged propagates from Carpincho setPrimary to the dApp', async (
   await expect(wallet.getByTestId('add-account-hint-input')).toBeHidden({ timeout: 15_000 })
   await expect(wallet.getByTestId('home-active-account')).toHaveAttribute(
     'data-party-id',
-    new RegExp(`^${FIRST_PARTY}::`)
+    new RegExp(`^${FIRST_PARTY}::`),
   )
 
   // 2b. Second party — opens via the dropdown "Add account" since one already exists.
@@ -53,7 +56,7 @@ test('accountsChanged propagates from Carpincho setPrimary to the dApp', async (
   // Active party should still be FIRST — creating a new account doesn't bump primary.
   await expect(wallet.getByTestId('home-active-account')).toHaveAttribute(
     'data-party-id',
-    new RegExp(`^${FIRST_PARTY}::`)
+    new RegExp(`^${FIRST_PARTY}::`),
   )
 
   // 3. dApp connects (picks up the current primary = FIRST).
@@ -63,7 +66,7 @@ test('accountsChanged propagates from Carpincho setPrimary to the dApp', async (
   await expect(dapp.getByTestId('signing-panel')).toBeVisible()
   await expect(dapp.getByTestId('connected-party')).toHaveAttribute(
     'data-party-id',
-    new RegExp(`^${FIRST_PARTY}::`)
+    new RegExp(`^${FIRST_PARTY}::`),
   )
 
   // 4. Switch primary in Carpincho. setPrimary fires the broadcast.
@@ -72,7 +75,7 @@ test('accountsChanged propagates from Carpincho setPrimary to the dApp', async (
   await wallet.locator(`[data-testid="account-item"][data-party-id^="${SECOND_PARTY}::"]`).click()
   await expect(wallet.getByTestId('home-active-account')).toHaveAttribute(
     'data-party-id',
-    new RegExp(`^${SECOND_PARTY}::`)
+    new RegExp(`^${SECOND_PARTY}::`),
   )
 
   // 5. dApp should react to accountsChanged and now show the SECOND party.
@@ -80,6 +83,6 @@ test('accountsChanged propagates from Carpincho setPrimary to the dApp', async (
   await expect(dapp.getByTestId('connected-party')).toHaveAttribute(
     'data-party-id',
     new RegExp(`^${SECOND_PARTY}::`),
-    { timeout: 10_000 }
+    { timeout: 10_000 },
   )
 })

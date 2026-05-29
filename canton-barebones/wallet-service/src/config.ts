@@ -53,7 +53,7 @@ const resolveToken = (backendUserId: string): { token?: string; source: TokenSou
   if (audience !== undefined && secret !== undefined) {
     return {
       token: createCantonToken({ subject: backendUserId, audience, secret }),
-      source: 'mint'
+      source: 'mint',
     }
   }
   return { source: 'none' }
@@ -64,16 +64,20 @@ export const loadConfig = (): WalletServiceConfig => {
   const resolved = resolveToken(backendUserId)
   return {
     port: optionalNumber('WALLET_SERVICE_PORT', 3010),
-    corsOrigins: (optional('WALLET_SERVICE_CORS_ORIGINS') ?? optional('WALLET_SERVICE_CORS_ORIGIN') ?? 'http://localhost:3011')
+    corsOrigins: (
+      optional('WALLET_SERVICE_CORS_ORIGINS') ??
+      optional('WALLET_SERVICE_CORS_ORIGIN') ??
+      'http://localhost:3011'
+    )
       .split(',')
-      .map(origin => origin.trim())
-      .filter(origin => origin.length > 0),
+      .map((origin) => origin.trim())
+      .filter((origin) => origin.length > 0),
     network: optional('NETWORK') ?? 'canton:local',
     provider: {
       id: optional('WALLET_PROVIDER_ID') ?? 'wallet-service',
       version: optional('WALLET_PROVIDER_VERSION') ?? '0.1.0',
       url: optional('WALLET_PROVIDER_URL') ?? 'http://localhost:3010',
-      userUrl: optional('WALLET_PROVIDER_USER_URL') ?? 'http://localhost:3010'
+      userUrl: optional('WALLET_PROVIDER_USER_URL') ?? 'http://localhost:3010',
     },
     canton: {
       jsonApiUrl: optional('CANTON_JSON_API_URL') ?? 'http://localhost:3013',
@@ -81,7 +85,7 @@ export const loadConfig = (): WalletServiceConfig => {
       adminApiUrl: optional('CANTON_ADMIN_API_URL') ?? 'grpc://localhost:3015',
       backendUserId,
       backendToken: resolved.token,
-      tokenSource: resolved.source
-    }
+      tokenSource: resolved.source,
+    },
   }
 }

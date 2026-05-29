@@ -13,26 +13,32 @@
 // wallet-gateway-remote behavior (pure pass-through) was verified upstream.
 // If anyone reintroduces a translator, these tests should fail.
 
-import { test, expect, WALLET_SERVICE_URL } from '../fixtures/stack.ts'
+import { expect, test, WALLET_SERVICE_URL } from '../fixtures/stack.ts'
 
-const rpc = async (request: import('@playwright/test').APIRequestContext, method: string, params?: unknown): Promise<{
+const rpc = async (
+  request: import('@playwright/test').APIRequestContext,
+  method: string,
+  params?: unknown,
+): Promise<{
   jsonrpc: '2.0'
   id: number
   result?: unknown
   error?: { code: number; message: string; data?: unknown }
 }> => {
   const response = await request.post(`${WALLET_SERVICE_URL}/rpc`, {
-    data: { jsonrpc: '2.0', id: 1, method, params }
+    data: { jsonrpc: '2.0', id: 1, method, params },
   })
   expect(response.ok()).toBe(true)
   return await response.json()
 }
 
 test.describe('/rpc spec conformance', () => {
-  test('ledgerApi returns the raw participant response for GET /v2/state/ledger-end', async ({ request }) => {
+  test('ledgerApi returns the raw participant response for GET /v2/state/ledger-end', async ({
+    request,
+  }) => {
     const body = await rpc(request, 'ledgerApi', {
       requestMethod: 'get',
-      resource: '/v2/state/ledger-end'
+      resource: '/v2/state/ledger-end',
     })
     expect(body.error).toBeUndefined()
     const result = body.result as Record<string, unknown>
@@ -43,25 +49,29 @@ test.describe('/rpc spec conformance', () => {
     expect(result).not.toHaveProperty('status')
   })
 
-  test('ledgerApi rejects participant-rejected bodies with -32000 (no silent translation)', async ({ request }) => {
+  test('ledgerApi rejects participant-rejected bodies with -32000 (no silent translation)', async ({
+    request,
+  }) => {
     // Sending the SDK-friendly shape that the OLD shim used to translate.
     // Without the shim, Canton will reject it (missing required `activeAtOffset`)
     // and the wallet propagates the error rather than rewriting the body.
     const body = await rpc(request, 'ledgerApi', {
       requestMethod: 'post',
       resource: '/v2/state/active-contracts',
-      body: { parties: ['some-party'], templateIds: [], filterByParty: true }
+      body: { parties: ['some-party'], templateIds: [], filterByParty: true },
     })
     expect(body.error).toBeDefined()
     expect(body.error?.code).toBe(-32000)
     expect(body.error?.message).toContain('400')
   })
 
-  test('ledgerApi accepts participant-native ACS body and returns the raw array', async ({ request }) => {
+  test('ledgerApi accepts participant-native ACS body and returns the raw array', async ({
+    request,
+  }) => {
     // Get the offset first (also exercises GET pass-through).
     const offsetBody = await rpc(request, 'ledgerApi', {
       requestMethod: 'get',
-      resource: '/v2/state/ledger-end'
+      resource: '/v2/state/ledger-end',
     })
     const offset = (offsetBody.result as { offset: number }).offset
 
@@ -70,7 +80,7 @@ test.describe('/rpc spec conformance', () => {
     // depend on whether any user parties were onboarded by earlier tests.
     const partiesBody = await rpc(request, 'ledgerApi', {
       requestMethod: 'get',
-      resource: '/v2/parties'
+      resource: '/v2/parties',
     })
     const parties = (partiesBody.result as { partyDetails: Array<{ party: string }> }).partyDetails
     expect(parties.length).toBeGreaterThan(0)
@@ -83,19 +93,21 @@ test.describe('/rpc spec conformance', () => {
         filter: {
           filtersByParty: {
             [probeParty]: {
-              cumulative: [{
-                identifierFilter: {
-                  WildcardFilter: {
-                    value: { includeCreatedEventBlob: true }
-                  }
-                }
-              }]
-            }
-          }
+              cumulative: [
+                {
+                  identifierFilter: {
+                    WildcardFilter: {
+                      value: { includeCreatedEventBlob: true },
+                    },
+                  },
+                },
+              ],
+            },
+          },
         },
         activeAtOffset: offset,
-        verbose: true
-      }
+        verbose: true,
+      },
     })
 
     expect(body.error).toBeUndefined()
@@ -105,14 +117,18 @@ test.describe('/rpc spec conformance', () => {
     expect(body.result).not.toMatchObject({ response: expect.anything() })
   })
 
-  test('removed-from-dapp-api: prepareCreateParty and completeCreateParty return -32601', async ({ request }) => {
+  test('removed-from-dapp-api: prepareCreateParty and completeCreateParty return -32601', async ({
+    request,
+  }) => {
     for (const method of ['prepareCreateParty', 'completeCreateParty']) {
       const body = await rpc(request, method, {})
       expect(body.error?.code).toBe(-32601)
     }
   })
 
-  test('reserved-for-future: prepareExecute, prepareExecuteAndWait, signMessage return -32004', async ({ request }) => {
+  test('reserved-for-future: prepareExecute, prepareExecuteAndWait, signMessage return -32004', async ({
+    request,
+  }) => {
     for (const method of ['prepareExecute', 'prepareExecuteAndWait', 'signMessage']) {
       const body = await rpc(request, method)
       expect(body.error?.code).toBe(-32004)

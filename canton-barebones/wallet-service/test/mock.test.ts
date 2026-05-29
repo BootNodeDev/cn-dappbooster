@@ -1,11 +1,6 @@
-import { describe, it } from 'node:test'
 import { strict as assert } from 'node:assert'
-import {
-  createMockPartyApi,
-  createMockRpc,
-  createMockState,
-  isMockEnabled
-} from '../src/mock.ts'
+import { describe, it } from 'node:test'
+import { createMockPartyApi, createMockRpc, createMockState, isMockEnabled } from '../src/mock.ts'
 import type { JsonRpcResponse } from '../src/types.ts'
 
 const baseConfig = () => ({
@@ -16,7 +11,7 @@ const baseConfig = () => ({
     id: 'wallet-service',
     version: '0.1.0',
     url: 'http://localhost:3010',
-    userUrl: 'http://localhost:3010'
+    userUrl: 'http://localhost:3010',
   },
   canton: {
     jsonApiUrl: 'http://localhost:3013',
@@ -24,8 +19,8 @@ const baseConfig = () => ({
     adminApiUrl: 'grpc://localhost:3015',
     backendUserId: 'wallet-service',
     backendToken: undefined as string | undefined,
-    tokenSource: 'none' as const
-  }
+    tokenSource: 'none' as const,
+  },
 })
 
 describe('isMockEnabled', () => {
@@ -55,7 +50,11 @@ describe('createMockRpc', () => {
     const rpc = createMockRpc(baseConfig())
     const res = (await rpc.handle({ jsonrpc: '2.0', id: 1, method: 'status' })) as JsonRpcResponse
     assert.ok('result' in res)
-    const status = res.result as { provider: { id: string }; connection: { isNetworkConnected: boolean }; network: { networkId: string } }
+    const status = res.result as {
+      provider: { id: string }
+      connection: { isNetworkConnected: boolean }
+      network: { networkId: string }
+    }
     assert.equal(status.provider.id, 'wallet-service')
     assert.equal(status.connection.isNetworkConnected, true)
     assert.equal(status.network.networkId, 'canton:local-mock')
@@ -64,8 +63,10 @@ describe('createMockRpc', () => {
   it('prepareTransaction returns canned prepared response without an SDK', async () => {
     const rpc = createMockRpc(baseConfig())
     const res = (await rpc.handle({
-      jsonrpc: '2.0', id: 1, method: 'prepareTransaction',
-      params: { partyId: 'alice::mock-abc', commands: [] }
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'prepareTransaction',
+      params: { partyId: 'alice::mock-abc', commands: [] },
     })) as JsonRpcResponse
     assert.ok('result' in res)
     const result = res.result as { preparedTransactionHash: string; hashingSchemeVersion: string }
@@ -80,10 +81,20 @@ describe('createMockRpc', () => {
       partyId: 'alice::mock',
       preparedTransaction: 'tx',
       preparedTransactionHash: 'hash',
-      signatureBase64: 'sig'
+      signatureBase64: 'sig',
     }
-    const first = (await rpc.handle({ jsonrpc: '2.0', id: 1, method: 'executePrepared', params })) as JsonRpcResponse
-    const second = (await rpc.handle({ jsonrpc: '2.0', id: 2, method: 'executePrepared', params })) as JsonRpcResponse
+    const first = (await rpc.handle({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'executePrepared',
+      params,
+    })) as JsonRpcResponse
+    const second = (await rpc.handle({
+      jsonrpc: '2.0',
+      id: 2,
+      method: 'executePrepared',
+      params,
+    })) as JsonRpcResponse
     assert.ok('result' in first)
     assert.ok('result' in second)
     const a = (first.result as { completionOffset: number }).completionOffset
@@ -98,7 +109,11 @@ describe('createMockRpc', () => {
 
   it('reserved methods still return -32004', async () => {
     const rpc = createMockRpc(baseConfig())
-    const res = (await rpc.handle({ jsonrpc: '2.0', id: 1, method: 'signMessage' })) as JsonRpcResponse
+    const res = (await rpc.handle({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'signMessage',
+    })) as JsonRpcResponse
     assert.ok('error' in res)
     assert.equal(res.error.code, -32004)
   })
@@ -107,17 +122,28 @@ describe('createMockRpc', () => {
 describe('createMockPartyApi', () => {
   it('prepare returns { onboardingId, partyId, multiHash } without an SDK', async () => {
     const api = createMockPartyApi(baseConfig())
-    const result = (await api.prepare({ publicKeyBase64: 'pk', partyHint: 'alice' })) as Record<string, unknown>
+    const result = (await api.prepare({ publicKeyBase64: 'pk', partyHint: 'alice' })) as Record<
+      string,
+      unknown
+    >
     assert.ok(typeof result.onboardingId === 'string')
-    assert.ok(typeof result.partyId === 'string' && (result.partyId as string).startsWith('alice::mock-'))
+    assert.ok(
+      typeof result.partyId === 'string' && (result.partyId as string).startsWith('alice::mock-'),
+    )
     assert.ok(typeof result.multiHash === 'string')
   })
 
   it('complete consumes the prepared entry and returns the synthesized partyId', async () => {
     const state = createMockState()
     const api = createMockPartyApi(baseConfig(), state)
-    const prep = (await api.prepare({ publicKeyBase64: 'pk', partyHint: 'bob' })) as { onboardingId: string; partyId: string }
-    const completed = (await api.complete({ onboardingId: prep.onboardingId, signatureBase64: 'sig' })) as { partyId: string }
+    const prep = (await api.prepare({ publicKeyBase64: 'pk', partyHint: 'bob' })) as {
+      onboardingId: string
+      partyId: string
+    }
+    const completed = (await api.complete({
+      onboardingId: prep.onboardingId,
+      signatureBase64: 'sig',
+    })) as { partyId: string }
     assert.equal(completed.partyId, prep.partyId)
     assert.equal(api.pendingSize(), 0)
   })
@@ -126,7 +152,7 @@ describe('createMockPartyApi', () => {
     const api = createMockPartyApi(baseConfig())
     await assert.rejects(
       () => api.complete({ onboardingId: 'unknown', signatureBase64: 'sig' }),
-      /not found or expired/
+      /not found or expired/,
     )
   })
 })

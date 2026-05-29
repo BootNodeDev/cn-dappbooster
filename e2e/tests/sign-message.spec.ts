@@ -12,12 +12,15 @@
 //   * client.signMessage({message: base64}) → {signature: base64}
 //   * The signature is non-empty and looks like base64 (Ed25519 is 64 bytes → 88 chars)
 
-import { test, expect, DAPP_URL } from '../fixtures/stack.ts'
+import { DAPP_URL, expect, test } from '../fixtures/stack.ts'
 
 const STRONG_PASSWORD = 'correct-horse-battery-staple-2025!'
 const PARTY_HINT = `e2e-sign-${Date.now().toString(36)}`
 
-test('signMessage round-trips a base64 signature through the injected provider', async ({ context, extensionId }) => {
+test('signMessage round-trips a base64 signature through the injected provider', async ({
+  context,
+  extensionId,
+}) => {
   test.setTimeout(60_000)
 
   // 1. Open Carpincho's popup and set up a fresh vault.
@@ -38,7 +41,7 @@ test('signMessage round-trips a base64 signature through the injected provider',
   // no reload required.
   await expect(wallet.getByTestId('home-active-account')).toHaveAttribute(
     'data-party-id',
-    new RegExp(`^${PARTY_HINT}::`)
+    new RegExp(`^${PARTY_HINT}::`),
   )
 
   // 3. Open the dApp and connect via the injected provider.

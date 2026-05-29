@@ -13,6 +13,7 @@
   "scripts": {
     "lint": "biome check",
     "lint:fix": "biome check --write",
+    "format": "biome format --write",
     "test": "node --import tsx --test \"test/**/*.test.ts\" \"test/**/*.test.tsx\"",
     "typecheck": "tsc -b --noEmit"
   },
@@ -21,7 +22,6 @@
     "react": "^18.0.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.1",
     "@canton-network/core-splice-provider": "^1.1.0",
     "@canton-network/core-types": "^1.1.0",
     "@canton-network/core-wallet-dapp-rpc-client": "^1.1.0",

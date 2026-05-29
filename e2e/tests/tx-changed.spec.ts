@@ -11,12 +11,15 @@
 // the commandId it dispatched. The pending/signed events are validated by a
 // JS-side capture installed before the action.
 
-import { test, expect, DAPP_URL } from '../fixtures/stack.ts'
+import { DAPP_URL, expect, test } from '../fixtures/stack.ts'
 
 const STRONG_PASSWORD = 'correct-horse-battery-staple-2025!'
 const PARTY_HINT = `e2e-tx-${Date.now().toString(36)}`
 
-test('txChanged lifecycle reaches the dApp during prepareExecuteAndWait', async ({ context, extensionId }) => {
+test('txChanged lifecycle reaches the dApp during prepareExecuteAndWait', async ({
+  context,
+  extensionId,
+}) => {
   test.setTimeout(90_000)
 
   // Vault setup + party create.
@@ -32,7 +35,7 @@ test('txChanged lifecycle reaches the dApp during prepareExecuteAndWait', async 
   await expect(wallet.getByTestId('add-account-hint-input')).toBeHidden({ timeout: 15_000 })
   await expect(wallet.getByTestId('home-active-account')).toHaveAttribute(
     'data-party-id',
-    new RegExp(`^${PARTY_HINT}::`)
+    new RegExp(`^${PARTY_HINT}::`),
   )
 
   // dApp connect.
@@ -45,7 +48,7 @@ test('txChanged lifecycle reaches the dApp during prepareExecuteAndWait', async 
   // BEFORE clicking the button — otherwise the pending/signed events that fire
   // before the user-visible "executed" state get missed.
   await dapp.evaluate(() => {
-    (window as unknown as { __txEvents: unknown[] }).__txEvents = []
+    ;(window as unknown as { __txEvents: unknown[] }).__txEvents = []
     window.addEventListener('message', (event: MessageEvent) => {
       const data = event.data as { type?: string; eventName?: string; payload?: unknown } | null
       if (data?.type === 'SPLICE_WALLET_EVENT' && data?.eventName === 'txChanged') {
@@ -69,7 +72,11 @@ test('txChanged lifecycle reaches the dApp during prepareExecuteAndWait', async 
   })
 
   // Pull the captured event sequence and assert the spec-shaped lifecycle.
-  const captured = await dapp.evaluate(() => (window as unknown as { __txEvents: Array<{ status?: string; commandId?: string }> }).__txEvents)
+  const captured = await dapp.evaluate(
+    () =>
+      (window as unknown as { __txEvents: Array<{ status?: string; commandId?: string }> })
+        .__txEvents,
+  )
   const statuses = captured.map((e) => e.status)
   expect(statuses).toEqual(['pending', 'signed', 'executed'])
 
