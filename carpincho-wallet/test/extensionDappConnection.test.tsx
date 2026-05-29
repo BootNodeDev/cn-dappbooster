@@ -187,7 +187,7 @@ describe('extension dApp connection helpers', () => {
   it('reads the active tab when the popup opens', async () => {
     // Scenario: the active tab points at GitHub and has not communicated with the wallet.
     installChrome({
-      url: 'https://github.com/BootNodeDev/bn-canton-dev-stack',
+      url: 'https://github.com/BootNodeDev/cn-dappbooster',
       favIconUrl: 'https://github.githubassets.com/favicons/favicon.svg',
     })
 
