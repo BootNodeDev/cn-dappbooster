@@ -78,6 +78,7 @@ export const createPendingStore = <T>(opts: PendingStoreOptions): PendingStore<T
     delete: (id) => {
       entries.delete(id)
     },
+    // upper bound: expired-but-unaccessed entries are counted until the next set() eviction
     size: () => entries.size,
   }
 }

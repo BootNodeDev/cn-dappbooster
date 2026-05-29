@@ -10,6 +10,7 @@
     "canton:token": "npm --prefix canton-barebones run token",
     "build-dar": "bash scripts/build-dar.sh",
     "deploy-dar": "bash canton-barebones/scripts/deploy-dar.sh",
+    "wallet:dev": "npm --prefix carpincho-wallet run dev",
     "wallet-service:dev": "npm --prefix canton-barebones/wallet-service run dev",
     "wallet-service:health": "curl -fsS http://localhost:3010/health",
     "carpincho:build:extension": "npm --prefix carpincho-wallet run build:extension",
