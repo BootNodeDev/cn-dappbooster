@@ -40,6 +40,20 @@ describe('HomeView empty account layout', () => {
   })
 })
 
+describe('HomeView transaction activity recording', () => {
+  // Scenario group: executed transactions should persist both the signed payload source and readable command input.
+  it('records prepared transaction bytes and original commands for activity history', () => {
+    // Scenario: after Canton prepares and executes a transaction, Activity needs audit data beyond the hash.
+    const homeView = source()
+
+    // The prepared transaction is the base64 payload that produced the signed hash, so it must be retained.
+    assert.match(homeView, /preparedTransaction: prepared\.preparedTransaction/)
+
+    // The original command array is the readable dApp request data shown in Activity.
+    assert.match(homeView, /commands: transactionCommands\(pendingExecute\.params\)/)
+  })
+})
+
 describe('PendingActionCard approval layout', () => {
   // Scenario: pending Canton requests need a compact payload area with a label and one framed text box.
   it('renders payload text directly under the payload label inside one text box', () => {
