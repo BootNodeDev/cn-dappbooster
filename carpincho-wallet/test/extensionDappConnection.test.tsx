@@ -160,6 +160,30 @@ describe('extension dApp connection helpers', () => {
     })
   })
 
+  it('marks the active tab connected when direct provider state tracks the same origin', () => {
+    // Scenario: a dApp connected through the injected browser provider, so there is no WalletConnect session.
+    installChrome()
+
+    // Use the connected origin recorded by the extension background and an active tab on a nested route.
+    const result = dappConnectionFromSources({
+      extensionMode: true,
+      sessions: [],
+      directConnectedOrigins: ['http://localhost:3012'],
+      activeTab: {
+        url: 'http://localhost:3012/counter',
+      },
+    })
+
+    // The footer should treat the active tab as connected because its origin matches direct provider state.
+    assert.deepEqual(result, {
+      kind: 'connected',
+      label: 'localhost:3012',
+      subtitle: 'Connected',
+      faviconUrl:
+        'chrome-extension://carpincho/_favicon/?pageUrl=http%3A%2F%2Flocalhost%3A3012%2Fcounter&size=32',
+    })
+  })
+
   it('reads the active tab when the popup opens', async () => {
     // Scenario: the active tab points at GitHub and has not communicated with the wallet.
     installChrome({

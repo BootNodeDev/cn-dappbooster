@@ -1,4 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
+import {
+  getDirectConnectedOrigins,
+  subscribeToDirectConnectedOrigins,
+} from '@/extension/runtimeClient.ts'
 import type { ConnectedDappSession } from '@/wc/client.ts'
 
 interface ChromeTab {
@@ -26,6 +30,7 @@ export type DappConnectionStatus =
 interface DappConnectionSources {
   extensionMode: boolean
   sessions: ConnectedDappSession[]
+  directConnectedOrigins?: string[]
   activeTab?: ChromeTab
 }
 
@@ -88,10 +93,11 @@ const queryActiveTab = async (): Promise<ChromeTab | undefined> =>
     })
   })
 
-// Derives the footer dApp row from the active tab and active WalletConnect sessions.
+// Derives the footer dApp row from the active tab and known dApp connection state.
 export const dappConnectionFromSources = ({
   extensionMode,
   sessions,
+  directConnectedOrigins = [],
   activeTab,
 }: DappConnectionSources): DappConnectionStatus => {
   const tab = normalizedWebTab(activeTab)
@@ -99,7 +105,9 @@ export const dappConnectionFromSources = ({
     if (tab?.url === undefined) {
       return { kind: 'none' }
     }
-    const connected = sessions.some((session) => sameOrigin(session.url, tab.url as string))
+    const connected =
+      directConnectedOrigins.some((origin) => sameOrigin(origin, tab.url as string)) ||
+      sessions.some((session) => sameOrigin(session.url, tab.url as string))
     return {
       kind: connected ? 'connected' : 'detected',
       label: labelFromUrl(tab.url),
@@ -130,6 +138,7 @@ export const useExtensionDappConnection = (
 ): DappConnectionStatus => {
   const { extensionMode, sessions } = sources
   const [activeTab, setActiveTab] = useState<ChromeTab | undefined>(sources.activeTab)
+  const [runtimeConnectedOrigins, setRuntimeConnectedOrigins] = useState<string[]>([])
 
   useEffect(() => {
     if (!extensionMode) {
@@ -138,8 +147,36 @@ export const useExtensionDappConnection = (
     void queryActiveTab().then(setActiveTab)
   }, [extensionMode])
 
+  useEffect(() => {
+    if (!extensionMode || sources.directConnectedOrigins !== undefined) {
+      return
+    }
+    let mounted = true
+    let changeSeq = 0
+    const seqAtRequest = changeSeq
+    const unsubscribe = subscribeToDirectConnectedOrigins((origins) => {
+      changeSeq += 1
+      if (mounted) {
+        setRuntimeConnectedOrigins(origins)
+      }
+    })
+    void getDirectConnectedOrigins()
+      .then((origins) => {
+        if (mounted && changeSeq === seqAtRequest) {
+          setRuntimeConnectedOrigins(origins)
+        }
+      })
+      .catch(() => undefined)
+    return () => {
+      mounted = false
+      unsubscribe()
+    }
+  }, [extensionMode, sources.directConnectedOrigins])
+
+  const directConnectedOrigins = sources.directConnectedOrigins ?? runtimeConnectedOrigins
+
   return useMemo(
-    () => dappConnectionFromSources({ extensionMode, sessions, activeTab }),
-    [activeTab, extensionMode, sessions],
+    () => dappConnectionFromSources({ extensionMode, sessions, directConnectedOrigins, activeTab }),
+    [activeTab, directConnectedOrigins, extensionMode, sessions],
   )
 }

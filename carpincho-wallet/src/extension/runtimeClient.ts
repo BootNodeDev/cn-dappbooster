@@ -1,6 +1,8 @@
+import { DIRECT_CONNECTED_ORIGINS_KEY, storedOrigins } from '@/extension/directConnections.ts'
 import {
   jsonRpcError,
   jsonRpcResult,
+  type RuntimeGetConnectedOrigins,
   type RuntimeGetPendingRequests,
   type RuntimePendingRequest,
   type RuntimePendingRequestMessage,
@@ -8,12 +10,26 @@ import {
 } from '@/extension/messages.ts'
 import type { ProviderResponder } from '@/provider/dispatch.ts'
 
+type SessionStorageChange = { newValue?: unknown }
+type SessionStorageChangeListener = (changes: Record<string, SessionStorageChange>) => void
+type SessionStorageChangedEvent = {
+  addListener: (listener: SessionStorageChangeListener) => void
+  removeListener: (listener: SessionStorageChangeListener) => void
+}
+
+const sessionStorageOnChanged = (): SessionStorageChangedEvent | undefined =>
+  (
+    globalThis as {
+      chrome?: { storage?: { session?: { onChanged?: SessionStorageChangedEvent } } }
+    }
+  ).chrome?.storage?.session?.onChanged
+
 type RuntimeListener = (message: unknown) => void
 
 type RuntimeApi = {
-  sendMessage: (message: unknown, callback: (response?: unknown) => void) => void
+  sendMessage?: (message: unknown, callback: (response?: unknown) => void) => void
   lastError?: { message?: string }
-  onMessage: {
+  onMessage?: {
     addListener: (listener: RuntimeListener) => void
     removeListener: (listener: RuntimeListener) => void
   }
@@ -22,12 +38,12 @@ type RuntimeApi = {
 const runtime = (): RuntimeApi | undefined =>
   (globalThis as { chrome?: { runtime?: RuntimeApi } }).chrome?.runtime
 
-export const isExtensionRuntime = (): boolean => runtime() !== undefined
+export const isExtensionRuntime = (): boolean => runtime()?.sendMessage !== undefined
 
 const sendRuntimeMessage = async <T>(message: unknown): Promise<T> =>
   await new Promise<T>((resolve, reject) => {
     const api = runtime()
-    if (api === undefined) {
+    if (api?.sendMessage === undefined) {
       reject(new Error('Carpincho extension runtime is not available'))
       return
     }
@@ -35,6 +51,10 @@ const sendRuntimeMessage = async <T>(message: unknown): Promise<T> =>
       const lastError = api.lastError
       if (lastError !== undefined) {
         reject(new Error(lastError.message ?? 'Carpincho extension runtime failed'))
+        return
+      }
+      if (response === undefined) {
+        reject(new Error('Carpincho extension runtime returned no response'))
         return
       }
       resolve(response as T)
@@ -45,6 +65,12 @@ export const getPendingProviderRequests = async (): Promise<RuntimePendingReques
   await sendRuntimeMessage<RuntimePendingRequest[]>({
     type: 'CARPINCHO_GET_PENDING_REQUESTS',
   } satisfies RuntimeGetPendingRequests)
+
+// Reads direct injected-provider dApp origins so the popup footer can show connection state.
+export const getDirectConnectedOrigins = async (): Promise<string[]> =>
+  await sendRuntimeMessage<string[]>({
+    type: 'CARPINCHO_GET_CONNECTED_ORIGINS',
+  } satisfies RuntimeGetConnectedOrigins)
 
 export const createRuntimeResponder = (pending: RuntimePendingRequest): ProviderResponder => ({
   result: async (value) => {
@@ -67,7 +93,8 @@ export const subscribeToPendingProviderRequests = (
   cb: (pending: RuntimePendingRequest) => void,
 ): (() => void) => {
   const api = runtime()
-  if (api === undefined) {
+  const onMessage = api?.onMessage
+  if (onMessage === undefined) {
     return () => undefined
   }
   const listener = (message: unknown): void => {
@@ -79,6 +106,24 @@ export const subscribeToPendingProviderRequests = (
       cb((message as RuntimePendingRequestMessage).pending)
     }
   }
-  api.onMessage.addListener(listener)
-  return () => api.onMessage.removeListener(listener)
+  onMessage.addListener(listener)
+  return () => onMessage.removeListener(listener)
+}
+
+// Subscribes to session-storage writes so the popup footer tracks direct dApp connection state.
+export const subscribeToDirectConnectedOrigins = (
+  cb: (origins: string[]) => void,
+): (() => void) => {
+  const onChanged = sessionStorageOnChanged()
+  if (onChanged === undefined) {
+    return () => undefined
+  }
+  const listener: SessionStorageChangeListener = (changes) => {
+    const change = changes[DIRECT_CONNECTED_ORIGINS_KEY]
+    if (change !== undefined) {
+      cb(storedOrigins(change.newValue))
+    }
+  }
+  onChanged.addListener(listener)
+  return () => onChanged.removeListener(listener)
 }

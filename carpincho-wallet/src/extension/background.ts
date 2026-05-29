@@ -1,9 +1,17 @@
+import { directConnectionUpdateFromProviderResponse } from '@/extension/directConnectionState.ts'
+import {
+  forgetDirectConnectedOrigin,
+  readDirectConnectedOrigins,
+  rememberDirectConnectedOrigin,
+} from '@/extension/directConnections.ts'
 import { createDirectProviderResponse } from '@/extension/directProvider.ts'
 import {
+  type JsonRpcRequest,
   type JsonRpcResponse,
   jsonRpcError,
   type RuntimeBroadcastEvent,
   type RuntimeEventRelay,
+  type RuntimeGetConnectedOrigins,
   type RuntimeGetPendingRequests,
   type RuntimePendingRequest,
   type RuntimePendingRequestMessage,
@@ -16,6 +24,7 @@ type RuntimeMessage =
   | RuntimeProviderRequest
   | RuntimeProviderResponse
   | RuntimeGetPendingRequests
+  | RuntimeGetConnectedOrigins
   | RuntimeBroadcastEvent
 
 type RuntimeSender = {
@@ -115,6 +124,22 @@ const notifyWalletViews = async (pending: RuntimePendingRequest): Promise<void> 
     .catch(() => undefined)
 }
 
+// Applies a provider response to the direct dApp origin registry used by the footer.
+const applyDirectConnectionUpdate = async (
+  { origin, request }: { origin: string; request: JsonRpcRequest },
+  response: JsonRpcResponse,
+): Promise<void> => {
+  const update = directConnectionUpdateFromProviderResponse({ origin, request, response })
+  if (update.action === 'none') {
+    return
+  }
+  if (update.action === 'remember') {
+    await rememberDirectConnectedOrigin(update.origin)
+  } else {
+    await forgetDirectConnectedOrigin(update.origin)
+  }
+}
+
 const updateActionBadge = async (): Promise<void> => {
   const count = pendingRequests.size
   await chromeApi?.action?.setBadgeText?.({
@@ -158,6 +183,10 @@ const handleProviderRequest = async (
     await readWalletSnapshot().catch(() => null),
   )
   if (directResponse !== undefined) {
+    await applyDirectConnectionUpdate(
+      { origin: message.origin, request: message.request },
+      directResponse,
+    ).catch(() => undefined)
     sendResponse(directResponse)
     return
   }
@@ -175,6 +204,13 @@ chromeApi?.runtime?.onMessage.addListener((message, _sender, sendResponse) => {
     return false
   }
 
+  if (message.type === 'CARPINCHO_GET_CONNECTED_ORIGINS') {
+    void readDirectConnectedOrigins()
+      .then(sendResponse)
+      .catch(() => sendResponse([]))
+    return true
+  }
+
   if (message.type === 'CARPINCHO_BROADCAST_EVENT') {
     void relayBroadcastToTabs(message)
     sendResponse({ ok: true })
@@ -189,6 +225,10 @@ chromeApi?.runtime?.onMessage.addListener((message, _sender, sendResponse) => {
     }
     pendingRequests.delete(message.requestId)
     pending.sendResponse(message.response)
+    void applyDirectConnectionUpdate(
+      { origin: pending.pending.origin, request: pending.pending.request },
+      message.response,
+    ).catch(() => undefined)
     void updateActionBadge().catch(() => undefined)
     sendResponse({ ok: true })
     return false
