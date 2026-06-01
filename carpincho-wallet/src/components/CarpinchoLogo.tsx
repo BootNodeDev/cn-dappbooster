@@ -1,4 +1,4 @@
-import logoUrl from '@/assets/carpincho-hero.svg'
+import logoUrl from '@/assets/carpincho-logo.svg'
 
 export interface CarpinchoLogoProps {
   size?: number
@@ -7,12 +7,12 @@ export interface CarpinchoLogoProps {
 
 export const CarpinchoLogo = ({ size = 120, className }: CarpinchoLogoProps): JSX.Element => (
   <img
-    src={logoUrl}
     alt="Carpincho Wallet"
-    width={size}
-    height={size}
     className={className}
     draggable={false}
+    height={size}
+    src={logoUrl}
     style={{ userSelect: 'none' }}
+    width={size}
   />
 )

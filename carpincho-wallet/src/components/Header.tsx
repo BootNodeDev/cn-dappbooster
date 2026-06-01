@@ -10,7 +10,7 @@ interface HeaderProps {
 }
 
 export const Header = ({ onOpenMenu }: HeaderProps): JSX.Element => {
-  const v = useVault()
+  const vault = useVault()
   return (
     <header className="flex items-center gap-3 pl-1 pr-1 pt-2 pb-3 mb-1 border-b border-border">
       <div className="size-9 grid place-items-center rounded-md bg-primary-soft overflow-hidden ring-1 ring-primary/15">
@@ -21,12 +21,12 @@ export const Header = ({ onOpenMenu }: HeaderProps): JSX.Element => {
           carpincho
         </h1>
         <div className="mt-1 font-mono text-[0.72rem] font-medium uppercase tracking-eyebrow text-muted-foreground">
-          {v.isLocked ? 'locked' : 'canton · signer'}
+          {vault.isLocked ? 'locked' : 'canton · signer'}
         </div>
       </div>
       <div className="flex items-center gap-1.5">
         <ThemeToggle />
-        {!v.isLocked && (
+        {!vault.isLocked && (
           <button
             type="button"
             onClick={onOpenMenu}
