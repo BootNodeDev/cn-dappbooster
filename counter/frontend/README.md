@@ -2,21 +2,20 @@
 
 Standalone React dApp for the Counter DAR.
 
-The frontend knows the Counter template and choices. It talks only to Carpincho through WalletConnect/CIP-0103:
+The frontend knows the Counter template and choices. It talks only to Carpincho through the injected CIP-0103 provider by default, with WalletConnect available as an optional fallback:
 
 ```text
-frontend -> WalletConnect -> carpincho-wallet -> wallet-service -> Canton participant
+frontend -> injected CIP-0103 provider -> carpincho-wallet -> wallet-service -> Canton participant
 ```
 
 ## Run
 
 ```bash
 npm install
-cp .env.local.example .env.local
 npm run dev
 ```
 
-`VITE_WC_PROJECT_ID` must be a WalletConnect/Reown project id.
+For the optional WalletConnect fallback, copy `.env.local.example` to `.env.local` and set `VITE_WC_PROJECT_ID` to a WalletConnect/Reown project id.
 
 The Canton network and Carpincho URL are configured from the app UI and stored in browser `localStorage`. Defaults:
 

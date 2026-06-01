@@ -11,7 +11,7 @@
 |----------|-----------|-------|
 | Framework | Vite 6 + React 18 | SPA; also builds as a Chrome extension |
 | Language | TypeScript 5.9 (strict) | |
-| Wallet protocol | WalletConnect Sign Client 2.x | CIP-0103 provider over Reown relay |
+| Wallet protocol | Injected CIP-0103 provider + optional WalletConnect Sign Client 2.x | Browser extension provider events by default; Reown relay only for WalletConnect fallback |
 | Cryptography | @noble/ed25519 3.x, @noble/hashes 1.x | Ed25519 signing; PBKDF2 + AES-GCM vault |
 | UI primitives | React 18 + Radix UI | `@radix-ui/react-{dropdown-menu,dialog,select,toast,tooltip}` for menus/modals/selects/toasts/tooltips; local wrappers (Button family, TextInput, PasswordInput, Alert, Card, SectionTitle, AccountAvatar, PendingActionCard, WarningBadge, JsonPreview, Select, Sheet, MenuRow, ToastProvider, Tooltip) for static visuals and Radix re-skins; shared icon SVG literals live in `src/components/ui/icons.tsx`; `Sheet` is the shared Radix Dialog scaffold for sheet-style flows (overlay, title, close button) and takes `side: 'bottom' | 'right'` (default `'bottom'`; right opens as a 400px-wide top-aligned drawer clamped by `100vw`); `ToastProvider` and `TooltipProvider` are both mounted once in `App.tsx`; `TextInput` and `PasswordInput` accept `error?: boolean` which applies a danger border, a persistent focus ring, and `aria-invalid`; `Button.tsx` exports `GHOST_BUTTON_CLASS` / `ICON_BUTTON_CLASS` for ad-hoc buttons (e.g. `ThemeToggle`, `PasswordInput`'s show/hide button) |
 | Styling | Tailwind CSS v4 (`@tailwindcss/vite`) | Utility classes inline in JSX; `src/index.css` declares CSS-variable tokens on `:root` / `[data-theme="dark"]` and exposes them to Tailwind through `@theme inline`; `@layer base` holds global resets; Radix `data-[state=...]` and `data-[highlighted]` attrs drive interactive variants |
@@ -95,8 +95,8 @@ Manages the WalletConnect sign client lifecycle and session event handling.
 Connects the extension popup UI to web pages and the extension background.
 
 - **`background.ts`** — Persistent service worker. Maintains a queue of pending dApp requests, updates the action badge with the count, and caches a wallet snapshot for the popup. Also records the set of direct (injected-provider) dApp origins that have connected to `chrome.storage.session`, which the popup reads and watches via `storage.session.onChanged` to drive the footer's connection state.
-- **`contentScript.ts`** — Injected into every page; bridges `window.postMessage` events to the extension runtime.
-- **`directProvider.ts`** — Injects a synchronous `window.carpincho` provider object into pages for dApps that do not use WalletConnect.
+- **`contentScript.ts`** — Injected into every matched page; announces Carpincho with `canton:announceProvider`, responds to `canton:requestProvider`, and bridges page `window.postMessage` requests to the extension runtime.
+- **`directProvider.ts`** — Handles direct injected-provider requests inside the background worker when the cached wallet snapshot can answer without opening the popup; approval-required methods are queued for the popup.
 - **`messages.ts`** — Shared message-type constants and type guards used by all three extension scripts.
 - **`runtimeClient.ts`** — Popup-side client for sending requests to the background and receiving responses.
 - **`directConnections.ts`** — Persists the set of direct injected-provider dApp origins that have completed a connect (and removes them on disconnect) in `chrome.storage.session`, with an in-memory fallback when not running as an extension, so the popup footer can show connection state for non-WalletConnect dApps.
@@ -110,9 +110,10 @@ The app communicates with two external systems:
 | System | Module | Notes |
 |--------|--------|-------|
 | wallet-service JSON-RPC | `src/api/walletService.ts` | Wraps all RPC calls; URL comes from `src/config/runtimeConfig.ts` |
-| WalletConnect relay | `src/wc/client.ts` | Sign client connected to Reown relay using `VITE_WC_PROJECT_ID` |
+| Injected extension provider | `src/extension/contentScript.ts` | Announces Carpincho to dApps through `canton:requestProvider` / `canton:announceProvider` and relays provider requests through the extension runtime |
+| WalletConnect relay | `src/wc/client.ts` | Optional fallback sign client connected to Reown relay using `VITE_WC_PROJECT_ID` |
 
-Components must never call either system directly. All wallet-service calls go through `src/provider/walletService.ts`; WalletConnect events are handled in `src/wc/handlers.ts` and forwarded to the provider dispatcher.
+Components must never call these systems directly. All wallet-service calls go through `src/provider/walletService.ts`; injected-provider requests are bridged by `src/extension/contentScript.ts` / `src/extension/background.ts`, and WalletConnect events are handled in `src/wc/handlers.ts`. Both paths forward to the provider dispatcher.
 
 ## Data Flow
 
@@ -126,8 +127,8 @@ flowchart TD
   vault["src/vault/VaultContext.tsx"]
   canton["Canton participant node"]
 
-  dapp -->|"WalletConnect session"| wc
-  dapp -->|"Direct provider injection"| direct
+  dapp -->|"Injected CIP-0103 provider"| direct
+  dapp -->|"Optional WalletConnect session"| wc
   wc --> dispatch
   direct --> dispatch
   dispatch -->|"read-only"| api
@@ -142,7 +143,7 @@ State mutations (unlock, add account, sign) go through `VaultContext`. Network c
 
 | Variable | Purpose |
 |----------|---------|
-| `VITE_WC_PROJECT_ID` | WalletConnect / Reown project ID (from cloud.reown.com) |
+| `VITE_WC_PROJECT_ID` | Optional WalletConnect / Reown project ID (from cloud.reown.com), only needed for the WalletConnect fallback |
 
 Runtime-only configuration (RPC URL, Canton network name) is stored in `localStorage` via `src/config/runtimeConfig.ts` and is not an environment variable.
 

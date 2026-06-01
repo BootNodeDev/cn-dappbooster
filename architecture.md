@@ -12,8 +12,8 @@
 | `canton-barebones/` | Docker Compose + Bash + Node scripts | Local Canton participant node, Postgres, mint-token helper, DAR deploy script, health-check |
 | `counter/daml/` | DAML (`dpm` build) | `quickstart-counter` model — DAR consumed by Canton |
 | `canton-barebones/wallet-service/` | Node 24 + Express 5 + TypeScript + `@canton-network/wallet-sdk` | JSON-RPC bridge between the wallet and the Canton participant JSON API. Started by `npm run canton:up` as a docker-compose service. Self-mints its Canton JWT at boot from `CANTON_AUTH_AUDIENCE` / `CANTON_AUTH_SECRET`. `WALLET_SERVICE_MOCK=1` (`src/mock.ts`) short-circuits the dispatcher with canned responses. |
-| `carpincho-wallet/` | Vite 6 + React 18 + Tailwind v4 + Radix UI + Biome + WalletConnect Sign Client 2.x + `@noble/ed25519` | CIP-0103 wallet (web + Chrome extension), encrypted local vault, signing |
-| `counter/frontend/` | Vite + React + `@canton-network/dapp-sdk` + Biome | Counter dApp UI that talks to the wallet over WalletConnect |
+| `carpincho-wallet/` | Vite 6 + React 18 + Tailwind v4 + Radix UI + Biome + WalletConnect Sign Client 2.x + `@noble/ed25519` | CIP-0103 wallet (web + Chrome extension), encrypted local vault, signing, injected provider, optional WalletConnect |
+| `counter/frontend/` | Vite + React + `@canton-network/dapp-sdk` + Biome | Counter dApp UI that talks to the wallet through the injected CIP-0103 provider, with optional WalletConnect fallback |
 
 ## Project Structure
 
@@ -43,7 +43,7 @@
 
 ## Data Flow
 
-The whole local stack is one signing loop. The Counter frontend speaks to Carpincho over WalletConnect; Carpincho signs locally and routes the signed transaction through the wallet-service JSON-RPC bridge, which calls the Canton participant's JSON API; the participant materialises the change against the deployed `quickstart-counter` DAR.
+The whole local stack is one signing loop. The Counter frontend discovers Carpincho through the injected CIP-0103 browser provider; Carpincho signs locally and routes the signed transaction through the wallet-service JSON-RPC bridge, which calls the Canton participant's JSON API; the participant materialises the change against the deployed `quickstart-counter` DAR. WalletConnect remains available as an opt-in fallback path.
 
 ```mermaid
 flowchart TD
@@ -53,7 +53,7 @@ flowchart TD
   cb["canton-barebones<br/>Participant JSON API http://localhost:3013<br/>Ledger/Admin gRPC localhost:3014 / 3015"]
   dar["counter/daml<br/>quickstart-counter DAR<br/>.daml/dist/*.dar"]
 
-  fe <-->|"WalletConnect / CIP-0103"| wallet
+  fe <-->|"Injected CIP-0103 provider<br/>optional WalletConnect"| wallet
   wallet -->|"JSON-RPC /rpc<br/>prepare, execute, read, onboard"| ws
   ws -->|"Canton JSON API<br/>Bearer CANTON_BACKEND_TOKEN"| cb
   dar -->|"deploy DAR package"| cb
@@ -61,7 +61,7 @@ flowchart TD
 
 State boundaries:
 
-- `counter/frontend` never touches the participant directly. It only knows about Carpincho (over WalletConnect) and the Counter DAML signature.
+- `counter/frontend` never touches the participant directly. It only knows about Carpincho through the injected CIP-0103 provider (or optional WalletConnect fallback) and the Counter DAML signature.
 - `carpincho-wallet` holds all signing keys (PBKDF2 + AES-GCM vault, Ed25519). It never talks to Canton directly; it goes through `canton-barebones/wallet-service`.
 - `canton-barebones/wallet-service` is the only component holding the Canton bearer token. It self-mints the token at boot, then validates and forwards JSON-RPC calls onto the participant's JSON API.
 - `canton-barebones` is the participant. Its bearer-token validation pins the trust boundary.
@@ -86,7 +86,7 @@ Local ports are intentionally assigned in the `3010+` range so they collide with
 
 | Variable | Owner | Purpose |
 |----------|-------|---------|
-| `VITE_WC_PROJECT_ID` | `carpincho-wallet/.env.local`, `counter/frontend/.env.local` | WalletConnect / Reown project ID. Same value in both subprojects. |
+| `VITE_WC_PROJECT_ID` | `carpincho-wallet/.env.local`, `counter/frontend/.env.local` | Optional WalletConnect / Reown project ID. Same value in both subprojects when using the WalletConnect fallback; not required for the injected extension provider path. |
 | `CANTON_BACKEND_TOKEN` | `canton-barebones/wallet-service` runtime env (compose) | Self-minted at boot from `CANTON_AUTH_AUDIENCE` / `CANTON_AUTH_SECRET` / `CANTON_ADMIN_USER_ID`. Set explicitly (e.g. via the compose env override) to bypass self-mint. Mint ad-hoc with `npm run canton:token`. |
 
 Runtime-only configuration that varies between sessions (RPC URL, Canton network name, Carpincho URL) is stored in `localStorage` inside the wallet and the frontend, configured from each UI — not from env files.

@@ -41,7 +41,7 @@ import {
 
 function App() {
   return (
-    <ConnectKitProvider config={{ appName: 'Counter', walletConnectProjectId: '...' }}>
+    <ConnectKitProvider config={{ appName: 'Counter' }}>
       <Counter />
     </ConnectKitProvider>
   )
@@ -67,7 +67,7 @@ function Counter() {
 
 | Hook | Returns | Notes |
 |---|---|---|
-| `useConnect()` | `{ connect(mode), disconnect(), isConnecting, isConnected, connectError }` | `connect('extension'   \| 'walletconnect')`. Throws if called outside `<ConnectKitProvider>`. |
+| `useConnect()` | `{ connect(mode), disconnect(), isConnecting, isConnected, connectError }` | `connect('extension' \| 'walletconnect' \| 'preferred')`. The extension path uses the injected CIP-0103 provider; WalletConnect requires `walletConnectProjectId`. Throws if called outside `<ConnectKitProvider>`. |
 | `useParty()` | `{ party: { partyId, network } \| undefined, status, isConnected }` | `party` updates reactively when the wallet's primary changes (via `accountsChanged`). |
 | `useWalletStatus()` | `{ isLocked, isConnected }` | Tracks `statusChanged` / `connected` lifecycle events from the wallet. Drives lock-detection UX. |
 | `useSignMessage()` | `{ signMessage(text), signature, isSigning, error, reset() }` | Promise lifecycle exposed as React state, wagmi pattern. The Promise also resolves with the signature for imperative use. |

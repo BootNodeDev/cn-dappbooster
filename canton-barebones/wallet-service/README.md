@@ -2,7 +2,7 @@
 
 Small Express service that sits between Carpincho and the Canton participant.
 
-The dApp-facing CIP-0103 surface lives in Carpincho over WalletConnect. This service has no private keys, so it exposes the participant bridge Carpincho needs: read the ACS, prepare a transaction hash, and execute a signed prepared transaction.
+The dApp-facing CIP-0103 surface lives in Carpincho, primarily through the injected browser provider with optional WalletConnect fallback. This service has no private keys, so it exposes the participant bridge Carpincho needs: read the ACS, prepare a transaction hash, and execute a signed prepared transaction.
 
 It is deliberately app-agnostic: no Counter-specific routes live here.
 
