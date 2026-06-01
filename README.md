@@ -12,7 +12,7 @@ flowchart TD
 
   fe <-->|"Injected CIP-0103 provider<br/>optional WalletConnect"| wallet
   wallet -->|"JSON-RPC /rpc<br/>prepare, execute, read, onboard"| ws
-  ws -->|"Canton JSON API<br/>Bearer CANTON_BACKEND_TOKEN"| cb
+  ws -->|"Canton JSON API<br/>self-minted JWT"| cb
   dar -->|"deploy DAR package"| cb
 ```
 
