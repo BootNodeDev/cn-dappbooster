@@ -122,7 +122,3 @@ The canonical `@canton-network/dapp-sdk`'s `client.onAccountsChanged(handler)` /
 - Account creation generates a local Ed25519 keypair, calls `wallet-service /admin/party/prepare` to build the topology transaction, signs the topology hash locally, calls `wallet-service /admin/party/complete` to submit, and stores the returned party id in the encrypted vault. Emits `accountsChanged` when the active set changes (add / remove / setPrimary).
 - Vault lifecycle (setup, unlock, lock, destroy) emits `connected` (on transition into the unlocked state) and `statusChanged` (on every transition) so dApps can react to user-driven lock/unlock without polling.
 - Auto-lock with idle timeout, session-password caching in `chrome.storage.session` (extension) or `sessionStorage` (web).
-
-## Attribution
-
-Carpincho logo derived from the "Capybara" icon by Delapouite ([game-icons.net](https://game-icons.net/1x1/delapouite/capybara.html)), licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). Argentine flag colour sash and ring composited on top.
