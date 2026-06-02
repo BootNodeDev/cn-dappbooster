@@ -48,21 +48,36 @@ test('signMessage round-trips a base64 signature through the injected provider',
   const dapp = await context.newPage()
   await dapp.goto(DAPP_URL)
   await dapp.getByTestId('connect-extension').click()
-  await expect(dapp.getByTestId('signing-panel')).toBeVisible()
+  // The connected-party marker is the visible post-connect state. The
+  // signMessage controls remain mounted as a hidden protocol harness so this
+  // spec can still exercise the wallet method without exposing that demo UI.
+  await expect(dapp.getByTestId('connected-party')).toHaveAttribute(
+    'data-party-id',
+    new RegExp(`^${PARTY_HINT}::`),
+  )
 
-  // 4. Fill input + click Sign. The dApp encodes the message as base64 before sending.
+  // 4. Fill input + click Sign through DOM events because the harness is
+  // intentionally hidden with display:none in the production UI.
   const message = 'verify this party owns the key'
-  await dapp.getByTestId('sign-input').fill(message)
-  await dapp.getByTestId('sign-message').click()
+  await dapp.getByTestId('sign-input').evaluate((element, value) => {
+    const input = element as HTMLInputElement
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set
+    setter?.call(input, value)
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+  }, message)
+  await dapp.getByTestId('sign-message').dispatchEvent('click')
 
   // 5. Carpincho shows the pending-approval card; click Approve.
   await wallet.bringToFront()
   await expect(wallet.getByTestId('pending-approve')).toBeVisible()
   await wallet.getByTestId('pending-approve').click()
 
-  // 6. dApp surfaces the signature.
+  // 6. dApp records the signature in the hidden harness output.
   await dapp.bringToFront()
-  await expect(dapp.getByTestId('signature-output')).toBeVisible()
+  await expect(dapp.getByTestId('signature-output')).toHaveAttribute(
+    'data-signature',
+    /^[A-Za-z0-9+/]+={0,2}$/,
+  )
   const signature = await dapp.getByTestId('signature-output').getAttribute('data-signature')
 
   // Ed25519 signature is 64 bytes → 88 base64 chars including '=' padding.

@@ -7,8 +7,8 @@
 // with a "Wallet locked — unlock Carpincho to continue" banner.
 //
 // Unlocking the wallet flips `isLocked` back via the `connected` /
-// `statusChanged` follow-up and the dApp recovers automatically (signing
-// panel returns, counters reload).
+// `statusChanged` follow-up and the dApp recovers automatically (workspace
+// actions return, counters reload).
 //
 // This test drives a manual lock from Carpincho's burger menu rather than
 // the idle timeout (faster, deterministic).
@@ -41,7 +41,9 @@ test('wallet lock surfaces in the dApp and unlock recovers', async ({ context, e
   const dapp = await context.newPage()
   await dapp.goto(DAPP_URL)
   await dapp.getByTestId('connect-extension').click()
-  await expect(dapp.getByTestId('signing-panel')).toBeVisible()
+  // The visible New counter action proves the dApp is connected and unlocked;
+  // hidden protocol harness panels are not part of this UX assertion.
+  await expect(dapp.getByTestId('new-counter')).toBeVisible()
   await expect(dapp.getByTestId('wallet-locked-banner')).toBeHidden()
 
   // Lock the wallet from the burger menu. Use exact-match name because
@@ -57,7 +59,7 @@ test('wallet lock surfaces in the dApp and unlock recovers', async ({ context, e
   // dApp picks up the statusChanged broadcast and surfaces the locked UX.
   await dapp.bringToFront()
   await expect(dapp.getByTestId('wallet-locked-banner')).toBeVisible({ timeout: 10_000 })
-  await expect(dapp.getByTestId('signing-panel')).toBeHidden()
+  await expect(dapp.getByTestId('new-counter')).toBeHidden()
 
   // Unlock the wallet.
   await wallet.bringToFront()
@@ -65,8 +67,8 @@ test('wallet lock surfaces in the dApp and unlock recovers', async ({ context, e
   await wallet.getByTestId('unlock-submit').click()
   await expect(wallet.getByTestId('home-active-account')).toBeVisible({ timeout: 10_000 })
 
-  // dApp recovers automatically — banner goes away, signing panel comes back.
+  // dApp recovers automatically — banner goes away and workspace actions return.
   await dapp.bringToFront()
   await expect(dapp.getByTestId('wallet-locked-banner')).toBeHidden({ timeout: 10_000 })
-  await expect(dapp.getByTestId('signing-panel')).toBeVisible()
+  await expect(dapp.getByTestId('new-counter')).toBeVisible()
 })

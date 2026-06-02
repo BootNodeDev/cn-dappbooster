@@ -63,7 +63,9 @@ test('accountsChanged propagates from Carpincho setPrimary to the dApp', async (
   const dapp = await context.newPage()
   await dapp.goto(DAPP_URL)
   await dapp.getByTestId('connect-extension').click()
-  await expect(dapp.getByTestId('signing-panel')).toBeVisible()
+  // The visible connected-party marker is the stable post-connect surface. The
+  // signing harness remains mounted for protocol tests, but it is intentionally
+  // hidden from the user-facing UI.
   await expect(dapp.getByTestId('connected-party')).toHaveAttribute(
     'data-party-id',
     new RegExp(`^${FIRST_PARTY}::`),
