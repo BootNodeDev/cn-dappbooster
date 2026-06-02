@@ -51,7 +51,9 @@ export interface TransactionRecord {
   method: string
   status: 'executed'
   createdAt: number
+  preparedTransaction?: string
   preparedTransactionHash: string
+  commands?: unknown[]
   commandId?: string
   submissionId?: string
   updateId?: string
