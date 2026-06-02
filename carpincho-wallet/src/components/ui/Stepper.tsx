@@ -18,15 +18,15 @@ const NODE_CLASS: Record<StepState, string> = {
 }
 
 const LABEL_CLASS: Record<StepState, string> = {
-  complete: 'text-soft',
-  active: 'text-foreground',
-  upcoming: 'text-muted-foreground',
+  complete: 'text-soft font-normal',
+  active: 'text-foreground font-semibold',
+  upcoming: 'text-muted-foreground font-normal',
 }
 
 export const Stepper = ({ steps, current }: StepperProps): JSX.Element => (
   <ol
     aria-label="Setup progress"
-    className="flex items-center justify-center gap-2 px-2 py-4"
+    className="flex items-center justify-center gap-2 px-2 pt-3 pb-5"
   >
     {steps.map((label, i) => {
       const index = i + 1
@@ -41,20 +41,18 @@ export const Stepper = ({ steps, current }: StepperProps): JSX.Element => (
         >
           <span
             className={cn(
-              'grid size-7 place-items-center rounded-full border font-mono text-[0.8rem] font-semibold transition-colors',
+              'grid size-6 place-items-center rounded-full border font-mono text-[0.78rem] font-semibold transition-colors',
               NODE_CLASS[state],
             )}
           >
             {state === 'complete' ? CHECK_ICON : index}
           </span>
-          <span className={cn('font-sans text-[0.85rem] font-medium', LABEL_CLASS[state])}>
-            {label}
-          </span>
+          <span className={cn('font-sans text-[0.85rem]', LABEL_CLASS[state])}>{label}</span>
           {index < steps.length && (
             <span
               aria-hidden="true"
               className={cn(
-                'mx-1 h-px w-8 transition-colors',
+                'mx-1 h-px w-12 transition-colors',
                 state === 'complete' ? 'bg-primary' : 'bg-border',
               )}
             />
