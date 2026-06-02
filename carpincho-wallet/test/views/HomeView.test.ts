@@ -17,37 +17,26 @@ const pendingActionsSource = (): string =>
 const pendingActionCardSource = (): string =>
   readFileSync('src/components/ui/PendingActionCard.tsx', 'utf8')
 
-describe('HomeView empty account layout', () => {
-  // Scenario group: empty wallets should avoid exposing account-dependent body sections.
-  it('renders only a vertically centered account card when no account exists', () => {
-    // Scenario: the vault is unlocked, but the user has not created a Canton account yet.
+describe('HomeView account body layout', () => {
+  // The empty-account state is unreachable: onboarding owns the 0-account case and the
+  // last account cannot be removed, so HomeView always renders with at least one account.
+  it('no longer carries an empty-account centering branch', () => {
     const homeView = source()
+    assert.doesNotMatch(homeView, /hasAccounts/)
+    assert.doesNotMatch(homeView, /min-h-\[calc\(100vh-10rem\)\] justify-center/)
+  })
 
-    // HomeView needs an explicit account-presence flag so every wallet body section shares one rule.
-    assert.match(homeView, /const hasAccounts = accountsSorted\.length > 0/)
-
-    // The empty account state is centered inside the wallet body instead of sitting at the top.
-    assert.match(homeView, /!hasAccounts && 'min-h-\[calc\(100vh-10rem\)\] justify-center'/)
-
-    // Pairing UI is only useful in the web WalletConnect flow, not in the extension popup.
-    assert.match(homeView, /\{hasAccounts && !hasPending && !extensionMode && \(/)
-    assert.doesNotMatch(homeView, /Listening on this browser/)
-
-    // Activity is hidden while approval UI owns the wallet body space for a pending request.
+  it('renders the add-account sheet with the shared CreateAccountForm', () => {
+    const homeView = source()
     assert.match(
       homeView,
-      /\{hasAccounts && !hasPending && <ActivityList transactions=\{v\.transactions\} \/>\}/,
+      /import \{ CreateAccountForm \} from '@\/components\/CreateAccountForm\.tsx'/,
     )
-
-    // Pending approval UI expands between account and footer so its payload can scroll in place.
-    assert.match(
-      homeView,
-      /hasAccounts && hasPending && 'h-\[calc\(100vh-12rem\)\] min-h-0 overflow-hidden pb-0'/,
-    )
+    assert.match(homeView, /<CreateAccountForm/)
+    assert.doesNotMatch(homeView, /AddAccountView/)
   })
 
   it('expands the pending-actions section to own the wallet body', () => {
-    // The expanding section moved into PendingActionsSection but keeps its body-owning layout rule.
     const pendingActionsSection = pendingActionsSectionSource()
     assert.match(
       pendingActionsSection,

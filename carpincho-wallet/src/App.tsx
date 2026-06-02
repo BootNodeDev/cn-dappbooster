@@ -7,13 +7,13 @@ import { TooltipProvider } from '@/components/ui/Tooltip.tsx'
 import { useVault } from '@/vault/useVault.ts'
 import { VaultProvider } from '@/vault/VaultContext.tsx'
 import { HomeView } from '@/views/HomeView.tsx'
-import { SetupView } from '@/views/SetupView.tsx'
+import { OnboardingFlow } from '@/views/onboarding/OnboardingFlow.tsx'
 import { UnlockView } from '@/views/UnlockView.tsx'
 
 const Shell = (): JSX.Element => {
   const v = useVault()
   const [menuOpen, setMenuOpen] = useState(false)
-  const showHeader = v.hasVault && !v.isLocked
+  const showHeader = v.hasVault && !v.isLocked && v.accounts.length > 0
   useEffect(() => {
     if (!showHeader) setMenuOpen(false)
   }, [showHeader])
@@ -28,9 +28,10 @@ const Shell = (): JSX.Element => {
   return (
     <div className={`w-popup mx-auto px-3 pt-3 ${showHeader ? 'pb-20' : 'pb-8'}`}>
       {showHeader && <Header onOpenMenu={() => setMenuOpen(true)} />}
-      {!v.hasVault && <SetupView />}
       {v.hasVault && v.isLocked && <UnlockView />}
-      {v.hasVault && !v.isLocked && <HomeView />}
+      {!v.hasVault && <OnboardingFlow />}
+      {v.hasVault && !v.isLocked && v.accounts.length === 0 && <OnboardingFlow />}
+      {v.hasVault && !v.isLocked && v.accounts.length > 0 && <HomeView />}
       {showHeader && (
         <MenuSheet
           open={menuOpen}

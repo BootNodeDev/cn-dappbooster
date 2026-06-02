@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AccountCard } from '@/components/AccountCard.tsx'
 import { ActivityList } from '@/components/ActivityList.tsx'
 import { ConnectionFooter } from '@/components/ConnectionFooter.tsx'
+import { CreateAccountForm } from '@/components/CreateAccountForm.tsx'
 import { PairOrConnectedCard } from '@/components/PairOrConnectedCard.tsx'
 import { Sheet } from '@/components/ui/Sheet.tsx'
 import { toast } from '@/components/ui/toast.ts'
@@ -10,7 +11,6 @@ import { isExtensionRuntime } from '@/extension/runtimeClient.ts'
 import { useWalletServiceStatus } from '@/hooks/useWalletServiceStatus.ts'
 import { cn } from '@/utils/cn.ts'
 import { useVault } from '@/vault/useVault.ts'
-import { AddAccountView } from '@/views/AddAccountView.tsx'
 import { ConnectionSettingsView } from '@/views/ConnectionSettingsView.tsx'
 import { PendingActionsSection } from '@/views/home/PendingActionsSection.tsx'
 import type { PendingExecuteRequest, PendingSignRequest } from '@/views/home/types.ts'
@@ -140,8 +140,8 @@ export const HomeView = (): JSX.Element => {
       ),
     [v.accounts],
   )
-  // Without an account there is no Canton party available for approvals or activity history.
-  const hasAccounts = accountsSorted.length > 0
+  // HomeView only renders when an account exists (onboarding owns the empty state and the
+  // last account cannot be removed), so a primary account is always available.
   const primary = v.primary ?? accountsSorted[0]
   const hasPending =
     proposal !== undefined || pendingSign !== undefined || pendingExecute !== undefined
@@ -155,8 +155,7 @@ export const HomeView = (): JSX.Element => {
       <div
         className={cn(
           'flex flex-col gap-3 pb-2',
-          !hasAccounts && 'min-h-[calc(100vh-10rem)] justify-center',
-          hasAccounts && hasPending && 'h-[calc(100vh-12rem)] min-h-0 overflow-hidden pb-0',
+          hasPending && 'h-[calc(100vh-12rem)] min-h-0 overflow-hidden pb-0',
         )}
       >
         <AccountCard
@@ -169,7 +168,7 @@ export const HomeView = (): JSX.Element => {
           onCopyPartyId={onCopyPartyId}
         />
 
-        {hasAccounts && hasPending && (
+        {hasPending && (
           <PendingActionsSection
             proposal={proposal}
             pendingSign={pendingSign}
@@ -182,7 +181,7 @@ export const HomeView = (): JSX.Element => {
           />
         )}
 
-        {hasAccounts && !hasPending && !extensionMode && (
+        {!hasPending && !extensionMode && (
           <PairOrConnectedCard
             sessions={sessions}
             pairingDraft={pairingDraft}
@@ -198,7 +197,7 @@ export const HomeView = (): JSX.Element => {
           />
         )}
 
-        {hasAccounts && !hasPending && <ActivityList transactions={v.transactions} />}
+        {!hasPending && <ActivityList transactions={v.transactions} />}
       </div>
 
       <Sheet
@@ -207,7 +206,10 @@ export const HomeView = (): JSX.Element => {
         title="Add account"
         description="Generate a new Canton party and store its keypair locally."
       >
-        <AddAccountView onClose={() => setAddAccountOpen(false)} />
+        <CreateAccountForm
+          onSuccess={() => setAddAccountOpen(false)}
+          onCancel={() => setAddAccountOpen(false)}
+        />
       </Sheet>
 
       <Sheet
