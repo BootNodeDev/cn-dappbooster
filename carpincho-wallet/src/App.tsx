@@ -29,7 +29,9 @@ const Shell = (): JSX.Element => {
     <div className={`w-popup mx-auto px-3 pt-3 ${showHeader ? 'pb-20' : 'pb-8'}`}>
       {showHeader && <Header onOpenMenu={() => setMenuOpen(true)} />}
       {v.hasVault && v.isLocked && <UnlockView />}
+      {/* No vault yet: onboarding step 1 (create vault). */}
       {!v.hasVault && <OnboardingFlow />}
+      {/* Unlocked vault with no account yet: onboarding step 2 (create first account). */}
       {v.hasVault && !v.isLocked && v.accounts.length === 0 && <OnboardingFlow />}
       {v.hasVault && !v.isLocked && v.accounts.length > 0 && <HomeView />}
       {showHeader && (
