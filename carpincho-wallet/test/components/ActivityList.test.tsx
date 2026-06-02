@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert'
 import { afterEach, describe, it } from 'node:test'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ActivityList } from '@/components/ActivityList.tsx'
 import type { TransactionRecord } from '@/vault/types.ts'
@@ -50,5 +50,31 @@ describe('ActivityList', () => {
     // The detail view should expose the original command JSON so the user can inspect the called choice and values.
     assert.ok(screen.getByText('Command payload'))
     assert.match(screen.getByText(/"choice": "Increment"/).textContent ?? '', /"by": 1/)
+  })
+
+  it('shows the normalized wallet API method in opened transaction details', () => {
+    // Scenario: a transaction was recorded from the internal prepare-and-execute flow, but Activity should show the public wallet API method consistently.
+    // This transaction fixture uses the raw internal method value that should be normalized for user-facing Activity labels.
+    const transaction: TransactionRecord = {
+      id: 'tx-1',
+      accountId: 'account-1',
+      accountName: 'Primary',
+      partyId: 'primary::namespace',
+      network: 'canton:local',
+      method: 'prepareExecuteAndWait',
+      status: 'executed',
+      createdAt: 1_700_000_000_000,
+      preparedTransactionHash: 'prepared-hash',
+      commandCount: 1,
+      summary: 'ExerciseCommand',
+    }
+
+    // Rendering and opening the transaction should expose the same method label used by the collapsed Activity row.
+    render(<ActivityList transactions={[transaction]} />)
+    fireEvent.click(screen.getByText('open'))
+
+    // The detail view should avoid leaking the internal prepare step because users recognize the execution as executeAndWait.
+    assert.equal(screen.queryByText('prepareExecuteAndWait') === null, true)
+    assert.equal(screen.getAllByText('executeAndWait').length, 2)
   })
 })

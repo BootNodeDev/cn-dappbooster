@@ -39,7 +39,7 @@ const txDetailRows = (tx: TransactionRecord): TxDetailRow[] => {
   rows.push(
     { label: 'Network', value: tx.network },
     { label: 'Party', value: tx.partyId, mono: true },
-    { label: 'Method', value: tx.method },
+    { label: 'Method', value: txMethodLabel(tx.method) },
     { label: 'Prepared hash', value: tx.preparedTransactionHash, mono: true },
   )
   if (tx.commandId !== undefined) {
