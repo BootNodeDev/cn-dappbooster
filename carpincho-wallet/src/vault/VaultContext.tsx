@@ -255,7 +255,7 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
     [persist, bump, accountsChangedPayload],
   )
 
-  // Caller (AddAccountView) generates the keypair before creating the Canton external party.
+  // Caller (CreateAccountForm) generates the keypair before creating the Canton external party.
   // Generating a new key here would desync the vault entry from the account UI.
   const addAccount = useCallback(
     async (args: {
@@ -315,6 +315,9 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
     async (id: string): Promise<void> => {
       if (unlockedPlaintext === null) {
         throw new Error('vault locked')
+      }
+      if (unlockedPlaintext.accounts.length <= 1) {
+        throw new Error('cannot remove the last account')
       }
       unlockedPlaintext.accounts = unlockedPlaintext.accounts.filter((a) => a.id !== id)
       if (unlockedPlaintext.primaryAccountId === id) {
