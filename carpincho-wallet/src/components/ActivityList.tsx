@@ -3,6 +3,7 @@ import { CARD_CLASS } from '@/components/ui/Card.tsx'
 import { SectionTitle } from '@/components/ui/SectionTitle.tsx'
 import { shortMiddle } from '@/utils/account.ts'
 import { cn } from '@/utils/cn.ts'
+import { prettyJson } from '@/utils/json.ts'
 import type { TransactionRecord } from '@/vault/types.ts'
 import { CANTON_METHOD_PREPARE_EXECUTE_AND_WAIT } from '@/wc/client.ts'
 
@@ -15,6 +16,7 @@ const TX_TIME_FMT = new Intl.DateTimeFormat(undefined, {
 
 const txTime = (tx: TransactionRecord): string => TX_TIME_FMT.format(tx.createdAt)
 
+// Keeps the Activity row label aligned with the public wallet API name users recognize.
 const txMethodLabel = (method: string): string =>
   method === CANTON_METHOD_PREPARE_EXECUTE_AND_WAIT ? 'executeAndWait' : method
 
@@ -24,6 +26,7 @@ interface TxDetailRow {
   mono?: boolean
 }
 
+// Builds the scalar metadata rows shown before the larger command payload block.
 const txDetailRows = (tx: TransactionRecord): TxDetailRow[] => {
   const rows: TxDetailRow[] = [
     { label: 'Summary', value: tx.summary ?? 'Canton transaction' },
@@ -36,7 +39,7 @@ const txDetailRows = (tx: TransactionRecord): TxDetailRow[] => {
   rows.push(
     { label: 'Network', value: tx.network },
     { label: 'Party', value: tx.partyId, mono: true },
-    { label: 'Method', value: tx.method },
+    { label: 'Method', value: txMethodLabel(tx.method) },
     { label: 'Prepared hash', value: tx.preparedTransactionHash, mono: true },
   )
   if (tx.commandId !== undefined) {
@@ -54,10 +57,15 @@ const txDetailRows = (tx: TransactionRecord): TxDetailRow[] => {
   return rows
 }
 
+// Checks whether the transaction has original dApp commands worth showing as audit JSON.
+const hasCommandPayload = (tx: TransactionRecord): boolean =>
+  tx.commands !== undefined && tx.commands.length > 0
+
 interface ActivityListProps {
   transactions: TransactionRecord[]
 }
 
+// Renders recent executed transactions with expandable details for hashes and command payloads.
 export const ActivityList = ({ transactions }: ActivityListProps): JSX.Element => {
   const visibleTxs = transactions.slice(0, 8)
 
@@ -123,6 +131,16 @@ export const ActivityList = ({ transactions }: ActivityListProps): JSX.Element =
                     </Fragment>
                   ))}
                 </dl>
+                {hasCommandPayload(tx) && (
+                  <div className="mt-3">
+                    <div className="mb-1.5 text-muted-foreground font-semibold tracking-tight text-[0.92rem]">
+                      Command payload
+                    </div>
+                    <pre className="max-h-48 overflow-auto rounded-md border border-border bg-background/60 p-3 m-0 whitespace-pre-wrap break-words font-mono text-[0.78rem] leading-relaxed text-soft">
+                      {prettyJson(tx.commands)}
+                    </pre>
+                  </div>
+                )}
               </div>
             </details>
           ))}

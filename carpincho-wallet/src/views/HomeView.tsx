@@ -81,6 +81,7 @@ interface ExecutePreparedResponse {
   completionOffset?: number
 }
 
+// Normalizes execution params so every prepare request has the active party and read parties Canton expects.
 const executeParams = (params: unknown, partyId: string): Record<string, unknown> => {
   const base =
     typeof params === 'object' && params !== null && !Array.isArray(params)
@@ -95,14 +96,22 @@ const executeParams = (params: unknown, partyId: string): Record<string, unknown
   }
 }
 
-const commandCount = (params: Record<string, unknown>): number | undefined => {
+// Extracts the original dApp commands that Activity can later render as a readable audit payload.
+const transactionCommands = (params: Record<string, unknown>): unknown[] | undefined => {
   const commands = params.commands
-  return Array.isArray(commands) ? commands.length : undefined
+  return Array.isArray(commands) ? commands : undefined
 }
 
+// Counts original dApp commands without assuming a specific DAML command shape.
+const commandCount = (params: Record<string, unknown>): number | undefined => {
+  const commands = transactionCommands(params)
+  return commands?.length
+}
+
+// Produces the short Activity row summary from the first original dApp command.
 const commandSummary = (params: Record<string, unknown>): string => {
-  const commands = params.commands
-  if (!Array.isArray(commands) || commands.length === 0) {
+  const commands = transactionCommands(params)
+  if (commands === undefined || commands.length === 0) {
     return 'Canton transaction'
   }
   const first = commands[0]
@@ -116,9 +125,11 @@ const commandSummary = (params: Record<string, unknown>): string => {
   return commands.length === 1 ? kind : `${kind} + ${commands.length - 1} more`
 }
 
+// Keeps optional string fields out of persisted activity when the dApp sent empty values.
 const optionalString = (value: unknown): string | undefined =>
   typeof value === 'string' && value.length > 0 ? value : undefined
 
+// Adapts WalletConnect request events to the provider responder used by local request handling.
 const walletConnectResponder = (req: RequestEvent): ProviderResponder => ({
   result: async (value) => {
     await respondWithResult(req.topic, req.id, value)
@@ -428,7 +439,9 @@ export const HomeView = (): JSX.Element => {
         network: pendingExecute.account.network,
         method: pendingExecute.method,
         status: 'executed',
+        preparedTransaction: prepared.preparedTransaction,
         preparedTransactionHash: prepared.preparedTransactionHash,
+        commands: transactionCommands(pendingExecute.params),
         commandId: optionalString(pendingExecute.params.commandId),
         submissionId: optionalString(pendingExecute.params.submissionId),
         updateId: executed.updateId,

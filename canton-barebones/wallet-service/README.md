@@ -1,131 +1,91 @@
 # Wallet Service
 
-Small Express service that sits between Carpincho and the Canton participant.
+Express JSON-RPC bridge between Carpincho and the local Canton participant.
 
-The dApp-facing CIP-0103 surface lives in Carpincho over WalletConnect. This service has no private keys, so it exposes the participant bridge Carpincho needs: read the ACS, prepare a transaction hash, and execute a signed prepared transaction.
-
-It is deliberately app-agnostic: no Counter-specific routes live here.
+It is intentionally app-agnostic: app-specific Daml commands come from the
+consumer, Carpincho owns signing and approval UI, and this service only handles
+Canton connectivity, participant reads, prepared transaction execution, and
+wallet-internal party onboarding.
 
 ## Run
 
-Primary path — started for you by `npm run canton:up` at the repo root. Verify with:
+Use the root runbook for startup, health checks, and local mock-mode commands:
 
-```bash
-npm run wallet-service:health
-```
+- [Root quick start](../../README.md#quick-start)
+- [Root wallet-service step](../../README.md#wallet-service)
 
-The service self-mints its Canton JWT at boot from `CANTON_AUTH_AUDIENCE`, `CANTON_AUTH_SECRET`, and `CANTON_ADMIN_USER_ID` (all in `canton-barebones/.env`). Set `CANTON_BACKEND_TOKEN` explicitly in the compose env or in this subproject's `.env` to bypass the self-mint.
+## Token
 
-Host-side dev mode (for mock-mode iteration without Docker):
+Real Canton calls require a bearer token accepted by the local participant.
+For this local stack, wallet-service self-mints that HS256 JWT at boot from
+`CANTON_AUTH_AUDIENCE`, `CANTON_AUTH_SECRET`, and `CANTON_ADMIN_USER_ID`.
 
-```bash
-npm install
-cp .env.example .env
-WALLET_SERVICE_MOCK=1 npm run dev
-```
-
-Useful checks:
-
-```bash
-curl http://localhost:3010/health
-curl http://localhost:3010/
-curl http://localhost:3010/wallet-service/info
-curl -s http://localhost:3010/rpc \
-  -H 'content-type: application/json' \
-  -d '{"jsonrpc":"2.0","id":1,"method":"status"}'
-```
-
-Expected flow once implemented:
-
-```text
-frontend -> carpincho -> wallet-service -> canton participant
-```
+Use the root README for the command flow.
 
 ## API Boundary
 
-CIP-0103 defines the dApp API as a Provider interface:
-
-```ts
-provider.request({ method, params })
-```
-
-The method names and payload semantics are the standard part. The transport is intentionally open: browser extension `postMessage`, HTTPS, WebSocket, local bridge, etc. This scaffold exposes the Provider over HTTP JSON-RPC 2.0:
+The public dApp surface is CIP-0103. Carpincho exposes that provider to dApps;
+this service exposes only the HTTP JSON-RPC bridge Carpincho needs at:
 
 ```text
 POST /rpc
 ```
 
-Methods use CIP-0103 names, for example:
+- [CIP-0103 Provider API](https://github.com/canton-foundation/cips/blob/main/cip-0103/cip-0103.md#provider-api)
+- [CIP-0103 Synchronous dApp API](https://github.com/canton-foundation/cips/blob/main/cip-0103/cip-0103.md#synchronous-dapp-api)
+- [Vendored OpenRPC dApp API](api-specs/openrpc-dapp-api.json)
 
-- `status`
-- `connect`
-- `isConnected`
-- `getActiveNetwork`
-- `listAccounts`
-- `getPrimaryAccount`
-- `prepareExecute`
-- `signMessage`
-- `ledgerApi`
+Service-specific methods:
 
-In this scaffold, `prepareExecute`, `prepareExecuteAndWait`, and `signMessage` are implemented by Carpincho, because Carpincho owns the user key and approval UI. Carpincho then calls two internal service methods:
+| Method               | Caller                          | Purpose                                                                                                          |
+| -------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `prepareTransaction` | Carpincho                       | Calls Canton interactive submission prepare and returns the prepared transaction payload/hash for local signing. |
+| `executePrepared`    | Carpincho                       | Submits Carpincho's signature over a prepared transaction to Canton.                                             |
+| `ledgerApi`          | Carpincho on behalf of the dApp | Proxies participant JSON API reads/writes and injects the Canton bearer token.                                   |
 
-- `prepareTransaction`: calls Canton interactive submission prepare and returns `preparedTransactionHash`.
-- `executePrepared`: submits the signed prepared transaction to Canton.
+`prepareExecute`, `prepareExecuteAndWait`, and `signMessage` stay in
+Carpincho because they require the user's key and approval UI.
 
-Counter-specific methods do not belong here. The frontend knows Counter and sends generic Daml commands through CIP-0103; the wallet service only handles Canton connectivity.
+For `ledgerApi` semantics, read the upstream spec instead of duplicating it:
 
-For reads, `ledgerApi` is a generic proxy to the Canton participant's JSON API.
-The wallet-service injects the bearer token and forwards your request as-is. See
-[`api-specs/openrpc-dapp-api.json`](api-specs/openrpc-dapp-api.json) `#/components/schemas/LedgerApiRequest`
-for the full param schema (`requestMethod`, `resource`, `body`, `query`, `path`).
+- [CIP-0103 `ledgerApi`](https://github.com/canton-foundation/cips/blob/main/cip-0103/cip-0103.md#ledgerapi)
+- [CIP-0103 JSON Ledger API rationale](https://github.com/canton-foundation/cips/blob/main/cip-0103/cip-0103.md#interoperability-with-the-json-ledger-api)
+- [`LedgerApiRequest` schema](api-specs/openrpc-dapp-api.json)
 
-External party onboarding/topology work is provider-specific operational logic. CIP-0103 explicitly keeps topology capabilities out of the dApp API, so those should not be exposed as generic dApp methods unless a later standard defines them.
+## Admin Endpoints
 
-For local onboarding, Carpincho calls two wallet-internal admin endpoints
-(not part of the dApp API):
+External party onboarding is wallet/provider operational logic, not generic
+dApp API. See
+[CIP-0103 topology-related capabilities](https://github.com/canton-foundation/cips/blob/main/cip-0103/cip-0103.md#topology-related-capabilities).
 
-- `POST /admin/party/prepare` with `{ publicKeyBase64, partyHint? }` — prepares
-  the external party topology transaction. Returns `{ onboardingId, partyId, multiHash }`.
-- `POST /admin/party/complete` with `{ onboardingId, signatureBase64, expectHeavyLoad? }` —
-  submits the topology transaction and grants user rights. Returns the created party.
+Carpincho uses these wallet-internal endpoints:
 
-These endpoints are scoped to the wallet (Carpincho is the only caller) and live
-off the `/rpc` JSON-RPC surface so the dApp API stays a clean projection of
-`openrpc-dapp-api.json`.
+| Endpoint                     | Purpose                                                                                              |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `POST /admin/party/prepare`  | Prepares the external party topology transaction and returns `{ onboardingId, partyId, multiHash }`. |
+| `POST /admin/party/complete` | Submits the signed topology transaction, grants user rights, and returns the created party.          |
+
+These endpoints stay outside `/rpc` so the dApp API remains a projection of
+the CIP/OpenRPC surface.
 
 ## Mock Mode
 
-Set `WALLET_SERVICE_MOCK=1` to short-circuit the dispatcher before any Canton
-SDK call. The mock factories in [`src/mock.ts`](src/mock.ts) return the same
-`Rpc` and `PartyApi` shapes as their real counterparts, so [`server.ts`](src/server.ts)
-swaps them at boot without adapting any HTTP wiring. Useful for wallet-only
-iteration with no Docker / Canton / DAML SDK running.
+`WALLET_SERVICE_MOCK=1` short-circuits Canton SDK calls and returns canned
+responses from [`src/mock.ts`](src/mock.ts). This is useful for wallet-only
+iteration with no Docker, Canton, or Daml SDK running.
 
-| Surface | Mock behaviour |
-| --- | --- |
-| `status`, `connect`, `isConnected` | Reports `isConnected: false`, `isNetworkConnected: true`, `networkId: <NETWORK>-mock`. |
-| `disconnect` | `null`. |
-| `getActiveNetwork` | `{ networkId: <NETWORK>-mock }`. |
-| `listAccounts` | `[]`. |
-| `getPrimaryAccount` | `-32001 Resource not found`. |
-| `prepareTransaction` | Canned `{ preparedTransaction, preparedTransactionHash, hashingSchemeVersion: HASHING_SCHEME_VERSION_V2 }`. |
-| `executePrepared` | `{ updateId, completionOffset }` with monotonically increasing offset. |
-| `ledgerApi` | Accepts only `POST /v2/state/active-contracts` (the shape the Counter frontend uses) and returns `{ contracts: [] }`. |
-| `prepareExecute`, `prepareExecuteAndWait`, `signMessage` | `-32004 Method not supported`. |
-| `POST /admin/party/prepare` | Synthesises a `partyId` from `partyHint`, returns `{ onboardingId, partyId, multiHash, topologyTransactions: [] }`. |
-| `POST /admin/party/complete` | Looks up the prepared entry and returns `{ partyId }`. |
+Mock mode reports `mock: true` from `GET /health` and
+`GET /wallet-service/info`; no Canton JWT is required.
 
-`GET /health` and `GET /wallet-service/info` report `mock: true` in mock mode.
-`CANTON_BACKEND_TOKEN` is not required. Start it directly with:
+The mock intentionally implements only the participant read shape currently
+used by the Counter frontend for ACS reads:
 
-```bash
-WALLET_SERVICE_MOCK=1 npm run dev
+```text
+POST /v2/state/active-contracts
 ```
-
-To exercise carpincho-wallet against the mocked service, run the wallet
-separately with `npm --prefix carpincho-wallet run dev`.
 
 ## References
 
-- CIP-0103: https://github.com/canton-foundation/cips/blob/main/cip-0103/cip-0103.md
-- OpenRPC dApp API: https://github.com/canton-network/wallet-gateway/blob/main/api-specs/openrpc-dapp-api.json
+- [CIP-0103](https://github.com/canton-foundation/cips/blob/main/cip-0103/cip-0103.md)
+- [OpenRPC dApp API](https://github.com/canton-network/wallet-gateway/blob/main/api-specs/openrpc-dapp-api.json)
+- [Vendored API specs](api-specs/README.md)
