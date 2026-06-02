@@ -1,42 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
+import { MenuList } from '@/components/menu/MenuList.tsx'
+import { type Direction, MENU_LISTS, SCREENS, type Screen } from '@/components/menu/screens.ts'
+import { ThemeMenu } from '@/components/menu/ThemeMenu.tsx'
 import { AutoLockList, PasswordForm } from '@/components/SecurityPanel.tsx'
-import { MenuRow } from '@/components/ui/MenuRow.tsx'
 import { Sheet } from '@/components/ui/Sheet.tsx'
 import { useVault } from '@/vault/useVault.ts'
-
-type Screen = 'root' | 'security' | 'password' | 'auto-lock'
-type Direction = 'forward' | 'back'
-
-interface ScreenConfig {
-  title: string
-  description: string
-  parent: Screen | null
-}
-
-const SCREENS: Record<Screen, ScreenConfig> = {
-  root: {
-    title: 'Menu',
-    description: 'Wallet menu.',
-    parent: null,
-  },
-  security: {
-    title: 'Security & Password',
-    description: 'Choose between password change and auto-lock configuration.',
-    parent: 'root',
-  },
-  password: {
-    title: 'Password',
-    description: 'Verify the current password and set a new one.',
-    parent: 'security',
-  },
-  'auto-lock': {
-    title: 'Auto-lock',
-    description: 'Choose how long the wallet stays unlocked while idle.',
-    parent: 'security',
-  },
-}
-
-const MENU_LIST_CLASS = 'flex flex-col gap-2 list-none m-0 p-0'
 
 interface MenuSheetProps {
   open: boolean
@@ -86,6 +54,7 @@ export const MenuSheet = ({ open, onOpenChange }: MenuSheetProps): JSX.Element =
   }
 
   const config = SCREENS[screen]
+  const list = MENU_LISTS[screen]
   const animationClass =
     direction === 'forward' ? 'animate-slide-in-right' : 'animate-slide-in-left'
 
@@ -103,31 +72,14 @@ export const MenuSheet = ({ open, onOpenChange }: MenuSheetProps): JSX.Element =
         ref={screenRef}
         className={animationClass}
       >
-        {screen === 'root' && (
-          <ul className={MENU_LIST_CLASS}>
-            <MenuRow
-              label="Security & Password"
-              onClick={() => goTo('security')}
-            />
-            <MenuRow
-              label="Log out"
-              tone="danger"
-              onClick={onLogout}
-            />
-          </ul>
+        {list !== undefined && (
+          <MenuList
+            rows={list}
+            onNavigate={goTo}
+            onLogout={onLogout}
+          />
         )}
-        {screen === 'security' && (
-          <ul className={MENU_LIST_CLASS}>
-            <MenuRow
-              label="Password"
-              onClick={() => goTo('password')}
-            />
-            <MenuRow
-              label="Auto-lock"
-              onClick={() => goTo('auto-lock')}
-            />
-          </ul>
-        )}
+        {screen === 'theme' && <ThemeMenu />}
         {screen === 'password' && <PasswordForm />}
         {screen === 'auto-lock' && <AutoLockList />}
       </div>

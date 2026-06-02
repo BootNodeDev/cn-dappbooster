@@ -1,15 +1,15 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
-import { type Theme, ThemeContext } from '@/theme/ThemeContext.ts'
+import { ThemeContext, type ThemeMode } from '@/theme/ThemeContext.ts'
 
 const STORAGE_KEY = 'carpincho-theme'
 
-const readStoredTheme = (): Theme | null => {
+const readStoredMode = (): ThemeMode | null => {
   if (typeof window === 'undefined') {
     return null
   }
   try {
     const stored = window.localStorage.getItem(STORAGE_KEY)
-    if (stored === 'light' || stored === 'dark') {
+    if (stored === 'light' || stored === 'dark' || stored === 'system') {
       return stored
     }
   } catch {
@@ -18,45 +18,31 @@ const readStoredTheme = (): Theme | null => {
   return null
 }
 
-const readInitial = (): Theme => {
-  const stored = readStoredTheme()
-  if (stored) {
-    return stored
-  }
-  if (typeof window === 'undefined') {
-    return 'light'
-  }
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-}
-
 interface ThemeProviderProps {
   children: ReactNode
 }
 
 export const ThemeProvider = ({ children }: ThemeProviderProps): JSX.Element => {
-  const [theme, setThemeState] = useState<Theme>(readInitial)
+  const [mode, setModeState] = useState<ThemeMode>(() => readStoredMode() ?? 'system')
 
   useEffect(() => {
-    document.documentElement.dataset.theme = theme
-  }, [theme])
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
+    const root = document.documentElement
+    if (mode !== 'system') {
+      root.dataset.theme = mode
       return
     }
+    // System mode: resolve from a single MediaQueryList and follow its changes.
     const media = window.matchMedia('(prefers-color-scheme: dark)')
-    const handler = (e: MediaQueryListEvent): void => {
-      // Respect any explicit user choice that has been persisted.
-      if (readStoredTheme() !== null) {
-        return
-      }
-      setThemeState(e.matches ? 'dark' : 'light')
+    const apply = (): void => {
+      root.dataset.theme = media.matches ? 'dark' : 'light'
     }
-    media.addEventListener('change', handler)
-    return () => media.removeEventListener('change', handler)
-  }, [])
+    apply()
+    media.addEventListener('change', apply)
+    return () => media.removeEventListener('change', apply)
+  }, [mode])
 
-  const persist = useCallback((next: Theme) => {
+  const setMode = useCallback((next: ThemeMode) => {
+    setModeState(next)
     try {
       window.localStorage.setItem(STORAGE_KEY, next)
     } catch {
@@ -64,23 +50,7 @@ export const ThemeProvider = ({ children }: ThemeProviderProps): JSX.Element => 
     }
   }, [])
 
-  const setTheme = useCallback(
-    (next: Theme) => {
-      setThemeState(next)
-      persist(next)
-    },
-    [persist],
-  )
-
-  const toggle = useCallback(() => {
-    setThemeState((prev) => {
-      const next: Theme = prev === 'dark' ? 'light' : 'dark'
-      persist(next)
-      return next
-    })
-  }, [persist])
-
-  const value = useMemo(() => ({ theme, setTheme, toggle }), [theme, setTheme, toggle])
+  const value = useMemo(() => ({ mode, setMode }), [mode, setMode])
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
 }

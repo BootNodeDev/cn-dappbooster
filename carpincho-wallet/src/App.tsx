@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Header } from '@/components/Header.tsx'
-import { MenuSheet } from '@/components/MenuSheet.tsx'
-import { ThemeToggle } from '@/components/ThemeToggle.tsx'
+import { MenuSheet } from '@/components/menu/MenuSheet.tsx'
 import { SPINNER_ICON } from '@/components/ui/icons.tsx'
 import { ToastProvider } from '@/components/ui/Toast.tsx'
 import { TooltipProvider } from '@/components/ui/Tooltip.tsx'
@@ -28,13 +27,7 @@ const Shell = (): JSX.Element => {
   }
   return (
     <div className={`w-popup mx-auto px-3 pt-3 ${showHeader ? 'pb-20' : 'pb-8'}`}>
-      {showHeader ? (
-        <Header onOpenMenu={() => setMenuOpen(true)} />
-      ) : (
-        <div className="flex justify-end pt-1 pb-3">
-          <ThemeToggle />
-        </div>
-      )}
+      {showHeader && <Header onOpenMenu={() => setMenuOpen(true)} />}
       {!v.hasVault && <SetupView />}
       {v.hasVault && v.isLocked && <UnlockView />}
       {v.hasVault && !v.isLocked && <HomeView />}

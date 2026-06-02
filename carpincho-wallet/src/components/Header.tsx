@@ -1,5 +1,4 @@
 import { CarpinchoLogo } from '@/components/CarpinchoLogo.tsx'
-import { ThemeToggle } from '@/components/ThemeToggle.tsx'
 import { ICON_BUTTON_CLASS, ROUND_ICON_BUTTON_CHROME } from '@/components/ui/Button.tsx'
 import { MENU_ICON } from '@/components/ui/icons.tsx'
 import { cn } from '@/utils/cn.ts'
@@ -24,20 +23,17 @@ export const Header = ({ onOpenMenu }: HeaderProps): JSX.Element => {
           {vault.isLocked ? 'locked' : 'canton · signer'}
         </div>
       </div>
-      <div className="flex items-center gap-1.5">
-        <ThemeToggle />
-        {!vault.isLocked && (
-          <button
-            type="button"
-            onClick={onOpenMenu}
-            aria-label="Menu"
-            title="Menu"
-            className={cn(ICON_BUTTON_CLASS, ROUND_ICON_BUTTON_CHROME, 'size-9 bg-surface/85')}
-          >
-            {MENU_ICON}
-          </button>
-        )}
-      </div>
+      {!vault.isLocked && (
+        <button
+          type="button"
+          onClick={onOpenMenu}
+          aria-label="Menu"
+          title="Menu"
+          className={cn(ICON_BUTTON_CLASS, ROUND_ICON_BUTTON_CHROME, 'size-9 bg-surface/85')}
+        >
+          {MENU_ICON}
+        </button>
+      )}
     </header>
   )
 }
