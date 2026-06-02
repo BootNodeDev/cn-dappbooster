@@ -65,12 +65,12 @@ request/response only. Carpincho adds a `SPLICE_WALLET_EVENT` postMessage type
 that delivers wallet→page broadcasts through the same content-script channel.
 Broadcast path:
 
-| Step | Sender | Transport | Message | Receiver |
-| --- | --- | --- | --- | --- |
-| 1 | popup | `chrome.runtime.sendMessage` | `CARPINCHO_BROADCAST_EVENT` | background |
-| 2 | background | `chrome.tabs.sendMessage` | `CARPINCHO_EVENT_RELAY` | content script |
-| 3 | content script | `window.postMessage` | `SPLICE_WALLET_EVENT` | dApp page |
-| 4 | provider | internal emit | `eventName`, `payload` | dApp handler |
+| Step | Sender         | Transport                    | Message                     | Receiver       |
+| ---- | -------------- | ---------------------------- | --------------------------- | -------------- |
+| 1    | popup          | `chrome.runtime.sendMessage` | `CARPINCHO_BROADCAST_EVENT` | background     |
+| 2    | background     | `chrome.tabs.sendMessage`    | `CARPINCHO_EVENT_RELAY`     | content script |
+| 3    | content script | `window.postMessage`         | `SPLICE_WALLET_EVENT`       | dApp page      |
+| 4    | provider       | internal emit                | `eventName`, `payload`      | dApp handler   |
 
 The canonical `@canton-network/dapp-sdk`'s `client.onAccountsChanged(handler)` /
 `client.onTxChanged(handler)` / `client.onConnected(handler)` /

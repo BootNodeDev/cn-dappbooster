@@ -36,14 +36,10 @@ The participant accepts local/dev HS256 JWTs configured by:
 - `.env`: `CANTON_AUTH_AUDIENCE`, `CANTON_AUTH_SECRET`, `CANTON_ADMIN_USER_ID`
 - [`config/canton/app.conf`](config/canton/app.conf): Canton ledger API auth service
 
-## URLs
+## Ports
 
-- JSON Ledger API: `http://localhost:3013`
-- Ledger API: `grpc://localhost:3014`
-- Admin API: `grpc://localhost:3015`
-- Health: `http://localhost:3016`
-- Sequencer public API: `localhost:3017`
-- Postgres: `localhost:3018`
+Refer to the [ports table in the root README](../README.md#ports) to see the
+ports used by this stack.
 
 ## Deploy a DAR
 
