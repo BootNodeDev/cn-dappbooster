@@ -1,14 +1,14 @@
-# Canton Counter Scaffold
+# Canton dApp Booster
 
 Minimal local stack:
 
 ```mermaid
 flowchart TD
-  fe["counter/frontend<br/>Counter dApp<br/>http://localhost:3012"]
+  fe["dapp/frontend<br/>dApp frontend<br/>http://localhost:3012"]
   wallet["carpincho-wallet<br/>Vault + signer<br/>http://localhost:3011"]
   ws["canton-barebones/wallet-service<br/>Canton bridge<br/>http://localhost:3010"]
   cb["canton-barebones<br/>Participant JSON API http://localhost:3013<br/>Ledger/Admin gRPC localhost:3014 / 3015"]
-  dar["counter/daml<br/>quickstart-counter DAR<br/>.daml/dist/*.dar"]
+  dar["dapp/daml<br/>quickstart-counter DAR<br/>.daml/dist/*.dar"]
 
   fe <-->|"Injected CIP-0103 provider<br/>optional WalletConnect"| wallet
   wallet -->|"JSON-RPC /rpc<br/>prepare, execute, read, onboard"| ws
@@ -16,11 +16,11 @@ flowchart TD
   dar -->|"deploy DAR package"| cb
 ```
 
-The frontend knows the Counter DAML signature and talks to Carpincho through the injected CIP-0103 browser provider. Carpincho owns the local signing key and uses the wallet service to prepare, read, and execute against the Canton participant. WalletConnect remains available as an optional fallback path.
+The dApp frontend knows the Counter DAML signature and talks to Carpincho through the injected CIP-0103 browser provider. Carpincho owns the local signing key and uses the wallet service to prepare, read, and execute against the Canton participant. WalletConnect remains available as an optional fallback path.
 
 ## Quick Start
 
-Run the packages in this order for the local Counter flow.
+Run the packages in this order for the local dApp flow.
 
 ## canton-barebones
 
@@ -42,7 +42,7 @@ npm run canton:health
 Build:
 
 ```bash
-npm run build-dar -- counter/daml
+npm run build-dar -- dapp/daml
 ```
 
 Make sure Canton is running:
@@ -54,7 +54,7 @@ npm run canton:health
 Deploy DAR:
 
 ```bash
-npm run deploy-dar -- counter/daml/.daml/dist/quickstart-counter-0.0.1.dar
+npm run deploy-dar -- dapp/daml/.daml/dist/quickstart-counter-0.0.1.dar
 ```
 
 Use the same format for any other DAML project and DAR:
@@ -125,7 +125,7 @@ Install the local connect kit first so Vite can resolve its peer/dev dependencie
 
 ```bash
 npm --prefix canton-connect-kit install
-npm --prefix counter/frontend install
+npm --prefix dapp/frontend install
 npm run app:dev
 ```
 
@@ -148,7 +148,7 @@ The Carpincho extension path above works through the injected CIP-0103 provider 
 Get a project id from https://cloud.reown.com, then set `VITE_WC_PROJECT_ID` in both:
 
 ```text
-counter/frontend/.env.local
+dapp/frontend/.env.local
 carpincho-wallet/.env.local
 ```
 
@@ -162,9 +162,9 @@ Local ports are intentionally assigned in the `3010+` range:
 
 | Component                   | URL / Port              |
 | --------------------------- | ----------------------- |
-| Counter wallet service      | `http://localhost:3010` |
+| Wallet service              | `http://localhost:3010` |
 | Carpincho wallet            | `http://localhost:3011` |
-| Counter frontend            | `http://localhost:3012` |
+| dApp frontend               | `http://localhost:3012` |
 | Canton JSON API             | `http://localhost:3013` |
 | Canton Ledger API           | `grpc://localhost:3014` |
 | Canton Admin API            | `grpc://localhost:3015` |

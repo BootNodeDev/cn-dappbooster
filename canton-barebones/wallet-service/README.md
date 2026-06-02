@@ -78,7 +78,7 @@ Mock mode reports `mock: true` from `GET /health` and
 `GET /wallet-service/info`; no Canton JWT is required.
 
 The mock intentionally implements only the participant read shape currently
-used by the Counter frontend for ACS reads:
+used by the dApp frontend for ACS reads:
 
 ```text
 POST /v2/state/active-contracts

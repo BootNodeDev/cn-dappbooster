@@ -1,6 +1,6 @@
-# @canton-counter/e2e
+# @canton-dappbooster/e2e
 
-Integration tests across the canton-counter scaffold's four packages.
+Integration tests across the cn-dappbooster's four packages.
 
 ## What this package does (and doesn't)
 
@@ -23,12 +23,12 @@ This package depends on **nothing in this repo** at the TypeScript level. Every 
 |---|---|---|
 | wallet-service HTTP | `http://localhost:3010` | `WALLET_SERVICE_URL` |
 | Carpincho web | `http://localhost:3011` | `CARPINCHO_URL` |
-| Counter dApp | `http://localhost:3012` | `DAPP_URL` |
-| Carpincho extension bundle | `../carpincho-wallet/dist-extension` | `EXTENSION_PATH` |
+| dApp | `http://localhost:3012` | `DAPP_URL` |
+| Carpincho extension bundle | `../../carpincho-wallet/dist-extension` | `EXTENSION_PATH` |
 
 When the four packages publish independently and the dev kit becomes a monorepo of NPM workspaces, these env-overrides let e2e target either:
 - the in-tree dev stack (default),
-- a `node_modules/@canton-counter/*` install,
+- a `node_modules/@canton-dappbooster/*` install,
 - a remote staging environment.
 
 ## Run
@@ -42,30 +42,30 @@ The full local stack must be running. From the repo root:
 npm run canton:up && npm run canton:health
 
 # Deploy the Counter DAR
-./canton-barebones/scripts/deploy-dar.sh counter/daml/.daml/dist/quickstart-counter-0.0.1.dar
+./canton-barebones/scripts/deploy-dar.sh dapp/daml/.daml/dist/quickstart-counter-0.0.1.dar
 
 # Build the Carpincho extension
 npm --prefix carpincho-wallet run build:extension
 
 # In separate terminals:
 npm run wallet:dev              # terminal 1 — Carpincho web UI on :3011
-npm run app:dev                 # terminal 2 — Counter dApp on :3012
+npm run app:dev                 # terminal 2 — dApp on :3012
 ```
 
 ### First-time setup
 
 ```bash
-npm --prefix e2e install
-npm --prefix e2e run install:browser
+npm --prefix dapp/e2e install
+npm --prefix dapp/e2e run install:browser
 ```
 
 ### Run the tests
 
 ```bash
-npm --prefix e2e test           # headless (where the extension support allows)
-npm --prefix e2e run test:headed
-npm --prefix e2e run test:ui    # interactive Playwright UI
-npm --prefix e2e run report     # open the last HTML report
+npm --prefix dapp/e2e test           # headless (where the extension support allows)
+npm --prefix dapp/e2e run test:headed
+npm --prefix dapp/e2e run test:ui    # interactive Playwright UI
+npm --prefix dapp/e2e run report     # open the last HTML report
 ```
 
 Or from the repo root: `npm run e2e`.
@@ -75,7 +75,7 @@ Or from the repo root: `npm run e2e`.
 **Boundary smoke (`tests/smoke.spec.ts`)** — fast (<2s each):
 1. wallet-service `/health` responds with the configured service
 2. wallet-service `/wallet-service/info` exposes the dapp-api surface (10 supportedMethods, two admin endpoints, three reserved methods)
-3. counter dApp loads and offers both connect paths (extension + WC fallback)
+3. dApp loads and offers both connect paths (extension + WC fallback)
 4. Carpincho extension is discoverable from a dApp page via `canton:requestProvider` / `canton:announceProvider`
 
 **`/rpc` spec conformance (`tests/spec-conformance.spec.ts`)** — guards the wire shape:
@@ -90,17 +90,17 @@ Or from the repo root: `npm run e2e`.
 - `tests/accounts-changed.spec.ts` — switching primary in Carpincho propagates to the dApp via `accountsChanged`
 - `tests/tx-changed.spec.ts` — captures the full `pending → signed → executed` lifecycle during `prepareExecuteAndWait`
 
-**12 tests total.** All deterministic via `data-testid` + `data-*` attribute reads, no sleep guesses.
+**13 tests total.** All deterministic via `data-testid` + `data-*` attribute reads, no sleep guesses.
 
 ## Not tested today (out of scope)
 
 - WC fallback path (would need a real Reown project ID)
-- Counter dApp's Increment / Add user / Add viewer flows (covered manually via agent-browser; could add Playwright if we want full UI coverage)
+- dApp's Increment / Add user / Add viewer flows (covered manually via agent-browser; could add Playwright if we want full UI coverage)
 - `connected` and `statusChanged` are emitted by the wallet on vault lifecycle transitions but no dApp surface consumes them yet, so there is no e2e test for them. `messageSignature` lifecycle events are not emitted (`signMessage` is request/response via the Promise; lifecycle events would have no consumer).
 
 ## Conventions
 
-- One spec file per integration concern (`smoke`, `party-onboarding`, `counter`, `spec-conformance`)
+- One spec file per integration concern (`smoke`, `party-onboarding`, dApp flow, `spec-conformance`)
 - Use `data-testid` selectors via `page.getByTestId(...)`. Avoid CSS-by-position or text-only locators — they break on UI tweaks
 - Tests must be runnable individually (no order dependencies)
 - Each test starts from a known browser context (the `context` fixture gives a fresh persistent profile per test)
