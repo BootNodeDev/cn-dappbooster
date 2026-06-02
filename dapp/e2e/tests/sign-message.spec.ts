@@ -3,7 +3,7 @@
 // Walks the full user journey:
 //   1. Set up the Carpincho vault from a clean extension state
 //   2. Create a party (drives /admin/party/* via the wallet's add-account form)
-//   3. Open the counter dApp and connect via the injected extension provider
+//   3. Open the dApp and connect via the injected extension provider
 //   4. Fill the "Sign message" demo input and click Sign
 //   5. Approve in the Carpincho popup
 //   6. Verify the dApp surfaces a non-empty base64 signature

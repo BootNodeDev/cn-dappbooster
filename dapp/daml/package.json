@@ -1,5 +1,5 @@
 {
-  "name": "@canton-counter/daml",
+  "name": "@canton-dappbooster/daml",
   "private": true,
   "version": "0.1.0",
   "scripts": {

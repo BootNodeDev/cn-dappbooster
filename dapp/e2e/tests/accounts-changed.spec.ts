@@ -4,7 +4,7 @@
 // `@canton-network/core-rpc-transport`) only carries request/response. Carpincho
 // extends the protocol with a `SPLICE_WALLET_EVENT` message type that delivers
 // wallet→page events through the existing content-script → page channel. The
-// counter dApp wires the bridge in `extensionProvider.ts` and the canonical
+// dApp wires the bridge in `extensionProvider.ts` and the canonical
 // `client.onAccountsChanged(listener)` API just works.
 //
 // What this test exercises:

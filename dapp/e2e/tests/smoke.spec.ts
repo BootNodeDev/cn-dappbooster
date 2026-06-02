@@ -1,17 +1,17 @@
-// Smoke tests for the canton-counter integration stack.
+// Smoke tests for the cn-dappbooster integration stack.
 //
 // These tests deliberately do NOT exercise the full transaction flow — that's
 // Phase 2 work. Here we only verify the cross-package wiring works:
 //   * wallet-service responds with the post-Phase-1 surface
 //   * Carpincho extension loads and announces via the discovery protocol
-//   * Counter dApp page loads
+//   * dApp page loads
 //
 // A failing smoke means the integration boundary is broken. Each test runs in
 // well under a second once the stack is up.
 
 import { DAPP_URL, expect, test, WALLET_SERVICE_URL } from '../fixtures/stack.ts'
 
-test.describe('canton-counter integration smoke', () => {
+test.describe('cn-dappbooster integration smoke', () => {
   test('wallet-service /health responds with the configured service', async ({ request }) => {
     const response = await request.get(`${WALLET_SERVICE_URL}/health`)
     expect(response.ok()).toBe(true)
@@ -45,7 +45,7 @@ test.describe('canton-counter integration smoke', () => {
     expect(body.reservedMethods).toEqual(['prepareExecute', 'prepareExecuteAndWait', 'signMessage'])
   })
 
-  test('counter dApp loads and offers both connect paths', async ({ context }) => {
+  test('dApp loads and offers both connect paths', async ({ context }) => {
     const page = await context.newPage()
     await page.goto(DAPP_URL)
     await expect(page.getByTestId('connect-extension')).toBeVisible()
