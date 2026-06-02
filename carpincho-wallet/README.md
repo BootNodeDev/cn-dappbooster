@@ -2,7 +2,7 @@
 
 Standalone browser wallet for the Canton barebones.
 
-Carpincho is intentionally not the Counter backend and not a Canton participant. It is a wallet/provider UI with an encrypted local vault, an injected CIP-0103 browser provider, and optional WalletConnect support. A dApp connects to Carpincho through the injected provider by default; Carpincho answers wallet/provider requests and forwards Canton execution requests to the app's wallet-service JSON-RPC endpoint.
+Carpincho is a wallet/provider UI with an encrypted local vault, an injected CIP-0103 browser provider, and optional WalletConnect support. A dApp connects to Carpincho through the injected provider by default; Carpincho answers wallet/provider requests and forwards Canton execution requests to the app's wallet-service JSON-RPC endpoint.
 
 ```text
 dApp frontend -> injected CIP-0103 provider -> carpincho-wallet -> wallet-service /rpc -> Canton participant
@@ -10,26 +10,11 @@ dApp frontend -> injected CIP-0103 provider -> carpincho-wallet -> wallet-servic
 
 ## Run
 
-Build the Chrome extension from the repository root:
+Use the root runbook for the full local flow and extension build/load steps:
 
-```bash
-npm --prefix .. run carpincho:build:extension
-```
-
-Build the Chrome extension from this package:
-
-```bash
-npm install
-npm run build:extension
-```
-
-Load the extension in Chrome from:
-
-```text
-dist-extension/
-```
-
-For the full local flow, follow the root [`README.md`](../README.md).
+- [Root quick start](../README.md#quick-start)
+- [Root wallet step](../README.md#wallet)
+- [Root dApp step](../README.md#dapp)
 
 Optional dev server:
 
@@ -40,19 +25,7 @@ npm run dev
 
 ## Local Browser Extension
 
-Build the unpacked Chromium extension:
-
-```bash
-npm run build:extension
-```
-
-Then install it locally:
-
-1. Open `chrome://extensions` or the equivalent Chromium extensions page.
-2. Enable Developer mode.
-3. Click `Load unpacked`.
-4. Select `dist-extension`.
-5. Open the Carpincho Wallet extension from the browser toolbar.
+Build and load commands live in the root [wallet step](../README.md#wallet).
 
 The extension uses its own `chrome-extension://` origin, so its encrypted vault
 is separate from the development vault at `http://localhost:3011`.
@@ -68,21 +41,18 @@ WalletConnect fallback still uses `.env.local`:
 
 - `VITE_WC_PROJECT_ID` - optional WalletConnect/Reown project id.
 
+For the full WalletConnect setup, use the root
+[WalletConnect section](../README.md#optional-walletconnect-connect-path).
+
 ## API Boundary
 
-The injected extension provider is the primary transport between the dApp and Carpincho. WalletConnect is an optional fallback transport. The provider method names follow the CIP-0103 shape:
+The injected extension provider is the primary transport between the dApp and
+Carpincho. WalletConnect is an optional fallback transport. Provider method
+names and payloads follow CIP-0103:
 
-- `connect`
-- `disconnect`
-- `isConnected`
-- `status`
-- `getActiveNetwork`
-- `listAccounts`
-- `getPrimaryAccount`
-- `signMessage`
-- `prepareExecute`
-- `prepareExecuteAndWait`
-- `ledgerApi`
+- [CIP-0103 Provider API](https://github.com/canton-foundation/cips/blob/main/cip-0103/cip-0103.md#provider-api)
+- [CIP-0103 Synchronous dApp API](https://github.com/canton-foundation/cips/blob/main/cip-0103/cip-0103.md#synchronous-dapp-api)
+- [wallet-service API boundary](../canton-barebones/wallet-service/README.md#api-boundary)
 
 For compatibility with the old quickstart wallet, Carpincho also accepts legacy `canton_*` aliases and normalizes them internally.
 
@@ -93,18 +63,14 @@ The dapp-api defines event methods (`accountsChanged`, `txChanged`, `connected`,
 (`@canton-network/core-rpc-transport`'s `WindowTransport`) carries
 request/response only. Carpincho adds a `SPLICE_WALLET_EVENT` postMessage type
 that delivers wallet→page broadcasts through the same content-script channel.
-The wire:
+Broadcast path:
 
-```text
-popup (vault mutation)
-  -> chrome.runtime.sendMessage     CARPINCHO_BROADCAST_EVENT
-background.ts
-  -> chrome.tabs.sendMessage         CARPINCHO_EVENT_RELAY
-contentScript.ts
-  -> window.postMessage              SPLICE_WALLET_EVENT
-dApp page
-  -> provider.emit(eventName, payload)
-```
+| Step | Sender         | Transport                    | Message                     | Receiver       |
+| ---- | -------------- | ---------------------------- | --------------------------- | -------------- |
+| 1    | popup          | `chrome.runtime.sendMessage` | `CARPINCHO_BROADCAST_EVENT` | background     |
+| 2    | background     | `chrome.tabs.sendMessage`    | `CARPINCHO_EVENT_RELAY`     | content script |
+| 3    | content script | `window.postMessage`         | `SPLICE_WALLET_EVENT`       | dApp page      |
+| 4    | provider       | internal emit                | `eventName`, `payload`      | dApp handler   |
 
 The canonical `@canton-network/dapp-sdk`'s `client.onAccountsChanged(handler)` /
 `client.onTxChanged(handler)` / `client.onConnected(handler)` /
