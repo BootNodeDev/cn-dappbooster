@@ -4,6 +4,7 @@ import SignClient from '@walletconnect/sign-client'
 import type { SignClientTypes } from '@walletconnect/types'
 import { getSdkError } from '@walletconnect/utils'
 import { loadRuntimeConfig } from '@/config/runtimeConfig.ts'
+import type { ProviderResponder } from '@/provider/types.ts'
 
 export const CANTON_NAMESPACE = 'canton'
 
@@ -171,6 +172,16 @@ export const respondWithError = async (
 ): Promise<void> => {
   await respond({ topic, response: formatJsonRpcError(requestId, { code, message }) })
 }
+
+// Adapts a WalletConnect request event to the provider responder used by request handling.
+export const walletConnectResponder = (req: RequestEvent): ProviderResponder => ({
+  result: async (value) => {
+    await respondWithResult(req.topic, req.id, value)
+  },
+  error: async (code, message) => {
+    await respondWithError(req.topic, req.id, code, message)
+  },
+})
 
 export const pairWithUri = async (uri: string): Promise<void> => {
   const client = await getSignClient()

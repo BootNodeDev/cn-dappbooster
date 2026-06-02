@@ -5,6 +5,14 @@ import { describe, it } from 'node:test'
 // Reads HomeView source without importing WalletConnect runtime dependencies into this layout test.
 const source = (): string => readFileSync('src/views/HomeView.tsx', 'utf8')
 
+// Reads the extracted pending-actions section so its layout contract can be checked in isolation.
+const pendingActionsSectionSource = (): string =>
+  readFileSync('src/views/home/PendingActionsSection.tsx', 'utf8')
+
+// Reads the extracted pending-actions hook that owns the prepare → sign → execute → record pipeline.
+const pendingActionsSource = (): string =>
+  readFileSync('src/views/home/usePendingActions.ts', 'utf8')
+
 // Reads the approval card source so the pending-request layout contract can be checked in isolation.
 const pendingActionCardSource = (): string =>
   readFileSync('src/components/ui/PendingActionCard.tsx', 'utf8')
@@ -36,7 +44,15 @@ describe('HomeView empty account layout', () => {
       homeView,
       /hasAccounts && hasPending && 'h-\[calc\(100vh-12rem\)\] min-h-0 overflow-hidden pb-0'/,
     )
-    assert.match(homeView, /'flex min-h-0 flex-1 flex-col overflow-hidden border-success\/55'/)
+  })
+
+  it('expands the pending-actions section to own the wallet body', () => {
+    // The expanding section moved into PendingActionsSection but keeps its body-owning layout rule.
+    const pendingActionsSection = pendingActionsSectionSource()
+    assert.match(
+      pendingActionsSection,
+      /'flex min-h-0 flex-1 flex-col overflow-hidden border-success\/55'/,
+    )
   })
 })
 
@@ -44,13 +60,13 @@ describe('HomeView transaction activity recording', () => {
   // Scenario group: executed transactions should persist both the signed payload source and readable command input.
   it('records prepared transaction bytes and original commands for activity history', () => {
     // Scenario: after Canton prepares and executes a transaction, Activity needs audit data beyond the hash.
-    const homeView = source()
+    const pendingActions = pendingActionsSource()
 
     // The prepared transaction is the base64 payload that produced the signed hash, so it must be retained.
-    assert.match(homeView, /preparedTransaction: prepared\.preparedTransaction/)
+    assert.match(pendingActions, /preparedTransaction: prepared\.preparedTransaction/)
 
     // The original command array is the readable dApp request data shown in Activity.
-    assert.match(homeView, /commands: transactionCommands\(pendingExecute\.params\)/)
+    assert.match(pendingActions, /commands: transactionCommands\(pendingExecute\.params\)/)
   })
 })
 
