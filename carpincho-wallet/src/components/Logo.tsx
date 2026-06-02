@@ -1,11 +1,11 @@
 import logoUrl from '@/assets/carpincho-logo.svg'
 
-export interface CarpinchoLogoProps {
+export interface LogoProps {
   size?: number
   className?: string
 }
 
-export const CarpinchoLogo = ({ size = 120, className }: CarpinchoLogoProps): JSX.Element => (
+export const Logo = ({ size = 120, className }: LogoProps): JSX.Element => (
   <img
     alt="Carpincho Wallet"
     className={className}

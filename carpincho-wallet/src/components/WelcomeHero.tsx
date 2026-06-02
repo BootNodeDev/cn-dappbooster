@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { CarpinchoLogo } from '@/components/CarpinchoLogo.tsx'
+import { Logo } from '@/components/Logo.tsx'
 
 interface WelcomeHeroProps {
   description?: ReactNode
@@ -9,7 +9,7 @@ interface WelcomeHeroProps {
 export const WelcomeHero = ({ description, logoSize = 132 }: WelcomeHeroProps): JSX.Element => (
   <div className="relative flex flex-col items-center text-center pt-4 pb-7">
     <div className="animate-fade-in [animation-duration:520ms]">
-      <CarpinchoLogo
+      <Logo
         size={logoSize}
         className="animate-drift"
       />
