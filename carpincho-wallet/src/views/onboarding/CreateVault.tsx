@@ -62,6 +62,12 @@ export const CreateVault = (): JSX.Element => {
 
   const canSubmit = passwordValid && acknowledged
 
+  // Latest acknowledged value for the animation loop to read without
+  // restarting it. Once checked, the comet finishes its current lap (if any)
+  // and stops looping, and the accent tint stays on.
+  const acknowledgedRef = useRef(acknowledged)
+  acknowledgedRef.current = acknowledged
+
   useEffect(() => {
     const el = ackRef.current
     if (!el) return
@@ -93,24 +99,30 @@ export const CreateVault = (): JSX.Element => {
     const innerH = traceH - 2 * TRACE_INSET - 2 * TRACE_RADIUS
     const total = 2 * innerW + 2 * innerH + 2 * Math.PI * TRACE_RADIUS
     const maxLen = total * TRACE_LEN_FRAC
-    let start: number | null = null
+    const peakTint = `color-mix(in srgb, var(--color-accent) ${(TRACE_TINT * 100).toFixed(2)}%, var(--color-muted))`
+    let lapStart: number | null = null
     let raf = 0
 
     const frame = (now: number): void => {
-      if (start === null) start = now
-      const t = (now - start) % TRACE_CYCLE_MS
+      const ack = acknowledgedRef.current
+      if (lapStart === null) lapStart = now
+      const elapsed = now - lapStart
 
-      if (t > TRACE_ACTIVE_MS) {
+      if (elapsed >= TRACE_ACTIVE_MS) {
+        // Lap finished: comet hidden. Keep the tint on while checked, clear it
+        // otherwise. Start the next lap only when unchecked and the rest is up.
         group.style.opacity = '0'
-        label.style.backgroundColor = ''
+        label.style.backgroundColor = ack ? peakTint : ''
+        if (!ack && elapsed >= TRACE_CYCLE_MS) lapStart = now
         raf = requestAnimationFrame(frame)
         return
       }
       group.style.opacity = '1'
 
-      const u = t / TRACE_ACTIVE_MS
-      // Accent tint envelope: fade in, hold, fade out across the lap.
-      const tintEnv = u < 0.1 ? u / 0.1 : u > 0.85 ? (1 - u) / 0.15 : 1
+      const u = elapsed / TRACE_ACTIVE_MS
+      // Accent tint envelope: fade in, hold, fade out across the lap. Once
+      // checked, hold it at peak so it stays on after the lap completes.
+      const tintEnv = ack ? 1 : u < 0.1 ? u / 0.1 : u > 0.85 ? (1 - u) / 0.15 : 1
       const tintPct = (tintEnv * TRACE_TINT * 100).toFixed(2)
       label.style.backgroundColor = `color-mix(in srgb, var(--color-accent) ${tintPct}%, var(--color-muted))`
       // Head leads at constant speed, then holds at the bottom-left corner
