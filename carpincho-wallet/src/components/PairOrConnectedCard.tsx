@@ -57,25 +57,28 @@ export const PairOrConnectedCard = ({
           </SecondaryButton>
         </div>
       ) : (
-        <div>
-          <div className="font-mono text-[0.74rem] font-semibold uppercase tracking-eyebrow text-muted-foreground mb-2">
-            Pair a dApp
+        <div className="flex flex-col gap-3">
+          <div>
+            <h2 className="font-display text-[1.15rem] font-semibold tracking-tight text-foreground">
+              Connect to dApp
+            </h2>
+            <p className="mt-1 text-soft text-[0.9rem] leading-relaxed">
+              Paste a WalletConnect URI to link this wallet with a dApp.
+            </p>
           </div>
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-stretch gap-2">
-            <TextInput
-              className="font-mono text-[0.92rem]"
-              value={pairingDraft}
-              onChange={(event) => onPairingDraftChange(event.target.value)}
-              placeholder="wc:..."
-            />
-            <PrimaryButton
-              className="min-w-[88px]"
-              onClick={onPair}
-              disabled={pairingBusy || pairingDraft.trim() === ''}
-            >
-              {pairingBusy ? 'Pairing…' : 'Connect'}
-            </PrimaryButton>
-          </div>
+          <TextInput
+            className="w-full font-mono text-[0.92rem]"
+            value={pairingDraft}
+            onChange={(event) => onPairingDraftChange(event.target.value)}
+            placeholder="wc:..."
+          />
+          <PrimaryButton
+            className="w-full"
+            onClick={onPair}
+            disabled={pairingBusy || pairingDraft.trim() === ''}
+          >
+            {pairingBusy ? 'Pairing…' : 'Connect'}
+          </PrimaryButton>
         </div>
       )}
     </section>
