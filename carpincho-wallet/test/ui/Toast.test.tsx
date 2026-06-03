@@ -44,13 +44,20 @@ describe('toast emitter', () => {
     assert.equal(getToastEntries()[0]?.durationMs, 1234)
   })
 
-  it('keeps a single toast per variant, replacing the previous one of that variant', () => {
+  it('collapses repeats of the same message, replacing the previous one', () => {
     const first = toast.success('Party ID copied')
     const second = toast.success('Party ID copied')
     const successes = getToastEntries().filter((entry) => entry.variant === 'success')
     assert.equal(successes.length, 1)
     assert.notEqual(first, second)
     assert.equal(successes[0]?.id, second)
+  })
+
+  it('keeps distinct messages of the same variant', () => {
+    toast.success('Party ID copied')
+    toast.success('wallet-service reachable: canton-local')
+    const messages = getToastEntries().map((entry) => entry.message)
+    assert.deepEqual(messages, ['Party ID copied', 'wallet-service reachable: canton-local'])
   })
 
   it('does not collapse toasts of different variants', () => {

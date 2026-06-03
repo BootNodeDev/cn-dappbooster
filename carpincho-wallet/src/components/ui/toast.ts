@@ -52,11 +52,17 @@ const emit = (variant: ToastVariant, input: ToastInput | string): string => {
     message: normalized.message,
     durationMs: normalized.durationMs ?? DEFAULT_DURATION_MS[variant],
   }
-  // Collapse duplicates: keep at most one toast per variant so rapid repeats (e.g. hitting a copy
-  // button several times) replace the existing toast instead of stacking. The fresh entry carries a
-  // new id, so it remounts and its auto-dismiss timer restarts from the latest action.
-  const withoutSameVariant = entries.filter((existing) => existing.variant !== variant)
-  const next = [...withoutSameVariant, entry]
+  // Collapse exact duplicates: an identical message of the same variant (e.g. hitting a copy
+  // button several times) replaces the existing toast instead of stacking, restarting its timer
+  // via the fresh id. Distinct messages of the same variant (a copy confirmation vs an RPC test
+  // result) are kept separately. Non-string messages (ReactNode) are always treated as distinct.
+  const isDuplicate = (existing: ToastEntry): boolean =>
+    existing.variant === variant &&
+    typeof existing.message === 'string' &&
+    typeof entry.message === 'string' &&
+    existing.message === entry.message
+  const withoutDuplicate = entries.filter((existing) => !isDuplicate(existing))
+  const next = [...withoutDuplicate, entry]
   entries = next.length > MAX_VISIBLE ? next.slice(next.length - MAX_VISIBLE) : next
   notify()
   return entry.id
