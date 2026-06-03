@@ -26,14 +26,14 @@
 src/
   api/              JSON-RPC client for the external wallet-service backend
   assets/           SVG assets (hero illustration)
-  components/       Shared UI components (CarpinchoLogo, Header,
+  components/       Shared UI components (Logo, Header,
                     WelcomeHero, AccountCard, ActivityList, ConnectionFooter,
-                    PairOrConnectedCard, NewPasswordFields,
+                    PairOrConnectedCard, NewPasswordFields, CreateAccountForm,
                     PasswordStrengthIndicator, menu/* drawer, ui/* primitives).
                     ui/* wraps Radix headless primitives (Select on top of
                     @radix-ui/react-select; Sheet on top of
                     @radix-ui/react-dialog) and provides static visuals (Button,
-                    TextInput, PasswordInput, Alert, Card, SectionTitle,
+                    TextInput, PasswordInput, Alert, Card, SectionTitle, Stepper,
                     AccountAvatar, PendingActionCard, WarningBadge, JsonPreview).
                     DropdownMenu is consumed directly from @radix-ui where used.
   theme/            ThemeProvider + ThemeContext + useTheme hook driving the
@@ -42,7 +42,7 @@ src/
   extension/        Chrome extension scripts: background, content script, provider injection
   provider/         CIP-0103 wallet provider — request dispatcher and method handlers
   vault/            Encrypted local vault: PBKDF2 key derivation, AES-GCM storage, React context
-  views/            Top-level UI views (Setup, Unlock, Home, AddAccount, ConnectionSettings)
+  views/            Top-level UI views (onboarding/* two-step wizard, Unlock, Home, ConnectionSettings)
   wc/               WalletConnect sign client setup and session event handlers
   App.tsx           Root component — selects the active view based on vault state
   main.tsx          Entry point — detects chrome-extension:// vs web runtime
@@ -175,7 +175,7 @@ Two React contexts wrap the app. `ThemeProvider` is mounted outermost (in `src/m
       <ToastProvider>     src/components/ui/Toast.tsx (mounted in src/App.tsx)
         <Shell>           src/App.tsx — reads vault state to pick the active view
           <Header />      includes the Menu burger button
-          <HomeView />    or <SetupView />, <UnlockView />, etc.
+          <HomeView />    or <OnboardingFlow />, <UnlockView />, etc.
           <MenuSheet />   drill-down drawer (Menu → Settings → Theme / Security & Password → Password / Auto-lock)
         </Shell>
       </ToastProvider>
