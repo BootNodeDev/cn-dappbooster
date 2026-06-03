@@ -34,29 +34,7 @@ const VARIANT_CLASS = {
     `${BASE_INTERACTIVE} py-2.5 px-4 leading-none rounded-md font-semibold text-[0.94rem] text-foreground ` +
     'bg-surface border border-border-strong enabled:hover:bg-muted enabled:hover:text-primary',
   ghost: GHOST_BUTTON_CLASS,
-  pill:
-    `${BASE_INTERACTIVE} py-1.5 px-3 rounded-sm text-soft text-[0.9rem] font-semibold ` +
-    'bg-surface/85 border border-border enabled:hover:bg-muted enabled:hover:text-primary enabled:hover:border-border-strong',
 } as const
-
-type Variant = keyof typeof VARIANT_CLASS
-
-interface ButtonVariantProps extends ButtonProps {
-  variant: Variant
-}
-
-export const Button = ({
-  variant,
-  type = 'button',
-  className,
-  ...rest
-}: ButtonVariantProps): JSX.Element => (
-  <button
-    type={type}
-    className={cn(VARIANT_CLASS[variant], className)}
-    {...rest}
-  />
-)
 
 export const PrimaryButton = ({
   type = 'button',
@@ -86,14 +64,6 @@ export const GhostButton = ({ type = 'button', className, ...rest }: ButtonProps
   <button
     type={type}
     className={cn(VARIANT_CLASS.ghost, className)}
-    {...rest}
-  />
-)
-
-export const PillButton = ({ type = 'button', className, ...rest }: ButtonProps): JSX.Element => (
-  <button
-    type={type}
-    className={cn(VARIANT_CLASS.pill, className)}
     {...rest}
   />
 )

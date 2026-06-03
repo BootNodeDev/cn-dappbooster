@@ -24,7 +24,8 @@ const CONTENT_CLASS_BY_SIDE: Record<Side, string> = {
   ),
   center: cn(
     CONTENT_BASE_CLASS,
-    'left-1/2 top-1/2 [transform:translate(-50%,-50%)] w-popup max-h-sheet',
+    // Clamp below the viewport width so the modal keeps a gutter from the popup's left/right edges.
+    'left-1/2 top-1/2 [transform:translate(-50%,-50%)] w-popup max-w-[calc(100vw-1.5rem)] max-h-sheet',
     'rounded-xl border data-[state=open]:animate-zoom-in-and-fade',
   ),
 }
@@ -86,7 +87,7 @@ export const Sheet = ({
             )}
             <Dialog.Title
               className={cn(
-                'm-0 font-display text-[1.55rem] font-semibold tracking-[-0.02em] leading-tight text-foreground truncate',
+                'm-0 font-display text-lg font-semibold tracking-[-0.02em] leading-tight text-foreground truncate',
                 titleClassName,
                 hideTitle && 'sr-only',
               )}

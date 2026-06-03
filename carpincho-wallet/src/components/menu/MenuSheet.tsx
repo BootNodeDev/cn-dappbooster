@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { MenuList } from '@/components/menu/MenuList'
 import { type Direction, MENU_LISTS, SCREENS, type Screen } from '@/components/menu/screens'
 import { ThemeMenu } from '@/components/menu/ThemeMenu'
+import { WalletConnectMenu } from '@/components/menu/WalletConnectMenu'
 import { AutoLockList, PasswordForm } from '@/components/SecurityPanel'
 import { Sheet } from '@/components/ui/Sheet'
+import { isExtensionRuntime } from '@/extension/runtimeClient'
 import { useVault } from '@/vault/useVault'
 
 interface MenuSheetProps {
@@ -57,7 +59,11 @@ export const MenuSheet = ({ open, onOpenChange }: MenuSheetProps): JSX.Element =
   }
 
   const config = SCREENS[screen]
-  const list = MENU_LISTS[screen]
+  // WalletConnect URI pairing is web-only (inert in extension mode), so drop it from the drawer there.
+  const list =
+    screen === 'root' && isExtensionRuntime()
+      ? MENU_LISTS.root?.filter((row) => row.to !== 'wallet-connect')
+      : MENU_LISTS[screen]
   const animationClass =
     direction === 'forward' ? 'animate-slide-in-right' : 'animate-slide-in-left'
 
@@ -84,6 +90,9 @@ export const MenuSheet = ({ open, onOpenChange }: MenuSheetProps): JSX.Element =
             onNavigate={goTo}
             onLogout={onLogout}
           />
+        )}
+        {screen === 'wallet-connect' && (
+          <WalletConnectMenu onPaired={() => handleOpenChange(false)} />
         )}
         {screen === 'theme' && <ThemeMenu />}
         {screen === 'password' && <PasswordForm />}

@@ -1,5 +1,5 @@
 import { Logo } from '@/components/Logo'
-import { ICON_BUTTON_CLASS, ROUND_ICON_BUTTON_CHROME } from '@/components/ui/Button'
+import { PLAIN_ICON_BUTTON_CLASS } from '@/components/ui/Button'
 import { MENU_ICON } from '@/components/ui/icons'
 import { cn } from '@/utils/cn'
 import { useVault } from '@/vault/useVault'
@@ -24,7 +24,7 @@ export const Header = ({ onOpenMenu }: HeaderProps): JSX.Element => {
           onClick={onOpenMenu}
           aria-label="Menu"
           title="Menu"
-          className={cn(ICON_BUTTON_CLASS, ROUND_ICON_BUTTON_CHROME, 'size-9 bg-surface/85')}
+          className={cn(PLAIN_ICON_BUTTON_CLASS, 'size-9 [&_svg]:size-6')}
         >
           {MENU_ICON}
         </button>

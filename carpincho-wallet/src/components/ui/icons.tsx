@@ -130,24 +130,6 @@ export const COG_ICON = (
   </svg>
 )
 
-export const DAPP_EMPTY_ICON = (
-  <svg
-    width="22"
-    height="22"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden="true"
-  >
-    <path d="m21 16-9 5-9-5V8l9-5 9 5Z" />
-    <path d="M3.3 8.3 12 13l8.7-4.7" />
-    <path d="M12 13v8" />
-  </svg>
-)
-
 export const EYE_ICON = (
   <svg
     width="16"

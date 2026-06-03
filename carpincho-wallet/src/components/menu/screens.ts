@@ -1,4 +1,11 @@
-export type Screen = 'root' | 'settings' | 'theme' | 'security' | 'password' | 'auto-lock'
+export type Screen =
+  | 'root'
+  | 'wallet-connect'
+  | 'settings'
+  | 'theme'
+  | 'security'
+  | 'password'
+  | 'auto-lock'
 export type Direction = 'forward' | 'back'
 
 interface ScreenConfig {
@@ -12,6 +19,11 @@ export const SCREENS: Record<Screen, ScreenConfig> = {
     title: 'Menu',
     description: 'Wallet menu.',
     parent: null,
+  },
+  'wallet-connect': {
+    title: 'Wallet Connect',
+    description: 'Paste a WalletConnect URI to connect a dApp.',
+    parent: 'root',
   },
   settings: {
     title: 'Settings',
@@ -51,6 +63,7 @@ export interface MenuListRow {
 // dedicated component instead and are absent from this map.
 export const MENU_LISTS: Partial<Record<Screen, MenuListRow[]>> = {
   root: [
+    { label: 'Wallet Connect', to: 'wallet-connect' },
     { label: 'Settings', to: 'settings' },
     { label: 'Log out', to: 'logout', tone: 'danger' },
   ],

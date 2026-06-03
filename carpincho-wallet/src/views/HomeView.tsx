@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AccountCard } from '@/components/AccountCard'
 import { ActivityList } from '@/components/ActivityList'
 import { ConnectionFooter } from '@/components/ConnectionFooter'
-import { PairOrConnectedCard } from '@/components/PairOrConnectedCard'
 import { PrimaryButton } from '@/components/ui/Button'
 import { Sheet } from '@/components/ui/Sheet'
 import { toast } from '@/components/ui/toast'
@@ -24,15 +23,12 @@ import {
   disconnectSession,
   getConnectedDappSessions,
   type ProposalEvent,
-  pairWithUri,
 } from '@/wc/client'
 
 export const HomeView = (): JSX.Element => {
   const v = useVault()
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [disconnectConfirmOpen, setDisconnectConfirmOpen] = useState(false)
-  const [pairingDraft, setPairingDraft] = useState('')
-  const [pairingBusy, setPairingBusy] = useState(false)
   const [sessions, setSessions] = useState<ConnectedDappSession[]>([])
   const [proposal, setProposal] = useState<ProposalEvent | undefined>(undefined)
   const [proposalAccount, setProposalAccount] = useState<string | null>(null)
@@ -97,23 +93,6 @@ export const HomeView = (): JSX.Element => {
     closeExtensionPopup,
   })
 
-  const onPairDapp = async (): Promise<void> => {
-    const uri = pairingDraft.trim()
-    if (uri === '') {
-      toast.warning('Paste a WalletConnect pairing URI first.')
-      return
-    }
-    setPairingBusy(true)
-    try {
-      await pairWithUri(uri)
-      setPairingDraft('')
-    } catch (err) {
-      toast.error(`Pairing failed: ${(err as Error).message}`)
-    } finally {
-      setPairingBusy(false)
-    }
-  }
-
   const onDisconnectDapp = async (topic: string): Promise<void> => {
     setBusy(true)
     try {
@@ -177,17 +156,6 @@ export const HomeView = (): JSX.Element => {
     <>
       <div className="flex flex-col gap-3 pb-2">
         <AccountCard primary={primary} />
-
-        {!hasPending && !extensionMode && connectedSession === undefined && (
-          <PairOrConnectedCard
-            pairingDraft={pairingDraft}
-            pairingBusy={pairingBusy}
-            onPairingDraftChange={setPairingDraft}
-            onPair={() => {
-              void onPairDapp()
-            }}
-          />
-        )}
 
         {!hasPending && <ActivityList transactions={v.transactions} />}
       </div>

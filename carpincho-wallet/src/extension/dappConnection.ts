@@ -8,13 +8,9 @@ import type { ConnectedDappSession } from '@/wc/client'
 interface ChromeTab {
   url?: string
   title?: string
-  favIconUrl?: string
 }
 
 interface ChromeApi {
-  runtime?: {
-    getURL: (path: string) => string
-  }
   tabs?: {
     query: (
       queryInfo: { active: true; currentWindow: true },
@@ -29,7 +25,6 @@ export type DappConnectionStatus =
       kind: 'detected' | 'connected'
       label: string
       subtitle: string
-      faviconUrl?: string
       origin: string
     }
 
@@ -42,18 +37,6 @@ interface DappConnectionSources {
 
 // Reads the Chrome runtime only when the popup is running inside the extension.
 const chromeApi = (): ChromeApi | undefined => (globalThis as { chrome?: ChromeApi }).chrome
-
-// Builds Chrome's Manifest V3 favicon URL for a page the extension already knows about.
-export const faviconUrlForPage = (pageUrl: string): string | undefined => {
-  const api = chromeApi()?.runtime
-  if (api === undefined) {
-    return undefined
-  }
-  const url = new URL(api.getURL('/_favicon/'))
-  url.searchParams.set('pageUrl', pageUrl)
-  url.searchParams.set('size', '32')
-  return url.toString()
-}
 
 // Returns the best compact label for a dApp page URL.
 const labelFromUrl = (url: string): string => {
@@ -127,7 +110,6 @@ export const dappConnectionFromSources = ({
       kind: connected ? 'connected' : 'detected',
       label: labelFromUrl(tab.url),
       subtitle: connected ? 'Connected' : 'Not connected',
-      faviconUrl: tab.favIconUrl ?? faviconUrlForPage(tab.url),
       origin: originFromUrl(tab.url),
     }
   }
@@ -141,7 +123,6 @@ export const dappConnectionFromSources = ({
           ? labelFromUrl(connectedSession.url)
           : connectedSession.name,
       subtitle: 'Connected',
-      faviconUrl: faviconUrlForPage(connectedSession.url),
       origin: originFromUrl(connectedSession.url),
     }
   }

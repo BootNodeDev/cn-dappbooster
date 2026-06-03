@@ -29,7 +29,6 @@ const detectedDapp: DappFooterStatus = {
   kind: 'detected',
   label: 'localhost:3012',
   subtitle: 'Not connected',
-  faviconUrl: 'chrome-extension://test/_favicon/?pageUrl=http%3A%2F%2Flocalhost%3A3012&size=32',
 }
 
 describe('ConnectionFooter', () => {

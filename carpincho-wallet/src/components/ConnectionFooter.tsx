@@ -10,7 +10,7 @@ export interface WalletServiceFooterStatus {
 
 export type DappFooterStatus =
   | { kind: 'none' }
-  | { kind: 'detected' | 'connected'; label: string; subtitle: string; faviconUrl?: string }
+  | { kind: 'detected' | 'connected'; label: string; subtitle: string }
 
 interface ConnectionFooterProps {
   walletService: WalletServiceFooterStatus
