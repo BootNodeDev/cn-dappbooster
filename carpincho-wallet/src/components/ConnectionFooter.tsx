@@ -37,7 +37,8 @@ export const ConnectionFooter = ({
   return (
     <footer
       className={cn(
-        'fixed bottom-0 left-1/2 -translate-x-1/2 z-30 w-popup',
+        // In-flow at the bottom of the home column, bled to the popup edges past the shell padding.
+        '-mx-3 shrink-0',
         'flex flex-col gap-1.5 border-t border-border bg-background/95 px-2 py-2 backdrop-blur-md',
       )}
     >

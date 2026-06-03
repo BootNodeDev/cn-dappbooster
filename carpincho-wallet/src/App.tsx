@@ -4,6 +4,7 @@ import { MenuSheet } from '@/components/menu/MenuSheet'
 import { SPINNER_ICON } from '@/components/ui/icons'
 import { ToastProvider } from '@/components/ui/ToastProvider'
 import { TooltipProvider } from '@/components/ui/Tooltip'
+import { cn } from '@/utils/cn'
 import { useVault } from '@/vault/useVault'
 import type { VaultContextValue } from '@/vault/VaultContext'
 import { VaultProvider } from '@/vault/VaultContext'
@@ -44,7 +45,14 @@ const Shell = (): JSX.Element => {
     )
   }
   return (
-    <div className={`w-popup mx-auto px-3 pt-3 ${showHeader ? 'pb-20' : 'pb-8'}`}>
+    <div
+      className={cn(
+        'w-popup mx-auto px-3 pt-3',
+        // Home is a fixed-height shell: header, account selector and footer stay pinned while only
+        // the tab body scrolls. Other views keep the natural document-height flow.
+        view === 'home' ? 'flex h-screen flex-col' : 'pb-8',
+      )}
+    >
       {showHeader && <Header onOpenMenu={() => setMenuOpen(true)} />}
       {view === 'unlock' && <UnlockView />}
       {view === 'onboarding' && <OnboardingFlow />}

@@ -289,6 +289,34 @@ export const CHEVRON_DOWN_ICON = (
   </svg>
 )
 
+export const RECEIPT_ICON = (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M4 3h16v18l-3-2-2 2-2-2-2 2-2-2-3 2Z" />
+    <line
+      x1="8"
+      y1="9"
+      x2="16"
+      y2="9"
+    />
+    <line
+      x1="8"
+      y1="13"
+      x2="14"
+      y2="13"
+    />
+  </svg>
+)
+
 export const TRASH_ICON = (
   <svg
     width="15"

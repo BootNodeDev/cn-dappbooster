@@ -1,24 +1,28 @@
-import { Fragment } from 'react'
-import { CARD_CLASS } from '@/components/ui/Card'
-import { SectionTitle } from '@/components/ui/SectionTitle'
-import { shortMiddle } from '@/utils/account'
+import { Fragment, useState } from 'react'
+import { RECEIPT_ICON } from '@/components/ui/icons'
+import { Sheet } from '@/components/ui/Sheet'
 import { cn } from '@/utils/cn'
 import { prettyJson } from '@/utils/json'
 import type { TransactionRecord } from '@/vault/types'
 import { CANTON_METHOD_PREPARE_EXECUTE_AND_WAIT } from '@/wc/client'
 
-const TX_TIME_FMT = new Intl.DateTimeFormat(undefined, {
+const DATE_GROUP_FMT = new Intl.DateTimeFormat(undefined, {
   month: 'short',
   day: 'numeric',
+  year: 'numeric',
+})
+
+const TIME_FMT = new Intl.DateTimeFormat(undefined, {
   hour: '2-digit',
   minute: '2-digit',
 })
 
-const txTime = (tx: TransactionRecord): string => TX_TIME_FMT.format(tx.createdAt)
-
-// Keeps the Activity row label aligned with the public wallet API name users recognize.
+// Keeps the Activity label aligned with the public wallet API name users recognize.
 const txMethodLabel = (method: string): string =>
   method === CANTON_METHOD_PREPARE_EXECUTE_AND_WAIT ? 'executeAndWait' : method
+
+// The row's primary line: the human summary when present, otherwise the wallet API method.
+const txTitle = (tx: TransactionRecord): string => tx.summary ?? txMethodLabel(tx.method)
 
 interface TxDetailRow {
   label: string
@@ -31,7 +35,10 @@ const txDetailRows = (tx: TransactionRecord): TxDetailRow[] => {
   const rows: TxDetailRow[] = [
     { label: 'Summary', value: tx.summary ?? 'Canton transaction' },
     { label: 'Account', value: tx.accountName },
-    { label: 'Time', value: txTime(tx) },
+    {
+      label: 'Time',
+      value: `${DATE_GROUP_FMT.format(tx.createdAt)}, ${TIME_FMT.format(tx.createdAt)}`,
+    },
   ]
   if (tx.commandCount !== undefined) {
     rows.push({ label: 'Commands', value: tx.commandCount })
@@ -61,91 +68,118 @@ const txDetailRows = (tx: TransactionRecord): TxDetailRow[] => {
 const hasCommandPayload = (tx: TransactionRecord): boolean =>
   tx.commands !== undefined && tx.commands.length > 0
 
+interface DateGroup {
+  label: string
+  items: TransactionRecord[]
+}
+
+// Sorts newest-first and buckets transactions under a per-day header, MetaMask-style.
+const groupByDate = (transactions: TransactionRecord[]): DateGroup[] => {
+  const groups: DateGroup[] = []
+  for (const tx of [...transactions].sort((a, b) => b.createdAt - a.createdAt)) {
+    const label = DATE_GROUP_FMT.format(tx.createdAt)
+    const last = groups[groups.length - 1]
+    if (last !== undefined && last.label === label) {
+      last.items.push(tx)
+    } else {
+      groups.push({ label, items: [tx] })
+    }
+  }
+  return groups
+}
+
+// The detail body shown inside the popup opened from an activity row.
+const TransactionDetails = ({ tx }: { tx: TransactionRecord }): JSX.Element => (
+  <div>
+    <dl className="m-0 grid grid-cols-[minmax(96px,auto)_1fr] gap-x-3 gap-y-2 text-[0.92rem]">
+      {txDetailRows(tx).map((row) => (
+        <Fragment key={row.label}>
+          <dt className="font-semibold tracking-tight text-muted-foreground">{row.label}</dt>
+          <dd
+            className={cn(
+              'm-0 min-w-0 font-medium text-soft [overflow-wrap:anywhere]',
+              row.mono && 'font-mono text-[0.88rem]',
+            )}
+          >
+            {row.value}
+          </dd>
+        </Fragment>
+      ))}
+    </dl>
+    {hasCommandPayload(tx) && (
+      <div className="mt-3">
+        <div className="mb-1.5 text-[0.92rem] font-semibold tracking-tight text-muted-foreground">
+          Command payload
+        </div>
+        <pre className="m-0 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-md border border-border bg-background/60 p-3 font-mono text-[0.78rem] leading-relaxed text-soft">
+          {prettyJson(tx.commands)}
+        </pre>
+      </div>
+    )}
+  </div>
+)
+
 interface ActivityListProps {
   transactions: TransactionRecord[]
 }
 
-// Renders recent executed transactions with expandable details for hashes and command payloads.
+// Renders executed transactions as MetaMask-style rows grouped by day; a row opens a detail popup.
 export const ActivityList = ({ transactions }: ActivityListProps): JSX.Element => {
-  const visibleTxs = transactions.slice(0, 8)
+  const [selected, setSelected] = useState<TransactionRecord | null>(null)
+
+  if (transactions.length === 0) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center px-4 py-10 text-center">
+        <p className="m-0 text-[0.95rem] font-medium text-muted-foreground">No activity yet</p>
+      </div>
+    )
+  }
 
   return (
-    <section className={cn(CARD_CLASS, 'p-3.5')}>
-      <div className="flex items-center justify-between gap-3 mb-3">
-        <SectionTitle>Activity</SectionTitle>
-        <span className="font-mono text-[0.78rem] font-semibold text-muted-foreground tracking-tight">
-          {transactions.length === 0
-            ? 'empty'
-            : `${transactions.length} record${transactions.length === 1 ? '' : 's'}`}
-        </span>
-      </div>
-      {visibleTxs.length === 0 ? (
-        <div className="px-2 py-7 text-center text-muted-foreground">
-          <div className="font-display text-[1.3rem] font-semibold text-foreground tracking-tight">
-            Nothing yet
+    <div className="flex flex-col pb-2">
+      {groupByDate(transactions).map((group) => (
+        <div key={group.label}>
+          <div className="px-1 pb-1 pt-3 text-[0.8rem] font-semibold tracking-tight text-muted-foreground">
+            {group.label}
           </div>
-          <p className="text-[0.95rem] font-medium mt-1 mb-0">
-            Executed transactions will surface here.
-          </p>
-        </div>
-      ) : (
-        <div className="flex flex-col">
-          {visibleTxs.map((tx, idx) => (
-            <details
+          {group.items.map((tx) => (
+            <button
               key={tx.id}
-              className={cn('group transition-colors', idx > 0 && 'border-t border-border/60')}
+              type="button"
+              onClick={() => setSelected(tx)}
+              className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-md px-1 py-2.5 text-left outline-none transition-colors hover:bg-primary-soft/40 focus-visible:bg-primary-soft/60"
             >
-              <summary className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_auto] items-center gap-3 min-h-12 cursor-pointer list-none px-1 py-2.5 [&::-webkit-details-marker]:hidden hover:bg-primary-soft/40 -mx-1 rounded-sm">
-                <span
-                  className="min-w-0 truncate text-[0.92rem] font-medium text-foreground font-mono"
-                  title={tx.preparedTransactionHash}
-                >
-                  {shortMiddle(tx.preparedTransactionHash, 9, 7)}
+              <span
+                aria-hidden="true"
+                className="grid size-9 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground"
+              >
+                {RECEIPT_ICON}
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-[0.94rem] font-semibold text-foreground">
+                  {txTitle(tx)}
                 </span>
-                <span
-                  className="min-w-0 truncate text-soft text-[0.9rem] font-medium"
-                  title={tx.method}
-                >
-                  {txMethodLabel(tx.method)}
-                </span>
-                <span className="justify-self-end font-mono text-[0.72rem] font-semibold uppercase tracking-eyebrow text-primary group-open:text-muted-foreground transition-colors whitespace-nowrap">
-                  <span className="group-open:hidden">open</span>
-                  <span className="hidden group-open:inline">close</span>
-                </span>
-              </summary>
-              <div className="pt-2 pb-3 px-1">
-                <dl className="grid grid-cols-[minmax(96px,auto)_1fr] gap-x-3 gap-y-2 m-0 text-[0.92rem]">
-                  {txDetailRows(tx).map((row) => (
-                    <Fragment key={row.label}>
-                      <dt className="text-muted-foreground font-semibold tracking-tight">
-                        {row.label}
-                      </dt>
-                      <dd
-                        className={cn(
-                          'm-0 min-w-0 [overflow-wrap:anywhere] text-soft font-medium',
-                          row.mono && 'font-mono text-[0.88rem]',
-                        )}
-                      >
-                        {row.value}
-                      </dd>
-                    </Fragment>
-                  ))}
-                </dl>
-                {hasCommandPayload(tx) && (
-                  <div className="mt-3">
-                    <div className="mb-1.5 text-muted-foreground font-semibold tracking-tight text-[0.92rem]">
-                      Command payload
-                    </div>
-                    <pre className="max-h-48 overflow-auto rounded-md border border-border bg-background/60 p-3 m-0 whitespace-pre-wrap break-words font-mono text-[0.78rem] leading-relaxed text-soft">
-                      {prettyJson(tx.commands)}
-                    </pre>
-                  </div>
-                )}
-              </div>
-            </details>
+                <span className="block text-[0.84rem] font-medium text-success">Confirmed</span>
+              </span>
+              <span className="justify-self-end whitespace-nowrap text-[0.8rem] font-medium text-muted-foreground">
+                {TIME_FMT.format(tx.createdAt)}
+              </span>
+            </button>
           ))}
         </div>
-      )}
-    </section>
+      ))}
+
+      <Sheet
+        open={selected !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelected(null)
+        }}
+        side="center"
+        title={selected === null ? '' : txTitle(selected)}
+        description="Transaction details."
+      >
+        {selected !== null && <TransactionDetails tx={selected} />}
+      </Sheet>
+    </div>
   )
 }

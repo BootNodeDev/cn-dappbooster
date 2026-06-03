@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AccountCard } from '@/components/AccountCard'
-import { ActivityList } from '@/components/ActivityList'
 import { ConnectionFooter } from '@/components/ConnectionFooter'
+import { HomeTabs } from '@/components/HomeTabs'
 import { PrimaryButton } from '@/components/ui/Button'
 import { Sheet } from '@/components/ui/Sheet'
 import { toast } from '@/components/ui/toast'
@@ -153,12 +153,12 @@ export const HomeView = (): JSX.Element => {
   const connectedOrigin = dapp.kind === 'connected' ? dapp.origin : ''
 
   return (
-    <>
-      <div className="flex flex-col gap-3 pb-2">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="shrink-0 pb-3">
         <AccountCard primary={primary} />
-
-        {!hasPending && <ActivityList transactions={v.transactions} />}
       </div>
+
+      <HomeTabs transactions={v.transactions} />
 
       {/* Approval requests are modal: the request must be explicitly approved or rejected, so the
           dialog has no dismiss affordance (onOpenChange is ignored, close X hidden). */}
@@ -229,6 +229,6 @@ export const HomeView = (): JSX.Element => {
         }
         onOpenSettings={() => setSettingsOpen(true)}
       />
-    </>
+    </div>
   )
 }
