@@ -12,16 +12,11 @@ export const Header = ({ onOpenMenu }: HeaderProps): JSX.Element => {
   const vault = useVault()
   return (
     <header className="flex items-center gap-3 pl-1 pr-1 pt-2 pb-3 mb-1 border-b border-border">
-      <div className="size-9 grid place-items-center rounded-md bg-primary-soft overflow-hidden ring-1 ring-primary/15">
-        <Logo size={28} />
-      </div>
+      <Logo size={36} />
       <div className="grow min-w-0 leading-none">
         <h1 className="font-display text-[1.55rem] font-semibold m-0 text-foreground tracking-[-0.025em] lowercase">
           carpincho
         </h1>
-        <div className="mt-1 font-mono text-[0.72rem] font-medium uppercase tracking-eyebrow text-muted-foreground">
-          {vault.isLocked ? 'locked' : 'canton · signer'}
-        </div>
       </div>
       {!vault.isLocked && (
         <button
