@@ -46,6 +46,7 @@ export const AccountCard = ({ primary }: AccountCardProps): JSX.Element => {
           <div className="pointer-events-none relative z-10 flex w-full items-center gap-2">
             <AccountRow
               account={primary}
+              avatarSize="sm"
               addressTrailing={
                 <button
                   type="button"
