@@ -57,15 +57,12 @@ export const SCREENS: Record<Screen, ScreenConfig> = {
 
 export interface MenuListRow {
   label: string
-  // A screen to drill into, or 'logout' for the one terminal action.
   to: Screen | 'logout'
   tone?: 'danger'
-  // Optional trailing icon rendered at the right edge of the row.
   icon?: ReactNode
 }
 
-// Navigation-list screens. Leaf screens (theme, password, auto-lock) render a
-// dedicated component instead and are absent from this map.
+// Leaf screens (theme, password, auto-lock) render dedicated components and are absent here.
 export const MENU_LISTS: Partial<Record<Screen, MenuListRow[]>> = {
   root: [
     { label: 'WalletConnect', to: 'wallet-connect', icon: WALLET_CONNECT_ICON },

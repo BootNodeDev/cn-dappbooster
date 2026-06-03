@@ -24,8 +24,8 @@ export type ProviderRequestHandler = (
   context: ProviderRequestContext,
 ) => Promise<void>
 
-// Bridges dispatch results that need human approval into the pending-sign / pending-execute state
-// that HomeView renders. Both the WalletConnect and extension request paths share this handler.
+// Bridges dispatch results needing approval into pending-sign / pending-execute state.
+// Shared by the WalletConnect and extension request paths.
 export const useProviderRequestHandler = (
   resolveAccounts: AccountResolver,
   setPendingSign: Dispatch<SetStateAction<PendingSignRequest | undefined>>,

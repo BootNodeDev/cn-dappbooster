@@ -2,8 +2,7 @@ import * as TabsPrimitive from '@radix-ui/react-tabs'
 import type { ReactNode } from 'react'
 import { cn } from '@/utils/cn'
 
-// Underline-style tab bar (MetaMask-like). The list acts as the view title; content panels scroll
-// on their own so the shell chrome (account selector, footer) stays pinned.
+// Underline-style tab bar; the list doubles as the view title.
 export const Tabs = TabsPrimitive.Root
 
 export const TabsList = ({

@@ -1,4 +1,4 @@
-// Normalizes execution params so every prepare request has the active party and read parties Canton expects.
+// Normalizes execution params to the party/actAs/readAs shape Canton expects.
 export const executeParams = (params: unknown, partyId: string): Record<string, unknown> => {
   const base =
     typeof params === 'object' && params !== null && !Array.isArray(params)
@@ -13,19 +13,19 @@ export const executeParams = (params: unknown, partyId: string): Record<string, 
   }
 }
 
-// Extracts the original dApp commands that Activity can later render as a readable audit payload.
+// Extracts the original dApp commands for the Activity audit payload.
 export const transactionCommands = (params: Record<string, unknown>): unknown[] | undefined => {
   const commands = params.commands
   return Array.isArray(commands) ? commands : undefined
 }
 
-// Counts original dApp commands without assuming a specific DAML command shape.
+// Counts commands without assuming a specific DAML command shape.
 export const commandCount = (params: Record<string, unknown>): number | undefined => {
   const commands = transactionCommands(params)
   return commands?.length
 }
 
-// Produces the short Activity row summary from the first original dApp command.
+// Short Activity row summary derived from the first command.
 export const commandSummary = (params: Record<string, unknown>): string => {
   const commands = transactionCommands(params)
   if (commands === undefined || commands.length === 0) {
@@ -42,6 +42,6 @@ export const commandSummary = (params: Record<string, unknown>): string => {
   return commands.length === 1 ? kind : `${kind} + ${commands.length - 1} more`
 }
 
-// Keeps optional string fields out of persisted activity when the dApp sent empty values.
+// Drops empty strings so they aren't persisted as optional fields.
 export const optionalString = (value: unknown): string | undefined =>
   typeof value === 'string' && value.length > 0 ? value : undefined

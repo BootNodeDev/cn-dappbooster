@@ -8,9 +8,7 @@ export const WalletEvent = {
   SPLICE_WALLET_EXT_READY: 'SPLICE_WALLET_EXT_READY',
   SPLICE_WALLET_EXT_ACK: 'SPLICE_WALLET_EXT_ACK',
   SPLICE_WALLET_EXT_OPEN: 'SPLICE_WALLET_EXT_OPEN',
-  // Carpincho-defined extension to the canonical SPLICE_WALLET_* set:
-  // wallet → page push for dapp-api event methods (accountsChanged, txChanged, ...)
-  // that the canonical extension transport doesn't yet define a channel for.
+  // Carpincho extension: wallet → page push for dapp-api event methods.
   SPLICE_WALLET_EVENT: 'SPLICE_WALLET_EVENT',
 } as const
 
@@ -101,10 +99,7 @@ export interface RuntimeForgetConnectedOrigin {
   origin: string
 }
 
-// Wallet→page event broadcast. Runs popup → background (CARPINCHO_BROADCAST_EVENT)
-// → content script (CARPINCHO_EVENT_RELAY) → page (SPLICE_WALLET_EVENT).
-// `eventName` matches the dapp-api spec method names (accountsChanged,
-// txChanged, ...). `payload` matches the corresponding *Event schema.
+// Wallet→page broadcast: popup → background → content script → page.
 export interface RuntimeBroadcastEvent {
   type: 'CARPINCHO_BROADCAST_EVENT'
   eventName: string

@@ -17,11 +17,11 @@ const TIME_FMT = new Intl.DateTimeFormat(undefined, {
   minute: '2-digit',
 })
 
-// Keeps the Activity label aligned with the public wallet API name users recognize.
+// Show the public wallet API name users recognize.
 const txMethodLabel = (method: string): string =>
   method === CANTON_METHOD_PREPARE_EXECUTE_AND_WAIT ? 'executeAndWait' : method
 
-// The row's primary line: the human summary when present, otherwise the wallet API method.
+// Human summary when present, otherwise the wallet API method.
 const txTitle = (tx: TransactionRecord): string => tx.summary ?? txMethodLabel(tx.method)
 
 interface TxDetailRow {
@@ -30,7 +30,7 @@ interface TxDetailRow {
   mono?: boolean
 }
 
-// Builds the scalar metadata rows shown before the larger command payload block.
+// Scalar metadata rows shown before the command payload block.
 const txDetailRows = (tx: TransactionRecord): TxDetailRow[] => {
   const rows: TxDetailRow[] = [
     { label: 'Summary', value: tx.summary ?? 'Canton transaction' },
@@ -64,7 +64,7 @@ const txDetailRows = (tx: TransactionRecord): TxDetailRow[] => {
   return rows
 }
 
-// Checks whether the transaction has original dApp commands worth showing as audit JSON.
+// Whether the transaction has original dApp commands worth showing as audit JSON.
 const hasCommandPayload = (tx: TransactionRecord): boolean =>
   tx.commands !== undefined && tx.commands.length > 0
 
@@ -73,7 +73,7 @@ interface DateGroup {
   items: TransactionRecord[]
 }
 
-// Sorts newest-first and buckets transactions under a per-day header, MetaMask-style.
+// Newest-first, bucketed under per-day headers.
 const groupByDate = (transactions: TransactionRecord[]): DateGroup[] => {
   const groups: DateGroup[] = []
   for (const tx of [...transactions].sort((a, b) => b.createdAt - a.createdAt)) {
@@ -88,7 +88,7 @@ const groupByDate = (transactions: TransactionRecord[]): DateGroup[] => {
   return groups
 }
 
-// The detail body shown inside the popup opened from an activity row.
+// Detail body shown inside the popup opened from an activity row.
 const TransactionDetails = ({ tx }: { tx: TransactionRecord }): JSX.Element => (
   <div>
     <dl className="m-0 grid grid-cols-[minmax(96px,auto)_1fr] gap-x-3 gap-y-2 text-[0.92rem]">
@@ -123,7 +123,7 @@ interface ActivityListProps {
   transactions: TransactionRecord[]
 }
 
-// Renders executed transactions as MetaMask-style rows grouped by day; a row opens a detail popup.
+// Executed transactions grouped by day; a row opens a detail popup.
 export const ActivityList = ({ transactions }: ActivityListProps): JSX.Element => {
   const [selected, setSelected] = useState<TransactionRecord | null>(null)
 

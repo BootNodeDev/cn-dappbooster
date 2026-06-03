@@ -20,8 +20,7 @@ interface ConnectionFooterProps {
   onOpenSettings: () => void
 }
 
-// Shows Canton service health, plus a connected-dApp row (app + account address + disconnect) that
-// only appears while a dApp is actually connected.
+// Canton service health, plus a connected-dApp row shown only while a dApp is connected.
 export const ConnectionFooter = ({
   walletService,
   dapp,
@@ -37,7 +36,7 @@ export const ConnectionFooter = ({
   return (
     <footer
       className={cn(
-        // In-flow at the bottom of the home column, bled to the popup edges past the shell padding.
+        // In-flow at the column bottom, bled past the shell padding to the popup edges.
         '-mx-3 shrink-0',
         'flex flex-col gap-1.5 border-t border-border bg-background/95 px-2 py-2 backdrop-blur-md',
       )}

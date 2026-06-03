@@ -19,10 +19,8 @@ const REMOVE_BUTTON_CLASS =
   'w-full border-danger bg-danger ' +
   'enabled:hover:border-danger enabled:hover:shadow-none enabled:hover:before:opacity-0'
 
-// Centered modal account switcher. Self-contained: reads accounts and mutates the active/removed
-// account through the vault. It is a single popup with three in-place screens — the account list,
-// the add-account form (drill-down via the back chevron), and the remove confirmation (dismiss via
-// the close X). Transient state resets whenever the dialog closes.
+// Centered account switcher: one popup with three in-place screens (list, add form, remove confirm)
+// backed by the vault. Transient state resets on close.
 export const AccountsDialog = ({ open, onOpenChange }: AccountsDialogProps): JSX.Element => {
   const v = useVault()
   const [screen, setScreen] = useState<'list' | 'add'>('list')
@@ -150,7 +148,7 @@ export const AccountsDialog = ({ open, onOpenChange }: AccountsDialogProps): JSX
             )}
           </div>
           <div className="flex max-h-[300px] min-h-[300px] flex-col gap-1 overflow-y-auto">
-            {/* ~4.5 rows tall: caps the on-screen list, hints there are more, and avoids layout shift while filtering. */}
+            {/* Fixed height hints there are more rows and avoids layout shift while filtering. */}
             {filtered.length === 0 ? (
               <p className="px-2 py-6 text-center text-[0.92rem] text-muted-foreground">
                 No accounts match

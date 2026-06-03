@@ -14,10 +14,8 @@ import { UnlockView } from '@/views/UnlockView'
 
 export type ShellView = 'loading' | 'unlock' | 'onboarding' | 'home'
 
-// Single source of truth for first-run routing. Order matters and encodes the backward-compat
-// guarantee: a returning user with an unlocked vault and at least one account lands on 'home',
-// never back through onboarding. OnboardingFlow internally picks step 1 (no vault) vs step 2
-// (unlocked vault, no account yet), so both onboarding cases collapse to one branch here.
+// First-run routing; order matters. OnboardingFlow picks step 1 (no vault) vs step 2
+// (unlocked vault, no account), so both onboarding cases collapse to one branch.
 export const selectShellView = (
   v: Pick<VaultContextValue, 'isLoading' | 'hasVault' | 'isLocked' | 'accounts'>,
 ): ShellView => {
@@ -48,8 +46,7 @@ const Shell = (): JSX.Element => {
     <div
       className={cn(
         'w-popup mx-auto px-3 pt-3',
-        // Home is a fixed-height shell: header, account selector and footer stay pinned while only
-        // the tab body scrolls. Other views keep the natural document-height flow.
+        // Home is a fixed-height shell (only the tab body scrolls); other views flow naturally.
         view === 'home' ? 'flex h-screen flex-col' : 'pb-8',
       )}
     >

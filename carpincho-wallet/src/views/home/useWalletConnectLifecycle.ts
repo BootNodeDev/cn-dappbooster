@@ -18,8 +18,8 @@ interface WalletConnectLifecycleArgs {
   setProposal: Dispatch<SetStateAction<ProposalEvent | undefined>>
 }
 
-// Drives the web-mode WalletConnect lifecycle: query-param pairing, session sync, proposal and
-// request subscriptions. Inert in extension mode, where requests arrive via the runtime bridge.
+// Web-mode WalletConnect lifecycle: query-param pairing, session sync, proposal/request
+// subscriptions. Inert in extension mode, where requests arrive via the runtime bridge.
 export const useWalletConnectLifecycle = ({
   extensionMode,
   handleProviderRequest,

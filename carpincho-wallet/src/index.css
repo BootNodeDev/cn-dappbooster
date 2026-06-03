@@ -3,10 +3,8 @@
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 /*
- * Typography roles (dappbooster brand — Manrope everywhere + JetBrains Mono):
- *   font-display (Manrope, heavy) — hero wordmarks, view-level headings, section markers
- *   font-sans    (Manrope)        — UI chrome, labels, body, buttons, inputs
- *   font-mono    (JetBrains Mono) — party IDs, hashes, RPC URLs, JSON, amounts
+ * Typography: font-display / font-sans (Manrope) for headings and UI; font-mono
+ * (JetBrains Mono) for party IDs, hashes, RPC URLs, JSON, amounts.
  */
 
 :root {
@@ -312,14 +310,9 @@
 }
 
 /*
- * Comet glow that traces the border once per cycle and rests between laps
- * (timing constants live in CreateVault). The comet runs counter-clockwise
- * from the bottom-left corner (bottom-left -> bottom-right -> top-right ->
- * top-left -> back) at a constant linear speed, grows out of the corner, and
- * is eaten back into it on return. It is drawn as a stack of short SVG
- * segments whose per-segment dash window and opacity are driven per-frame in
- * CreateVault, giving a trail that fades toward the tail. The group carries
- * the blur glow so it blooms around the whole comet.
+ * Comet glow that traces the border once per cycle (timing in CreateVault).
+ * Drawn as a stack of short SVG segments whose dash window and opacity are
+ * driven per-frame in CreateVault to form a trail; the group carries the glow.
  */
 .border-trace {
   position: relative;

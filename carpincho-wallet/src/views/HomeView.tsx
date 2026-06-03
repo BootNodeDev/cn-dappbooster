@@ -106,8 +106,7 @@ export const HomeView = (): JSX.Element => {
   }
 
   const accountsSorted = useMemo(() => sortAccounts(v.accounts), [v.accounts])
-  // HomeView only renders when an account exists (onboarding owns the empty state and the
-  // last account cannot be removed), so a primary account is always available.
+  // HomeView only renders when an account exists, so a primary is always available.
   const primary = v.primary ?? accountsSorted[0]
   const hasPending =
     proposal !== undefined || pendingSign !== undefined || pendingExecute !== undefined
@@ -116,8 +115,7 @@ export const HomeView = (): JSX.Element => {
     sessions,
   })
   const connectedSession = sessions[0]
-  // The footer shows the connected account's address (truncated party id), matching the header: the
-  // WC session's account on the web, the active account for the extension's injected provider.
+  // Connected account address: the WC session's account on web, the active account in extension mode.
   const footerDappAccountAddress = ((): string | undefined => {
     if (extensionMode) {
       return primary === undefined ? undefined : shortMiddle(primary.partyId, 12, 7)
@@ -130,7 +128,7 @@ export const HomeView = (): JSX.Element => {
       connectedSession.accounts[0]
     return partyId === undefined ? undefined : shortMiddle(partyId, 12, 7)
   })()
-  // The actual disconnect, run only after the confirmation dialog is accepted.
+  // Disconnect, run only after the confirmation dialog is accepted.
   const performDisconnect = ((): (() => void) | undefined => {
     if (extensionMode) {
       if (dapp.kind !== 'connected') {
@@ -160,8 +158,7 @@ export const HomeView = (): JSX.Element => {
 
       <HomeTabs transactions={v.transactions} />
 
-      {/* Approval requests are modal: the request must be explicitly approved or rejected, so the
-          dialog has no dismiss affordance (onOpenChange is ignored, close X hidden). */}
+      {/* Approval requests are modal: explicit approve/reject only, no dismiss affordance. */}
       <Sheet
         open={hasPending}
         onOpenChange={() => undefined}

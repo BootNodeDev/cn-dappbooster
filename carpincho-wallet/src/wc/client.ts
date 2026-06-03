@@ -214,8 +214,7 @@ export interface ConnectedDappSession {
   accounts: string[]
 }
 
-// CAIP account strings look like `<chain>:<encodeURIComponent(partyId)>`; the party id is the last
-// colon-separated segment (encoded, so it never contains a literal colon).
+// CAIP account is `<chain>:<encodeURIComponent(partyId)>`; party id is the last segment.
 const partyIdsFromNamespaces = (
   namespaces: ReturnType<
     InstanceType<typeof SignClient>['session']['getAll']

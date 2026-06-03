@@ -10,10 +10,8 @@ interface AccountRowProps {
   addressTrailing?: ReactNode
 }
 
-// Renders the shared account identity (avatar + party id) reused by the active account row and the
-// account popup entries. When `withName` is set the account name becomes the primary label and the
-// truncated party id drops to a secondary line, with an optional trailing slot beside the address
-// (e.g. a copy button).
+// Shared account identity (avatar + party id). With `withName`, the name becomes the primary label
+// and the party id drops to a secondary line; `addressTrailing` adds a slot beside the address.
 export const AccountRow = ({
   account,
   withName = false,

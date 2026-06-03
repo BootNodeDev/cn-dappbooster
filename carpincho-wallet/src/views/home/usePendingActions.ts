@@ -52,9 +52,8 @@ export interface PendingActions {
   onRejectExecute: () => Promise<void>
 }
 
-// Owns the approve / reject side effects for the three pending request kinds (connect proposal,
-// message sign, prepare-execute), including the prepare → sign → execute → record → broadcast
-// pipeline and the dapp-api txChanged lifecycle events.
+// Approve / reject side effects for the three pending request kinds, including the
+// prepare → sign → execute → record → broadcast pipeline and txChanged events.
 export const usePendingActions = ({
   vault,
   proposal,
@@ -136,8 +135,7 @@ export const usePendingActions = ({
     setBusy(true)
     const cmdId = optionalString(pendingExecute.params.commandId) ?? ''
     try {
-      // dapp-api txChanged: pending — the wallet has accepted the request and
-      // is about to call the participant prepare.
+      // txChanged: pending — accepted, about to call participant prepare.
       void broadcastWalletEvent('txChanged', { status: 'pending', commandId: cmdId })
       const prepared = await walletServiceRequest<PreparedTransactionResponse>(
         'prepareTransaction',
@@ -147,8 +145,7 @@ export const usePendingActions = ({
         pendingExecute.account.id,
         prepared.preparedTransactionHash,
       )
-      // dapp-api txChanged: signed — the prepared transaction was hashed and
-      // signed locally; the wallet is about to submit to the participant.
+      // txChanged: signed — signed locally, about to submit to the participant.
       void broadcastWalletEvent('txChanged', {
         status: 'signed',
         commandId: cmdId,
@@ -196,14 +193,14 @@ export const usePendingActions = ({
           : isLegacyPrepareSign
             ? tx
             : { tx }
-      // dapp-api txChanged: executed — the participant accepted the submission.
+      // txChanged: executed — participant accepted the submission.
       void broadcastWalletEvent('txChanged', tx)
       await pendingExecute.responder.result(result)
       toast.success('Transaction executed.')
       setPendingExecute(undefined)
     } catch (err) {
       const msg = (err as Error).message
-      // dapp-api txChanged: failed — submission did not complete on the participant.
+      // txChanged: failed — submission did not complete.
       void broadcastWalletEvent('txChanged', { status: 'failed', commandId: cmdId, reason: msg })
       await pendingExecute.responder.error(-32000, msg).catch(() => undefined)
       toast.error(`Transaction failed: ${msg}`)
@@ -219,7 +216,7 @@ export const usePendingActions = ({
       return
     }
     const cmdId = optionalString(pendingExecute.params.commandId) ?? ''
-    // dapp-api txChanged: failed — user declined the request before submission.
+    // txChanged: failed — user declined before submission.
     void broadcastWalletEvent('txChanged', {
       status: 'failed',
       commandId: cmdId,

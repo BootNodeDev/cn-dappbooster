@@ -18,8 +18,7 @@ type Listener = (entries: ReadonlyArray<ToastEntry>) => void
 
 const MAX_VISIBLE = 3
 
-// Only critical, must-read feedback (errors) persists until the user dismisses it. Everything
-// else is transient and clears itself after 3 s.
+// Only errors persist until dismissed; everything else clears after 3 s.
 const DEFAULT_DURATION_MS: Record<ToastVariant, number> = {
   info: 3000,
   success: 3000,
@@ -52,10 +51,8 @@ const emit = (variant: ToastVariant, input: ToastInput | string): string => {
     message: normalized.message,
     durationMs: normalized.durationMs ?? DEFAULT_DURATION_MS[variant],
   }
-  // Collapse exact duplicates: an identical message of the same variant (e.g. hitting a copy
-  // button several times) replaces the existing toast instead of stacking, restarting its timer
-  // via the fresh id. Distinct messages of the same variant (a copy confirmation vs an RPC test
-  // result) are kept separately. Non-string messages (ReactNode) are always treated as distinct.
+  // Collapse exact duplicates: same variant + identical string message replaces the existing
+  // toast (restarting its timer via the fresh id). ReactNode messages are always distinct.
   const isDuplicate = (existing: ToastEntry): boolean =>
     existing.variant === variant &&
     typeof existing.message === 'string' &&

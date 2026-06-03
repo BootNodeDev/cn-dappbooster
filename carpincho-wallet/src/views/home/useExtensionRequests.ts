@@ -13,8 +13,8 @@ interface ExtensionRequestsArgs {
   handleProviderRequest: ProviderRequestHandler
 }
 
-// Feeds extension-runtime pending provider requests through the shared handler, de-duplicating by
-// request id so a request seen via both the initial drain and the live subscription runs once.
+// Feeds extension pending requests through the shared handler, de-duplicating by
+// request id so the initial drain and live subscription don't run one twice.
 export const useExtensionRequests = ({
   extensionMode,
   handleProviderRequest,

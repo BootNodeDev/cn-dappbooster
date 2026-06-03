@@ -16,7 +16,6 @@ interface PendingActionsSectionProps extends PendingActions {
 }
 
 // Renders the single active pending request (connect proposal, message sign, or prepare-execute).
-// The surrounding approval dialog (a centered Sheet) provides the container chrome.
 export const PendingActionsSection = ({
   proposal,
   pendingSign,
@@ -31,7 +30,7 @@ export const PendingActionsSection = ({
   onApproveExecute,
   onRejectExecute,
 }: PendingActionsSectionProps): JSX.Element => {
-  // Connect always uses the active account; the proposalAccount mirrors it (no in-dialog picker).
+  // Connect always uses the active account; proposalAccount mirrors it.
   const connectAccount = accountsSorted.find((a) => a.id === proposalAccount) ?? accountsSorted[0]
 
   return (

@@ -7,10 +7,10 @@ interface HomeTabsProps {
   transactions: TransactionRecord[]
 }
 
-// The tab content is the only scrolling region between the account selector and the footer.
+// The only scrolling region between the account selector and the footer.
 const TAB_CONTENT_CLASS = 'min-h-0 flex-1 overflow-y-auto outline-none'
 
-// Tabbed home body. Activity is first; Assets is a mocked placeholder for a future tab.
+// Tabbed home body; Assets is a mocked placeholder.
 export const HomeTabs = ({ transactions }: HomeTabsProps): JSX.Element => (
   <Tabs
     defaultValue="activity"

@@ -1,14 +1,6 @@
-// Push a dapp-api event (accountsChanged, txChanged, ...) from the wallet UI
-// to every page where Carpincho's content script is running.
-//
-// Wire: this helper → chrome.runtime → background.ts → chrome.tabs → content
-// script → window.postMessage(SPLICE_WALLET_EVENT). The dApp's provider listens
-// for SPLICE_WALLET_EVENT and calls `provider.emit(eventName, payload)` so
-// `client.onAccountsChanged(listener)` fires per the canonical SDK contract.
-//
-// On the web variant (carpincho running as a regular page at localhost:3011),
-// chrome.runtime is undefined and this is a no-op — events only ride the
-// extension transport for now.
+// Push a dapp-api event to content-script pages via
+// chrome.runtime → background.ts → chrome.tabs → SPLICE_WALLET_EVENT.
+// No-op on the web variant where chrome.runtime is undefined.
 
 import type { RuntimeBroadcastEvent } from '@/extension/messages'
 

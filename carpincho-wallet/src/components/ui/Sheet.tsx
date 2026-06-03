@@ -24,7 +24,7 @@ const CONTENT_CLASS_BY_SIDE: Record<Side, string> = {
   ),
   center: cn(
     CONTENT_BASE_CLASS,
-    // Clamp below the viewport width so the modal keeps a gutter from the popup's left/right edges.
+    // Clamp below viewport width to keep a gutter from the popup edges.
     'left-1/2 top-1/2 [transform:translate(-50%,-50%)] w-popup max-w-[calc(100vw-1.5rem)] max-h-sheet',
     'rounded-xl border data-[state=open]:animate-zoom-in-and-fade',
   ),
@@ -46,8 +46,7 @@ interface SheetProps {
   hideTitle?: boolean
   // Extra classes merged onto the title — e.g. to shrink it per-flow.
   titleClassName?: string
-  // When set, the header close (X) runs this instead of closing the sheet — e.g. to step back to a
-  // previous in-sheet screen rather than dismissing the whole dialog.
+  // When set, the header close (X) runs this instead of dismissing the sheet.
   onClose?: () => void
   side?: Side
   children: ReactNode
@@ -115,7 +114,7 @@ export const Sheet = ({
             ))}
         </div>
         <Dialog.Description className="sr-only">{description}</Dialog.Description>
-        {/* -m-1 p-1 gives focus glows room on all sides so overflow clipping doesn't shear them. */}
+        {/* -m-1 p-1 gives focus glows room so overflow clipping doesn't shear them. */}
         <div className="-m-1 flex-1 overflow-y-auto p-1">{children}</div>
       </Dialog.Content>
     </Dialog.Portal>

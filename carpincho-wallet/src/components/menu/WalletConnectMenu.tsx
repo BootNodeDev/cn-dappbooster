@@ -5,12 +5,10 @@ import { toast } from '@/components/ui/toast'
 import { pairWithUri } from '@/wc/client'
 
 interface WalletConnectMenuProps {
-  // Closes the drawer once pairing succeeds, so the proposal/approval flow owned by HomeView is visible.
+  // Closes the drawer on success so HomeView's approval flow is visible.
   onPaired: () => void
 }
 
-// WalletConnect URI pairing entry point inside the drawer. Pasting a wc: URI and confirming hands
-// off to the proposal/approval flow owned by HomeView.
 export const WalletConnectMenu = ({ onPaired }: WalletConnectMenuProps): JSX.Element => {
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)

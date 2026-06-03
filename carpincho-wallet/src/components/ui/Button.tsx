@@ -15,8 +15,7 @@ export const ICON_BUTTON_CLASS =
   'enabled:hover:text-primary enabled:hover:bg-primary-soft ' +
   'focus-visible:outline-none focus-visible:shadow-focus'
 
-// Like ICON_BUTTON_CLASS but tints only the icon on hover (no background fill) — for icon buttons
-// that sit inline beside text, where a hover background would read as clutter.
+// Like ICON_BUTTON_CLASS but no hover background fill — for icons inline beside text.
 export const PLAIN_ICON_BUTTON_CLASS =
   'inline-grid place-items-center rounded-sm text-muted-foreground transition-colors ' +
   'hover:text-primary focus-visible:outline-none focus-visible:shadow-focus'

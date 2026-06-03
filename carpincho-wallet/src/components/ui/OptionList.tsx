@@ -8,8 +8,7 @@ interface OptionListProps<T extends string> {
   onSelect: (value: T) => void
 }
 
-// Single-select list: each option is a full-width row that marks the active
-// value with a check icon. Shared by the Theme and Auto-lock menu screens.
+// Single-select row list; marks the active value with a check. Shared by Theme and Auto-lock.
 export const OptionList = <T extends string>({
   options,
   value,

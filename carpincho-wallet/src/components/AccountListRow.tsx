@@ -5,8 +5,7 @@ import { copyPartyId } from '@/utils/clipboard'
 import { cn } from '@/utils/cn'
 import type { AccountPublic } from '@/vault/types'
 
-// The remove affordance tints only its icon red on hover (no button-background change), matching the
-// inline copy button.
+// Tints only its icon on hover, matching the inline copy button.
 const REMOVE_BUTTON_CLASS =
   'relative z-10 inline-grid size-8 shrink-0 place-items-center rounded-sm ' +
   'text-muted-foreground transition-colors hover:text-danger ' +
@@ -19,10 +18,8 @@ interface AccountListRowProps {
   onRequestRemove: () => void
 }
 
-// One account entry in the Accounts popup. A full-row button sits behind the content and selects the
-// account, while the inline copy button (beside the address) and the remove button sit above it so
-// their clicks stay independent of selection. The remove button is omitted when only one account
-// exists.
+// A full-row button selects the account; the copy and remove buttons sit above it so their clicks
+// stay independent of selection. Remove is omitted when only one account exists.
 export const AccountListRow = ({
   account,
   canRemove,

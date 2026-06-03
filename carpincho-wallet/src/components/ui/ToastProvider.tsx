@@ -15,13 +15,12 @@ import { cn } from '@/utils/cn'
 
 const CLOSE_ANIMATION_MS = 200
 
-// Mirror the app shell (`w-popup ... px-3`) so toast cards align edge-to-edge with the
-// content column rather than spilling wider than the app's contents.
+// Mirror the app shell width so toast cards align with the content column.
 const VIEWPORT_CLASS =
   'fixed top-2 left-1/2 -translate-x-1/2 z-[60] flex flex-col gap-2 ' +
   'w-popup px-3 outline-none m-0 list-none'
 
-// Elevated surface card matching Card / popover chrome, with a variant-tinted left accent rail.
+// Elevated surface card with a variant-tinted left accent rail.
 const BASE_TOAST_CLASS = cn(
   'relative flex items-start gap-3 overflow-hidden py-3 pl-4 pr-2.5',
   'rounded-lg border border-border bg-surface text-foreground shadow-popover',
@@ -32,8 +31,7 @@ const BASE_TOAST_CLASS = cn(
   'data-[swipe=end]:animate-slide-up-and-fade-out',
 )
 
-// Per-variant accent: the left rail (before:bg-*) and the tinted icon badge carry the colour;
-// the message text stays neutral (text-foreground) for legibility against the surface.
+// Per-variant accent: only the rail and icon badge carry colour; message text stays neutral.
 const VARIANT_ACCENT: Record<FeedbackVariant, { rail: string; badge: string; icon: JSX.Element }> =
   {
     info: { rail: 'before:bg-primary', badge: 'bg-primary-soft text-primary', icon: INFO_ICON },
@@ -112,8 +110,7 @@ export const ToastProvider = ({ children }: ToastProviderProps): JSX.Element => 
             entry={entry}
           />
         ))}
-      {/* Portal the viewport to <body> so toasts escape the #root stacking context (z-index: 1) and
-          render above dialog/sheet overlays that portal to <body> at lower z-indexes. */}
+      {/* Portal to <body> so toasts escape #root's stacking context and render above sheet overlays. */}
       {createPortal(<RadixToast.Viewport className={VIEWPORT_CLASS} />, document.body)}
     </RadixToast.Provider>
   )

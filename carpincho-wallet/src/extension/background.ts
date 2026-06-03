@@ -70,8 +70,7 @@ const chromeApi = (
   }
 ).chrome
 
-// Match patterns kept in sync with public/manifest.json `content_scripts.matches`.
-// Any drift here means the event broadcast misses some pages.
+// Keep in sync with public/manifest.json `content_scripts.matches`; drift means missed pages.
 const CONTENT_SCRIPT_MATCHES = [
   'http://localhost/*',
   'http://127.0.0.1/*',

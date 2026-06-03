@@ -11,9 +11,7 @@ interface AccountCardProps {
   primary: AccountPublic | undefined
 }
 
-// Renders the current account summary row. The whole card opens the centered Accounts popup (which
-// owns switching, adding, and removing accounts); the chevron is just an affordance. The copy button
-// sits inline beside the address and stays independent of the card's open action.
+// The whole card opens the Accounts popup; the inline copy button stays independent of that action.
 export const AccountCard = ({ primary }: AccountCardProps): JSX.Element => {
   const [accountsOpen, setAccountsOpen] = useState(false)
 
