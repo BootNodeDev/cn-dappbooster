@@ -11,11 +11,12 @@ interface MenuListProps {
 
 export const MenuList = ({ rows, onNavigate, onLogout }: MenuListProps): JSX.Element => (
   <ul className={MENU_LIST_CLASS}>
-    {rows.map(({ label, to, tone }) => (
+    {rows.map(({ label, to, tone, icon }) => (
       <MenuRow
         key={label}
         label={label}
         tone={tone}
+        icon={icon}
         onClick={to === 'logout' ? onLogout : () => onNavigate(to)}
       />
     ))}

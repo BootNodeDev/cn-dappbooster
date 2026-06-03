@@ -1,3 +1,6 @@
+import type { ReactNode } from 'react'
+import { WALLET_CONNECT_ICON } from '@/components/ui/icons'
+
 export type Screen =
   | 'root'
   | 'wallet-connect'
@@ -21,7 +24,7 @@ export const SCREENS: Record<Screen, ScreenConfig> = {
     parent: null,
   },
   'wallet-connect': {
-    title: 'Wallet Connect',
+    title: 'WalletConnect',
     description: 'Paste a WalletConnect URI to connect a dApp.',
     parent: 'root',
   },
@@ -57,13 +60,15 @@ export interface MenuListRow {
   // A screen to drill into, or 'logout' for the one terminal action.
   to: Screen | 'logout'
   tone?: 'danger'
+  // Optional trailing icon rendered at the right edge of the row.
+  icon?: ReactNode
 }
 
 // Navigation-list screens. Leaf screens (theme, password, auto-lock) render a
 // dedicated component instead and are absent from this map.
 export const MENU_LISTS: Partial<Record<Screen, MenuListRow[]>> = {
   root: [
-    { label: 'Wallet Connect', to: 'wallet-connect' },
+    { label: 'WalletConnect', to: 'wallet-connect', icon: WALLET_CONNECT_ICON },
     { label: 'Settings', to: 'settings' },
     { label: 'Log out', to: 'logout', tone: 'danger' },
   ],
