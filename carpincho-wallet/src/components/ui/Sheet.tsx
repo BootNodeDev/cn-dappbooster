@@ -41,6 +41,9 @@ interface SheetProps {
   description: string
   onBack?: () => void
   hideClose?: boolean
+  // When set, the header close (X) runs this instead of closing the sheet — e.g. to step back to a
+  // previous in-sheet screen rather than dismissing the whole dialog.
+  onClose?: () => void
   side?: Side
   children: ReactNode
 }
@@ -52,6 +55,7 @@ export const Sheet = ({
   description,
   onBack,
   hideClose = false,
+  onClose,
   side = 'bottom',
   children,
 }: SheetProps): JSX.Element => (
@@ -78,17 +82,28 @@ export const Sheet = ({
               {title}
             </Dialog.Title>
           </div>
-          {!hideClose && (
-            <Dialog.Close
-              aria-label="Close"
-              className={SHEET_ICON_BUTTON_CLASS}
-            >
-              {X_ICON}
-            </Dialog.Close>
-          )}
+          {!hideClose &&
+            (onClose !== undefined ? (
+              <button
+                type="button"
+                aria-label="Close"
+                onClick={onClose}
+                className={SHEET_ICON_BUTTON_CLASS}
+              >
+                {X_ICON}
+              </button>
+            ) : (
+              <Dialog.Close
+                aria-label="Close"
+                className={SHEET_ICON_BUTTON_CLASS}
+              >
+                {X_ICON}
+              </Dialog.Close>
+            ))}
         </div>
         <Dialog.Description className="sr-only">{description}</Dialog.Description>
-        <div className="flex-1 overflow-y-auto">{children}</div>
+        {/* -mx-1 px-1 gives focus glows horizontal room so overflow clipping doesn't shear them. */}
+        <div className="-mx-1 flex-1 overflow-y-auto px-1">{children}</div>
       </Dialog.Content>
     </Dialog.Portal>
   </Dialog.Root>

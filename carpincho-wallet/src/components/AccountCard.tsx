@@ -18,7 +18,7 @@ export const AccountCard = ({ primary }: AccountCardProps): JSX.Element => {
   const [accountsOpen, setAccountsOpen] = useState(false)
 
   return (
-    <section className="relative border border-border rounded-lg bg-surface p-2.5">
+    <section className="group relative border border-border rounded-lg bg-surface p-2.5">
       {primary === undefined ? (
         <div className="py-3 text-center">
           <div className="font-display text-[1.4rem] font-semibold text-foreground mb-1">
@@ -43,7 +43,7 @@ export const AccountCard = ({ primary }: AccountCardProps): JSX.Element => {
             data-party-id={primary.partyId}
             onClick={() => setAccountsOpen(true)}
             aria-label="Open account menu"
-            className="absolute inset-0 z-0 rounded-lg outline-none transition-colors hover:bg-primary-soft/60 focus-visible:shadow-focus"
+            className="absolute inset-0 z-0 rounded-lg outline-none transition-colors group-hover:bg-primary-soft/60 focus-visible:shadow-focus"
           />
           <div className="pointer-events-none relative z-10 flex w-full items-center gap-2">
             <AccountRow

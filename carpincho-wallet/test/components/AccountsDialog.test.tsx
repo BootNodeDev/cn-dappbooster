@@ -128,10 +128,25 @@ describe('AccountsDialog', () => {
     const bobRow = screen.getAllByTestId('account-item')[1].parentElement as HTMLElement
     await user.click(within(bobRow).getByTestId('account-remove'))
 
-    const confirm = await screen.findByRole('alertdialog')
-    assert.ok((confirm.textContent ?? '').includes('bob'))
+    assert.ok(screen.getByText(/remove bob\?/i))
+    assert.ok(screen.getByText(ACCT_B.partyId))
     await user.click(screen.getByTestId('confirm-remove-action'))
     assert.deepEqual(removed, ['b'])
+  })
+
+  it('cancels removal via the close button and returns to the list', async () => {
+    const user = userEvent.setup()
+    const removed: string[] = []
+    const { onOpenChange } = renderDialog({ removeAccount: async (id) => void removed.push(id) })
+    await screen.findByRole('dialog')
+
+    const bobRow = screen.getAllByTestId('account-item')[1].parentElement as HTMLElement
+    await user.click(within(bobRow).getByTestId('account-remove'))
+    await user.click(screen.getByRole('button', { name: /close/i }))
+
+    assert.ok(screen.getByTestId('account-search'))
+    assert.deepEqual(removed, [])
+    assert.equal(onOpenChange.includes(false), false)
   })
 
   it('hides the remove button when only one account exists', async () => {
@@ -157,7 +172,6 @@ describe('AccountsDialog', () => {
 
     const bobRow = screen.getAllByTestId('account-item')[1].parentElement as HTMLElement
     await user.click(within(bobRow).getByTestId('account-remove'))
-    await screen.findByRole('alertdialog')
     await user.click(screen.getByTestId('confirm-remove-action'))
 
     assert.equal(onOpenChange.includes(false), false)

@@ -3,6 +3,6 @@ import { Card } from '@/components/ui/Card'
 
 export const CreateFirstAccount = (): JSX.Element => (
   <Card>
-    <CreateAccountForm />
+    <CreateAccountForm showIntro />
   </Card>
 )

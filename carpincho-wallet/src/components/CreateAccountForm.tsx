@@ -13,6 +13,7 @@ export interface CreateAccountFormProps {
   onSuccess?: () => void
   onCancel?: () => void
   submitLabel?: string
+  showIntro?: boolean
 }
 
 const HINT_PATTERN = /^[a-z0-9._-]{3,64}$/
@@ -21,6 +22,7 @@ export const CreateAccountForm = ({
   onSuccess,
   onCancel,
   submitLabel = 'Create account',
+  showIntro = false,
 }: CreateAccountFormProps): JSX.Element => {
   const v = useVault()
   const [name, setName] = useState('')
@@ -66,9 +68,11 @@ export const CreateAccountForm = ({
 
   return (
     <div>
-      <p className="text-soft text-[1rem] mb-5 leading-relaxed">
-        You need at least one account to start using the wallet.
-      </p>
+      {showIntro && (
+        <p className="text-soft text-[1rem] mb-5 leading-relaxed">
+          You need at least one account to start using the wallet.
+        </p>
+      )}
       <form
         onSubmit={onSubmit}
         className="flex flex-col gap-4"
