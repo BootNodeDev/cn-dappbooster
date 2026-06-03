@@ -89,7 +89,7 @@ export const CreateVault = (): JSX.Element => {
     if (traceW === 0) return
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (reduce) return
-    const segs = traceSegRefs.current.slice(0, TRACE_SEGMENTS)
+    const segs = traceSegRefs.current
     const group = traceGroupRef.current
     const label = ackRef.current
     if (!group || !label || segs.some((s) => !s)) return
@@ -99,9 +99,29 @@ export const CreateVault = (): JSX.Element => {
     const innerH = traceH - 2 * TRACE_INSET - 2 * TRACE_RADIUS
     const total = 2 * innerW + 2 * innerH + 2 * Math.PI * TRACE_RADIUS
     const maxLen = total * TRACE_LEN_FRAC
-    const peakTint = `color-mix(in srgb, var(--color-accent) ${(TRACE_TINT * 100).toFixed(2)}%, var(--color-muted))`
+
     let lapStart: number | null = null
     let raf = 0
+    // Current tint level (0..1) eased toward its target, and the last values
+    // actually written to the DOM -- so idle frames skip redundant style writes.
+    let tintLevel = 0
+    let lastBg: string | null = null
+    let lastGroupOpacity: string | null = null
+
+    const setBg = (level: number): void => {
+      const bg =
+        level <= 0.002
+          ? ''
+          : `color-mix(in srgb, var(--color-accent) ${(level * TRACE_TINT * 100).toFixed(2)}%, var(--color-muted))`
+      if (bg === lastBg) return
+      label.style.backgroundColor = bg
+      lastBg = bg
+    }
+    const setGroupOpacity = (op: string): void => {
+      if (op === lastGroupOpacity) return
+      group.style.opacity = op
+      lastGroupOpacity = op
+    }
 
     const frame = (now: number): void => {
       const ack = acknowledgedRef.current
@@ -109,22 +129,26 @@ export const CreateVault = (): JSX.Element => {
       const elapsed = now - lapStart
 
       if (elapsed >= TRACE_ACTIVE_MS) {
-        // Lap finished: comet hidden. Keep the tint on while checked, clear it
-        // otherwise. Start the next lap only when unchecked and the rest is up.
-        group.style.opacity = '0'
-        label.style.backgroundColor = ack ? peakTint : ''
+        // Idle: comet hidden. Ease the tint toward peak while checked or zero
+        // otherwise, then settle so further frames touch nothing. Start the next
+        // lap only when unchecked and the rest is up.
+        setGroupOpacity('0')
+        const target = ack ? 1 : 0
+        tintLevel += (target - tintLevel) * 0.15
+        if (Math.abs(target - tintLevel) < 0.004) tintLevel = target
+        setBg(tintLevel)
         if (!ack && elapsed >= TRACE_CYCLE_MS) lapStart = now
         raf = requestAnimationFrame(frame)
         return
       }
-      group.style.opacity = '1'
+      setGroupOpacity('1')
 
       const u = elapsed / TRACE_ACTIVE_MS
       // Accent tint envelope: fade in, hold, fade out across the lap. Once
-      // checked, hold it at peak so it stays on after the lap completes.
-      const tintEnv = ack ? 1 : u < 0.1 ? u / 0.1 : u > 0.85 ? (1 - u) / 0.15 : 1
-      const tintPct = (tintEnv * TRACE_TINT * 100).toFixed(2)
-      label.style.backgroundColor = `color-mix(in srgb, var(--color-accent) ${tintPct}%, var(--color-muted))`
+      // checked, hold it at peak so it stays on after the lap completes. Set
+      // directly during the lap so the envelope timing is exact.
+      tintLevel = ack ? 1 : u < 0.1 ? u / 0.1 : u > 0.85 ? (1 - u) / 0.15 : 1
+      setBg(tintLevel)
       // Head leads at constant speed, then holds at the bottom-left corner
       // (length = total) for the final TRACE_EATEN slice of the lap.
       const head = Math.min(u / (1 - TRACE_EATEN), 1) * total
@@ -222,7 +246,6 @@ export const CreateVault = (): JSX.Element => {
                     }}
                     className="border-trace-seg"
                     d={tracePath}
-                    style={{ strokeDasharray: '0 99999' }}
                   />
                 ))}
               </g>
