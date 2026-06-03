@@ -18,10 +18,12 @@ type Listener = (entries: ReadonlyArray<ToastEntry>) => void
 
 const MAX_VISIBLE = 3
 
+// Only critical, must-read feedback (errors) persists until the user dismisses it. Everything
+// else is transient and clears itself after 3 s.
 const DEFAULT_DURATION_MS: Record<ToastVariant, number> = {
-  info: 5000,
-  success: 5000,
-  warning: 8000,
+  info: 3000,
+  success: 3000,
+  warning: 3000,
   error: Number.POSITIVE_INFINITY,
 }
 
@@ -50,7 +52,11 @@ const emit = (variant: ToastVariant, input: ToastInput | string): string => {
     message: normalized.message,
     durationMs: normalized.durationMs ?? DEFAULT_DURATION_MS[variant],
   }
-  const next = [...entries, entry]
+  // Collapse duplicates: keep at most one toast per variant so rapid repeats (e.g. hitting a copy
+  // button several times) replace the existing toast instead of stacking. The fresh entry carries a
+  // new id, so it remounts and its auto-dismiss timer restarts from the latest action.
+  const withoutSameVariant = entries.filter((existing) => existing.variant !== variant)
+  const next = [...withoutSameVariant, entry]
   entries = next.length > MAX_VISIBLE ? next.slice(next.length - MAX_VISIBLE) : next
   notify()
   return entry.id

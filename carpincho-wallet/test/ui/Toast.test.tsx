@@ -34,8 +34,8 @@ describe('toast emitter', () => {
     toast.warning('careful')
     toast.error('boom')
     const [info, warning, error] = getToastEntries()
-    assert.equal(info?.durationMs, 5000)
-    assert.equal(warning?.durationMs, 8000)
+    assert.equal(info?.durationMs, 3000)
+    assert.equal(warning?.durationMs, 3000)
     assert.equal(error?.durationMs, Number.POSITIVE_INFINITY)
   })
 
@@ -44,18 +44,34 @@ describe('toast emitter', () => {
     assert.equal(getToastEntries()[0]?.durationMs, 1234)
   })
 
-  it('evicts the oldest entry when a fourth toast is fired', () => {
+  it('keeps a single toast per variant, replacing the previous one of that variant', () => {
+    const first = toast.success('Party ID copied')
+    const second = toast.success('Party ID copied')
+    const successes = getToastEntries().filter((entry) => entry.variant === 'success')
+    assert.equal(successes.length, 1)
+    assert.notEqual(first, second)
+    assert.equal(successes[0]?.id, second)
+  })
+
+  it('does not collapse toasts of different variants', () => {
     toast.info('a')
-    toast.info('b')
-    toast.info('c')
-    toast.info('d')
+    toast.success('b')
+    toast.error('c')
+    assert.equal(getToastEntries().length, 3)
+  })
+
+  it('evicts the oldest entry when more than three variants are active', () => {
+    toast.info('a')
+    toast.success('b')
+    toast.warning('c')
+    toast.error('d')
     const messages = getToastEntries().map((entry) => entry.message)
     assert.deepEqual(messages, ['b', 'c', 'd'])
   })
 
   it('dismiss removes a specific entry by id', () => {
     const idA = toast.info('a')
-    toast.info('b')
+    toast.success('b')
     toast.dismiss(idA)
     const messages = getToastEntries().map((entry) => entry.message)
     assert.deepEqual(messages, ['b'])
@@ -63,7 +79,7 @@ describe('toast emitter', () => {
 
   it('clear empties every active entry', () => {
     toast.info('a')
-    toast.info('b')
+    toast.success('b')
     toast.clear()
     assert.equal(getToastEntries().length, 0)
   })
@@ -108,8 +124,8 @@ describe('ToastProvider', () => {
     render(<ToastProvider>nothing</ToastProvider>)
     act(() => {
       toast.info('first')
-      toast.info('second')
-      toast.info('third')
+      toast.success('second')
+      toast.warning('third')
     })
     const messages = Array.from(document.body.querySelectorAll('li[data-state="open"]')).map(
       (li) => li.querySelector('div')?.textContent ?? '',
