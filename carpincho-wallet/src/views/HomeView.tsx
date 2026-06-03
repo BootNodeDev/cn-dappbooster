@@ -126,13 +126,6 @@ export const HomeView = (): JSX.Element => {
     }
   }
 
-  const onCopyPartyId = (partyId: string): void => {
-    void navigator.clipboard
-      .writeText(partyId)
-      .then(() => toast.success('Party ID copied'))
-      .catch((err: Error) => toast.error(`Copy failed: ${err.message}`))
-  }
-
   const accountsSorted = useMemo(
     () =>
       [...v.accounts].sort((a, b) =>
@@ -158,15 +151,7 @@ export const HomeView = (): JSX.Element => {
           hasPending && 'h-[calc(100vh-12rem)] min-h-0 overflow-hidden pb-0',
         )}
       >
-        <AccountCard
-          primary={primary}
-          accountsSorted={accountsSorted}
-          onSelectAccount={(id) => {
-            void v.setPrimary(id)
-          }}
-          onAddAccount={() => setAddAccountOpen(true)}
-          onCopyPartyId={onCopyPartyId}
-        />
+        <AccountCard primary={primary} />
 
         {hasPending && (
           <PendingActionsSection
