@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { walletServiceRequest } from '@/api/walletService'
-import { PrimaryButton, SecondaryButton } from '@/components/ui/Button'
+import { GhostButton, PrimaryButton } from '@/components/ui/Button'
 import { TextInput } from '@/components/ui/TextInput'
 import { toast } from '@/components/ui/toast'
 import type { RuntimeConfig } from '@/config/runtimeConfig'
@@ -53,7 +53,19 @@ export const ConnectionSettingsView = (): JSX.Element => {
   return (
     <section className="flex flex-col gap-4 pt-1">
       <div>
-        <label htmlFor="wallet-service-rpc">Wallet-service RPC URL</label>
+        <div className="flex items-center justify-between gap-3">
+          <label htmlFor="wallet-service-rpc">Wallet-service RPC URL</label>
+          <GhostButton
+            type="button"
+            onClick={() => {
+              void onTest()
+            }}
+            disabled={busy}
+            className="text-[0.82rem]"
+          >
+            {busy ? 'Testing…' : 'Test wallet-service'}
+          </GhostButton>
+        </div>
         <TextInput
           id="wallet-service-rpc"
           type="url"
@@ -76,17 +88,12 @@ export const ConnectionSettingsView = (): JSX.Element => {
         />
       </div>
 
-      <div className="flex gap-3 mt-1">
-        <PrimaryButton onClick={onSave}>Save</PrimaryButton>
-        <SecondaryButton
-          onClick={() => {
-            void onTest()
-          }}
-          disabled={busy}
-        >
-          {busy ? 'Testing…' : 'Test wallet-service'}
-        </SecondaryButton>
-      </div>
+      <PrimaryButton
+        className="w-full mt-1"
+        onClick={onSave}
+      >
+        Save
+      </PrimaryButton>
     </section>
   )
 }
