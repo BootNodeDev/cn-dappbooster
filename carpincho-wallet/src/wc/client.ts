@@ -210,7 +210,27 @@ export interface ConnectedDappSession {
   name: string
   url: string
   description: string
+  // Party IDs the session was approved with (decoded from the CAIP account strings).
+  accounts: string[]
 }
+
+// CAIP account strings look like `<chain>:<encodeURIComponent(partyId)>`; the party id is the last
+// colon-separated segment (encoded, so it never contains a literal colon).
+const partyIdsFromNamespaces = (
+  namespaces: ReturnType<
+    InstanceType<typeof SignClient>['session']['getAll']
+  >[number]['namespaces'],
+): string[] =>
+  Object.values(namespaces).flatMap((ns) =>
+    ns.accounts.map((account) => {
+      const encoded = account.split(':').pop() ?? ''
+      try {
+        return decodeURIComponent(encoded)
+      } catch {
+        return encoded
+      }
+    }),
+  )
 
 const toConnectedDappSession = (
   session: ReturnType<InstanceType<typeof SignClient>['session']['getAll']>[number],
@@ -219,6 +239,7 @@ const toConnectedDappSession = (
   name: session.peer.metadata.name,
   url: session.peer.metadata.url,
   description: session.peer.metadata.description,
+  accounts: partyIdsFromNamespaces(session.namespaces),
 })
 
 export const getConnectedDappSessions = async (): Promise<ConnectedDappSession[]> => {

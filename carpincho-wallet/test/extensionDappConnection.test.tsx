@@ -30,6 +30,7 @@ const session: ConnectedDappSession = {
   name: 'Counter dApp',
   url: 'http://localhost:3012',
   description: 'Counter app',
+  accounts: [],
 }
 
 const DappProbe = (): JSX.Element => {

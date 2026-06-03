@@ -135,6 +135,14 @@ export const HomeView = (): JSX.Element => {
     extensionMode,
     sessions,
   })
+  const connectedSession = sessions[0]
+  const connectedAccountName = useMemo(
+    () =>
+      connectedSession === undefined
+        ? undefined
+        : v.accounts.find((a) => connectedSession.accounts.includes(a.partyId))?.name,
+    [connectedSession, v.accounts],
+  )
 
   return (
     <>
@@ -159,18 +167,13 @@ export const HomeView = (): JSX.Element => {
           />
         )}
 
-        {!hasPending && !extensionMode && (
+        {!hasPending && !extensionMode && connectedSession === undefined && (
           <PairOrConnectedCard
-            sessions={sessions}
             pairingDraft={pairingDraft}
             pairingBusy={pairingBusy}
-            busy={busy}
             onPairingDraftChange={setPairingDraft}
             onPair={() => {
               void onPairDapp()
-            }}
-            onDisconnect={(topic) => {
-              void onDisconnectDapp(topic)
             }}
           />
         )}
@@ -190,6 +193,14 @@ export const HomeView = (): JSX.Element => {
       <ConnectionFooter
         walletService={walletService}
         dapp={dapp}
+        dappAccountName={connectedAccountName}
+        onDisconnectDapp={
+          connectedSession === undefined
+            ? undefined
+            : () => {
+                void onDisconnectDapp(connectedSession.topic)
+              }
+        }
         onOpenSettings={() => setSettingsOpen(true)}
       />
     </>

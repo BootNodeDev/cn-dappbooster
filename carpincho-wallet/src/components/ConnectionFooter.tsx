@@ -1,5 +1,5 @@
-import { ICON_BUTTON_CLASS } from '@/components/ui/Button'
-import { COG_ICON, DAPP_EMPTY_ICON } from '@/components/ui/icons'
+import { ICON_BUTTON_CLASS, SecondaryButton } from '@/components/ui/Button'
+import { COG_ICON } from '@/components/ui/icons'
 import { cn } from '@/utils/cn'
 
 export interface WalletServiceFooterStatus {
@@ -15,13 +15,18 @@ export type DappFooterStatus =
 interface ConnectionFooterProps {
   walletService: WalletServiceFooterStatus
   dapp: DappFooterStatus
+  dappAccountName?: string
+  onDisconnectDapp?: () => void
   onOpenSettings: () => void
 }
 
-// Keeps service health and dApp communication visible as two separate footer states.
+// Shows Canton service health, plus a connected-dApp row (app + account + disconnect) that only
+// appears while a dApp is actually connected.
 export const ConnectionFooter = ({
   walletService,
   dapp,
+  dappAccountName,
+  onDisconnectDapp,
   onOpenSettings,
 }: ConnectionFooterProps): JSX.Element => {
   const dotClass = walletService.connected ? 'bg-success' : 'bg-danger'
@@ -76,22 +81,11 @@ export const ConnectionFooter = ({
         </button>
       </div>
 
-      <div className="h-px bg-border" />
+      {dapp.kind === 'connected' && (
+        <>
+          <div className="h-px bg-border" />
 
-      <div className="flex min-h-7 items-center gap-2">
-        {dapp.kind === 'none' ? (
-          <>
-            <span className="grid size-6 place-items-center text-muted-foreground">
-              {DAPP_EMPTY_ICON}
-            </span>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-[0.88rem] font-semibold text-muted-foreground">
-                No Dapp found
-              </div>
-            </div>
-          </>
-        ) : (
-          <>
+          <div className="flex min-h-7 items-center gap-2">
             <span className="grid size-7 shrink-0 place-items-center overflow-hidden rounded-md border border-border bg-surface text-primary">
               {dapp.faviconUrl === undefined ? (
                 <span className="font-display text-[0.82rem] font-semibold">
@@ -106,17 +100,27 @@ export const ConnectionFooter = ({
                 />
               )}
             </span>
-            <div className="flex min-w-0 flex-1 items-baseline gap-3">
-              <div className="truncate text-[0.9rem] font-semibold leading-tight text-foreground">
+            <div className="min-w-0 flex-1 leading-tight">
+              <div className="truncate text-[0.9rem] font-semibold text-foreground">
                 {dapp.label}
               </div>
-              <div className="shrink-0 truncate text-[0.82rem] font-medium leading-tight text-muted-foreground">
-                {dapp.subtitle}
-              </div>
+              {dappAccountName !== undefined && (
+                <div className="truncate text-[0.82rem] font-medium text-muted-foreground">
+                  {dappAccountName}
+                </div>
+              )}
             </div>
-          </>
-        )}
-      </div>
+            {onDisconnectDapp !== undefined && (
+              <SecondaryButton
+                className="shrink-0 px-3 py-1.5 text-[0.85rem]"
+                onClick={onDisconnectDapp}
+              >
+                Disconnect
+              </SecondaryButton>
+            )}
+          </div>
+        </>
+      )}
     </footer>
   )
 }
