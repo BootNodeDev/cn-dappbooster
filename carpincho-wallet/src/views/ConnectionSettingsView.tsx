@@ -53,7 +53,7 @@ export const ConnectionSettingsView = (): JSX.Element => {
   return (
     <section className="flex flex-col gap-4 pt-1">
       <div>
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-baseline justify-between gap-3">
           <label htmlFor="wallet-service-rpc">Wallet-service RPC URL</label>
           <GhostButton
             type="button"
