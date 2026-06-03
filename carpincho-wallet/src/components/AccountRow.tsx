@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { AccountAvatar } from '@/components/ui/AccountAvatar'
 import { shortMiddle } from '@/utils/account'
 import { cn } from '@/utils/cn'
@@ -6,12 +7,18 @@ import type { AccountPublic } from '@/vault/types'
 interface AccountRowProps {
   account: AccountPublic
   withName?: boolean
+  nameTrailing?: ReactNode
 }
 
 // Renders the shared account identity (avatar + party id) reused by the active account row and the
-// account popup entries. When `withName` is set the account name becomes the primary label and the
-// truncated party id drops to a secondary line, matching the popup list layout.
-export const AccountRow = ({ account, withName = false }: AccountRowProps): JSX.Element => (
+// account popup entries. When `withName` is set the account name becomes the primary label (with an
+// optional trailing slot beside it, e.g. a status dot) and the truncated party id drops to a
+// secondary line, matching the popup list layout.
+export const AccountRow = ({
+  account,
+  withName = false,
+  nameTrailing,
+}: AccountRowProps): JSX.Element => (
   <div className="flex min-w-0 flex-1 items-center gap-2">
     <AccountAvatar
       name={account.name}
@@ -19,12 +26,15 @@ export const AccountRow = ({ account, withName = false }: AccountRowProps): JSX.
     />
     <div className="min-w-0 flex-1">
       {withName && (
-        <span className="block truncate text-[0.9rem] font-semibold text-foreground">
-          {account.name}
-        </span>
+        <div className="flex min-w-0 items-center gap-1.5">
+          <span className="min-w-0 truncate text-[0.9rem] font-semibold text-foreground">
+            {account.name}
+          </span>
+          {nameTrailing}
+        </div>
       )}
       <span
-        title={account.name}
+        title={withName ? account.partyId : account.name}
         className={cn(
           'block truncate font-mono text-foreground',
           withName

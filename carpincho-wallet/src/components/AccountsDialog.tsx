@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { AccountListRow } from '@/components/AccountListRow'
 import { CreateAccountForm } from '@/components/CreateAccountForm'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { SEARCH_ICON } from '@/components/ui/icons'
 import { Sheet } from '@/components/ui/Sheet'
 import { TextInput } from '@/components/ui/TextInput'
 import { toast } from '@/components/ui/toast'
@@ -76,21 +77,29 @@ export const AccountsDialog = ({ open, onOpenChange }: AccountsDialogProps): JSX
           <CreateAccountForm
             submitLabel="Create account"
             onSuccess={() => setScreen('list')}
-            onCancel={() => setScreen('list')}
           />
         ) : (
           <div
             data-testid="accounts-dialog"
             className="flex flex-col gap-3"
           >
-            <TextInput
-              type="text"
-              data-testid="account-search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search your accounts"
-              aria-label="Search your accounts"
-            />
+            <div className="relative">
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              >
+                {SEARCH_ICON}
+              </span>
+              <TextInput
+                type="text"
+                data-testid="account-search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search your accounts"
+                aria-label="Search your accounts"
+                className="pl-9 text-sm"
+              />
+            </div>
             <div className="flex flex-col gap-1">
               {filtered.length === 0 ? (
                 <p className="px-2 py-6 text-center text-[0.92rem] text-muted-foreground">

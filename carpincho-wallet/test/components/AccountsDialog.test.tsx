@@ -162,15 +162,13 @@ describe('AccountsDialog', () => {
     assert.equal(onOpenChange.includes(false), false)
   })
 
-  it('returns to the list when the add form is cancelled', async () => {
+  it('shows only a create button on the add screen, no cancel button', async () => {
     const user = userEvent.setup()
     renderDialog()
     await screen.findByRole('dialog')
 
     await user.click(screen.getByTestId('menu-add-account'))
-    assert.ok(screen.getByTestId('add-account-hint-input'))
-
-    await user.click(screen.getByTestId('add-account-cancel'))
-    assert.ok(screen.getByTestId('account-search'))
+    assert.ok(screen.getByTestId('add-account-submit'))
+    assert.equal(screen.queryByTestId('add-account-cancel'), null)
   })
 })

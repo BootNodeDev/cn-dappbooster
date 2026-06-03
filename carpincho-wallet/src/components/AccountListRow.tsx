@@ -40,6 +40,7 @@ export const AccountListRow = ({
       <AccountRow
         account={account}
         withName
+        nameTrailing={<StatusDot active={account.isPrimary} />}
       />
     </button>
     <button
@@ -51,7 +52,6 @@ export const AccountListRow = ({
     >
       {COPY_ICON}
     </button>
-    <StatusDot active={account.isPrimary} />
     {canRemove && (
       <button
         type="button"
