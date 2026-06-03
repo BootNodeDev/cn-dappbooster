@@ -63,7 +63,7 @@ export const PairOrConnectedCard = ({
               Connect to dApp
             </h2>
             <p className="mt-1 text-soft text-[0.9rem] leading-relaxed">
-              Paste a WalletConnect URI to link this wallet with a dApp.
+              Paste a WalletConnect URI
             </p>
           </div>
           <TextInput
