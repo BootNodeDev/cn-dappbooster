@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { AccountListRow } from '@/components/AccountListRow'
 import { CreateAccountForm } from '@/components/CreateAccountForm'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
-import { SEARCH_ICON } from '@/components/ui/icons'
+import { SEARCH_ICON, X_ICON } from '@/components/ui/icons'
 import { Sheet } from '@/components/ui/Sheet'
 import { TextInput } from '@/components/ui/TextInput'
 import { toast } from '@/components/ui/toast'
@@ -72,6 +72,7 @@ export const AccountsDialog = ({ open, onOpenChange }: AccountsDialogProps): JSX
         title={isAdd ? 'Add account' : 'Accounts'}
         description={isAdd ? 'Create a new Canton party.' : 'Switch, add, or remove accounts.'}
         onBack={isAdd ? () => setScreen('list') : undefined}
+        hideClose
       >
         {isAdd ? (
           <CreateAccountForm
@@ -97,8 +98,19 @@ export const AccountsDialog = ({ open, onOpenChange }: AccountsDialogProps): JSX
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search your accounts"
                 aria-label="Search your accounts"
-                className="pl-9 text-sm"
+                className="pl-9 pr-9 text-sm"
               />
+              {query !== '' && (
+                <button
+                  type="button"
+                  data-testid="account-search-clear"
+                  onClick={() => setQuery('')}
+                  aria-label="Clear search"
+                  className="absolute right-2 top-1/2 inline-grid size-6 -translate-y-1/2 place-items-center rounded-sm text-muted-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:shadow-focus"
+                >
+                  {X_ICON}
+                </button>
+              )}
             </div>
             <div className="flex flex-col gap-1">
               {filtered.length === 0 ? (

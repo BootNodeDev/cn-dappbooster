@@ -94,7 +94,8 @@ describe('AccountsDialog', () => {
     await screen.findByRole('dialog')
     await user.type(screen.getByTestId('account-search'), 'PARTY-BOB')
     assert.equal(screen.getAllByTestId('account-item').length, 1)
-    assert.ok((screen.getByTestId('account-item').textContent ?? '').includes('bob'))
+    const row = screen.getByTestId('account-item').parentElement as HTMLElement
+    assert.ok((row.textContent ?? '').includes('bob'))
   })
 
   it('shows an empty message when nothing matches', async () => {

@@ -109,6 +109,22 @@ describe('CreateAccountForm', () => {
     renderForm({ submitLabel: 'Create your account' })
     assert.ok(screen.getByRole('button', { name: 'Create your account' }))
   })
+
+  it('always shows the username requirements as helper text', () => {
+    renderForm()
+    assert.ok(screen.getByText(/3-64 lowercase/i))
+  })
+
+  it('keeps the submit button disabled until the username is valid', async () => {
+    const user = userEvent.setup()
+    renderForm()
+    const submit = screen.getByTestId('add-account-submit') as HTMLButtonElement
+    assert.equal(submit.disabled, true)
+    await user.type(screen.getByTestId('add-account-hint-input'), 'ab')
+    assert.equal(submit.disabled, true)
+    await user.type(screen.getByTestId('add-account-hint-input'), 'cde')
+    assert.equal(submit.disabled, false)
+  })
 })
 
 describe('CreateAccountForm pipeline wiring', () => {

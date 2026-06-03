@@ -1,6 +1,6 @@
 import * as Dialog from '@radix-ui/react-dialog'
 import type { ReactNode } from 'react'
-import { ICON_BUTTON_CLASS, ROUND_ICON_BUTTON_CHROME } from '@/components/ui/Button'
+import { ICON_BUTTON_CLASS } from '@/components/ui/Button'
 import { BACK_ICON, X_ICON } from '@/components/ui/icons'
 import { cn } from '@/utils/cn'
 
@@ -29,7 +29,10 @@ const CONTENT_CLASS_BY_SIDE: Record<Side, string> = {
   ),
 }
 
-const SHEET_ICON_BUTTON_CLASS = cn(ICON_BUTTON_CLASS, ROUND_ICON_BUTTON_CHROME, 'size-8 bg-surface')
+const SHEET_ICON_BUTTON_CLASS = cn(
+  ICON_BUTTON_CLASS,
+  'size-8 rounded-md bg-surface text-soft [&_svg]:size-5',
+)
 
 interface SheetProps {
   open: boolean

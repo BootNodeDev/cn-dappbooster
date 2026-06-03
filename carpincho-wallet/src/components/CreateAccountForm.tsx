@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { completeCreateParty, prepareCreateParty } from '@/api/walletService'
-import { Alert } from '@/components/ui/Alert'
 import { PrimaryButton, SecondaryButton } from '@/components/ui/Button'
 import { TextInput } from '@/components/ui/TextInput'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { toast } from '@/components/ui/toast'
+import { cn } from '@/utils/cn'
 import { generateKeypair, signMessageBase64 } from '@/vault/keypair'
 import { useVault } from '@/vault/useVault'
 import { getCantonNetwork } from '@/wc/client'
@@ -15,6 +15,8 @@ export interface CreateAccountFormProps {
   submitLabel?: string
 }
 
+const HINT_PATTERN = /^[a-z0-9._-]{3,64}$/
+
 export const CreateAccountForm = ({
   onSuccess,
   onCancel,
@@ -23,14 +25,14 @@ export const CreateAccountForm = ({
   const v = useVault()
   const [name, setName] = useState('')
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | undefined>(undefined)
+
+  const trimmed = name.trim().toLowerCase()
+  const isValid = HINT_PATTERN.test(trimmed)
+  const showError = name.trim() !== '' && !isValid
 
   const onSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault()
-    setError(undefined)
-    const trimmed = name.trim().toLowerCase()
-    if (!/^[a-z0-9._-]{3,64}$/.test(trimmed)) {
-      setError('Use 3–64 lowercase letters, digits, dot, dash, or underscore.')
+    if (!isValid) {
       return
     }
     setBusy(true)
@@ -93,15 +95,25 @@ export const CreateAccountForm = ({
             onChange={(e) => setName(e.target.value)}
             placeholder="alice"
             maxLength={64}
+            error={showError}
+            aria-describedby="acct-name-hint"
           />
+          <p
+            id="acct-name-hint"
+            className={cn(
+              'mt-1.5 text-[0.8rem] leading-relaxed',
+              showError ? 'text-danger' : 'text-muted-foreground',
+            )}
+          >
+            Use 3-64 lowercase letters, digits, dot, dash, or underscore.
+          </p>
         </div>
-        {error !== undefined && <Alert variant="error">{error}</Alert>}
-        <div className={standalone ? 'mt-10' : 'mt-1 flex gap-3'}>
+        <div className={standalone ? 'mt-6' : 'mt-1 flex gap-3'}>
           <PrimaryButton
             type="submit"
             className={standalone ? 'w-full' : undefined}
             data-testid="add-account-submit"
-            disabled={busy || name.trim() === ''}
+            disabled={busy || !isValid}
           >
             {busy ? 'Creating…' : submitLabel}
           </PrimaryButton>

@@ -1,10 +1,17 @@
 import { AccountRow } from '@/components/AccountRow'
-import { ICON_BUTTON_CLASS } from '@/components/ui/Button'
+import { PLAIN_ICON_BUTTON_CLASS } from '@/components/ui/Button'
 import { COPY_ICON, TRASH_ICON } from '@/components/ui/icons'
 import { StatusDot } from '@/components/ui/StatusDot'
 import { copyPartyId } from '@/utils/clipboard'
 import { cn } from '@/utils/cn'
 import type { AccountPublic } from '@/vault/types'
+
+// The remove affordance tints only its icon red on hover (no button-background change), matching the
+// inline copy button.
+const REMOVE_BUTTON_CLASS =
+  'relative z-10 inline-grid size-8 shrink-0 place-items-center rounded-sm ' +
+  'text-muted-foreground transition-colors hover:text-danger ' +
+  'focus-visible:outline-none focus-visible:shadow-focus'
 
 interface AccountListRowProps {
   account: AccountPublic
@@ -13,9 +20,10 @@ interface AccountListRowProps {
   onRequestRemove: () => void
 }
 
-// One account entry in the Accounts popup: a clickable identity (selects the account), an
-// independent copy action, the active-status dot, and a remove action that the parent gates behind
-// a confirmation dialog. The remove button is omitted when only one account exists.
+// One account entry in the Accounts popup. A full-row button sits behind the content and selects the
+// account, while the inline copy button (beside the address) and the remove button sit above it so
+// their clicks stay independent of selection. The remove button is omitted when only one account
+// exists.
 export const AccountListRow = ({
   account,
   canRemove,
@@ -24,7 +32,7 @@ export const AccountListRow = ({
 }: AccountListRowProps): JSX.Element => (
   <div
     className={cn(
-      'flex w-full items-center gap-1 rounded-sm transition-colors',
+      'relative flex w-full items-center gap-1 rounded-sm transition-colors',
       account.isPrimary && 'bg-primary-soft/40',
     )}
   >
@@ -35,33 +43,33 @@ export const AccountListRow = ({
       aria-current={account.isPrimary ? true : undefined}
       aria-label={account.name}
       onClick={onSelect}
-      className="flex min-w-0 flex-1 items-center gap-2 rounded-sm p-2 text-left outline-none transition-colors hover:bg-primary-soft focus-visible:shadow-focus"
-    >
+      className="absolute inset-0 z-0 rounded-sm outline-none transition-colors hover:bg-primary-soft focus-visible:shadow-focus"
+    />
+    <div className="pointer-events-none relative z-10 flex min-w-0 flex-1 items-center gap-2 p-2">
       <AccountRow
         account={account}
         withName
         nameTrailing={<StatusDot active={account.isPrimary} />}
+        addressTrailing={
+          <button
+            type="button"
+            data-testid="account-copy-party-id"
+            onClick={() => copyPartyId(account.partyId)}
+            aria-label="Copy party ID"
+            className={cn(PLAIN_ICON_BUTTON_CLASS, 'pointer-events-auto size-6 shrink-0')}
+          >
+            {COPY_ICON}
+          </button>
+        }
       />
-    </button>
-    <button
-      type="button"
-      data-testid="account-copy-party-id"
-      onClick={() => copyPartyId(account.partyId)}
-      aria-label="Copy party ID"
-      className={cn(ICON_BUTTON_CLASS, 'size-8 shrink-0 rounded-sm')}
-    >
-      {COPY_ICON}
-    </button>
+    </div>
     {canRemove && (
       <button
         type="button"
         data-testid="account-remove"
         onClick={onRequestRemove}
         aria-label={`Remove ${account.name}`}
-        className={cn(
-          ICON_BUTTON_CLASS,
-          'size-8 shrink-0 rounded-sm enabled:hover:bg-danger/10 enabled:hover:text-danger',
-        )}
+        className={REMOVE_BUTTON_CLASS}
       >
         {TRASH_ICON}
       </button>
