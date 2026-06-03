@@ -11,8 +11,8 @@
     "includes": [
       "carpincho-wallet/**",
       "canton-connect-kit/**",
-      "counter/frontend/**",
-      "e2e/**",
+      "dapp/frontend/**",
+      "dapp/e2e/**",
       "canton-barebones/**",
       "!**/api-specs"
     ]
@@ -71,7 +71,7 @@
       }
     },
     {
-      "includes": ["counter/frontend/**"],
+      "includes": ["dapp/frontend/**"],
       "linter": {
         "rules": {
           "style": {
@@ -81,7 +81,7 @@
       }
     },
     {
-      "includes": ["e2e/**"],
+      "includes": ["dapp/e2e/**"],
       "linter": {
         "rules": {
           "correctness": {

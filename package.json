@@ -1,5 +1,5 @@
 {
-  "name": "canton-counter-scaffold",
+  "name": "cn-dappbooster",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -14,13 +14,13 @@
     "wallet-service:dev": "npm --prefix canton-barebones/wallet-service run dev",
     "wallet-service:health": "curl -fsS http://localhost:3010/health",
     "carpincho:build:extension": "npm --prefix carpincho-wallet run build:extension",
-    "app:dev": "npm --prefix counter/frontend run dev -- --host localhost --port 3012 --strictPort",
+    "app:dev": "npm --prefix dapp/frontend run dev -- --host localhost --port 3012 --strictPort",
     "lint": "biome check",
     "lint:fix": "biome check --write",
     "format": "biome format --write",
-    "e2e": "npm --prefix e2e test",
-    "e2e:headed": "npm --prefix e2e run test:headed",
-    "e2e:ui": "npm --prefix e2e run test:ui",
+    "e2e": "npm --prefix dapp/e2e test",
+    "e2e:headed": "npm --prefix dapp/e2e run test:headed",
+    "e2e:ui": "npm --prefix dapp/e2e run test:ui",
     "prepare": "husky"
   },
   "devDependencies": {

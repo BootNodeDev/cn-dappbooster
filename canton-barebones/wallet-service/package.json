@@ -1,5 +1,5 @@
 {
-  "name": "@canton-counter/wallet-service",
+  "name": "@canton-dappbooster/wallet-service",
   "private": true,
   "type": "module",
   "engines": {
