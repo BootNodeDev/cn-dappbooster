@@ -16,12 +16,12 @@ there's no widely-adopted equivalent of `wagmi` / `RainbowKit` / `ConnectKit`
 - Manages event subscriptions as React state
 - Exposes lifecycle (lock/unlock) as derived UI state
 
-This package fills that gap for the counter dApp scaffold. EVM devs cloning
+This package fills that gap for the dApp scaffold. EVM devs cloning
 the scaffold should recognise the patterns from day one.
 
 ## Status
 
-Early — used by `counter/frontend` in this repo. Not yet a published
+Early — used by `dapp/frontend` in this repo. Not yet a published
 artifact. The hook signatures are stable enough to depend on; the
 implementation underneath may swap to delegate to `@partylayer/sdk` if that
 ecosystem matures.

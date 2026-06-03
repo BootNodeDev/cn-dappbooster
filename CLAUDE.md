@@ -1,10 +1,10 @@
-# Agent Configuration — Canton Counter Scaffold
+# Agent Configuration — Canton dApp Booster
 
 This file defines monorepo-wide rules for agents working in this repository. Each subproject can layer its own `CLAUDE.md` for stack-specific details:
 
 - [`carpincho-wallet/CLAUDE.md`](carpincho-wallet/CLAUDE.md) — CIP-0103 wallet (Vite + React + Biome)
 - [`canton-connect-kit/README.md`](canton-connect-kit/README.md) — wagmi-style React hooks for Canton dApps
-- `canton-barebones/`, `counter/daml/`, `counter/frontend/` — see each subproject's `README.md`
+- `canton-barebones/`, `dapp/daml/`, `dapp/frontend/`, `dapp/e2e/` — see each subproject's `README.md`
 
 For the system shape (data flow, components, ports), see [`architecture.md`](architecture.md).
 
@@ -14,13 +14,13 @@ For the system shape (data flow, components, ports), see [`architecture.md`](arc
 
 | Category | Technology | Notes |
 |----------|-----------|-------|
-| Languages | TypeScript, DAML, Bash | TypeScript across the JS subprojects; DAML in `counter/daml/`; Bash for canton-barebones scripts |
+| Languages | TypeScript, DAML, Bash | TypeScript across the JS subprojects; DAML in `dapp/daml/`; Bash for canton-barebones scripts |
 | Package manager | npm | One `package-lock.json` per Node subproject; root `package.json` orchestrates via `npm --prefix <dir>` |
 | Node | 24 | Pinned via root `.nvmrc`; inherits to every Node subproject |
 | Container runtime | Docker | Used by `canton-barebones/` for the local participant + Postgres |
 | Commit linting | commitlint + husky | Enforced via root `.husky/commit-msg` |
 | Lint / format | Biome | One root `biome.json` and a single root `@biomejs/biome`; per-project specifics live in `overrides`. No per-subproject Biome install or config |
-| Pre-commit | lint-staged | Root `.lintstagedrc.mjs` runs root Biome (`biome check --write`) across `carpincho-wallet/`, `canton-connect-kit/`, and `counter/frontend/` |
+| Pre-commit | lint-staged | Root `.lintstagedrc.mjs` runs root Biome (`biome check --write`) across `carpincho-wallet/`, `canton-connect-kit/`, `dapp/frontend/`, and `dapp/e2e/` |
 | Pre-push | tsc | Root `.husky/pre-push` runs `tsc --noEmit` per Node subproject |
 
 ## Subprojects
@@ -28,10 +28,11 @@ For the system shape (data flow, components, ports), see [`architecture.md`](arc
 | Path | Purpose | Stack | Port |
 |------|---------|-------|------|
 | [`canton-barebones/`](canton-barebones/) | Local Canton participant + Postgres via docker-compose; deploy + health + token scripts | Docker, Bash, Node scripts | 3013/3014/3015/3016/3017/3018 |
-| [`counter/daml/`](counter/daml/) | `quickstart-counter` DAML model | DAML | n/a (DAR artifact) |
+| [`dapp/daml/`](dapp/daml/) | `quickstart-counter` DAML model | DAML | n/a (DAR artifact) |
 | [`canton-barebones/wallet-service/`](canton-barebones/wallet-service/) | JSON-RPC bridge between the wallet and the Canton participant. Started by `npm run canton:up`. Self-mints its Canton JWT. | Node + Express + TypeScript | 3010 |
 | [`carpincho-wallet/`](carpincho-wallet/) | CIP-0103 wallet — vault, signing, WalletConnect, Chrome extension | Vite 6 + React 18 + Tailwind v4 + Biome | 3011 |
-| [`counter/frontend/`](counter/frontend/) | Counter dApp UI | Vite + React + Biome | 3012 |
+| [`dapp/frontend/`](dapp/frontend/) | dApp UI | Vite + React + Biome | 3012 |
+| [`dapp/e2e/`](dapp/e2e/) | dApp integration tests | Playwright + TypeScript | n/a |
 | [`canton-connect-kit/`](canton-connect-kit/) | wagmi-style React hooks for connecting Canton dApps to CIP-0103 wallets | TypeScript + React 18 + Biome | n/a (library) |
 
 ## Code Style
@@ -61,7 +62,8 @@ See [`architecture.md`](architecture.md) for the system shape, subproject layout
 
 - Each subproject owns its own test runner. Run from the subproject directory or via `npm --prefix`:
   - `carpincho-wallet`: `npm test` (Node `node:test` + `tsx` + happy-dom)
-  - `counter/frontend`: `npm test` (Node `node:test` with `--experimental-strip-types`)
+  - `dapp/frontend`: `npm test` (Node `node:test` with `--experimental-strip-types`)
+  - `dapp/e2e`: `npm test` (Playwright against the running local stack)
   - `canton-barebones`: `npm test` (Node `node:test` against the scripts)
 - Cover the paths that matter — business logic, API integrations, component behaviour. Skip styling, third-party library internals, trivial getters/setters.
 
@@ -144,7 +146,7 @@ Before declaring monorepo-touching work done:
 
 - Subproject-level: `npm run lint` and `npm test` inside any subproject you touched.
 - Root-level: `git push --dry-run` exercises the pre-push tsc sweep across all Node subprojects.
-- For the full end-to-end loop (Canton up → DAR built → DAR deployed → wallet-service → wallet → counter app), follow [`README.md`](README.md) §1–6.
+- For the full end-to-end loop (Canton up → DAR built → DAR deployed → wallet-service → wallet → dApp), follow [`README.md`](README.md) §1–6.
 
 ## References
 

@@ -1,4 +1,4 @@
-# Architecture Overview — Canton Counter Scaffold
+# Architecture Overview — Canton dApp Booster
 
 <!-- Monorepo-level architecture. Captures the shape of the whole stack:
      subprojects, ports, data flow between components, environment variables.
@@ -10,10 +10,11 @@
 | Subproject | Stack | Purpose |
 |------------|-------|---------|
 | `canton-barebones/` | Docker Compose + Bash + Node scripts | Local Canton participant node, Postgres, mint-token helper, DAR deploy script, health-check |
-| `counter/daml/` | DAML (`dpm` build) | `quickstart-counter` model — DAR consumed by Canton |
+| `dapp/daml/` | DAML (`dpm` build) | `quickstart-counter` model — DAR consumed by Canton |
 | `canton-barebones/wallet-service/` | Node 24 + Express 5 + TypeScript + `@canton-network/wallet-sdk` | JSON-RPC bridge between the wallet and the Canton participant JSON API. Started by `npm run canton:up` as a docker-compose service. Self-mints its Canton JWT at boot from `CANTON_AUTH_AUDIENCE` / `CANTON_AUTH_SECRET`. `WALLET_SERVICE_MOCK=1` (`src/mock.ts`) short-circuits the dispatcher with canned responses. |
 | `carpincho-wallet/` | Vite 6 + React 18 + Tailwind v4 + Radix UI + Biome + WalletConnect Sign Client 2.x + `@noble/ed25519` | CIP-0103 wallet (web + Chrome extension), encrypted local vault, signing, injected provider, optional WalletConnect |
-| `counter/frontend/` | Vite + React + `@canton-network/dapp-sdk` + Biome | Counter dApp UI that talks to the wallet through the injected CIP-0103 provider, with optional WalletConnect fallback |
+| `dapp/frontend/` | Vite + React + `@canton-network/dapp-sdk` + Biome | dApp UI that talks to the wallet through the injected CIP-0103 provider, with optional WalletConnect fallback |
+| `dapp/e2e/` | Playwright + TypeScript | Black-box integration tests for the dApp, Carpincho, wallet-service, and Canton stack |
 
 ## Project Structure
 
@@ -28,9 +29,10 @@
 ├── .husky/                        commit-msg, pre-commit, pre-push hooks
 ├── canton-barebones/                   Local Canton participant + Postgres + wallet-service
 ├── carpincho-wallet/              CIP-0103 wallet (web + Chrome extension)
-├── counter/
+├── dapp/
 │   ├── daml/                      quickstart-counter DAML model
-│   └── frontend/                  Counter dApp UI
+│   ├── frontend/                  dApp UI
+│   └── e2e/                       Black-box integration tests
 ├── CLAUDE.md                      Agent rules — monorepo-wide
 ├── AGENTS.md                      Pointer to CLAUDE.md for non-Claude agents
 ├── architecture.md                THIS FILE
@@ -43,15 +45,15 @@
 
 ## Data Flow
 
-The whole local stack is one signing loop. The Counter frontend discovers Carpincho through the injected CIP-0103 browser provider; Carpincho signs locally and routes the signed transaction through the wallet-service JSON-RPC bridge, which calls the Canton participant's JSON API; the participant materialises the change against the deployed `quickstart-counter` DAR. WalletConnect remains available as an opt-in fallback path.
+The whole local stack is one signing loop. The dApp frontend discovers Carpincho through the injected CIP-0103 browser provider; Carpincho signs locally and routes the signed transaction through the wallet-service JSON-RPC bridge, which calls the Canton participant's JSON API; the participant materialises the change against the deployed `quickstart-counter` DAR. WalletConnect remains available as an opt-in fallback path.
 
 ```mermaid
 flowchart TD
-  fe["counter/frontend<br/>Counter dApp<br/>http://localhost:3012"]
+  fe["dapp/frontend<br/>dApp frontend<br/>http://localhost:3012"]
   wallet["carpincho-wallet<br/>Vault + signer<br/>http://localhost:3011"]
   ws["canton-barebones/wallet-service<br/>Canton bridge<br/>http://localhost:3010"]
   cb["canton-barebones<br/>Participant JSON API http://localhost:3013<br/>Ledger/Admin gRPC localhost:3014 / 3015"]
-  dar["counter/daml<br/>quickstart-counter DAR<br/>.daml/dist/*.dar"]
+  dar["dapp/daml<br/>quickstart-counter DAR<br/>.daml/dist/*.dar"]
 
   fe <-->|"Injected CIP-0103 provider<br/>optional WalletConnect"| wallet
   wallet -->|"JSON-RPC /rpc<br/>prepare, execute, read, onboard"| ws
@@ -61,7 +63,7 @@ flowchart TD
 
 State boundaries:
 
-- `counter/frontend` never touches the participant directly. It only knows about Carpincho through the injected CIP-0103 provider (or optional WalletConnect fallback) and the Counter DAML signature.
+- `dapp/frontend` never touches the participant directly. It only knows about Carpincho through the injected CIP-0103 provider (or optional WalletConnect fallback) and the dApp's DAML signature.
 - `carpincho-wallet` holds all signing keys (PBKDF2 + AES-GCM vault, Ed25519). It never talks to Canton directly; it goes through `canton-barebones/wallet-service`.
 - `canton-barebones/wallet-service` is the only component holding the Canton bearer token. It self-mints the token at boot, then validates and forwards JSON-RPC calls onto the participant's JSON API.
 - `canton-barebones` is the participant. Its bearer-token validation pins the trust boundary.
@@ -72,9 +74,9 @@ Local ports are intentionally assigned in the `3010+` range so they collide with
 
 | Component | URL / Port |
 |-----------|------------|
-| Counter wallet service | `http://localhost:3010` |
+| Wallet service | `http://localhost:3010` |
 | Carpincho wallet | `http://localhost:3011` |
-| Counter frontend | `http://localhost:3012` |
+| dApp frontend | `http://localhost:3012` |
 | Canton JSON API | `http://localhost:3013` |
 | Canton Ledger API | `grpc://localhost:3014` |
 | Canton Admin API | `grpc://localhost:3015` |
@@ -86,7 +88,7 @@ Local ports are intentionally assigned in the `3010+` range so they collide with
 
 | Variable | Owner | Purpose |
 |----------|-------|---------|
-| `VITE_WC_PROJECT_ID` | `carpincho-wallet/.env.local`, `counter/frontend/.env.local` | Optional WalletConnect / Reown project ID. Same value in both subprojects when using the WalletConnect fallback; not required for the injected extension provider path. |
+| `VITE_WC_PROJECT_ID` | `carpincho-wallet/.env.local`, `dapp/frontend/.env.local` | Optional WalletConnect / Reown project ID. Same value in both subprojects when using the WalletConnect fallback; not required for the injected extension provider path. |
 | `CANTON_BACKEND_TOKEN` | `canton-barebones/wallet-service` runtime env (compose) | Self-minted at boot from `CANTON_AUTH_AUDIENCE` / `CANTON_AUTH_SECRET` / `CANTON_ADMIN_USER_ID`. Set explicitly (e.g. via the compose env override) to bypass self-mint. Mint ad-hoc with `npm run canton:token`. |
 
 Runtime-only configuration that varies between sessions (RPC URL, Canton network name, Carpincho URL) is stored in `localStorage` inside the wallet and the frontend, configured from each UI — not from env files.
@@ -106,7 +108,7 @@ Driven from root `package.json`:
 | `npm run wallet-service:health` | Hit the wallet-service health endpoint at `:3010` |
 | `npm --prefix canton-barebones run wallet-service:logs` | Tail the wallet-service container's logs |
 | `npm run carpincho:build:extension` | Build the Chrome extension into `carpincho-wallet/dist-extension` |
-| `npm run app:dev` | Start the Counter frontend on `:3012` (Vite, strict port) |
+| `npm run app:dev` | Start the dApp frontend on `:3012` (Vite, strict port) |
 
 For the full bring-up sequence, follow [`README.md`](README.md).
 
@@ -114,7 +116,8 @@ For the full bring-up sequence, follow [`README.md`](README.md).
 
 - [`carpincho-wallet/architecture.md`](carpincho-wallet/architecture.md) — wallet-internal architecture: Vault crypto, CIP-0103 dispatcher, WalletConnect handlers, Chrome extension bridge, theming, auth/session
 - [`canton-barebones/README.md`](canton-barebones/README.md) — local participant setup
-- [`counter/daml/README.md`](counter/daml/README.md) — DAML model
+- [`dapp/daml/README.md`](dapp/daml/README.md) — DAML model
 - [`canton-barebones/wallet-service/README.md`](canton-barebones/wallet-service/README.md) — JSON-RPC bridge
-- [`counter/frontend/README.md`](counter/frontend/README.md) — Counter dApp UI
+- [`dapp/frontend/README.md`](dapp/frontend/README.md) — dApp UI
+- [`dapp/e2e/README.md`](dapp/e2e/README.md) — black-box integration tests
 - [BootNode SDLC framework](https://github.com/BootNodeDev/bootnode-sdlc) — the methodology these `CLAUDE.md` / `architecture.md` / `.github/` / `.claude/skills/` files derive from
