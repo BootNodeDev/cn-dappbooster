@@ -63,7 +63,7 @@ export const ConnectionSettingsView = (): JSX.Element => {
             disabled={busy}
             className="text-[0.82rem]"
           >
-            {busy ? 'Testing…' : 'Test wallet-service'}
+            {busy ? 'Testing…' : 'Test'}
           </GhostButton>
         </div>
         <TextInput
@@ -77,7 +77,7 @@ export const ConnectionSettingsView = (): JSX.Element => {
       </div>
 
       <div>
-        <label htmlFor="canton-network">WalletConnect Canton network</label>
+        <label htmlFor="canton-network">Canton network</label>
         <TextInput
           id="canton-network"
           type="text"
