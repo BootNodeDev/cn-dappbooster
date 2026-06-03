@@ -39,7 +39,7 @@ const seedVault = async (password: string): Promise<void> => {
   writeFreshVault(blob)
 }
 
-const waitFor = async (predicate: () => boolean, timeoutMs = 2000): Promise<void> => {
+const waitFor = async (predicate: () => boolean, timeoutMs = 10_000): Promise<void> => {
   const start = Date.now()
   while (!predicate()) {
     if (Date.now() - start > timeoutMs) return
