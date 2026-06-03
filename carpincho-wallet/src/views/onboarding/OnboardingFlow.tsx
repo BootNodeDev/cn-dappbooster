@@ -12,7 +12,10 @@ export const OnboardingFlow = (): JSX.Element => {
 
   return (
     <div>
-      <WelcomeHero description="Canton development wallet." />
+      <WelcomeHero
+        description="Canton development wallet."
+        layout="compact"
+      />
       <Stepper
         steps={ONBOARDING_STEPS}
         current={step}
