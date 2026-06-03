@@ -218,7 +218,7 @@ describe('MenuSheet', () => {
     render(<Harness />)
     await user.click(screen.getByRole('button', { name: /^settings$/i }))
     assert.ok(screen.getByRole('button', { name: /^theme$/i }))
-    await user.click(screen.getByRole('button', { name: /close/i }))
+    await user.keyboard('{Escape}')
     await user.click(screen.getByRole('button', { name: /reopen/i }))
     assert.ok(screen.getByRole('button', { name: /^settings$/i }))
   })

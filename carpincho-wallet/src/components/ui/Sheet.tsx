@@ -32,6 +32,7 @@ interface SheetProps {
   title: string
   description: string
   onBack?: () => void
+  hideClose?: boolean
   side?: Side
   children: ReactNode
 }
@@ -42,6 +43,7 @@ export const Sheet = ({
   title,
   description,
   onBack,
+  hideClose = false,
   side = 'bottom',
   children,
 }: SheetProps): JSX.Element => (
@@ -68,12 +70,14 @@ export const Sheet = ({
               {title}
             </Dialog.Title>
           </div>
-          <Dialog.Close
-            aria-label="Close"
-            className={SHEET_ICON_BUTTON_CLASS}
-          >
-            {X_ICON}
-          </Dialog.Close>
+          {!hideClose && (
+            <Dialog.Close
+              aria-label="Close"
+              className={SHEET_ICON_BUTTON_CLASS}
+            >
+              {X_ICON}
+            </Dialog.Close>
+          )}
         </div>
         <Dialog.Description className="sr-only">{description}</Dialog.Description>
         <div className="flex-1 overflow-y-auto">{children}</div>

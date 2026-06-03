@@ -43,7 +43,10 @@ export const MenuSheet = ({ open, onOpenChange }: MenuSheetProps): JSX.Element =
 
   const goBack = (): void => {
     const parent = SCREENS[screen].parent
-    if (parent === null) return
+    if (parent === null) {
+      handleOpenChange(false)
+      return
+    }
     setDirection('back')
     setScreen(parent)
   }
@@ -64,7 +67,8 @@ export const MenuSheet = ({ open, onOpenChange }: MenuSheetProps): JSX.Element =
       onOpenChange={handleOpenChange}
       title={config.title}
       description={config.description}
-      onBack={config.parent !== null ? goBack : undefined}
+      onBack={goBack}
+      hideClose
       side="right"
     >
       <div
