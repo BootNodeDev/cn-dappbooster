@@ -102,8 +102,8 @@ export const Sheet = ({
             ))}
         </div>
         <Dialog.Description className="sr-only">{description}</Dialog.Description>
-        {/* -mx-1 px-1 gives focus glows horizontal room so overflow clipping doesn't shear them. */}
-        <div className="-mx-1 flex-1 overflow-y-auto px-1">{children}</div>
+        {/* -m-1 p-1 gives focus glows room on all sides so overflow clipping doesn't shear them. */}
+        <div className="-m-1 flex-1 overflow-y-auto p-1">{children}</div>
       </Dialog.Content>
     </Dialog.Portal>
   </Dialog.Root>
