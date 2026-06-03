@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { walletServiceRequest } from '@/api/walletService'
-import { GhostButton, PrimaryButton, SecondaryButton } from '@/components/ui/Button'
+import { PrimaryButton, SecondaryButton } from '@/components/ui/Button'
 import { TextInput } from '@/components/ui/TextInput'
 import { toast } from '@/components/ui/toast'
 import type { RuntimeConfig } from '@/config/runtimeConfig'
@@ -52,10 +52,6 @@ export const ConnectionSettingsView = (): JSX.Element => {
 
   return (
     <section className="flex flex-col gap-4 pt-1">
-      <div className="flex items-center justify-end">
-        <GhostButton onClick={() => setDraft(config)}>Reset</GhostButton>
-      </div>
-
       <div>
         <label htmlFor="wallet-service-rpc">Wallet-service RPC URL</label>
         <TextInput

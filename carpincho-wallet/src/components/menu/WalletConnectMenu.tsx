@@ -34,7 +34,13 @@ export const WalletConnectMenu = ({ onPaired }: WalletConnectMenuProps): JSX.Ele
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <form
+      className="flex flex-col gap-3"
+      onSubmit={(event) => {
+        event.preventDefault()
+        void onPair()
+      }}
+    >
       <p className="text-soft text-[0.9rem] leading-relaxed">Paste a WalletConnect URI</p>
       <TextInput
         className="w-full font-mono text-[0.92rem]"
@@ -43,14 +49,12 @@ export const WalletConnectMenu = ({ onPaired }: WalletConnectMenuProps): JSX.Ele
         placeholder="wc:..."
       />
       <PrimaryButton
+        type="submit"
         className="w-full"
-        onClick={() => {
-          void onPair()
-        }}
         disabled={busy || draft.trim() === ''}
       >
         {busy ? 'Pairing…' : 'Connect'}
       </PrimaryButton>
-    </div>
+    </form>
   )
 }
