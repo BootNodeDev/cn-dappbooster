@@ -17,6 +17,31 @@ const DEFAULT_LOGO_SIZE: Record<WelcomeHeroLayout, number> = {
   compact: 52,
 }
 
+const FloatingLogo = ({ size, duration }: { size: number; duration?: string }): JSX.Element => {
+  const durationStyle = duration ? { animationDuration: duration } : undefined
+  return (
+    <div className="relative inline-flex items-center justify-center">
+      <span
+        className="animate-drift relative z-10 inline-flex"
+        style={durationStyle}
+      >
+        <Logo size={size} />
+      </span>
+      <span
+        aria-hidden="true"
+        className="animate-logo-shadow pointer-events-none absolute left-1/2 -bottom-1"
+        style={{
+          width: size * 0.6,
+          height: size * 0.14,
+          background:
+            'radial-gradient(ellipse at center, var(--logo-shadow-color) 0%, transparent 70%)',
+          ...durationStyle,
+        }}
+      />
+    </div>
+  )
+}
+
 export const WelcomeHero = ({
   description,
   logoSize,
@@ -28,9 +53,9 @@ export const WelcomeHero = ({
     return (
       <div className="relative flex flex-col items-center text-center pt-4 pb-5">
         <div className="flex items-center gap-3 animate-fade-in [animation-duration:520ms]">
-          <Logo
+          <FloatingLogo
             size={size}
-            className="animate-drift"
+            duration="6s"
           />
           <span className={`${WORDMARK_BASE} text-[2rem]`}>carpincho</span>
         </div>
@@ -46,10 +71,7 @@ export const WelcomeHero = ({
   return (
     <div className="relative flex flex-col items-center text-center pt-4 pb-7">
       <div className="animate-fade-in [animation-duration:520ms]">
-        <Logo
-          size={size}
-          className="animate-drift"
-        />
+        <FloatingLogo size={size} />
       </div>
       <div
         className={`${WORDMARK_BASE} mt-4 text-[2.75rem] animate-slide-up-and-fade [animation-delay:80ms] [animation-fill-mode:backwards]`}
