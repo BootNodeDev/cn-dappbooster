@@ -222,4 +222,56 @@ describe('MenuSheet', () => {
     await user.click(screen.getByRole('button', { name: /reopen/i }))
     assert.ok(screen.getByRole('button', { name: /^settings$/i }))
   })
+
+  it('shows the WalletConnect entry in web mode and drills into its pairing screen', async () => {
+    const user = userEvent.setup()
+    render(
+      wrap(
+        baseVault(),
+        <MenuSheet
+          open={true}
+          onOpenChange={() => undefined}
+        />,
+      ),
+    )
+    await user.click(screen.getByRole('button', { name: /walletconnect/i }))
+    assert.ok(screen.getByPlaceholderText('wc:...'))
+  })
+
+  it('hides the WalletConnect entry in extension mode', () => {
+    const originalChrome = (globalThis as { chrome?: unknown }).chrome
+    // isExtensionRuntime() keys off chrome.runtime.sendMessage; WC pairing is web-only.
+    ;(globalThis as { chrome?: unknown }).chrome = { runtime: { sendMessage: () => undefined } }
+    try {
+      render(
+        wrap(
+          baseVault(),
+          <MenuSheet
+            open={true}
+            onOpenChange={() => undefined}
+          />,
+        ),
+      )
+      assert.equal(screen.queryByRole('button', { name: /walletconnect/i }), null)
+      // The rest of the drawer is unaffected.
+      assert.ok(screen.getByRole('button', { name: /^settings$/i }))
+    } finally {
+      ;(globalThis as { chrome?: unknown }).chrome = originalChrome
+    }
+  })
+
+  it('keeps the root drawer title accessible but visually hidden', () => {
+    render(
+      wrap(
+        baseVault(),
+        <MenuSheet
+          open={true}
+          onOpenChange={() => undefined}
+        />,
+      ),
+    )
+    // Root screen hides the "Menu" title visually (sr-only) while leaving it for screen readers.
+    const title = screen.getByText('Menu')
+    assert.match(title.className, /sr-only/)
+  })
 })
