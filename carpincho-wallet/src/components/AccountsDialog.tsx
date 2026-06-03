@@ -62,6 +62,7 @@ export const AccountsDialog = ({ open, onOpenChange }: AccountsDialogProps): JSX
     }
     const target = removeTarget
     setRemoveTarget(null)
+    setQuery('')
     void v
       .removeAccount(target.id)
       .then(() => toast.success('Account removed'))
