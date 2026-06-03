@@ -4,7 +4,7 @@ import { ICON_BUTTON_CLASS, ROUND_ICON_BUTTON_CHROME } from '@/components/ui/But
 import { BACK_ICON, X_ICON } from '@/components/ui/icons'
 import { cn } from '@/utils/cn'
 
-type Side = 'bottom' | 'right'
+type Side = 'bottom' | 'right' | 'center'
 
 const OVERLAY_CLASS =
   'fixed inset-0 z-40 bg-scrim backdrop-blur-sm data-[state=open]:animate-fade-in'
@@ -21,6 +21,11 @@ const CONTENT_CLASS_BY_SIDE: Record<Side, string> = {
     CONTENT_BASE_CLASS,
     'inset-y-0 right-0 w-drawer max-w-[100vw]',
     'border-l data-[state=open]:animate-sheet-slide-right',
+  ),
+  center: cn(
+    CONTENT_BASE_CLASS,
+    'left-1/2 top-1/2 [transform:translate(-50%,-50%)] w-popup max-h-sheet',
+    'rounded-xl border data-[state=open]:animate-zoom-in-and-fade',
   ),
 }
 
