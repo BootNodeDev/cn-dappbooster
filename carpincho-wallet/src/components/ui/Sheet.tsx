@@ -66,7 +66,7 @@ export const Sheet = ({
     <Dialog.Portal>
       <Dialog.Overlay className={OVERLAY_CLASS} />
       <Dialog.Content className={CONTENT_CLASS_BY_SIDE[side]}>
-        <div className="flex items-center justify-between gap-3 mb-2">
+        <div className="flex items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-2 min-w-0">
             {onBack !== undefined && (
               <button

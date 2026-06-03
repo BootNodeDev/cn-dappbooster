@@ -1,7 +1,6 @@
 import { AccountRow } from '@/components/AccountRow'
 import { PLAIN_ICON_BUTTON_CLASS } from '@/components/ui/Button'
 import { COPY_ICON, TRASH_ICON } from '@/components/ui/icons'
-import { StatusDot } from '@/components/ui/StatusDot'
 import { copyPartyId } from '@/utils/clipboard'
 import { cn } from '@/utils/cn'
 import type { AccountPublic } from '@/vault/types'
@@ -49,7 +48,6 @@ export const AccountListRow = ({
       <AccountRow
         account={account}
         withName
-        nameTrailing={<StatusDot active={account.isPrimary} />}
         addressTrailing={
           <button
             type="button"
