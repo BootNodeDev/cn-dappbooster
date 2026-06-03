@@ -1,30 +1,54 @@
 import * as RadixToast from '@radix-ui/react-toast'
 import { type ReactNode, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import {
-  FEEDBACK_BASE_CLASS,
-  FEEDBACK_VARIANT_CLASS,
-  type FeedbackVariant,
-} from '@/components/ui/Alert'
+import type { FeedbackVariant } from '@/components/ui/Alert'
 import { ICON_BUTTON_CLASS } from '@/components/ui/Button'
-import { X_ICON } from '@/components/ui/icons'
+import {
+  ALERT_CIRCLE_ICON,
+  ALERT_TRIANGLE_ICON,
+  CHECK_ICON,
+  INFO_ICON,
+  X_ICON,
+} from '@/components/ui/icons'
 import { resolveDurationMs, subscribeToasts, type ToastEntry, toast } from '@/components/ui/toast'
 import { cn } from '@/utils/cn'
 
 const CLOSE_ANIMATION_MS = 200
 
+// Mirror the app shell (`w-popup ... px-3`) so toast cards align edge-to-edge with the
+// content column rather than spilling wider than the app's contents.
 const VIEWPORT_CLASS =
   'fixed top-2 left-1/2 -translate-x-1/2 z-[60] flex flex-col gap-2 ' +
-  'w-[min(100%_-_1rem,28rem)] outline-none m-0 p-0 list-none'
+  'w-popup px-3 outline-none m-0 list-none'
 
+// Elevated surface card matching Card / popover chrome, with a variant-tinted left accent rail.
 const BASE_TOAST_CLASS = cn(
-  FEEDBACK_BASE_CLASS,
-  'shadow-popover flex items-center justify-between gap-3',
-  'data-[state=open]:animate-slide-down-and-fade data-[state=closed]:animate-fade-in',
+  'relative flex items-start gap-3 overflow-hidden py-3 pl-4 pr-2.5',
+  'rounded-lg border border-border bg-surface text-foreground shadow-popover',
+  "before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:content-['']",
+  'data-[state=open]:animate-slide-down-and-fade data-[state=closed]:animate-slide-up-and-fade-out',
   'data-[swipe=move]:translate-y-[var(--radix-toast-swipe-move-y)]',
   'data-[swipe=cancel]:translate-y-0 data-[swipe=cancel]:transition-[transform_200ms_ease-out]',
-  'data-[swipe=end]:animate-fade-in',
+  'data-[swipe=end]:animate-slide-up-and-fade-out',
 )
+
+// Per-variant accent: the left rail (before:bg-*) and the tinted icon badge carry the colour;
+// the message text stays neutral (text-foreground) for legibility against the surface.
+const VARIANT_ACCENT: Record<FeedbackVariant, { rail: string; badge: string; icon: JSX.Element }> =
+  {
+    info: { rail: 'before:bg-primary', badge: 'bg-primary-soft text-primary', icon: INFO_ICON },
+    success: { rail: 'before:bg-success', badge: 'bg-success-soft text-success', icon: CHECK_ICON },
+    warning: {
+      rail: 'before:bg-warning',
+      badge: 'bg-warning-soft text-warning',
+      icon: ALERT_TRIANGLE_ICON,
+    },
+    error: {
+      rail: 'before:bg-danger',
+      badge: 'bg-danger-soft text-danger',
+      icon: ALERT_CIRCLE_ICON,
+    },
+  }
 
 const ANNOUNCE_TYPE: Record<FeedbackVariant, 'foreground' | 'background'> = {
   info: 'background',
@@ -38,6 +62,7 @@ interface ToastItemProps {
 }
 
 const ToastItem = ({ entry }: ToastItemProps): JSX.Element => {
+  const accent = VARIANT_ACCENT[entry.variant]
   return (
     <RadixToast.Root
       duration={resolveDurationMs(entry.durationMs)}
@@ -47,14 +72,20 @@ const ToastItem = ({ entry }: ToastItemProps): JSX.Element => {
           window.setTimeout(() => toast.dismiss(entry.id), CLOSE_ANIMATION_MS)
         }
       }}
-      className={cn(BASE_TOAST_CLASS, FEEDBACK_VARIANT_CLASS[entry.variant])}
+      className={cn(BASE_TOAST_CLASS, accent.rail)}
     >
-      <RadixToast.Description className="min-w-0 grow break-words">
+      <span
+        aria-hidden="true"
+        className={cn('mt-px grid size-7 shrink-0 place-items-center rounded-full', accent.badge)}
+      >
+        {accent.icon}
+      </span>
+      <RadixToast.Description className="min-w-0 grow break-words pt-1 text-[0.9rem] font-medium leading-snug">
         {entry.message}
       </RadixToast.Description>
       <RadixToast.Close
         aria-label="Dismiss"
-        className={cn(ICON_BUTTON_CLASS, 'shrink-0 size-7 rounded-sm text-current bg-transparent')}
+        className={cn(ICON_BUTTON_CLASS, 'size-7 shrink-0 rounded-md bg-transparent')}
       >
         {X_ICON}
       </RadixToast.Close>
