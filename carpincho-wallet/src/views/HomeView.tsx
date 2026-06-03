@@ -9,7 +9,6 @@ import { useExtensionDappConnection } from '@/extension/dappConnection'
 import { forgetConnectedOrigin, isExtensionRuntime } from '@/extension/runtimeClient'
 import { useWalletServiceStatus } from '@/hooks/useWalletServiceStatus'
 import { sortAccounts } from '@/utils/account'
-import { cn } from '@/utils/cn'
 import { useVault } from '@/vault/useVault'
 import { ConnectionSettingsView } from '@/views/ConnectionSettingsView'
 import { PendingActionsSection } from '@/views/home/PendingActionsSection'
@@ -167,26 +166,8 @@ export const HomeView = (): JSX.Element => {
 
   return (
     <>
-      <div
-        className={cn(
-          'flex flex-col gap-3 pb-2',
-          hasPending && 'h-[calc(100vh-12rem)] min-h-0 overflow-hidden pb-0',
-        )}
-      >
+      <div className="flex flex-col gap-3 pb-2">
         <AccountCard primary={primary} />
-
-        {hasPending && (
-          <PendingActionsSection
-            proposal={proposal}
-            pendingSign={pendingSign}
-            pendingExecute={pendingExecute}
-            proposalAccount={proposalAccount}
-            onProposalAccountChange={setProposalAccount}
-            accountsSorted={accountsSorted}
-            busy={busy}
-            {...pendingActions}
-          />
-        )}
 
         {!hasPending && !extensionMode && connectedSession === undefined && (
           <PairOrConnectedCard
@@ -201,6 +182,28 @@ export const HomeView = (): JSX.Element => {
 
         {!hasPending && <ActivityList transactions={v.transactions} />}
       </div>
+
+      {/* Approval requests are modal: the request must be explicitly approved or rejected, so the
+          dialog has no dismiss affordance (onOpenChange is ignored, close X hidden). */}
+      <Sheet
+        open={hasPending}
+        onOpenChange={() => undefined}
+        side="center"
+        title="Awaiting approval"
+        description="Review and approve or reject this dApp request."
+        hideClose
+      >
+        <PendingActionsSection
+          proposal={proposal}
+          pendingSign={pendingSign}
+          pendingExecute={pendingExecute}
+          proposalAccount={proposalAccount}
+          onProposalAccountChange={setProposalAccount}
+          accountsSorted={accountsSorted}
+          busy={busy}
+          {...pendingActions}
+        />
+      </Sheet>
 
       <Sheet
         open={settingsOpen}

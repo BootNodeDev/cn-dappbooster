@@ -26,29 +26,22 @@ export const PendingActionCard = ({
   children,
 }: PendingActionCardProps): JSX.Element => (
   <div
-    className="flex h-full min-h-0 flex-col gap-3 overflow-hidden"
+    className="flex flex-col gap-3"
     data-pending-kind={method}
   >
-    <div className="min-w-0 shrink-0">
-      <div className="font-mono text-[0.72rem] font-semibold tracking-eyebrow uppercase text-success">
-        awaiting approval
-      </div>
-      <div className="mt-1 font-mono text-[0.84rem] font-medium text-muted-foreground">
-        method: <span className="text-foreground">{method}</span>
-      </div>
+    <div className="min-w-0 font-mono text-[0.84rem] font-medium text-muted-foreground">
+      method: <span className="text-foreground">{method}</span>
     </div>
-    {children !== undefined && <div className="shrink-0">{children}</div>}
+    {children !== undefined && <div>{children}</div>}
     {payload !== undefined && (
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="shrink-0 font-mono text-[0.84rem] font-medium text-muted-foreground">
-          payload:
-        </div>
-        <pre className="mt-1.5 min-h-0 flex-1 overflow-auto whitespace-pre-wrap break-words rounded-md border border-border bg-background/60 p-3 font-mono text-[0.82rem] leading-relaxed text-soft">
+      <div>
+        <div className="font-mono text-[0.84rem] font-medium text-muted-foreground">payload:</div>
+        <pre className="mt-1.5 max-h-[40vh] overflow-auto whitespace-pre-wrap break-words rounded-md border border-border bg-background/60 p-3 font-mono text-[0.82rem] leading-relaxed text-soft">
           {typeof payload.json === 'string' ? payload.json : JSON.stringify(payload.json, null, 2)}
         </pre>
       </div>
     )}
-    <div className="grid shrink-0 grid-cols-2 gap-3">
+    <div className="grid grid-cols-2 gap-3">
       <PrimaryButton
         data-testid="pending-approve"
         onClick={onApprove}

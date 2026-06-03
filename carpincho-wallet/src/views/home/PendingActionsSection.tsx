@@ -1,8 +1,6 @@
 import { Alert } from '@/components/ui/Alert'
-import { CARD_CLASS } from '@/components/ui/Card'
 import { PendingActionCard } from '@/components/ui/PendingActionCard'
 import { Select, SelectItem } from '@/components/ui/Select'
-import { cn } from '@/utils/cn'
 import type { AccountPublic } from '@/vault/types'
 import type { PendingExecuteRequest, PendingSignRequest } from '@/views/home/types'
 import type { PendingActions } from '@/views/home/usePendingActions'
@@ -18,8 +16,8 @@ interface PendingActionsSectionProps extends PendingActions {
   busy: boolean
 }
 
-// Renders the single active pending request (connect proposal, message sign, or prepare-execute)
-// inside the expanding card that owns the wallet body while an approval is in flight.
+// Renders the single active pending request (connect proposal, message sign, or prepare-execute).
+// The surrounding approval dialog (a centered Sheet) provides the container chrome.
 export const PendingActionsSection = ({
   proposal,
   pendingSign,
@@ -35,9 +33,7 @@ export const PendingActionsSection = ({
   onApproveExecute,
   onRejectExecute,
 }: PendingActionsSectionProps): JSX.Element => (
-  <section
-    className={cn(CARD_CLASS, 'flex min-h-0 flex-1 flex-col overflow-hidden border-success/55')}
-  >
+  <>
     {proposal !== undefined ? (
       <PendingActionCard
         method={CANTON_METHOD_CONNECT}
@@ -95,5 +91,5 @@ export const PendingActionsSection = ({
         payload={{ json: pendingExecute.params }}
       />
     ) : null}
-  </section>
+  </>
 )

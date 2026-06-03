@@ -38,12 +38,13 @@ describe('HomeView account body layout', () => {
     assert.match(accountsDialog, /<CreateAccountForm/)
   })
 
-  it('expands the pending-actions section to own the wallet body', () => {
+  it('shows the pending approval in a centered dialog rather than the body', () => {
+    const homeView = source()
+    assert.match(homeView, /title="Awaiting approval"/)
+    assert.match(homeView, /<PendingActionsSection/)
+    // The section no longer owns the body with its own success-bordered card.
     const pendingActionsSection = pendingActionsSectionSource()
-    assert.match(
-      pendingActionsSection,
-      /'flex min-h-0 flex-1 flex-col overflow-hidden border-success\/55'/,
-    )
+    assert.doesNotMatch(pendingActionsSection, /border-success\/55/)
   })
 })
 
@@ -73,7 +74,7 @@ describe('PendingActionCard approval layout', () => {
     // The payload label stays visually aligned with the method row while the JSON text itself scrolls.
     assert.match(pendingActionCard, /payload:/)
     assert.match(pendingActionCard, /<pre/)
-    assert.match(pendingActionCard, /min-h-0 flex-1 overflow-auto/)
+    assert.match(pendingActionCard, /max-h-\[40vh\] overflow-auto/)
     assert.match(pendingActionCard, /rounded-md border border-border bg-background\/60 p-3/)
   })
 })
