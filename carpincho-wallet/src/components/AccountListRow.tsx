@@ -1,15 +1,9 @@
 import { AccountRow } from '@/components/AccountRow'
+import { CopyPartyIdButton } from '@/components/CopyPartyIdButton'
 import { PLAIN_ICON_BUTTON_CLASS } from '@/components/ui/Button'
-import { COPY_ICON, TRASH_ICON } from '@/components/ui/icons'
-import { copyPartyId } from '@/utils/clipboard'
+import { TRASH_ICON } from '@/components/ui/icons'
 import { cn } from '@/utils/cn'
 import type { AccountPublic } from '@/vault/types'
-
-// Tints only its icon on hover, matching the inline copy button.
-const REMOVE_BUTTON_CLASS =
-  'relative z-10 inline-grid size-8 shrink-0 place-items-center rounded-sm ' +
-  'text-muted-foreground transition-colors hover:text-danger ' +
-  'focus-visible:outline-none focus-visible:shadow-focus'
 
 interface AccountListRowProps {
   account: AccountPublic
@@ -45,17 +39,7 @@ export const AccountListRow = ({
       <AccountRow
         account={account}
         withName
-        addressTrailing={
-          <button
-            type="button"
-            data-testid="account-copy-party-id"
-            onClick={() => copyPartyId(account.partyId)}
-            aria-label="Copy party ID"
-            className={cn(PLAIN_ICON_BUTTON_CLASS, 'pointer-events-auto size-6 shrink-0')}
-          >
-            {COPY_ICON}
-          </button>
-        }
+        addressTrailing={<CopyPartyIdButton partyId={account.partyId} />}
       />
     </div>
     {canRemove && (
@@ -64,7 +48,7 @@ export const AccountListRow = ({
         data-testid="account-remove"
         onClick={onRequestRemove}
         aria-label={`Remove ${account.name}`}
-        className={REMOVE_BUTTON_CLASS}
+        className={cn(PLAIN_ICON_BUTTON_CLASS, 'relative z-10 size-8 shrink-0 hover:text-danger')}
       >
         {TRASH_ICON}
       </button>

@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { CHEVRON_RIGHT_ICON, RECEIPT_ICON } from '@/components/ui/icons'
 import { Sheet } from '@/components/ui/Sheet'
 import { cn } from '@/utils/cn'
@@ -126,6 +126,7 @@ interface ActivityListProps {
 // Executed transactions grouped by day; a row opens a detail popup.
 export const ActivityList = ({ transactions }: ActivityListProps): JSX.Element => {
   const [selected, setSelected] = useState<TransactionRecord | null>(null)
+  const groups = useMemo(() => groupByDate(transactions), [transactions])
 
   if (transactions.length === 0) {
     return (
@@ -137,7 +138,7 @@ export const ActivityList = ({ transactions }: ActivityListProps): JSX.Element =
 
   return (
     <div className="flex flex-col pb-2">
-      {groupByDate(transactions).map((group) => (
+      {groups.map((group) => (
         <div key={group.label}>
           <div className="px-1 pb-1 pt-3 text-[0.8rem] font-semibold tracking-tight text-muted-foreground">
             {group.label}

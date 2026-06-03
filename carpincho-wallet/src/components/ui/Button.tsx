@@ -20,8 +20,9 @@ export const PLAIN_ICON_BUTTON_CLASS =
   'inline-grid place-items-center rounded-sm text-muted-foreground transition-colors ' +
   'hover:text-primary focus-visible:outline-none focus-visible:shadow-focus'
 
-export const ROUND_ICON_BUTTON_CHROME =
-  'rounded-md border border-border text-soft enabled:hover:border-border-strong'
+// Primary chrome recoloured for destructive actions; layout (e.g. w-full) is left to the caller.
+const DANGER_OVERRIDE =
+  'border-danger bg-danger enabled:hover:border-danger enabled:hover:shadow-none enabled:hover:before:opacity-0'
 
 const VARIANT_CLASS = {
   primary:
@@ -63,6 +64,13 @@ export const GhostButton = ({ type = 'button', className, ...rest }: ButtonProps
   <button
     type={type}
     className={cn(VARIANT_CLASS.ghost, className)}
+    {...rest}
+  />
+)
+
+export const DangerButton = ({ className, ...rest }: ButtonProps): JSX.Element => (
+  <PrimaryButton
+    className={cn(DANGER_OVERRIDE, className)}
     {...rest}
   />
 )

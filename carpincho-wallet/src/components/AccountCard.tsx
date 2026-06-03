@@ -1,10 +1,9 @@
 import { useState } from 'react'
 import { AccountRow } from '@/components/AccountRow'
 import { AccountsDialog } from '@/components/AccountsDialog'
-import { PLAIN_ICON_BUTTON_CLASS, PrimaryButton } from '@/components/ui/Button'
-import { CHEVRON_DOWN_ICON, COPY_ICON } from '@/components/ui/icons'
-import { copyPartyId } from '@/utils/clipboard'
-import { cn } from '@/utils/cn'
+import { CopyPartyIdButton } from '@/components/CopyPartyIdButton'
+import { PrimaryButton } from '@/components/ui/Button'
+import { CHEVRON_DOWN_ICON } from '@/components/ui/icons'
 import type { AccountPublic } from '@/vault/types'
 
 interface AccountCardProps {
@@ -47,17 +46,7 @@ export const AccountCard = ({ primary }: AccountCardProps): JSX.Element => {
             <AccountRow
               account={primary}
               avatarSize="sm"
-              addressTrailing={
-                <button
-                  type="button"
-                  data-testid="account-copy-party-id"
-                  onClick={() => copyPartyId(primary.partyId)}
-                  aria-label="Copy party ID"
-                  className={cn(PLAIN_ICON_BUTTON_CLASS, 'pointer-events-auto size-6 shrink-0')}
-                >
-                  {COPY_ICON}
-                </button>
-              }
+              addressTrailing={<CopyPartyIdButton partyId={primary.partyId} />}
             />
             <span
               aria-hidden="true"

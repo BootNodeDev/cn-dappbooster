@@ -38,19 +38,4 @@ export const TabTrigger = ({
   </TabsPrimitive.Trigger>
 )
 
-export const TabContent = ({
-  value,
-  className,
-  children,
-}: {
-  value: string
-  className?: string
-  children: ReactNode
-}): JSX.Element => (
-  <TabsPrimitive.Content
-    value={value}
-    className={className}
-  >
-    {children}
-  </TabsPrimitive.Content>
-)
+export const TabContent = TabsPrimitive.Content

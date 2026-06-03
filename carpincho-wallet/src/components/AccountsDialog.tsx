@@ -1,12 +1,14 @@
 import { useMemo, useState } from 'react'
 import { AccountListRow } from '@/components/AccountListRow'
 import { CreateAccountForm } from '@/components/CreateAccountForm'
-import { PrimaryButton } from '@/components/ui/Button'
+import { PLAIN_ICON_BUTTON_CLASS } from '@/components/ui/Button'
+import { DangerConfirm } from '@/components/ui/DangerConfirm'
 import { SEARCH_ICON, X_ICON } from '@/components/ui/icons'
 import { Sheet } from '@/components/ui/Sheet'
 import { TextInput } from '@/components/ui/TextInput'
 import { toast } from '@/components/ui/toast'
 import { sortAccounts } from '@/utils/account'
+import { cn } from '@/utils/cn'
 import type { AccountPublic } from '@/vault/types'
 import { useVault } from '@/vault/useVault'
 
@@ -14,10 +16,6 @@ interface AccountsDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
-
-const REMOVE_BUTTON_CLASS =
-  'w-full border-danger bg-danger ' +
-  'enabled:hover:border-danger enabled:hover:shadow-none enabled:hover:before:opacity-0'
 
 // Centered account switcher: one popup with three in-place screens (list, add form, remove confirm)
 // backed by the vault. Transient state resets on close.
@@ -89,28 +87,20 @@ export const AccountsDialog = ({ open, onOpenChange }: AccountsDialogProps): JSX
       onClose={removeTarget !== null ? () => setRemoveTarget(null) : undefined}
     >
       {removeTarget !== null ? (
-        <div
-          data-testid="remove-account"
-          className="flex flex-col gap-4"
-        >
-          <div className="rounded-md border border-border bg-muted/50 px-3 py-2.5">
-            <span className="block break-all font-mono text-[0.8rem] leading-relaxed text-foreground">
-              {removeTarget.partyId}
-            </span>
-          </div>
-          <p className="text-soft text-[0.95rem] leading-relaxed">
-            <span className="font-semibold text-foreground">{removeTarget.name}</span> will be
-            removed from this wallet.
-          </p>
-          <p className="font-semibold text-foreground">This cannot be undone.</p>
-          <PrimaryButton
-            className={REMOVE_BUTTON_CLASS}
-            data-testid="confirm-remove-action"
-            onClick={onConfirmRemove}
-          >
-            Remove
-          </PrimaryButton>
-        </div>
+        <DangerConfirm
+          testId="remove-account"
+          identifier={removeTarget.partyId}
+          message={
+            <>
+              <span className="font-semibold text-foreground">{removeTarget.name}</span> will be
+              removed from this wallet.
+            </>
+          }
+          note="This cannot be undone."
+          confirmLabel="Remove"
+          confirmTestId="confirm-remove-action"
+          onConfirm={onConfirmRemove}
+        />
       ) : isAdd ? (
         <CreateAccountForm
           submitLabel="Create account"
@@ -143,7 +133,10 @@ export const AccountsDialog = ({ open, onOpenChange }: AccountsDialogProps): JSX
                 data-testid="account-search-clear"
                 onClick={() => setQuery('')}
                 aria-label="Clear search"
-                className="absolute right-2 top-1/2 inline-grid size-6 -translate-y-1/2 place-items-center rounded-sm text-muted-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:shadow-focus"
+                className={cn(
+                  PLAIN_ICON_BUTTON_CLASS,
+                  'absolute right-2 top-1/2 size-6 -translate-y-1/2',
+                )}
               >
                 {X_ICON}
               </button>

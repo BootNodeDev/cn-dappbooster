@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AccountCard } from '@/components/AccountCard'
 import { ConnectionFooter } from '@/components/ConnectionFooter'
 import { HomeTabs } from '@/components/HomeTabs'
-import { PrimaryButton } from '@/components/ui/Button'
+import { DangerConfirm } from '@/components/ui/DangerConfirm'
 import { Sheet } from '@/components/ui/Sheet'
 import { toast } from '@/components/ui/toast'
 import { useExtensionDappConnection } from '@/extension/dappConnection'
@@ -194,27 +194,21 @@ export const HomeView = (): JSX.Element => {
         title={`Disconnect ${connectedLabel}?`}
         description="Disconnect this dApp from the wallet."
       >
-        <div className="flex flex-col gap-4">
-          <div className="rounded-md border border-border bg-muted/50 px-3 py-2.5">
-            <span className="block break-all font-mono text-[0.8rem] leading-relaxed text-foreground">
-              {connectedOrigin}
-            </span>
-          </div>
-          <p className="text-soft text-[0.95rem] leading-relaxed">
-            <span className="font-semibold text-foreground">{connectedLabel}</span> will be
-            disconnected from this wallet.
-          </p>
-          <PrimaryButton
-            className="w-full border-danger bg-danger enabled:hover:border-danger enabled:hover:shadow-none enabled:hover:before:opacity-0"
-            data-testid="confirm-disconnect"
-            onClick={() => {
-              performDisconnect?.()
-              setDisconnectConfirmOpen(false)
-            }}
-          >
-            Disconnect
-          </PrimaryButton>
-        </div>
+        <DangerConfirm
+          identifier={connectedOrigin}
+          message={
+            <>
+              <span className="font-semibold text-foreground">{connectedLabel}</span> will be
+              disconnected from this wallet.
+            </>
+          }
+          confirmLabel="Disconnect"
+          confirmTestId="confirm-disconnect"
+          onConfirm={() => {
+            performDisconnect?.()
+            setDisconnectConfirmOpen(false)
+          }}
+        />
       </Sheet>
 
       <ConnectionFooter
