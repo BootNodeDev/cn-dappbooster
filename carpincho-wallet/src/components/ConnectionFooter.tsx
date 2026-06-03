@@ -1,5 +1,5 @@
 import { ICON_BUTTON_CLASS, SecondaryButton } from '@/components/ui/Button'
-import { COG_ICON } from '@/components/ui/icons'
+import { COG_ICON, DISCONNECT_ICON } from '@/components/ui/icons'
 import { cn } from '@/utils/cn'
 
 export interface WalletServiceFooterStatus {
@@ -15,17 +15,17 @@ export type DappFooterStatus =
 interface ConnectionFooterProps {
   walletService: WalletServiceFooterStatus
   dapp: DappFooterStatus
-  dappAccountName?: string
+  dappAccountAddress?: string
   onDisconnectDapp?: () => void
   onOpenSettings: () => void
 }
 
-// Shows Canton service health, plus a connected-dApp row (app + account + disconnect) that only
-// appears while a dApp is actually connected.
+// Shows Canton service health, plus a connected-dApp row (app + account address + disconnect) that
+// only appears while a dApp is actually connected.
 export const ConnectionFooter = ({
   walletService,
   dapp,
-  dappAccountName,
+  dappAccountAddress,
   onDisconnectDapp,
   onOpenSettings,
 }: ConnectionFooterProps): JSX.Element => {
@@ -38,7 +38,7 @@ export const ConnectionFooter = ({
     <footer
       className={cn(
         'fixed bottom-0 left-1/2 -translate-x-1/2 z-30 w-popup',
-        'flex flex-col gap-1.5 border-t border-border bg-background/95 px-4 py-2 backdrop-blur-md',
+        'flex flex-col gap-1.5 border-t border-border bg-background/95 px-2 py-2 backdrop-blur-md',
       )}
     >
       <div className="flex items-center gap-2">
@@ -83,39 +83,27 @@ export const ConnectionFooter = ({
 
       {dapp.kind === 'connected' && (
         <>
-          <div className="h-px bg-border" />
+          <div className="-mx-2 h-px bg-border" />
 
           <div className="flex min-h-7 items-center gap-2">
-            <span className="grid size-7 shrink-0 place-items-center overflow-hidden rounded-md border border-border bg-surface text-primary">
-              {dapp.faviconUrl === undefined ? (
-                <span className="font-display text-[0.82rem] font-semibold">
-                  {dapp.label.charAt(0).toUpperCase()}
-                </span>
-              ) : (
-                <img
-                  className="size-4.5 rounded-sm object-contain"
-                  src={dapp.faviconUrl}
-                  alt=""
-                  aria-hidden="true"
-                />
-              )}
-            </span>
             <div className="min-w-0 flex-1 leading-tight">
-              <div className="truncate text-[0.9rem] font-semibold text-foreground">
+              <div className="truncate text-[0.82rem] font-semibold text-foreground">
                 {dapp.label}
               </div>
-              {dappAccountName !== undefined && (
-                <div className="truncate text-[0.82rem] font-medium text-muted-foreground">
-                  {dappAccountName}
+              {dappAccountAddress !== undefined && (
+                <div className="truncate font-mono text-[0.78rem] text-muted-foreground">
+                  {dappAccountAddress}
                 </div>
               )}
             </div>
             {onDisconnectDapp !== undefined && (
               <SecondaryButton
-                className="shrink-0 px-3 py-1.5 text-[0.85rem]"
+                className="shrink-0 px-2.5 py-2"
                 onClick={onDisconnectDapp}
+                aria-label="Disconnect"
+                title="Disconnect"
               >
-                Disconnect
+                {DISCONNECT_ICON}
               </SecondaryButton>
             )}
           </div>

@@ -111,15 +111,15 @@ describe('ConnectionFooter', () => {
     assert.equal(screen.queryByText('localhost:3012'), null)
   })
 
-  it('shows the connected dApp with account name and a disconnect button', async () => {
-    // Scenario: a dApp is connected, so the footer shows the app, the connected account, and disconnect.
+  it('shows the connected dApp with account address and a disconnect button', async () => {
+    // Scenario: a dApp is connected, so the footer shows the app, the connected account address, and disconnect.
     const user = userEvent.setup()
     let disconnects = 0
     render(
       <ConnectionFooter
         walletService={connectedService}
         dapp={{ kind: 'connected', label: 'Counter dApp', subtitle: 'Connected' }}
-        dappAccountName="alice"
+        dappAccountAddress="bn-dev::mock...79f7ec4"
         onDisconnectDapp={() => {
           disconnects += 1
         }}
@@ -128,7 +128,7 @@ describe('ConnectionFooter', () => {
     )
 
     assert.ok(screen.getByText('Counter dApp'))
-    assert.ok(screen.getByText('alice'))
+    assert.ok(screen.getByText('bn-dev::mock...79f7ec4'))
     await user.click(screen.getByRole('button', { name: /disconnect/i }))
     assert.equal(disconnects, 1)
   })

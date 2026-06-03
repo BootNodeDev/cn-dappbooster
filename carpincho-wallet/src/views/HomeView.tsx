@@ -3,12 +3,13 @@ import { AccountCard } from '@/components/AccountCard'
 import { ActivityList } from '@/components/ActivityList'
 import { ConnectionFooter } from '@/components/ConnectionFooter'
 import { PairOrConnectedCard } from '@/components/PairOrConnectedCard'
+import { PrimaryButton } from '@/components/ui/Button'
 import { Sheet } from '@/components/ui/Sheet'
 import { toast } from '@/components/ui/toast'
 import { useExtensionDappConnection } from '@/extension/dappConnection'
 import { forgetConnectedOrigin, isExtensionRuntime } from '@/extension/runtimeClient'
 import { useWalletServiceStatus } from '@/hooks/useWalletServiceStatus'
-import { sortAccounts } from '@/utils/account'
+import { shortMiddle, sortAccounts } from '@/utils/account'
 import { useVault } from '@/vault/useVault'
 import { ConnectionSettingsView } from '@/views/ConnectionSettingsView'
 import { PendingActionsSection } from '@/views/home/PendingActionsSection'
@@ -29,6 +30,7 @@ import {
 export const HomeView = (): JSX.Element => {
   const v = useVault()
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [disconnectConfirmOpen, setDisconnectConfirmOpen] = useState(false)
   const [pairingDraft, setPairingDraft] = useState('')
   const [pairingBusy, setPairingBusy] = useState(false)
   const [sessions, setSessions] = useState<ConnectedDappSession[]>([])
@@ -135,17 +137,22 @@ export const HomeView = (): JSX.Element => {
     sessions,
   })
   const connectedSession = sessions[0]
-  const connectedAccountName = useMemo(
-    () =>
-      connectedSession === undefined
-        ? undefined
-        : v.accounts.find((a) => connectedSession.accounts.includes(a.partyId))?.name,
-    [connectedSession, v.accounts],
-  )
-  // The footer's connected-account label: the WC session's account on the web, the active account
-  // for the extension's injected-provider connection (which always serves the primary account).
-  const footerDappAccountName = extensionMode ? primary?.name : connectedAccountName
-  const footerDisconnect = ((): (() => void) | undefined => {
+  // The footer shows the connected account's address (truncated party id), matching the header: the
+  // WC session's account on the web, the active account for the extension's injected provider.
+  const footerDappAccountAddress = ((): string | undefined => {
+    if (extensionMode) {
+      return primary === undefined ? undefined : shortMiddle(primary.partyId, 12, 7)
+    }
+    if (connectedSession === undefined) {
+      return undefined
+    }
+    const partyId =
+      v.accounts.find((a) => connectedSession.accounts.includes(a.partyId))?.partyId ??
+      connectedSession.accounts[0]
+    return partyId === undefined ? undefined : shortMiddle(partyId, 12, 7)
+  })()
+  // The actual disconnect, run only after the confirmation dialog is accepted.
+  const performDisconnect = ((): (() => void) | undefined => {
     if (extensionMode) {
       if (dapp.kind !== 'connected') {
         return undefined
@@ -163,6 +170,8 @@ export const HomeView = (): JSX.Element => {
           void onDisconnectDapp(connectedSession.topic)
         }
   })()
+  const connectedLabel = dapp.kind === 'connected' ? dapp.label : ''
+  const connectedOrigin = dapp.kind === 'connected' ? dapp.origin : ''
 
   return (
     <>
@@ -213,11 +222,43 @@ export const HomeView = (): JSX.Element => {
         <ConnectionSettingsView />
       </Sheet>
 
+      <Sheet
+        open={disconnectConfirmOpen}
+        onOpenChange={setDisconnectConfirmOpen}
+        side="center"
+        title={`Disconnect ${connectedLabel}?`}
+        description="Disconnect this dApp from the wallet."
+      >
+        <div className="flex flex-col gap-4">
+          <div className="rounded-md border border-border bg-muted/50 px-3 py-2.5">
+            <span className="block break-all font-mono text-[0.8rem] leading-relaxed text-foreground">
+              {connectedOrigin}
+            </span>
+          </div>
+          <p className="text-soft text-[0.95rem] leading-relaxed">
+            <span className="font-semibold text-foreground">{connectedLabel}</span> will be
+            disconnected from this wallet.
+          </p>
+          <PrimaryButton
+            className="w-full border-danger bg-danger enabled:hover:border-danger enabled:hover:shadow-none enabled:hover:before:opacity-0"
+            data-testid="confirm-disconnect"
+            onClick={() => {
+              performDisconnect?.()
+              setDisconnectConfirmOpen(false)
+            }}
+          >
+            Disconnect
+          </PrimaryButton>
+        </div>
+      </Sheet>
+
       <ConnectionFooter
         walletService={walletService}
         dapp={dapp}
-        dappAccountName={footerDappAccountName}
-        onDisconnectDapp={footerDisconnect}
+        dappAccountAddress={footerDappAccountAddress}
+        onDisconnectDapp={
+          performDisconnect === undefined ? undefined : () => setDisconnectConfirmOpen(true)
+        }
         onOpenSettings={() => setSettingsOpen(true)}
       />
     </>

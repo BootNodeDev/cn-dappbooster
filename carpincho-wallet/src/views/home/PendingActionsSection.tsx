@@ -49,13 +49,9 @@ export const PendingActionsSection = ({
           {connectAccount === undefined ? (
             <Alert variant="info">Add an account first before approving.</Alert>
           ) : (
-            <div>
-              <div className="font-mono text-[0.84rem] font-medium text-muted-foreground">
-                account: <span className="text-foreground">{connectAccount.name}</span>
-              </div>
-              <div className="mt-0.5 font-mono text-[0.78rem] text-muted-foreground">
-                {shortMiddle(connectAccount.partyId, 12, 7)}
-              </div>
+            <div className="font-mono text-[0.84rem] font-medium text-muted-foreground">
+              account:{' '}
+              <span className="text-foreground">{shortMiddle(connectAccount.partyId, 12, 7)}</span>
             </div>
           )}
         </PendingActionCard>
