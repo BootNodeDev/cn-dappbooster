@@ -1,6 +1,6 @@
 import { Alert } from '@/components/ui/Alert'
 import { PendingActionCard } from '@/components/ui/PendingActionCard'
-import { Select, SelectItem } from '@/components/ui/Select'
+import { shortMiddle } from '@/utils/account'
 import type { AccountPublic } from '@/vault/types'
 import type { PendingExecuteRequest, PendingSignRequest } from '@/views/home/types'
 import type { PendingActions } from '@/views/home/usePendingActions'
@@ -11,7 +11,6 @@ interface PendingActionsSectionProps extends PendingActions {
   pendingSign: PendingSignRequest | undefined
   pendingExecute: PendingExecuteRequest | undefined
   proposalAccount: string | null
-  onProposalAccountChange: (id: string) => void
   accountsSorted: AccountPublic[]
   busy: boolean
 }
@@ -23,7 +22,6 @@ export const PendingActionsSection = ({
   pendingSign,
   pendingExecute,
   proposalAccount,
-  onProposalAccountChange,
   accountsSorted,
   busy,
   onApproveProposal,
@@ -32,64 +30,54 @@ export const PendingActionsSection = ({
   onRejectSign,
   onApproveExecute,
   onRejectExecute,
-}: PendingActionsSectionProps): JSX.Element => (
-  <>
-    {proposal !== undefined ? (
-      <PendingActionCard
-        method={CANTON_METHOD_CONNECT}
-        approveLabel="Connect"
-        approveDisabled={busy || proposalAccount === null}
-        onApprove={onApproveProposal}
-        onReject={onRejectProposal}
-        busy={busy}
-        payload={{ json: proposal.params }}
-      >
-        {accountsSorted.length === 0 ? (
-          <Alert variant="info">Add an account first before approving.</Alert>
-        ) : (
-          <>
-            <label
-              className="inline-block mb-2 text-sm"
-              htmlFor="proposal-account-select"
-            >
-              Account
-            </label>
-            <Select
-              id="proposal-account-select"
-              className="mb-2"
-              value={proposalAccount ?? ''}
-              onValueChange={onProposalAccountChange}
-            >
-              {accountsSorted.map((a) => (
-                <SelectItem
-                  key={a.id}
-                  value={a.id}
-                >
-                  {a.name}
-                </SelectItem>
-              ))}
-            </Select>
-          </>
-        )}
-      </PendingActionCard>
-    ) : pendingSign !== undefined ? (
-      <PendingActionCard
-        method={CANTON_METHOD_SIGN_MESSAGE}
-        approveLabel="Sign"
-        onApprove={onApproveSign}
-        onReject={onRejectSign}
-        busy={busy}
-        payload={{ json: pendingSign.messageBase64 }}
-      />
-    ) : pendingExecute !== undefined ? (
-      <PendingActionCard
-        method={pendingExecute.rawMethod}
-        approveLabel="Approve"
-        onApprove={onApproveExecute}
-        onReject={onRejectExecute}
-        busy={busy}
-        payload={{ json: pendingExecute.params }}
-      />
-    ) : null}
-  </>
-)
+}: PendingActionsSectionProps): JSX.Element => {
+  // Connect always uses the active account; the proposalAccount mirrors it (no in-dialog picker).
+  const connectAccount = accountsSorted.find((a) => a.id === proposalAccount) ?? accountsSorted[0]
+
+  return (
+    <>
+      {proposal !== undefined ? (
+        <PendingActionCard
+          method={CANTON_METHOD_CONNECT}
+          approveLabel="Connect"
+          approveDisabled={busy || proposalAccount === null}
+          onApprove={onApproveProposal}
+          onReject={onRejectProposal}
+          busy={busy}
+          payload={{ json: proposal.params }}
+        >
+          {connectAccount === undefined ? (
+            <Alert variant="info">Add an account first before approving.</Alert>
+          ) : (
+            <div>
+              <div className="font-mono text-[0.84rem] font-medium text-muted-foreground">
+                account: <span className="text-foreground">{connectAccount.name}</span>
+              </div>
+              <div className="mt-0.5 font-mono text-[0.78rem] text-muted-foreground">
+                {shortMiddle(connectAccount.partyId, 12, 7)}
+              </div>
+            </div>
+          )}
+        </PendingActionCard>
+      ) : pendingSign !== undefined ? (
+        <PendingActionCard
+          method={CANTON_METHOD_SIGN_MESSAGE}
+          approveLabel="Sign"
+          onApprove={onApproveSign}
+          onReject={onRejectSign}
+          busy={busy}
+          payload={{ json: pendingSign.messageBase64 }}
+        />
+      ) : pendingExecute !== undefined ? (
+        <PendingActionCard
+          method={pendingExecute.rawMethod}
+          approveLabel="Approve"
+          onApprove={onApproveExecute}
+          onReject={onRejectExecute}
+          busy={busy}
+          payload={{ json: pendingExecute.params }}
+        />
+      ) : null}
+    </>
+  )
+}

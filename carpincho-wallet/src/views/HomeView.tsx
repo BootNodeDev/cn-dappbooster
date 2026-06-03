@@ -198,7 +198,6 @@ export const HomeView = (): JSX.Element => {
           pendingSign={pendingSign}
           pendingExecute={pendingExecute}
           proposalAccount={proposalAccount}
-          onProposalAccountChange={setProposalAccount}
           accountsSorted={accountsSorted}
           busy={busy}
           {...pendingActions}
