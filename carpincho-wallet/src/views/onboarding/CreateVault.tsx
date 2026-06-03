@@ -6,14 +6,11 @@ import { Tooltip } from '@/components/ui/Tooltip'
 import { toast } from '@/components/ui/toast'
 import { useVault } from '@/vault/useVault'
 
-// Border-tracing comet glow. The path is drawn counter-clockwise starting at
-// the bottom-left corner so the comet travels bottom-left -> bottom-right ->
-// top-right -> top-left -> back. INSET keeps the stroke off the border-box
-// edge, RADIUS matches the label's rounded-sm corners.
+// Border-tracing comet glow. Path runs counter-clockwise from the bottom-left
+// corner; INSET keeps the stroke off the edge, RADIUS matches rounded-sm corners.
 const TRACE_INSET = 1.5
 const TRACE_RADIUS = 4
-// Comet is rendered as N short segments whose opacity falls off toward the
-// tail, producing a fading trail that bends around the corners.
+// Comet is N short segments whose opacity falls off toward the tail (fading trail).
 const TRACE_SEGMENTS = 18
 const TRACE_KEYS = Array.from({ length: TRACE_SEGMENTS }, (_, i) => `trace-seg-${i}`)
 // Visible comet length as a fraction of the perimeter.
@@ -21,8 +18,10 @@ const TRACE_LEN_FRAC = 0.24
 // One lap of travel, then rest for the remainder of the cycle.
 const TRACE_ACTIVE_MS = 5000
 const TRACE_CYCLE_MS = 10000
-// Final fraction of the lap during which the head holds at the bottom-left
-// corner while the tail catches up -- the comet is "eaten" by the corner.
+// Hold before the very first lap, so the comet eases in rather than firing on mount.
+const TRACE_START_DELAY_MS = 10000
+// Final fraction of the lap where the head holds at the corner and the tail
+// catches up -- the comet is "eaten" by the corner.
 const TRACE_EATEN = 0.18
 // Peak accent tint mixed into the label background while the comet runs.
 const TRACE_TINT = 0.06
@@ -62,9 +61,8 @@ export const CreateVault = (): JSX.Element => {
 
   const canSubmit = passwordValid && acknowledged
 
-  // Latest acknowledged value for the animation loop to read without
-  // restarting it. Once checked, the comet finishes its current lap (if any)
-  // and stops looping, and the accent tint stays on.
+  // Lets the animation loop read the latest acknowledged value without restarting.
+  // Once checked, the comet finishes its lap, stops looping, and the tint stays on.
   const acknowledgedRef = useRef(acknowledged)
   acknowledgedRef.current = acknowledged
 
@@ -102,8 +100,8 @@ export const CreateVault = (): JSX.Element => {
 
     let lapStart: number | null = null
     let raf = 0
-    // Current tint level (0..1) eased toward its target, and the last values
-    // actually written to the DOM -- so idle frames skip redundant style writes.
+    // Tint level (0..1) eased toward target; last-written values let idle frames
+    // skip redundant style writes.
     let tintLevel = 0
     let lastBg: string | null = null
     let lastGroupOpacity: string | null = null
@@ -125,13 +123,12 @@ export const CreateVault = (): JSX.Element => {
 
     const frame = (now: number): void => {
       const ack = acknowledgedRef.current
-      if (lapStart === null) lapStart = now
+      if (lapStart === null) lapStart = now + TRACE_START_DELAY_MS
       const elapsed = now - lapStart
 
-      if (elapsed >= TRACE_ACTIVE_MS) {
-        // Idle: comet hidden. Ease the tint toward peak while checked or zero
-        // otherwise, then settle so further frames touch nothing. Start the next
-        // lap only when unchecked and the rest is up.
+      if (elapsed < 0 || elapsed >= TRACE_ACTIVE_MS) {
+        // Idle: comet hidden. Ease tint toward peak (checked) or zero, then settle.
+        // Start the next lap only when unchecked and the rest is up.
         setGroupOpacity('0')
         const target = ack ? 1 : 0
         tintLevel += (target - tintLevel) * 0.15
@@ -144,16 +141,12 @@ export const CreateVault = (): JSX.Element => {
       setGroupOpacity('1')
 
       const u = elapsed / TRACE_ACTIVE_MS
-      // Accent tint envelope: fade in, hold, fade out across the lap. Once
-      // checked, hold it at peak so it stays on after the lap completes. Set
-      // directly during the lap so the envelope timing is exact.
+      // Tint envelope: fade in, hold, fade out across the lap; held at peak once checked.
       tintLevel = ack ? 1 : u < 0.1 ? u / 0.1 : u > 0.85 ? (1 - u) / 0.15 : 1
       setBg(tintLevel)
-      // Head leads at constant speed, then holds at the bottom-left corner
-      // (length = total) for the final TRACE_EATEN slice of the lap.
+      // Head leads at constant speed, then holds at the corner for the final TRACE_EATEN slice.
       const head = Math.min(u / (1 - TRACE_EATEN), 1) * total
-      // Tail is pinned at the start corner while the comet grows, trails by
-      // maxLen during the cruise, then collapses into the corner at the end.
+      // Tail: pinned while growing, trails by maxLen during cruise, then collapses into the corner.
       const tail =
         u < 1 - TRACE_EATEN
           ? Math.max(0, head - maxLen)
@@ -167,7 +160,7 @@ export const CreateVault = (): JSX.Element => {
         const b = tail + (len * (i + 1)) / TRACE_SEGMENTS
         seg.style.strokeDasharray = `${Math.max(0, b - a)} ${total}`
         seg.style.strokeDashoffset = `${-a}`
-        // Fade from the bright head (i = last) down to the faint tail (i = 0).
+        // Bright head (i = last) down to faint tail (i = 0).
         seg.style.opacity = `${((i + 1) / TRACE_SEGMENTS) ** 1.7}`
       }
       raf = requestAnimationFrame(frame)
