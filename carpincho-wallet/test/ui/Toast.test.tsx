@@ -103,13 +103,15 @@ describe('ToastProvider', () => {
   })
 
   it('renders newest entries on top of the visible stack', () => {
-    const { container } = render(<ToastProvider>nothing</ToastProvider>)
+    // The viewport portals to document.body (to escape the #root stacking context), so the toast
+    // list items live under body rather than the render container.
+    render(<ToastProvider>nothing</ToastProvider>)
     act(() => {
       toast.info('first')
       toast.info('second')
       toast.info('third')
     })
-    const messages = Array.from(container.querySelectorAll('li[data-state="open"]')).map(
+    const messages = Array.from(document.body.querySelectorAll('li[data-state="open"]')).map(
       (li) => li.querySelector('div')?.textContent ?? '',
     )
     assert.deepEqual(messages, ['third', 'second', 'first'])

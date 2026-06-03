@@ -1,5 +1,6 @@
 import * as RadixToast from '@radix-ui/react-toast'
 import { type ReactNode, useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
   FEEDBACK_BASE_CLASS,
   FEEDBACK_VARIANT_CLASS,
@@ -80,7 +81,9 @@ export const ToastProvider = ({ children }: ToastProviderProps): JSX.Element => 
             entry={entry}
           />
         ))}
-      <RadixToast.Viewport className={VIEWPORT_CLASS} />
+      {/* Portal the viewport to <body> so toasts escape the #root stacking context (z-index: 1) and
+          render above dialog/sheet overlays that portal to <body> at lower z-indexes. */}
+      {createPortal(<RadixToast.Viewport className={VIEWPORT_CLASS} />, document.body)}
     </RadixToast.Provider>
   )
 }
