@@ -2,13 +2,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AccountCard } from '@/components/AccountCard'
 import { ActivityList } from '@/components/ActivityList'
 import { ConnectionFooter } from '@/components/ConnectionFooter'
-import { CreateAccountForm } from '@/components/CreateAccountForm'
 import { PairOrConnectedCard } from '@/components/PairOrConnectedCard'
 import { Sheet } from '@/components/ui/Sheet'
 import { toast } from '@/components/ui/toast'
 import { useExtensionDappConnection } from '@/extension/dappConnection'
 import { isExtensionRuntime } from '@/extension/runtimeClient'
 import { useWalletServiceStatus } from '@/hooks/useWalletServiceStatus'
+import { sortAccounts } from '@/utils/account'
 import { cn } from '@/utils/cn'
 import { useVault } from '@/vault/useVault'
 import { ConnectionSettingsView } from '@/views/ConnectionSettingsView'
@@ -29,7 +29,6 @@ import {
 
 export const HomeView = (): JSX.Element => {
   const v = useVault()
-  const [addAccountOpen, setAddAccountOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [pairingDraft, setPairingDraft] = useState('')
   const [pairingBusy, setPairingBusy] = useState(false)
@@ -126,13 +125,7 @@ export const HomeView = (): JSX.Element => {
     }
   }
 
-  const accountsSorted = useMemo(
-    () =>
-      [...v.accounts].sort((a, b) =>
-        a.isPrimary === b.isPrimary ? a.createdAt - b.createdAt : a.isPrimary ? -1 : 1,
-      ),
-    [v.accounts],
-  )
+  const accountsSorted = useMemo(() => sortAccounts(v.accounts), [v.accounts])
   // HomeView only renders when an account exists (onboarding owns the empty state and the
   // last account cannot be removed), so a primary account is always available.
   const primary = v.primary ?? accountsSorted[0]
@@ -184,18 +177,6 @@ export const HomeView = (): JSX.Element => {
 
         {!hasPending && <ActivityList transactions={v.transactions} />}
       </div>
-
-      <Sheet
-        open={addAccountOpen}
-        onOpenChange={setAddAccountOpen}
-        title="Add account"
-        description="Generate a new Canton party and store its keypair locally."
-      >
-        <CreateAccountForm
-          onSuccess={() => setAddAccountOpen(false)}
-          onCancel={() => setAddAccountOpen(false)}
-        />
-      </Sheet>
 
       <Sheet
         open={settingsOpen}

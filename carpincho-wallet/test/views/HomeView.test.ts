@@ -26,11 +26,16 @@ describe('HomeView account body layout', () => {
     assert.doesNotMatch(homeView, /min-h-\[calc\(100vh-10rem\)\] justify-center/)
   })
 
-  it('renders the add-account sheet with the shared CreateAccountForm', () => {
+  it('delegates account add/switch to the AccountsDialog rendered by AccountCard', () => {
     const homeView = source()
-    assert.match(homeView, /import \{ CreateAccountForm \} from '@\/components\/CreateAccountForm'/)
-    assert.match(homeView, /<CreateAccountForm/)
-    assert.doesNotMatch(homeView, /AddAccountView/)
+    assert.match(homeView, /<AccountCard/)
+    assert.doesNotMatch(homeView, /<CreateAccountForm/)
+    const accountsDialog = readFileSync('src/components/AccountsDialog.tsx', 'utf8')
+    assert.match(
+      accountsDialog,
+      /import \{ CreateAccountForm \} from '@\/components\/CreateAccountForm'/,
+    )
+    assert.match(accountsDialog, /<CreateAccountForm/)
   })
 
   it('expands the pending-actions section to own the wallet body', () => {
