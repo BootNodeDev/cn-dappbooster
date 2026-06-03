@@ -1,6 +1,6 @@
-// Shortens non-party identifiers with the same compact shape used elsewhere in
-// the counter UI when a value does not include a Canton party separator.
-const shortIdentifier = (value: string): string =>
+// Shortens a non-party identifier (e.g. a contract id or pairing URI) to a
+// compact head...tail form when it has no Canton party separator.
+export const shortenIdentifier = (value: string): string =>
   value.length <= 22 ? value : `${value.slice(0, 12)}...${value.slice(-8)}`
 
 // Formats Canton party IDs by preserving the human-readable party name and
@@ -8,7 +8,7 @@ const shortIdentifier = (value: string): string =>
 export const formatPartyId = (partyId: string): string => {
   const separator = partyId.indexOf('::')
   if (separator === -1) {
-    return shortIdentifier(partyId)
+    return shortenIdentifier(partyId)
   }
 
   const name = partyId.slice(0, separator)

@@ -3,7 +3,7 @@ export interface RuntimeConfig {
   walletCompanionUrl: string
 }
 
-const STORAGE_KEY = 'counter.frontend.runtime-config.v1'
+const STORAGE_KEY = 'dapp.frontend.runtime-config.v1'
 
 const DEFAULT_RUNTIME_CONFIG: RuntimeConfig = {
   cantonNetwork: 'canton:local',
