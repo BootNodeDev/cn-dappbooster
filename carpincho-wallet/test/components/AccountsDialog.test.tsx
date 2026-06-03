@@ -148,4 +148,29 @@ describe('AccountsDialog', () => {
     await user.click(screen.getByRole('button', { name: /back/i }))
     assert.ok(screen.getByTestId('account-search'))
   })
+
+  it('does not close the dialog after confirming a removal', async () => {
+    const user = userEvent.setup()
+    const { onOpenChange } = renderDialog({ removeAccount: async () => undefined })
+    await screen.findByRole('dialog')
+
+    const bobRow = screen.getAllByTestId('account-item')[1].parentElement as HTMLElement
+    await user.click(within(bobRow).getByTestId('account-remove'))
+    await screen.findByRole('alertdialog')
+    await user.click(screen.getByTestId('confirm-remove-action'))
+
+    assert.equal(onOpenChange.includes(false), false)
+  })
+
+  it('returns to the list when the add form is cancelled', async () => {
+    const user = userEvent.setup()
+    renderDialog()
+    await screen.findByRole('dialog')
+
+    await user.click(screen.getByTestId('menu-add-account'))
+    assert.ok(screen.getByTestId('add-account-hint-input'))
+
+    await user.click(screen.getByTestId('add-account-cancel'))
+    assert.ok(screen.getByTestId('account-search'))
+  })
 })
