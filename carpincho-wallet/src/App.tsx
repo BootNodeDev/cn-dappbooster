@@ -5,19 +5,37 @@ import { SPINNER_ICON } from '@/components/ui/icons'
 import { ToastProvider } from '@/components/ui/ToastProvider'
 import { TooltipProvider } from '@/components/ui/Tooltip'
 import { useVault } from '@/vault/useVault'
+import type { VaultContextValue } from '@/vault/VaultContext'
 import { VaultProvider } from '@/vault/VaultContext'
 import { HomeView } from '@/views/HomeView'
 import { OnboardingFlow } from '@/views/onboarding/OnboardingFlow'
 import { UnlockView } from '@/views/UnlockView'
 
+export type ShellView = 'loading' | 'unlock' | 'onboarding' | 'home'
+
+// Single source of truth for first-run routing. Order matters and encodes the backward-compat
+// guarantee: a returning user with an unlocked vault and at least one account lands on 'home',
+// never back through onboarding. OnboardingFlow internally picks step 1 (no vault) vs step 2
+// (unlocked vault, no account yet), so both onboarding cases collapse to one branch here.
+export const selectShellView = (
+  v: Pick<VaultContextValue, 'isLoading' | 'hasVault' | 'isLocked' | 'accounts'>,
+): ShellView => {
+  if (v.isLoading) return 'loading'
+  if (!v.hasVault) return 'onboarding'
+  if (v.isLocked) return 'unlock'
+  if (v.accounts.length === 0) return 'onboarding'
+  return 'home'
+}
+
 const Shell = (): JSX.Element => {
   const v = useVault()
   const [menuOpen, setMenuOpen] = useState(false)
-  const showHeader = v.hasVault && !v.isLocked && v.accounts.length > 0
+  const view = selectShellView(v)
+  const showHeader = view === 'home'
   useEffect(() => {
     if (!showHeader) setMenuOpen(false)
   }, [showHeader])
-  if (v.isLoading) {
+  if (view === 'loading') {
     return (
       <div className="w-popup mx-auto px-3 pt-3 pb-8 min-h-screen flex flex-col items-center justify-center gap-3 text-muted-foreground">
         {SPINNER_ICON}
@@ -28,12 +46,9 @@ const Shell = (): JSX.Element => {
   return (
     <div className={`w-popup mx-auto px-3 pt-3 ${showHeader ? 'pb-20' : 'pb-8'}`}>
       {showHeader && <Header onOpenMenu={() => setMenuOpen(true)} />}
-      {v.hasVault && v.isLocked && <UnlockView />}
-      {/* No vault yet: onboarding step 1 (create vault). */}
-      {!v.hasVault && <OnboardingFlow />}
-      {/* Unlocked vault with no account yet: onboarding step 2 (create first account). */}
-      {v.hasVault && !v.isLocked && v.accounts.length === 0 && <OnboardingFlow />}
-      {v.hasVault && !v.isLocked && v.accounts.length > 0 && <HomeView />}
+      {view === 'unlock' && <UnlockView />}
+      {view === 'onboarding' && <OnboardingFlow />}
+      {view === 'home' && <HomeView />}
       {showHeader && (
         <MenuSheet
           open={menuOpen}
