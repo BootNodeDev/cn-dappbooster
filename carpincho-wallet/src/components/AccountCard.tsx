@@ -13,62 +13,56 @@ interface AccountCardProps {
 
 // Renders the current account summary row. The downward chevron opens the centered Accounts popup,
 // which owns switching, adding, and removing accounts. The header keeps avatar + truncated party id
-// + copy, with a thin divider before the chevron.
+// + copy, with a full-height divider before the chevron.
 export const AccountCard = ({ primary }: AccountCardProps): JSX.Element => {
   const [accountsOpen, setAccountsOpen] = useState(false)
 
   return (
-    <section className="relative overflow-hidden border border-border rounded-lg bg-surface p-2.5">
-      <div
-        aria-hidden="true"
-        className="absolute inset-x-0 top-0 h-14 bg-[image:var(--bg-gradient-brand)] opacity-[0.16] [mask-image:linear-gradient(180deg,black_0%,transparent_100%)] pointer-events-none"
-      />
-      <div className="relative z-[1]">
-        {primary === undefined ? (
-          <div className="py-3 text-center">
-            <div className="font-display text-[1.4rem] font-semibold text-foreground mb-1">
-              No account yet
-            </div>
-            <p className="text-soft text-[0.98rem] mb-4">
-              Create your first Canton party to start signing.
-            </p>
-            <PrimaryButton
-              className="w-full"
-              data-testid="home-create-account"
-              onClick={() => setAccountsOpen(true)}
-            >
-              Finish
-            </PrimaryButton>
+    <section className="border border-border rounded-lg bg-surface p-2.5">
+      {primary === undefined ? (
+        <div className="py-3 text-center">
+          <div className="font-display text-[1.4rem] font-semibold text-foreground mb-1">
+            No account yet
           </div>
-        ) : (
-          <div className="flex w-full items-center gap-2">
-            <AccountRow account={primary} />
-            <button
-              type="button"
-              data-testid="account-copy-party-id"
-              onClick={() => copyPartyId(primary.partyId)}
-              aria-label="Copy party ID"
-              className={cn(ICON_BUTTON_CLASS, 'size-8 shrink-0 rounded-sm')}
-            >
-              {COPY_ICON}
-            </button>
-            <span
-              aria-hidden="true"
-              className="mx-0.5 h-6 w-px shrink-0 self-center bg-border"
-            />
-            <button
-              type="button"
-              data-testid="home-active-account"
-              data-party-id={primary.partyId}
-              onClick={() => setAccountsOpen(true)}
-              aria-label="Open account menu"
-              className={cn(ICON_BUTTON_CLASS, 'size-8 shrink-0 rounded-sm')}
-            >
-              {CHEVRON_DOWN_ICON}
-            </button>
-          </div>
-        )}
-      </div>
+          <p className="text-soft text-[0.98rem] mb-4">
+            Create your first Canton party to start signing.
+          </p>
+          <PrimaryButton
+            className="w-full"
+            data-testid="home-create-account"
+            onClick={() => setAccountsOpen(true)}
+          >
+            Finish
+          </PrimaryButton>
+        </div>
+      ) : (
+        <div className="flex w-full items-center gap-2">
+          <AccountRow account={primary} />
+          <button
+            type="button"
+            data-testid="account-copy-party-id"
+            onClick={() => copyPartyId(primary.partyId)}
+            aria-label="Copy party ID"
+            className={cn(ICON_BUTTON_CLASS, 'size-8 shrink-0 rounded-sm')}
+          >
+            {COPY_ICON}
+          </button>
+          <span
+            aria-hidden="true"
+            className="mx-0.5 w-px shrink-0 self-stretch bg-border"
+          />
+          <button
+            type="button"
+            data-testid="home-active-account"
+            data-party-id={primary.partyId}
+            onClick={() => setAccountsOpen(true)}
+            aria-label="Open account menu"
+            className={cn(ICON_BUTTON_CLASS, 'size-8 shrink-0 rounded-sm')}
+          >
+            {CHEVRON_DOWN_ICON}
+          </button>
+        </div>
+      )}
       <AccountsDialog
         open={accountsOpen}
         onOpenChange={setAccountsOpen}
