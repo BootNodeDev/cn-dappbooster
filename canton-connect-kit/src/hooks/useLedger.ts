@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { useConnectKitContext } from '../ConnectKitProvider.tsx'
+import { useConnectKitContext } from '../ConnectKitProvider'
 
 export interface LedgerApiParams {
   requestMethod: 'get' | 'post' | 'patch' | 'put' | 'delete'

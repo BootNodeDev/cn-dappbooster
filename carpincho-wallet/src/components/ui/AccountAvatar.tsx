@@ -1,4 +1,4 @@
-import { avatarStyle, initials } from '@/utils/account.ts'
+import { avatarStyle, initials } from '@/utils/account'
 
 interface AccountAvatarProps {
   name: string

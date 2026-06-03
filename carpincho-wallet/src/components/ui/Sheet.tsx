@@ -1,8 +1,8 @@
 import * as Dialog from '@radix-ui/react-dialog'
 import type { ReactNode } from 'react'
-import { ICON_BUTTON_CLASS, ROUND_ICON_BUTTON_CHROME } from '@/components/ui/Button.tsx'
-import { BACK_ICON, X_ICON } from '@/components/ui/icons.tsx'
-import { cn } from '@/utils/cn.ts'
+import { ICON_BUTTON_CLASS, ROUND_ICON_BUTTON_CHROME } from '@/components/ui/Button'
+import { BACK_ICON, X_ICON } from '@/components/ui/icons'
+import { cn } from '@/utils/cn'
 
 type Side = 'bottom' | 'right'
 

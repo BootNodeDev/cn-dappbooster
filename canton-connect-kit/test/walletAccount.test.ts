@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert'
 import { describe, it } from 'node:test'
-import { selectPrimaryAccount, toParty } from '../src/lib/walletAccount.ts'
+import { selectPrimaryAccount, toParty } from '../src/lib/walletAccount'
 
 describe('selectPrimaryAccount', () => {
   it('returns undefined for an empty list', () => {

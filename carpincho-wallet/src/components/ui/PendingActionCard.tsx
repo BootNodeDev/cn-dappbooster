@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { PrimaryButton, SecondaryButton } from '@/components/ui/Button.tsx'
+import { PrimaryButton, SecondaryButton } from '@/components/ui/Button'
 
 interface PendingActionCardProps {
   method: string

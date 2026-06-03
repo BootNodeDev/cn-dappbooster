@@ -9,7 +9,7 @@ import {
   readLockAt,
   readSessionPassword,
   shouldWipeMemoryOnPageHide,
-} from '@/vault/sessionUnlock.ts'
+} from '@/vault/sessionUnlock'
 
 type FakeChromeStorage = {
   data: Record<string, string>

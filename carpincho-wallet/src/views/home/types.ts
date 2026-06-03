@@ -1,9 +1,9 @@
 import type {
   CANTON_METHOD_PREPARE_EXECUTE,
   CANTON_METHOD_PREPARE_EXECUTE_AND_WAIT,
-} from '@/provider/methods.ts'
-import type { ProviderResponder } from '@/provider/types.ts'
-import type { AccountPublic } from '@/vault/types.ts'
+} from '@/provider/methods'
+import type { ProviderResponder } from '@/provider/types'
+import type { AccountPublic } from '@/vault/types'
 
 export interface PendingSignRequest {
   account: AccountPublic

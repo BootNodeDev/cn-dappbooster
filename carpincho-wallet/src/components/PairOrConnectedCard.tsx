@@ -1,8 +1,8 @@
-import { PrimaryButton, SecondaryButton } from '@/components/ui/Button.tsx'
-import { CARD_CLASS } from '@/components/ui/Card.tsx'
-import { TextInput } from '@/components/ui/TextInput.tsx'
-import { cn } from '@/utils/cn.ts'
-import type { ConnectedDappSession } from '@/wc/client.ts'
+import { PrimaryButton, SecondaryButton } from '@/components/ui/Button'
+import { CARD_CLASS } from '@/components/ui/Card'
+import { TextInput } from '@/components/ui/TextInput'
+import { cn } from '@/utils/cn'
+import type { ConnectedDappSession } from '@/wc/client'
 
 interface PairOrConnectedCardProps {
   sessions: ConnectedDappSession[]

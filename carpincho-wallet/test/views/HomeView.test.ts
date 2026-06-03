@@ -28,10 +28,7 @@ describe('HomeView account body layout', () => {
 
   it('renders the add-account sheet with the shared CreateAccountForm', () => {
     const homeView = source()
-    assert.match(
-      homeView,
-      /import \{ CreateAccountForm \} from '@\/components\/CreateAccountForm\.tsx'/,
-    )
+    assert.match(homeView, /import \{ CreateAccountForm \} from '@\/components\/CreateAccountForm'/)
     assert.match(homeView, /<CreateAccountForm/)
     assert.doesNotMatch(homeView, /AddAccountView/)
   })

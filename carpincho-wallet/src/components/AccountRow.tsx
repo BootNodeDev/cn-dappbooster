@@ -1,6 +1,6 @@
-import { AccountAvatar } from '@/components/ui/AccountAvatar.tsx'
-import { shortMiddle } from '@/utils/account.ts'
-import type { AccountPublic } from '@/vault/types.ts'
+import { AccountAvatar } from '@/components/ui/AccountAvatar'
+import { shortMiddle } from '@/utils/account'
+import type { AccountPublic } from '@/vault/types'
 
 interface AccountRowProps {
   account: AccountPublic

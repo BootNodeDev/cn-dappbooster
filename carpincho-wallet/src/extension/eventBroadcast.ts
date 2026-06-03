@@ -10,7 +10,7 @@
 // chrome.runtime is undefined and this is a no-op — events only ride the
 // extension transport for now.
 
-import type { RuntimeBroadcastEvent } from '@/extension/messages.ts'
+import type { RuntimeBroadcastEvent } from '@/extension/messages'
 
 type RuntimeApi = {
   sendMessage: (message: RuntimeBroadcastEvent) => Promise<unknown>

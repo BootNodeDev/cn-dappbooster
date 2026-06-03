@@ -4,14 +4,14 @@ import type {
   RuntimePendingRequest,
   RuntimePendingRequestMessage,
   RuntimeProviderResponse,
-} from '@/extension/messages.ts'
+} from '@/extension/messages'
 import {
   createRuntimeResponder,
   getDirectConnectedOrigins,
   getPendingProviderRequests,
   subscribeToDirectConnectedOrigins,
   subscribeToPendingProviderRequests,
-} from '@/extension/runtimeClient.ts'
+} from '@/extension/runtimeClient'
 
 const originalChrome = (globalThis as { chrome?: unknown }).chrome
 

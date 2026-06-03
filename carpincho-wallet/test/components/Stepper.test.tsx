@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert'
 import { afterEach, describe, it } from 'node:test'
 import { cleanup, render, screen } from '@testing-library/react'
-import { Stepper } from '@/components/ui/Stepper.tsx'
+import { Stepper } from '@/components/ui/Stepper'
 
 const STEPS = ['Create vault', 'Create account']
 

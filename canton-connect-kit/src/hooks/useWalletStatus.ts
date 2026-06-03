@@ -1,4 +1,4 @@
-import { useConnectKitContext } from '../ConnectKitProvider.tsx'
+import { useConnectKitContext } from '../ConnectKitProvider'
 
 export interface UseWalletStatusResult {
   isLocked: boolean

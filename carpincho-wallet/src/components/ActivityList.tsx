@@ -1,11 +1,11 @@
 import { Fragment } from 'react'
-import { CARD_CLASS } from '@/components/ui/Card.tsx'
-import { SectionTitle } from '@/components/ui/SectionTitle.tsx'
-import { shortMiddle } from '@/utils/account.ts'
-import { cn } from '@/utils/cn.ts'
-import { prettyJson } from '@/utils/json.ts'
-import type { TransactionRecord } from '@/vault/types.ts'
-import { CANTON_METHOD_PREPARE_EXECUTE_AND_WAIT } from '@/wc/client.ts'
+import { CARD_CLASS } from '@/components/ui/Card'
+import { SectionTitle } from '@/components/ui/SectionTitle'
+import { shortMiddle } from '@/utils/account'
+import { cn } from '@/utils/cn'
+import { prettyJson } from '@/utils/json'
+import type { TransactionRecord } from '@/vault/types'
+import { CANTON_METHOD_PREPARE_EXECUTE_AND_WAIT } from '@/wc/client'
 
 const TX_TIME_FMT = new Intl.DateTimeFormat(undefined, {
   month: 'short',

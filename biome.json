@@ -48,12 +48,6 @@
       },
       "linter": {
         "rules": {
-          "correctness": {
-            "useImportExtensions": {
-              "level": "error",
-              "options": { "forceJsExtensions": false }
-            }
-          },
           "style": {
             "noRestrictedImports": {
               "level": "error",
@@ -62,6 +56,10 @@
                   {
                     "group": ["./**", "../**"],
                     "message": "Use the '@/' alias instead of relative imports."
+                  },
+                  {
+                    "group": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"],
+                    "message": "Do not include the file extension in imports."
                   }
                 ]
               }
@@ -76,6 +74,26 @@
         "rules": {
           "style": {
             "noDescendingSpecificity": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["canton-connect-kit/**", "counter/frontend/src/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"],
+                    "message": "Do not include the file extension in imports."
+                  }
+                ]
+              }
+            }
           }
         }
       }

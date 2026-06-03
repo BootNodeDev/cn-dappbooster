@@ -3,8 +3,8 @@ import { formatJsonRpcError, formatJsonRpcResult } from '@walletconnect/jsonrpc-
 import SignClient from '@walletconnect/sign-client'
 import type { SignClientTypes } from '@walletconnect/types'
 import { getSdkError } from '@walletconnect/utils'
-import { loadRuntimeConfig } from '@/config/runtimeConfig.ts'
-import type { ProviderResponder } from '@/provider/types.ts'
+import { loadRuntimeConfig } from '@/config/runtimeConfig'
+import type { ProviderResponder } from '@/provider/types'
 
 export const CANTON_NAMESPACE = 'canton'
 

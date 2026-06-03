@@ -1,6 +1,6 @@
-import { CHECK_ICON } from '@/components/ui/icons.tsx'
-import { MENU_ROW_BASE_CLASS } from '@/components/ui/MenuRow.tsx'
-import { cn } from '@/utils/cn.ts'
+import { CHECK_ICON } from '@/components/ui/icons'
+import { MENU_ROW_BASE_CLASS } from '@/components/ui/MenuRow'
+import { cn } from '@/utils/cn'
 
 interface OptionListProps<T extends string> {
   options: Array<{ value: T; label: string }>

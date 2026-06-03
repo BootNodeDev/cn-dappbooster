@@ -19,7 +19,7 @@ import type {
   ConnectorProvider,
   WalletConnectConnector,
   WalletConnectConnectorOptions,
-} from '../types.ts'
+} from '../types'
 
 const CANTON_NAMESPACE = 'canton'
 const CANTON_WC_METHODS = [

@@ -1,16 +1,12 @@
-import { Alert } from '@/components/ui/Alert.tsx'
-import { CARD_CLASS } from '@/components/ui/Card.tsx'
-import { PendingActionCard } from '@/components/ui/PendingActionCard.tsx'
-import { Select, SelectItem } from '@/components/ui/Select.tsx'
-import { cn } from '@/utils/cn.ts'
-import type { AccountPublic } from '@/vault/types.ts'
-import type { PendingExecuteRequest, PendingSignRequest } from '@/views/home/types.ts'
-import type { PendingActions } from '@/views/home/usePendingActions.ts'
-import {
-  CANTON_METHOD_CONNECT,
-  CANTON_METHOD_SIGN_MESSAGE,
-  type ProposalEvent,
-} from '@/wc/client.ts'
+import { Alert } from '@/components/ui/Alert'
+import { CARD_CLASS } from '@/components/ui/Card'
+import { PendingActionCard } from '@/components/ui/PendingActionCard'
+import { Select, SelectItem } from '@/components/ui/Select'
+import { cn } from '@/utils/cn'
+import type { AccountPublic } from '@/vault/types'
+import type { PendingExecuteRequest, PendingSignRequest } from '@/views/home/types'
+import type { PendingActions } from '@/views/home/usePendingActions'
+import { CANTON_METHOD_CONNECT, CANTON_METHOD_SIGN_MESSAGE, type ProposalEvent } from '@/wc/client'
 
 interface PendingActionsSectionProps extends PendingActions {
   proposal: ProposalEvent | undefined

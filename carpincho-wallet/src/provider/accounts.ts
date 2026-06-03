@@ -1,4 +1,4 @@
-import type { AccountPublic } from '@/vault/types.ts'
+import type { AccountPublic } from '@/vault/types'
 
 export const SIGNING_PROVIDER_ID = 'carpincho-wallet'
 

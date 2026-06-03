@@ -2,8 +2,8 @@ import { strict as assert } from 'node:assert'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { ThemeProvider } from '@/theme/ThemeProvider.tsx'
-import { useTheme } from '@/theme/useTheme.ts'
+import { ThemeProvider } from '@/theme/ThemeProvider'
+import { useTheme } from '@/theme/useTheme'
 
 const STORAGE_KEY = 'carpincho-theme'
 

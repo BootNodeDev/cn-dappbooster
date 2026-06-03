@@ -1,5 +1,5 @@
-import { Tooltip } from '@/components/ui/Tooltip.tsx'
-import { MIN_PASSWORD_LENGTH, scorePassword } from '@/vault/passwordStrength.ts'
+import { Tooltip } from '@/components/ui/Tooltip'
+import { MIN_PASSWORD_LENGTH, scorePassword } from '@/vault/passwordStrength'
 
 type Tier = { segmentColor: string; labelColor: string; label: string }
 

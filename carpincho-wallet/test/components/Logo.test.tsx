@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert'
 import { afterEach, describe, it } from 'node:test'
 import { cleanup, render, screen } from '@testing-library/react'
-import { Logo } from '@/components/Logo.tsx'
+import { Logo } from '@/components/Logo'
 
 describe('Logo', () => {
   afterEach(() => {

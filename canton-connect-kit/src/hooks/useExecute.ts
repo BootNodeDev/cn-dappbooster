@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { type TxStatusSnapshot, useConnectKitContext } from '../ConnectKitProvider.tsx'
+import { type TxStatusSnapshot, useConnectKitContext } from '../ConnectKitProvider'
 
 export interface ExecuteParams {
   commandId?: string

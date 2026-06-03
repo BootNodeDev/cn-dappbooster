@@ -1,31 +1,31 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { AccountCard } from '@/components/AccountCard.tsx'
-import { ActivityList } from '@/components/ActivityList.tsx'
-import { ConnectionFooter } from '@/components/ConnectionFooter.tsx'
-import { CreateAccountForm } from '@/components/CreateAccountForm.tsx'
-import { PairOrConnectedCard } from '@/components/PairOrConnectedCard.tsx'
-import { Sheet } from '@/components/ui/Sheet.tsx'
-import { toast } from '@/components/ui/toast.ts'
-import { useExtensionDappConnection } from '@/extension/dappConnection.ts'
-import { isExtensionRuntime } from '@/extension/runtimeClient.ts'
-import { useWalletServiceStatus } from '@/hooks/useWalletServiceStatus.ts'
-import { cn } from '@/utils/cn.ts'
-import { useVault } from '@/vault/useVault.ts'
-import { ConnectionSettingsView } from '@/views/ConnectionSettingsView.tsx'
-import { PendingActionsSection } from '@/views/home/PendingActionsSection.tsx'
-import type { PendingExecuteRequest, PendingSignRequest } from '@/views/home/types.ts'
-import { useExtensionRequests } from '@/views/home/useExtensionRequests.ts'
-import { usePendingActions } from '@/views/home/usePendingActions.ts'
-import { useProviderRequestHandler } from '@/views/home/useProviderRequestHandler.ts'
-import { useWalletConnectLifecycle } from '@/views/home/useWalletConnectLifecycle.ts'
-import type { AccountSnapshot } from '@/wc/accounts.ts'
+import { AccountCard } from '@/components/AccountCard'
+import { ActivityList } from '@/components/ActivityList'
+import { ConnectionFooter } from '@/components/ConnectionFooter'
+import { CreateAccountForm } from '@/components/CreateAccountForm'
+import { PairOrConnectedCard } from '@/components/PairOrConnectedCard'
+import { Sheet } from '@/components/ui/Sheet'
+import { toast } from '@/components/ui/toast'
+import { useExtensionDappConnection } from '@/extension/dappConnection'
+import { isExtensionRuntime } from '@/extension/runtimeClient'
+import { useWalletServiceStatus } from '@/hooks/useWalletServiceStatus'
+import { cn } from '@/utils/cn'
+import { useVault } from '@/vault/useVault'
+import { ConnectionSettingsView } from '@/views/ConnectionSettingsView'
+import { PendingActionsSection } from '@/views/home/PendingActionsSection'
+import type { PendingExecuteRequest, PendingSignRequest } from '@/views/home/types'
+import { useExtensionRequests } from '@/views/home/useExtensionRequests'
+import { usePendingActions } from '@/views/home/usePendingActions'
+import { useProviderRequestHandler } from '@/views/home/useProviderRequestHandler'
+import { useWalletConnectLifecycle } from '@/views/home/useWalletConnectLifecycle'
+import type { AccountSnapshot } from '@/wc/accounts'
 import {
   type ConnectedDappSession,
   disconnectSession,
   getConnectedDappSessions,
   type ProposalEvent,
   pairWithUri,
-} from '@/wc/client.ts'
+} from '@/wc/client'
 
 export const HomeView = (): JSX.Element => {
   const v = useVault()

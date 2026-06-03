@@ -2,7 +2,7 @@
 // typically tag exactly one entry with `primary: true`; this helper falls
 // back to the first entry when nothing is flagged.
 
-import type { Party } from '../types.ts'
+import type { Party } from '../types'
 
 export interface RawWalletAccount {
   primary?: boolean

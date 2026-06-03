@@ -3,9 +3,9 @@ import { afterEach, describe, it } from 'node:test'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ReactNode } from 'react'
-import { Header } from '@/components/Header.tsx'
-import { ThemeProvider } from '@/theme/ThemeProvider.tsx'
-import { VaultContext, type VaultContextValue } from '@/vault/VaultContext.tsx'
+import { Header } from '@/components/Header'
+import { ThemeProvider } from '@/theme/ThemeProvider'
+import { VaultContext, type VaultContextValue } from '@/vault/VaultContext'
 
 const baseVault = (overrides: Partial<VaultContextValue> = {}): VaultContextValue => ({
   isLocked: false,
@@ -30,7 +30,7 @@ const baseVault = (overrides: Partial<VaultContextValue> = {}): VaultContextValu
   }),
   removeAccount: async () => undefined,
   signMessage: async () => '',
-  recordTransaction: async () => ({}) as unknown as import('@/vault/types.ts').TransactionRecord,
+  recordTransaction: async () => ({}) as unknown as import('@/vault/types').TransactionRecord,
   changePassword: async () => undefined,
   verifyPassword: () => false,
   autoLockOption: 'never',

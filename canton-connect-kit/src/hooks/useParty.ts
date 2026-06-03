@@ -1,5 +1,5 @@
-import { useConnectKitContext } from '../ConnectKitProvider.tsx'
-import type { ConnectionStatus, Party } from '../types.ts'
+import { useConnectKitContext } from '../ConnectKitProvider'
+import type { ConnectionStatus, Party } from '../types'
 
 export interface UsePartyResult {
   party: Party | undefined

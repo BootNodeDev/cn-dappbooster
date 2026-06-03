@@ -3,7 +3,7 @@ import { describe, it } from 'node:test'
 import {
   directConnectionUpdateFromProviderResponse,
   normalizeDirectConnectionOrigin,
-} from '@/extension/directConnectionState.ts'
+} from '@/extension/directConnectionState'
 
 describe('extension direct connection state', () => {
   it('normalizes direct dApp URLs to http origins', () => {

@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { MenuList } from '@/components/menu/MenuList.tsx'
-import { type Direction, MENU_LISTS, SCREENS, type Screen } from '@/components/menu/screens.ts'
-import { ThemeMenu } from '@/components/menu/ThemeMenu.tsx'
-import { AutoLockList, PasswordForm } from '@/components/SecurityPanel.tsx'
-import { Sheet } from '@/components/ui/Sheet.tsx'
-import { useVault } from '@/vault/useVault.ts'
+import { MenuList } from '@/components/menu/MenuList'
+import { type Direction, MENU_LISTS, SCREENS, type Screen } from '@/components/menu/screens'
+import { ThemeMenu } from '@/components/menu/ThemeMenu'
+import { AutoLockList, PasswordForm } from '@/components/SecurityPanel'
+import { Sheet } from '@/components/ui/Sheet'
+import { useVault } from '@/vault/useVault'
 
 interface MenuSheetProps {
   open: boolean

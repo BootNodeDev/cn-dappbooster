@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { NewPasswordFields } from '@/components/NewPasswordFields.tsx'
-import { PrimaryButton } from '@/components/ui/Button.tsx'
-import { Card } from '@/components/ui/Card.tsx'
-import { Tooltip } from '@/components/ui/Tooltip.tsx'
-import { toast } from '@/components/ui/toast.ts'
-import { useVault } from '@/vault/useVault.ts'
+import { NewPasswordFields } from '@/components/NewPasswordFields'
+import { PrimaryButton } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
+import { Tooltip } from '@/components/ui/Tooltip'
+import { toast } from '@/components/ui/toast'
+import { useVault } from '@/vault/useVault'
 
 export const CreateVault = (): JSX.Element => {
   const v = useVault()
@@ -31,9 +31,6 @@ export const CreateVault = (): JSX.Element => {
 
   return (
     <Card className="mb-3">
-      <h2 className="m-0 mb-1 font-display text-[1.6rem] font-semibold text-foreground tracking-[-0.02em] leading-tight">
-        Create a vault
-      </h2>
       <p className="text-soft text-[1rem] mb-5 leading-relaxed flex items-center gap-2">
         Choose a strong password
         <Tooltip
@@ -85,7 +82,7 @@ export const CreateVault = (): JSX.Element => {
           disabled={isWorking || !canSubmit}
           type="submit"
         >
-          {isWorking ? 'Encrypting vault…' : 'Create vault'}
+          {isWorking ? 'Encrypting...' : 'Create'}
         </PrimaryButton>
       </form>
     </Card>

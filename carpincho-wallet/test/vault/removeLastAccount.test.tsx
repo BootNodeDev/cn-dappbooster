@@ -1,8 +1,8 @@
 import { strict as assert } from 'node:assert'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 import { act, cleanup, render } from '@testing-library/react'
-import { useVault } from '@/vault/useVault.ts'
-import { type VaultContextValue, VaultProvider } from '@/vault/VaultContext.tsx'
+import { useVault } from '@/vault/useVault'
+import { type VaultContextValue, VaultProvider } from '@/vault/VaultContext'
 
 const captureVault = (): { ref: { current: VaultContextValue | null } } => {
   const ref: { current: VaultContextValue | null } = { current: null }

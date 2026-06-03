@@ -5,8 +5,8 @@ import {
   dappConnectionFromSources,
   faviconUrlForPage,
   useExtensionDappConnection,
-} from '@/extension/dappConnection.ts'
-import type { ConnectedDappSession } from '@/wc/client.ts'
+} from '@/extension/dappConnection'
+import type { ConnectedDappSession } from '@/wc/client'
 
 type FakeChrome = {
   api: {

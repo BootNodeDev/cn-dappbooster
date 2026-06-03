@@ -1,6 +1,6 @@
-import { OptionList } from '@/components/ui/OptionList.tsx'
-import type { ThemeMode } from '@/theme/ThemeContext.ts'
-import { useTheme } from '@/theme/useTheme.ts'
+import { OptionList } from '@/components/ui/OptionList'
+import type { ThemeMode } from '@/theme/ThemeContext'
+import { useTheme } from '@/theme/useTheme'
 
 const THEME_OPTIONS: Array<{ value: ThemeMode; label: string }> = [
   { value: 'light', label: 'Light' },

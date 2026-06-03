@@ -10,11 +10,11 @@ import {
   useRef,
   useState,
 } from 'react'
-import { broadcastWalletEvent } from '@/extension/eventBroadcast.ts'
-import { persistWalletSnapshot } from '@/extension/walletSnapshot.ts'
-import { accountToCip103Wallet } from '@/provider/accounts.ts'
-import { assertSecureContext, decryptVault, encryptVault } from '@/vault/crypto.ts'
-import { signMessageBase64 } from '@/vault/keypair.ts'
+import { broadcastWalletEvent } from '@/extension/eventBroadcast'
+import { persistWalletSnapshot } from '@/extension/walletSnapshot'
+import { accountToCip103Wallet } from '@/provider/accounts'
+import { assertSecureContext, decryptVault, encryptVault } from '@/vault/crypto'
+import { signMessageBase64 } from '@/vault/keypair'
 import {
   clearLockAt,
   clearSessionPassword,
@@ -23,7 +23,7 @@ import {
   readLockAt,
   readSessionPassword,
   shouldWipeMemoryOnPageHide,
-} from '@/vault/sessionUnlock.ts'
+} from '@/vault/sessionUnlock'
 import {
   type AutoLockOption,
   hasVault as hasVaultOnDisk,
@@ -33,13 +33,8 @@ import {
   wipeVault,
   writeAutoLockOption,
   writeFreshVault,
-} from '@/vault/storage.ts'
-import type {
-  AccountPublic,
-  AccountSecret,
-  TransactionRecord,
-  VaultPlaintext,
-} from '@/vault/types.ts'
+} from '@/vault/storage'
+import type { AccountPublic, AccountSecret, TransactionRecord, VaultPlaintext } from '@/vault/types'
 
 const AUTO_LOCK_MS: Record<AutoLockOption, number | null> = {
   never: null,

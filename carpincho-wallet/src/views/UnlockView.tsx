@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { Alert } from '@/components/ui/Alert.tsx'
-import { PrimaryButton } from '@/components/ui/Button.tsx'
-import { Card } from '@/components/ui/Card.tsx'
-import { PasswordInput } from '@/components/ui/PasswordInput.tsx'
-import { toast } from '@/components/ui/toast.ts'
-import { WelcomeHero } from '@/components/WelcomeHero.tsx'
-import { useVault } from '@/vault/useVault.ts'
+import { Alert } from '@/components/ui/Alert'
+import { PrimaryButton } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
+import { PasswordInput } from '@/components/ui/PasswordInput'
+import { toast } from '@/components/ui/toast'
+import { WelcomeHero } from '@/components/WelcomeHero'
+import { useVault } from '@/vault/useVault'
 
 export const UnlockView = (): JSX.Element => {
   const v = useVault()

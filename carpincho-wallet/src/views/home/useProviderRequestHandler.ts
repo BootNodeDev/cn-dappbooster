@@ -3,16 +3,16 @@ import {
   dispatchProviderRequest,
   type ProviderRequest,
   type ProviderResponder,
-} from '@/provider/dispatch.ts'
+} from '@/provider/dispatch'
 import {
   CANTON_METHOD_PREPARE_EXECUTE,
   CANTON_METHOD_PREPARE_EXECUTE_AND_WAIT,
   CANTON_METHOD_SIGN_MESSAGE,
-} from '@/provider/methods.ts'
-import type { AccountResolver } from '@/provider/types.ts'
-import { executeParams } from '@/views/home/transactionSummary.ts'
-import type { PendingExecuteRequest, PendingSignRequest } from '@/views/home/types.ts'
-import { selectedAccount } from '@/wc/accounts.ts'
+} from '@/provider/methods'
+import type { AccountResolver } from '@/provider/types'
+import { executeParams } from '@/views/home/transactionSummary'
+import type { PendingExecuteRequest, PendingSignRequest } from '@/views/home/types'
+import { selectedAccount } from '@/wc/accounts'
 
 export interface ProviderRequestContext {
   rawMethod?: string

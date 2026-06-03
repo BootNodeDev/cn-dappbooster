@@ -1,11 +1,11 @@
 import { type FormEvent, useState } from 'react'
-import { NewPasswordFields } from '@/components/NewPasswordFields.tsx'
-import { PrimaryButton } from '@/components/ui/Button.tsx'
-import { OptionList } from '@/components/ui/OptionList.tsx'
-import { PasswordInput } from '@/components/ui/PasswordInput.tsx'
-import { toast } from '@/components/ui/toast.ts'
-import type { AutoLockOption } from '@/vault/storage.ts'
-import { useVault } from '@/vault/useVault.ts'
+import { NewPasswordFields } from '@/components/NewPasswordFields'
+import { PrimaryButton } from '@/components/ui/Button'
+import { OptionList } from '@/components/ui/OptionList'
+import { PasswordInput } from '@/components/ui/PasswordInput'
+import { toast } from '@/components/ui/toast'
+import type { AutoLockOption } from '@/vault/storage'
+import { useVault } from '@/vault/useVault'
 
 const AUTO_LOCK_LABELS: Array<{ value: AutoLockOption; label: string }> = [
   { value: 'never', label: 'Never' },

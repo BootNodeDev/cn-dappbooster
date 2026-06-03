@@ -2,9 +2,9 @@ import { strict as assert } from 'node:assert'
 import { afterEach, describe, it } from 'node:test'
 import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { AccountCard } from '@/components/AccountCard.tsx'
-import { shortMiddle } from '@/utils/account.ts'
-import type { AccountPublic } from '@/vault/types.ts'
+import { AccountCard } from '@/components/AccountCard'
+import { shortMiddle } from '@/utils/account'
+import type { AccountPublic } from '@/vault/types'
 
 // Test fixture: a primary account with a long party id exercises the same compact summary row used
 // in the wallet popup while keeping the selected account deterministic for the dropdown menu.

@@ -1,5 +1,5 @@
-import { CHECK_ICON } from '@/components/ui/icons.tsx'
-import { cn } from '@/utils/cn.ts'
+import { CHECK_ICON } from '@/components/ui/icons'
+import { cn } from '@/utils/cn'
 
 export interface StepperProps {
   steps: string[]

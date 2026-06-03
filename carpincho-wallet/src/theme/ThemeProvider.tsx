@@ -1,5 +1,5 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
-import { ThemeContext, type ThemeMode } from '@/theme/ThemeContext.ts'
+import { ThemeContext, type ThemeMode } from '@/theme/ThemeContext'
 
 const STORAGE_KEY = 'carpincho-theme'
 

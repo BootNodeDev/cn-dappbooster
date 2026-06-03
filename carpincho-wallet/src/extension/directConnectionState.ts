@@ -1,9 +1,9 @@
-import type { JsonRpcRequest, JsonRpcResponse } from '@/extension/messages.ts'
+import type { JsonRpcRequest, JsonRpcResponse } from '@/extension/messages'
 import {
   CANTON_METHOD_CONNECT,
   CANTON_METHOD_DISCONNECT,
   normalizeMethod,
-} from '@/provider/methods.ts'
+} from '@/provider/methods'
 
 export type DirectConnectionUpdate =
   | { action: 'remember'; origin: string }

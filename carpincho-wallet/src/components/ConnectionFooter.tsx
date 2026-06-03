@@ -1,6 +1,6 @@
-import { ICON_BUTTON_CLASS } from '@/components/ui/Button.tsx'
-import { COG_ICON, DAPP_EMPTY_ICON } from '@/components/ui/icons.tsx'
-import { cn } from '@/utils/cn.ts'
+import { ICON_BUTTON_CLASS } from '@/components/ui/Button'
+import { COG_ICON, DAPP_EMPTY_ICON } from '@/components/ui/icons'
+import { cn } from '@/utils/cn'
 
 export interface WalletServiceFooterStatus {
   connected: boolean

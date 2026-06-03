@@ -1,7 +1,7 @@
 import * as RadixSelect from '@radix-ui/react-select'
 import { forwardRef, type ReactNode } from 'react'
-import { INPUT_CLASS } from '@/components/ui/TextInput.tsx'
-import { cn } from '@/utils/cn.ts'
+import { INPUT_CLASS } from '@/components/ui/TextInput'
+import { cn } from '@/utils/cn'
 
 type SelectProps = {
   id?: string

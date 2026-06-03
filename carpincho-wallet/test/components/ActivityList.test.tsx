@@ -2,8 +2,8 @@ import { strict as assert } from 'node:assert'
 import { afterEach, describe, it } from 'node:test'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { ActivityList } from '@/components/ActivityList.tsx'
-import type { TransactionRecord } from '@/vault/types.ts'
+import { ActivityList } from '@/components/ActivityList'
+import type { TransactionRecord } from '@/vault/types'
 
 describe('ActivityList', () => {
   // Scenario group: executed Canton transactions should expose the original dApp command payload.

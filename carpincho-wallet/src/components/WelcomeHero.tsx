@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Logo } from '@/components/Logo.tsx'
+import { Logo } from '@/components/Logo'
 
 interface WelcomeHeroProps {
   description?: ReactNode

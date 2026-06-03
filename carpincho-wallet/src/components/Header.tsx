@@ -1,8 +1,8 @@
-import { Logo } from '@/components/Logo.tsx'
-import { ICON_BUTTON_CLASS, ROUND_ICON_BUTTON_CHROME } from '@/components/ui/Button.tsx'
-import { MENU_ICON } from '@/components/ui/icons.tsx'
-import { cn } from '@/utils/cn.ts'
-import { useVault } from '@/vault/useVault.ts'
+import { Logo } from '@/components/Logo'
+import { ICON_BUTTON_CLASS, ROUND_ICON_BUTTON_CHROME } from '@/components/ui/Button'
+import { MENU_ICON } from '@/components/ui/icons'
+import { cn } from '@/utils/cn'
+import { useVault } from '@/vault/useVault'
 
 interface HeaderProps {
   onOpenMenu: () => void

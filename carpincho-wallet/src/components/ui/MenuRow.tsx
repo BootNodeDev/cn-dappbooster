@@ -1,4 +1,4 @@
-import { cn } from '@/utils/cn.ts'
+import { cn } from '@/utils/cn'
 
 export const MENU_ROW_BASE_CLASS =
   'w-full px-4 py-3 rounded-lg bg-surface border border-border ' +

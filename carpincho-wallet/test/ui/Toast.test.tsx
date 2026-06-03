@@ -1,14 +1,14 @@
 import { strict as assert } from 'node:assert'
 import { afterEach, describe, it } from 'node:test'
 import { act, cleanup, render } from '@testing-library/react'
-import { ToastProvider } from '@/components/ui/Toast.tsx'
+import { ToastProvider } from '@/components/ui/ToastProvider'
 import {
   getToastEntries,
   NEVER_DISMISS_MS,
   resolveDurationMs,
   subscribeToasts,
   toast,
-} from '@/components/ui/toast.ts'
+} from '@/components/ui/toast'
 
 describe('toast emitter', () => {
   afterEach(() => {

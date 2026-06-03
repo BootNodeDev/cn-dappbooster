@@ -6,7 +6,7 @@ import {
   ConnectionFooter,
   type DappFooterStatus,
   type WalletServiceFooterStatus,
-} from '@/components/ConnectionFooter.tsx'
+} from '@/components/ConnectionFooter'
 
 const connectedService: WalletServiceFooterStatus = {
   // Wallet-service fixture representing a healthy Canton network connection.

@@ -1,10 +1,10 @@
-import { directConnectionUpdateFromProviderResponse } from '@/extension/directConnectionState.ts'
+import { directConnectionUpdateFromProviderResponse } from '@/extension/directConnectionState'
 import {
   forgetDirectConnectedOrigin,
   readDirectConnectedOrigins,
   rememberDirectConnectedOrigin,
-} from '@/extension/directConnections.ts'
-import { createDirectProviderResponse } from '@/extension/directProvider.ts'
+} from '@/extension/directConnections'
+import { createDirectProviderResponse } from '@/extension/directProvider'
 import {
   type JsonRpcRequest,
   type JsonRpcResponse,
@@ -17,8 +17,8 @@ import {
   type RuntimePendingRequestMessage,
   type RuntimeProviderRequest,
   type RuntimeProviderResponse,
-} from '@/extension/messages.ts'
-import { readWalletSnapshot } from '@/extension/walletSnapshot.ts'
+} from '@/extension/messages'
+import { readWalletSnapshot } from '@/extension/walletSnapshot'
 
 type RuntimeMessage =
   | RuntimeProviderRequest

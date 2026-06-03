@@ -4,16 +4,11 @@ import {
   FEEDBACK_BASE_CLASS,
   FEEDBACK_VARIANT_CLASS,
   type FeedbackVariant,
-} from '@/components/ui/Alert.tsx'
-import { ICON_BUTTON_CLASS } from '@/components/ui/Button.tsx'
-import { X_ICON } from '@/components/ui/icons.tsx'
-import {
-  resolveDurationMs,
-  subscribeToasts,
-  type ToastEntry,
-  toast,
-} from '@/components/ui/toast.ts'
-import { cn } from '@/utils/cn.ts'
+} from '@/components/ui/Alert'
+import { ICON_BUTTON_CLASS } from '@/components/ui/Button'
+import { X_ICON } from '@/components/ui/icons'
+import { resolveDurationMs, subscribeToasts, type ToastEntry, toast } from '@/components/ui/toast'
+import { cn } from '@/utils/cn'
 
 const CLOSE_ANIMATION_MS = 200
 

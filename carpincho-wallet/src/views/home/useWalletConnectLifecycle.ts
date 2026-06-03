@@ -1,6 +1,6 @@
 import { type Dispatch, type SetStateAction, useEffect } from 'react'
-import { toast } from '@/components/ui/toast.ts'
-import type { ProviderRequestHandler } from '@/views/home/useProviderRequestHandler.ts'
+import { toast } from '@/components/ui/toast'
+import type { ProviderRequestHandler } from '@/views/home/useProviderRequestHandler'
 import {
   type ConnectedDappSession,
   type ProposalEvent,
@@ -9,7 +9,7 @@ import {
   subscribeToRequests,
   subscribeToSessionChanges,
   walletConnectResponder,
-} from '@/wc/client.ts'
+} from '@/wc/client'
 
 interface WalletConnectLifecycleArgs {
   extensionMode: boolean

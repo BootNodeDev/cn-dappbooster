@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import { completeCreateParty, prepareCreateParty } from '@/api/walletService.ts'
-import { Alert } from '@/components/ui/Alert.tsx'
-import { PrimaryButton, SecondaryButton } from '@/components/ui/Button.tsx'
-import { TextInput } from '@/components/ui/TextInput.tsx'
-import { toast } from '@/components/ui/toast.ts'
-import { generateKeypair, signMessageBase64 } from '@/vault/keypair.ts'
-import { useVault } from '@/vault/useVault.ts'
-import { getCantonNetwork } from '@/wc/client.ts'
+import { completeCreateParty, prepareCreateParty } from '@/api/walletService'
+import { Alert } from '@/components/ui/Alert'
+import { PrimaryButton, SecondaryButton } from '@/components/ui/Button'
+import { TextInput } from '@/components/ui/TextInput'
+import { Tooltip } from '@/components/ui/Tooltip'
+import { toast } from '@/components/ui/toast'
+import { generateKeypair, signMessageBase64 } from '@/vault/keypair'
+import { useVault } from '@/vault/useVault'
+import { getCantonNetwork } from '@/wc/client'
 
 export interface CreateAccountFormProps {
   onSuccess?: () => void
@@ -64,15 +65,25 @@ export const CreateAccountForm = ({
   return (
     <div>
       <p className="text-soft text-[1rem] mb-5 leading-relaxed">
-        Generates a fresh ed25519 keypair and creates a Canton external party through the
-        wallet-service.
+        You need at least one account to start using the wallet.
       </p>
       <form
         onSubmit={onSubmit}
         className="flex flex-col gap-4"
       >
         <div>
-          <label htmlFor="acct-name">Username / party hint</label>
+          <label
+            htmlFor="acct-name"
+            className="flex gap-1"
+          >
+            Username
+            <Tooltip
+              content={
+                <>This will become the "party hint": the prefix of your on-ledger Canton party ID</>
+              }
+              label="Username / party hint"
+            />
+          </label>
           <TextInput
             id="acct-name"
             type="text"

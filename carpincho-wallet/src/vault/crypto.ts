@@ -1,5 +1,5 @@
 // PBKDF2-HMAC-SHA256 (600k iters) → AES-256-GCM via SubtleCrypto.
-import type { EncryptedVault } from '@/vault/types.ts'
+import type { EncryptedVault } from '@/vault/types'
 
 const KDF_ITERATIONS = 600_000
 const SALT_BYTES = 16

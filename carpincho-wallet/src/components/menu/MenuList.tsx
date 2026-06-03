@@ -1,5 +1,5 @@
-import type { MenuListRow, Screen } from '@/components/menu/screens.ts'
-import { MenuRow } from '@/components/ui/MenuRow.tsx'
+import type { MenuListRow, Screen } from '@/components/menu/screens'
+import { MenuRow } from '@/components/ui/MenuRow'
 
 export const MENU_LIST_CLASS = 'flex flex-col gap-2 list-none m-0 p-0'
 

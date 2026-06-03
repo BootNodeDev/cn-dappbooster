@@ -54,12 +54,12 @@ test/               Node test runner suite (11 test files)
 
 ## Key Abstractions
 
-### Toast feedback (`src/components/ui/toast.ts` + `Toast.tsx`)
+### Toast feedback (`src/components/ui/toast.ts` + `ToastProvider.tsx`)
 
 Transient system feedback — action results, async errors, network failures, copy confirmations — surfaces as toasts. Inline `Alert` stays reserved for in-form validation tied to specific inputs and for persistent contextual hints inside cards.
 
 - **`toast.ts`** — Pure-TS module owning the active-entries array and a subscriber list. Exposes `toast.{info,success,warning,error,dismiss,clear}` and a `subscribeToasts(listener)` API. Caps the visible stack at 3 entries; older entries are evicted on overflow. No React import, so non-component callers (WalletConnect handlers in `src/wc/`, vault errors, extension bridge) can fire toasts directly.
-- **`Toast.tsx`** — Renders the active entries through `@radix-ui/react-toast`. `ToastProvider` is mounted once in `App.tsx` below `VaultProvider`. The viewport is fixed top-center, stacked newest-on-top. Variants reuse the same `text-*` / `bg-*-soft` / `border-*` tokens and left-border accent as `Alert`. Default durations: info / success 5 s, warning 8 s, error never auto-dismisses (manual close only); all variants always render a close button.
+- **`ToastProvider.tsx`** — Renders the active entries through `@radix-ui/react-toast`. `ToastProvider` is mounted once in `App.tsx` below `VaultProvider`. The viewport is fixed top-center, stacked newest-on-top. Variants reuse the same `text-*` / `bg-*-soft` / `border-*` tokens and left-border accent as `Alert`. Default durations: info / success 5 s, warning 8 s, error never auto-dismisses (manual close only); all variants always render a close button.
 
 ### Vault (`src/vault/`)
 
@@ -172,7 +172,7 @@ Two React contexts wrap the app. `ThemeProvider` is mounted outermost (in `src/m
 <ThemeProvider>           src/theme/ThemeProvider.tsx (mounted in src/main.tsx)
   <VaultProvider>         src/vault/VaultContext.tsx (mounted in src/App.tsx)
     <TooltipProvider>     src/components/ui/Tooltip.tsx (mounted in src/App.tsx)
-      <ToastProvider>     src/components/ui/Toast.tsx (mounted in src/App.tsx)
+      <ToastProvider>     src/components/ui/ToastProvider.tsx (mounted in src/App.tsx)
         <Shell>           src/App.tsx — reads vault state to pick the active view
           <Header />      includes the Menu burger button
           <HomeView />    or <OnboardingFlow />, <UnlockView />, etc.

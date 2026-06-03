@@ -4,7 +4,7 @@ import {
   type RuntimeConfig,
   saveRuntimeConfig,
   subscribeRuntimeConfig,
-} from '@/config/runtimeConfig.ts'
+} from '@/config/runtimeConfig'
 
 export const useRuntimeConfig = (): {
   config: RuntimeConfig

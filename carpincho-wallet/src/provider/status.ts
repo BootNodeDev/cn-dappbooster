@@ -1,7 +1,7 @@
-import { walletServiceRequest } from '@/api/walletService.ts'
-import { loadRuntimeConfig } from '@/config/runtimeConfig.ts'
-import { SIGNING_PROVIDER_ID } from '@/provider/accounts.ts'
-import { CANTON_METHOD_STATUS } from '@/provider/methods.ts'
+import { walletServiceRequest } from '@/api/walletService'
+import { loadRuntimeConfig } from '@/config/runtimeConfig'
+import { SIGNING_PROVIDER_ID } from '@/provider/accounts'
+import { CANTON_METHOD_STATUS } from '@/provider/methods'
 
 interface WalletServiceStatus {
   connection?: {

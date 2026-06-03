@@ -18,9 +18,9 @@ import {
   createCounterCommand,
   incrementCounterCommand,
   normalizeCounterContract,
-} from './counterSignature.js'
-import { loadRuntimeConfig } from './runtimeConfig.js'
-import { formatPartyId } from './utils/formatPartyId.js'
+} from './counterSignature'
+import { loadRuntimeConfig } from './runtimeConfig'
+import { formatPartyId } from './utils/formatPartyId'
 
 const short = (value: string): string =>
   value.length <= 22 ? value : `${value.slice(0, 12)}...${value.slice(-8)}`

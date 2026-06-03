@@ -3,7 +3,7 @@ import { afterEach, describe, it } from 'node:test'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
-import { Select, SelectItem } from '@/components/ui/Select.tsx'
+import { Select, SelectItem } from '@/components/ui/Select'
 
 type Option = { id: string; label: string }
 

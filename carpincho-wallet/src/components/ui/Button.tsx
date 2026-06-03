@@ -1,5 +1,5 @@
 import type { ComponentPropsWithoutRef } from 'react'
-import { cn } from '@/utils/cn.ts'
+import { cn } from '@/utils/cn'
 
 type ButtonProps = ComponentPropsWithoutRef<'button'>
 
@@ -8,29 +8,29 @@ const BASE_INTERACTIVE =
   'duration-200 ease-out active:scale-[0.98] disabled:active:scale-100 ' +
   'focus-visible:outline-none focus-visible:shadow-focus'
 
-export const GHOST_BUTTON_CLASS = `${BASE_INTERACTIVE} border-0 bg-transparent text-primary hover:text-primary-hover text-[0.95rem] font-semibold p-0`
+export const GHOST_BUTTON_CLASS = `${BASE_INTERACTIVE} border-0 bg-transparent text-primary enabled:hover:text-primary-hover text-[0.95rem] font-semibold p-0`
 
 export const ICON_BUTTON_CLASS =
   'inline-grid place-items-center text-muted-foreground transition-colors ' +
-  'hover:text-primary hover:bg-primary-soft ' +
+  'enabled:hover:text-primary enabled:hover:bg-primary-soft ' +
   'focus-visible:outline-none focus-visible:shadow-focus'
 
 export const ROUND_ICON_BUTTON_CHROME =
-  'rounded-md border border-border text-soft hover:border-border-strong'
+  'rounded-md border border-border text-soft enabled:hover:border-border-strong'
 
 const VARIANT_CLASS = {
   primary:
     `${BASE_INTERACTIVE} relative isolate overflow-hidden py-2.5 px-4 leading-none rounded-md font-semibold text-[0.94rem] text-primary-foreground ` +
-    'bg-primary border border-primary hover:border-transparent hover:shadow-glow ' +
+    'bg-primary border border-primary enabled:hover:border-transparent enabled:hover:shadow-glow ' +
     'before:absolute before:inset-0 before:-z-10 before:rounded-[inherit] before:bg-[image:var(--bg-gradient-brand)] ' +
-    'before:opacity-0 before:transition-opacity before:duration-200 hover:before:opacity-100',
+    'before:opacity-0 before:transition-opacity before:duration-200 enabled:hover:before:opacity-100',
   secondary:
     `${BASE_INTERACTIVE} py-2.5 px-4 leading-none rounded-md font-semibold text-[0.94rem] text-foreground ` +
-    'bg-surface border border-border-strong hover:bg-muted hover:text-primary',
+    'bg-surface border border-border-strong enabled:hover:bg-muted enabled:hover:text-primary',
   ghost: GHOST_BUTTON_CLASS,
   pill:
     `${BASE_INTERACTIVE} py-1.5 px-3 rounded-sm text-soft text-[0.9rem] font-semibold ` +
-    'bg-surface/85 border border-border hover:bg-muted hover:text-primary hover:border-border-strong',
+    'bg-surface/85 border border-border enabled:hover:bg-muted enabled:hover:text-primary enabled:hover:border-border-strong',
 } as const
 
 type Variant = keyof typeof VARIANT_CLASS

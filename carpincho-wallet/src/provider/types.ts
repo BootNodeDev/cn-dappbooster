@@ -1,5 +1,5 @@
-import type { PendingApprovalMethod } from '@/provider/methods.ts'
-import type { AccountPublic } from '@/vault/types.ts'
+import type { PendingApprovalMethod } from '@/provider/methods'
+import type { AccountPublic } from '@/vault/types'
 
 export interface ProviderRequest {
   method: string

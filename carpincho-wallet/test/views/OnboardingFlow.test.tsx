@@ -1,9 +1,9 @@
 import { strict as assert } from 'node:assert'
 import { afterEach, describe, it } from 'node:test'
 import { cleanup, render, screen } from '@testing-library/react'
-import { TooltipProvider } from '@/components/ui/Tooltip.tsx'
-import { VaultContext, type VaultContextValue } from '@/vault/VaultContext.tsx'
-import { OnboardingFlow } from '@/views/onboarding/OnboardingFlow.tsx'
+import { TooltipProvider } from '@/components/ui/Tooltip'
+import { VaultContext, type VaultContextValue } from '@/vault/VaultContext'
+import { OnboardingFlow } from '@/views/onboarding/OnboardingFlow'
 
 const baseVault = (overrides: Partial<VaultContextValue> = {}): VaultContextValue =>
   ({
@@ -29,7 +29,7 @@ const baseVault = (overrides: Partial<VaultContextValue> = {}): VaultContextValu
     }),
     removeAccount: async () => undefined,
     signMessage: async () => '',
-    recordTransaction: async () => ({}) as unknown as import('@/vault/types.ts').TransactionRecord,
+    recordTransaction: async () => ({}) as unknown as import('@/vault/types').TransactionRecord,
     changePassword: async () => undefined,
     verifyPassword: () => false,
     autoLockOption: 'never',
@@ -54,7 +54,7 @@ describe('OnboardingFlow', () => {
 
   it('shows step 1 (create vault) active when there is no vault', () => {
     renderFlow({ hasVault: false })
-    assert.ok(screen.getByRole('button', { name: /create vault/i }))
+    assert.ok(screen.getByRole('button', { name: /^create$/i }))
     assert.equal(screen.getByTestId('step-1').getAttribute('aria-current'), 'step')
     assert.equal(screen.getByTestId('step-2').getAttribute('data-state'), 'upcoming')
   })

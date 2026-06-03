@@ -1,4 +1,4 @@
-import { DIRECT_CONNECTED_ORIGINS_KEY, storedOrigins } from '@/extension/directConnections.ts'
+import { DIRECT_CONNECTED_ORIGINS_KEY, storedOrigins } from '@/extension/directConnections'
 import {
   jsonRpcError,
   jsonRpcResult,
@@ -7,8 +7,8 @@ import {
   type RuntimePendingRequest,
   type RuntimePendingRequestMessage,
   type RuntimeProviderResponse,
-} from '@/extension/messages.ts'
-import type { ProviderResponder } from '@/provider/dispatch.ts'
+} from '@/extension/messages'
+import type { ProviderResponder } from '@/provider/dispatch'
 
 type SessionStorageChange = { newValue?: unknown }
 type SessionStorageChangeListener = (changes: Record<string, SessionStorageChange>) => void

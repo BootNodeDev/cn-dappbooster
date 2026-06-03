@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { cn } from '@/utils/cn.ts'
+import { cn } from '@/utils/cn'
 
 export type FeedbackVariant = 'info' | 'error' | 'warning' | 'success'
 

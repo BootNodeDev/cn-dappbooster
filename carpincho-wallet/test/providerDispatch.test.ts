@@ -6,7 +6,7 @@ import {
   CANTON_METHOD_SIGN_MESSAGE,
   dispatchProviderRequest,
   type ProviderResponder,
-} from '@/provider/dispatch.ts'
+} from '@/provider/dispatch'
 
 const account = {
   id: 'acct-1',

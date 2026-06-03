@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { walletServiceRequest } from '@/api/walletService.ts'
-import { useRuntimeConfig } from '@/config/useRuntimeConfig.ts'
+import { walletServiceRequest } from '@/api/walletService'
+import { useRuntimeConfig } from '@/config/useRuntimeConfig'
 
 interface WalletServiceStatusResponse {
   connection?: {

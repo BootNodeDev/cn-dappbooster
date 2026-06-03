@@ -1,5 +1,5 @@
 import { type ComponentPropsWithoutRef, forwardRef } from 'react'
-import { cn } from '@/utils/cn.ts'
+import { cn } from '@/utils/cn'
 
 export const INPUT_CLASS =
   'block w-full px-4 py-2.5 text-foreground bg-surface border border-border-strong ' +

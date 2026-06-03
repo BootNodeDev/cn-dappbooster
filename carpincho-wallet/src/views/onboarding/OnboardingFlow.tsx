@@ -1,14 +1,15 @@
-import { Stepper } from '@/components/ui/Stepper.tsx'
-import { WelcomeHero } from '@/components/WelcomeHero.tsx'
-import { useVault } from '@/vault/useVault.ts'
-import { CreateFirstAccount } from '@/views/onboarding/CreateFirstAccount.tsx'
-import { CreateVault } from '@/views/onboarding/CreateVault.tsx'
+import { Stepper } from '@/components/ui/Stepper'
+import { WelcomeHero } from '@/components/WelcomeHero'
+import { useVault } from '@/vault/useVault'
+import { CreateFirstAccount } from '@/views/onboarding/CreateFirstAccount'
+import { CreateVault } from '@/views/onboarding/CreateVault'
 
-const ONBOARDING_STEPS = ['Create vault', 'Create account']
+const ONBOARDING_STEPS = ['Create Vault', 'Create Account']
 
 export const OnboardingFlow = (): JSX.Element => {
   const v = useVault()
   const step = v.hasVault ? 2 : 1
+
   return (
     <div>
       <WelcomeHero description="Canton development wallet." />

@@ -2,9 +2,9 @@ import { strict as assert } from 'node:assert'
 import { afterEach, describe, it } from 'node:test'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { TooltipProvider } from '@/components/ui/Tooltip.tsx'
-import { VaultContext, type VaultContextValue } from '@/vault/VaultContext.tsx'
-import { CreateVault } from '@/views/onboarding/CreateVault.tsx'
+import { TooltipProvider } from '@/components/ui/Tooltip'
+import { VaultContext, type VaultContextValue } from '@/vault/VaultContext'
+import { CreateVault } from '@/views/onboarding/CreateVault'
 
 const baseVault = (): VaultContextValue => ({
   isLocked: false,
@@ -29,7 +29,7 @@ const baseVault = (): VaultContextValue => ({
   }),
   removeAccount: async () => undefined,
   signMessage: async () => '',
-  recordTransaction: async () => ({}) as unknown as import('@/vault/types.ts').TransactionRecord,
+  recordTransaction: async () => ({}) as unknown as import('@/vault/types').TransactionRecord,
   changePassword: async () => undefined,
   verifyPassword: () => false,
   autoLockOption: 'never',
@@ -79,7 +79,7 @@ describe('CreateVault', () => {
   it('submit button is disabled until password is strong enough, matches, and is acknowledged', async () => {
     const user = userEvent.setup()
     renderCreateVault()
-    const button = screen.getByRole('button', { name: /create vault/i }) as HTMLButtonElement
+    const button = screen.getByRole('button', { name: /^create$/i }) as HTMLButtonElement
     assert.equal(button.disabled, true)
 
     await user.type(screen.getByLabelText(/^password$/i), 'purple-monkey-dishwasher-42')
@@ -102,7 +102,7 @@ describe('CreateVault', () => {
     await user.type(screen.getByLabelText(/^password$/i), 'purple-monkey-dishwasher-42')
     await user.type(screen.getByLabelText(/confirm password/i), 'purple-monkey-dishwasher-42')
     await user.click(screen.getByLabelText(/i understand/i))
-    await user.click(screen.getByRole('button', { name: /create vault/i }))
+    await user.click(screen.getByRole('button', { name: /^create$/i }))
 
     assert.deepEqual(calls, ['purple-monkey-dishwasher-42'])
   })

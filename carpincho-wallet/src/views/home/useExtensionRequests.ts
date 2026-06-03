@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef } from 'react'
-import { toast } from '@/components/ui/toast.ts'
-import type { RuntimePendingRequest } from '@/extension/messages.ts'
+import { toast } from '@/components/ui/toast'
+import type { RuntimePendingRequest } from '@/extension/messages'
 import {
   createRuntimeResponder,
   getPendingProviderRequests,
   subscribeToPendingProviderRequests,
-} from '@/extension/runtimeClient.ts'
-import type { ProviderRequestHandler } from '@/views/home/useProviderRequestHandler.ts'
+} from '@/extension/runtimeClient'
+import type { ProviderRequestHandler } from '@/views/home/useProviderRequestHandler'
 
 interface ExtensionRequestsArgs {
   extensionMode: boolean

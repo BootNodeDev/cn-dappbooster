@@ -7,7 +7,7 @@ import {
   executeParams,
   optionalString,
   transactionCommands,
-} from '@/views/home/transactionSummary.ts'
+} from '@/views/home/transactionSummary'
 
 describe('executeParams', () => {
   it('injects the active party and defaults actAs / readAs from a plain object', () => {

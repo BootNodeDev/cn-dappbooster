@@ -3,8 +3,9 @@ import { readFileSync } from 'node:fs'
 import { afterEach, describe, it } from 'node:test'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { CreateAccountForm } from '@/components/CreateAccountForm.tsx'
-import { VaultContext, type VaultContextValue } from '@/vault/VaultContext.tsx'
+import { CreateAccountForm } from '@/components/CreateAccountForm'
+import { TooltipProvider } from '@/components/ui/Tooltip'
+import { VaultContext, type VaultContextValue } from '@/vault/VaultContext'
 
 const baseVault = (overrides: Partial<VaultContextValue> = {}): VaultContextValue =>
   ({
@@ -30,7 +31,7 @@ const baseVault = (overrides: Partial<VaultContextValue> = {}): VaultContextValu
     }),
     removeAccount: async () => undefined,
     signMessage: async () => '',
-    recordTransaction: async () => ({}) as unknown as import('@/vault/types.ts').TransactionRecord,
+    recordTransaction: async () => ({}) as unknown as import('@/vault/types').TransactionRecord,
     changePassword: async () => undefined,
     verifyPassword: () => false,
     autoLockOption: 'never',
@@ -39,13 +40,15 @@ const baseVault = (overrides: Partial<VaultContextValue> = {}): VaultContextValu
   }) as VaultContextValue
 
 const renderForm = (
-  props: Partial<import('@/components/CreateAccountForm.tsx').CreateAccountFormProps> = {},
+  props: Partial<import('@/components/CreateAccountForm').CreateAccountFormProps> = {},
   vaultOverrides: Partial<VaultContextValue> = {},
 ): void => {
   render(
-    <VaultContext.Provider value={baseVault(vaultOverrides)}>
-      <CreateAccountForm {...props} />
-    </VaultContext.Provider>,
+    <TooltipProvider>
+      <VaultContext.Provider value={baseVault(vaultOverrides)}>
+        <CreateAccountForm {...props} />
+      </VaultContext.Provider>
+    </TooltipProvider>,
   )
 }
 

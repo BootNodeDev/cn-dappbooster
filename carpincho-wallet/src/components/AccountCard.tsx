@@ -1,10 +1,10 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { useCallback, useLayoutEffect, useRef, useState } from 'react'
-import { AccountRow } from '@/components/AccountRow.tsx'
-import { ICON_BUTTON_CLASS, PrimaryButton } from '@/components/ui/Button.tsx'
-import { COPY_ICON } from '@/components/ui/icons.tsx'
-import { cn } from '@/utils/cn.ts'
-import type { AccountPublic } from '@/vault/types.ts'
+import { AccountRow } from '@/components/AccountRow'
+import { ICON_BUTTON_CLASS, PrimaryButton } from '@/components/ui/Button'
+import { COPY_ICON } from '@/components/ui/icons'
+import { cn } from '@/utils/cn'
+import type { AccountPublic } from '@/vault/types'
 
 interface AccountCardProps {
   primary: AccountPublic | undefined
@@ -120,7 +120,7 @@ export const AccountCard = ({
               data-testid="home-create-account"
               onClick={onAddAccount}
             >
-              Create account
+              Finish
             </PrimaryButton>
           </div>
         ) : (

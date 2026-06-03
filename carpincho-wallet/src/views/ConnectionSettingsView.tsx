@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { walletServiceRequest } from '@/api/walletService.ts'
-import { GhostButton, PrimaryButton, SecondaryButton } from '@/components/ui/Button.tsx'
-import { TextInput } from '@/components/ui/TextInput.tsx'
-import { toast } from '@/components/ui/toast.ts'
-import type { RuntimeConfig } from '@/config/runtimeConfig.ts'
-import { useRuntimeConfig } from '@/config/useRuntimeConfig.ts'
+import { walletServiceRequest } from '@/api/walletService'
+import { GhostButton, PrimaryButton, SecondaryButton } from '@/components/ui/Button'
+import { TextInput } from '@/components/ui/TextInput'
+import { toast } from '@/components/ui/toast'
+import type { RuntimeConfig } from '@/config/runtimeConfig'
+import { useRuntimeConfig } from '@/config/useRuntimeConfig'
 
 interface WalletServiceStatus {
   connection?: {

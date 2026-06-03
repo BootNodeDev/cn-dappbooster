@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   getDirectConnectedOrigins,
   subscribeToDirectConnectedOrigins,
-} from '@/extension/runtimeClient.ts'
-import type { ConnectedDappSession } from '@/wc/client.ts'
+} from '@/extension/runtimeClient'
+import type { ConnectedDappSession } from '@/wc/client'
 
 interface ChromeTab {
   url?: string

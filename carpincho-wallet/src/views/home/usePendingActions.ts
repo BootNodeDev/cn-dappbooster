@@ -1,17 +1,17 @@
 import type { Dispatch, SetStateAction } from 'react'
-import { walletServiceRequest } from '@/api/walletService.ts'
-import { toast } from '@/components/ui/toast.ts'
-import { broadcastWalletEvent } from '@/extension/eventBroadcast.ts'
-import { CANTON_METHOD_PREPARE_EXECUTE } from '@/provider/methods.ts'
-import type { VaultContextValue } from '@/vault/VaultContext.tsx'
+import { walletServiceRequest } from '@/api/walletService'
+import { toast } from '@/components/ui/toast'
+import { broadcastWalletEvent } from '@/extension/eventBroadcast'
+import { CANTON_METHOD_PREPARE_EXECUTE } from '@/provider/methods'
+import type { VaultContextValue } from '@/vault/VaultContext'
 import {
   commandCount,
   commandSummary,
   optionalString,
   transactionCommands,
-} from '@/views/home/transactionSummary.ts'
-import type { PendingExecuteRequest, PendingSignRequest } from '@/views/home/types.ts'
-import { approveProposal, type ProposalEvent, rejectProposal } from '@/wc/client.ts'
+} from '@/views/home/transactionSummary'
+import type { PendingExecuteRequest, PendingSignRequest } from '@/views/home/types'
+import { approveProposal, type ProposalEvent, rejectProposal } from '@/wc/client'
 
 interface PreparedTransactionResponse {
   preparedTransaction: string
