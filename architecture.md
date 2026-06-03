@@ -22,19 +22,20 @@
 .
 ├── .claude/
 │   ├── settings.local.json        (gitignored)
-│   └── skills/{create-pr,issue}   SDLC agent skills (used by /sdlc:* slash commands)
+│   └── skills/{create-pr,issue}   Agent helper skills
 ├── .github/
 │   ├── ISSUE_TEMPLATE/            bug / feature / epic / spike templates
 │   └── PULL_REQUEST_TEMPLATE.md
 ├── .husky/                        commit-msg, pre-commit, pre-push hooks
-├── canton-barebones/                   Local Canton participant + Postgres + wallet-service
+├── canton-barebones/              Local Canton participant + Postgres + wallet-service
+├── canton-connect-kit/            React hooks for CIP-0103 wallet connections
 ├── carpincho-wallet/              CIP-0103 wallet (web + Chrome extension)
 ├── dapp/
 │   ├── daml/                      quickstart-counter DAML model
 │   ├── frontend/                  dApp UI
 │   └── e2e/                       Black-box integration tests
-├── CLAUDE.md                      Agent rules — monorepo-wide
-├── AGENTS.md                      Pointer to CLAUDE.md for non-Claude agents
+├── AGENTS.md                      Agent rules — monorepo-wide
+├── CLAUDE.md                      Compatibility shim pointing to AGENTS.md
 ├── architecture.md                THIS FILE
 ├── README.md                      Bring-up runbook for the local stack
 ├── commitlint.config.js           Conventional Commit enforcement
@@ -115,9 +116,9 @@ For the full bring-up sequence, follow [`README.md`](README.md).
 ## Further Reading
 
 - [`carpincho-wallet/architecture.md`](carpincho-wallet/architecture.md) — wallet-internal architecture: Vault crypto, CIP-0103 dispatcher, WalletConnect handlers, Chrome extension bridge, theming, auth/session
+- [`canton-connect-kit/architecture.md`](canton-connect-kit/architecture.md) — connect-kit internals: provider context, connectors, hooks, event bridge
 - [`canton-barebones/README.md`](canton-barebones/README.md) — local participant setup
 - [`dapp/daml/README.md`](dapp/daml/README.md) — DAML model
 - [`canton-barebones/wallet-service/README.md`](canton-barebones/wallet-service/README.md) — JSON-RPC bridge
 - [`dapp/frontend/README.md`](dapp/frontend/README.md) — dApp UI
 - [`dapp/e2e/README.md`](dapp/e2e/README.md) — black-box integration tests
-- [BootNode SDLC framework](https://github.com/BootNodeDev/bootnode-sdlc) — the methodology these `CLAUDE.md` / `architecture.md` / `.github/` / `.claude/skills/` files derive from

@@ -7,3 +7,5 @@ Minimal dApp split into:
 - `e2e`: Playwright tests for the dApp integration flow.
 
 The Canton barebones lives in `../canton-barebones`.
+
+For the shared local loop, follow the root [quick start](../README.md#quick-start).

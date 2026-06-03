@@ -12,10 +12,6 @@ The compiled DAR is written to:
 .daml/dist/quickstart-counter-0.0.1.dar
 ```
 
-Deploy it to the local Canton barebones:
-
-```bash
-../../canton-barebones/scripts/deploy-dar.sh .daml/dist/quickstart-counter-0.0.1.dar
-```
+For local deployment, follow the root [DAR deployment step](../../README.md#deploy-dars).
 
 This folder owns the app Daml code. The base Canton folder should not keep app DARs checked in.
