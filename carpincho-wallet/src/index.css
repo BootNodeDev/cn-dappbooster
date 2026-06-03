@@ -287,6 +287,44 @@
   }
 }
 
+/*
+ * Comet glow that traces the border once and rests, on a 10s cycle. The comet
+ * runs counter-clockwise from the bottom-left corner (bottom-left ->
+ * bottom-right -> top-right -> top-left -> back) at a constant linear speed,
+ * grows out of the corner, and is eaten back into it on return. It is drawn as
+ * a stack of short SVG segments whose per-segment dash window and opacity are
+ * driven per-frame in CreateVault, giving a trail that fades toward the tail.
+ * The group carries the blur glow so it blooms around the whole comet.
+ */
+.border-trace {
+  position: relative;
+}
+
+.border-trace-svg {
+  position: absolute;
+  inset: -1px;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.border-trace-glow {
+  filter: drop-shadow(0 0 2px var(--color-accent)) drop-shadow(0 0 6px var(--color-accent))
+    drop-shadow(0 0 12px color-mix(in srgb, var(--color-accent) 55%, transparent));
+}
+
+.border-trace-seg {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .border-trace-svg {
+    display: none;
+  }
+}
+
 @layer base {
   html,
   body,
