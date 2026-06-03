@@ -69,6 +69,8 @@ export const MenuSheet = ({ open, onOpenChange }: MenuSheetProps): JSX.Element =
       description={config.description}
       onBack={goBack}
       hideClose
+      hideTitle={screen === 'root'}
+      titleClassName="text-lg"
       side="right"
     >
       <div

@@ -19,7 +19,7 @@ const CONTENT_CLASS_BY_SIDE: Record<Side, string> = {
   ),
   right: cn(
     CONTENT_BASE_CLASS,
-    'inset-y-0 right-0 w-drawer max-w-[100vw]',
+    'inset-y-0 right-0 w-drawer max-w-[75vw]',
     'border-l data-[state=open]:animate-sheet-slide-right',
   ),
   center: cn(
@@ -41,6 +41,10 @@ interface SheetProps {
   description: string
   onBack?: () => void
   hideClose?: boolean
+  // Visually hide the title (kept for screen readers) while leaving the back chevron in place.
+  hideTitle?: boolean
+  // Extra classes merged onto the title — e.g. to shrink it per-flow.
+  titleClassName?: string
   // When set, the header close (X) runs this instead of closing the sheet — e.g. to step back to a
   // previous in-sheet screen rather than dismissing the whole dialog.
   onClose?: () => void
@@ -55,6 +59,8 @@ export const Sheet = ({
   description,
   onBack,
   hideClose = false,
+  hideTitle = false,
+  titleClassName,
   onClose,
   side = 'bottom',
   children,
@@ -78,7 +84,13 @@ export const Sheet = ({
                 {BACK_ICON}
               </button>
             )}
-            <Dialog.Title className="m-0 font-display text-[1.55rem] font-semibold tracking-[-0.02em] leading-tight text-foreground truncate">
+            <Dialog.Title
+              className={cn(
+                'm-0 font-display text-[1.55rem] font-semibold tracking-[-0.02em] leading-tight text-foreground truncate',
+                titleClassName,
+                hideTitle && 'sr-only',
+              )}
+            >
               {title}
             </Dialog.Title>
           </div>
