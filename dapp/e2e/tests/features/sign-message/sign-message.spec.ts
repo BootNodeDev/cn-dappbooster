@@ -12,7 +12,7 @@
 //   * client.signMessage({message: base64}) → {signature: base64}
 //   * The signature is non-empty and looks like base64 (Ed25519 is 64 bytes → 88 chars)
 
-import { DAPP_URL, expect, test } from '../fixtures/stack.ts'
+import { DAPP_URL, expect, test } from '../../../fixtures/stack.ts'
 
 const STRONG_PASSWORD = 'correct-horse-battery-staple-2025!'
 const PARTY_HINT = `e2e-sign-${Date.now().toString(36)}`

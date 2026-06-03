@@ -11,7 +11,7 @@
 // the commandId it dispatched. The pending/signed events are validated by a
 // JS-side capture installed before the action.
 
-import { DAPP_URL, expect, test } from '../fixtures/stack.ts'
+import { DAPP_URL, expect, test } from '../../../fixtures/stack.ts'
 
 const STRONG_PASSWORD = 'correct-horse-battery-staple-2025!'
 const PARTY_HINT = `e2e-tx-${Date.now().toString(36)}`

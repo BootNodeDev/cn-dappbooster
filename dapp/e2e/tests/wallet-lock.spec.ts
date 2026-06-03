@@ -41,9 +41,9 @@ test('wallet lock surfaces in the dApp and unlock recovers', async ({ context, e
   const dapp = await context.newPage()
   await dapp.goto(DAPP_URL)
   await dapp.getByTestId('connect-extension').click()
-  // The visible New counter action proves the dApp is connected and unlocked;
-  // hidden protocol harness panels are not part of this UX assertion.
-  await expect(dapp.getByTestId('new-counter')).toBeVisible()
+  // The shell-owned `workspace-ready` marker proves the dApp is connected and
+  // unlocked, independent of any removable feature (counter, sign-message, ...).
+  await expect(dapp.getByTestId('workspace-ready')).toBeVisible()
   await expect(dapp.getByTestId('wallet-locked-banner')).toBeHidden()
 
   // Lock the wallet from the burger menu. Use exact-match name because
@@ -59,7 +59,7 @@ test('wallet lock surfaces in the dApp and unlock recovers', async ({ context, e
   // dApp picks up the statusChanged broadcast and surfaces the locked UX.
   await dapp.bringToFront()
   await expect(dapp.getByTestId('wallet-locked-banner')).toBeVisible({ timeout: 10_000 })
-  await expect(dapp.getByTestId('new-counter')).toBeHidden()
+  await expect(dapp.getByTestId('workspace-ready')).toBeHidden()
 
   // Unlock the wallet.
   await wallet.bringToFront()
@@ -70,5 +70,5 @@ test('wallet lock surfaces in the dApp and unlock recovers', async ({ context, e
   // dApp recovers automatically — banner goes away and workspace actions return.
   await dapp.bringToFront()
   await expect(dapp.getByTestId('wallet-locked-banner')).toBeHidden({ timeout: 10_000 })
-  await expect(dapp.getByTestId('new-counter')).toBeVisible()
+  await expect(dapp.getByTestId('workspace-ready')).toBeVisible()
 })
