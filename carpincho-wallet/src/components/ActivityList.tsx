@@ -1,5 +1,5 @@
 import { Fragment, useState } from 'react'
-import { RECEIPT_ICON } from '@/components/ui/icons'
+import { CHEVRON_RIGHT_ICON, RECEIPT_ICON } from '@/components/ui/icons'
 import { Sheet } from '@/components/ui/Sheet'
 import { cn } from '@/utils/cn'
 import { prettyJson } from '@/utils/json'
@@ -156,13 +156,21 @@ export const ActivityList = ({ transactions }: ActivityListProps): JSX.Element =
                 {RECEIPT_ICON}
               </span>
               <span className="min-w-0">
-                <span className="block truncate text-[0.94rem] font-semibold text-foreground">
-                  {txTitle(tx)}
+                <span className="flex items-baseline gap-2">
+                  <span className="truncate text-[0.94rem] font-semibold text-foreground">
+                    {txTitle(tx)}
+                  </span>
+                  <span className="shrink-0 whitespace-nowrap text-[0.72rem] font-normal italic text-muted-foreground">
+                    {TIME_FMT.format(tx.createdAt)}
+                  </span>
                 </span>
                 <span className="block text-[0.84rem] font-medium text-success">Confirmed</span>
               </span>
-              <span className="justify-self-end whitespace-nowrap text-[0.8rem] font-medium text-muted-foreground">
-                {TIME_FMT.format(tx.createdAt)}
+              <span
+                aria-hidden="true"
+                className="justify-self-end text-muted-foreground"
+              >
+                {CHEVRON_RIGHT_ICON}
               </span>
             </button>
           ))}
