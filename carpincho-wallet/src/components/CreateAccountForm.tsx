@@ -59,9 +59,11 @@ export const CreateAccountForm = ({
     }
   }
 
+  const standalone = onCancel === undefined
+
   return (
-    <div className="flex flex-col gap-4 pt-1">
-      <p className="text-soft text-[1rem] m-0 leading-relaxed">
+    <div>
+      <p className="text-soft text-[1rem] mb-5 leading-relaxed">
         Generates a fresh ed25519 keypair and creates a Canton external party through the
         wallet-service.
       </p>
@@ -83,9 +85,10 @@ export const CreateAccountForm = ({
           />
         </div>
         {error !== undefined && <Alert variant="error">{error}</Alert>}
-        <div className="flex gap-3 mt-1">
+        <div className={standalone ? 'mt-10' : 'mt-1 flex gap-3'}>
           <PrimaryButton
             type="submit"
+            className={standalone ? 'w-full' : undefined}
             data-testid="add-account-submit"
             disabled={busy || name.trim() === ''}
           >
