@@ -6,7 +6,7 @@ import { PairOrConnectedCard } from '@/components/PairOrConnectedCard'
 import { Sheet } from '@/components/ui/Sheet'
 import { toast } from '@/components/ui/toast'
 import { useExtensionDappConnection } from '@/extension/dappConnection'
-import { isExtensionRuntime } from '@/extension/runtimeClient'
+import { forgetConnectedOrigin, isExtensionRuntime } from '@/extension/runtimeClient'
 import { useWalletServiceStatus } from '@/hooks/useWalletServiceStatus'
 import { sortAccounts } from '@/utils/account'
 import { cn } from '@/utils/cn'
@@ -143,6 +143,27 @@ export const HomeView = (): JSX.Element => {
         : v.accounts.find((a) => connectedSession.accounts.includes(a.partyId))?.name,
     [connectedSession, v.accounts],
   )
+  // The footer's connected-account label: the WC session's account on the web, the active account
+  // for the extension's injected-provider connection (which always serves the primary account).
+  const footerDappAccountName = extensionMode ? primary?.name : connectedAccountName
+  const footerDisconnect = ((): (() => void) | undefined => {
+    if (extensionMode) {
+      if (dapp.kind !== 'connected') {
+        return undefined
+      }
+      const { origin } = dapp
+      return () => {
+        void forgetConnectedOrigin(origin).catch((err: Error) =>
+          toast.error(`Disconnect failed: ${err.message}`),
+        )
+      }
+    }
+    return connectedSession === undefined
+      ? undefined
+      : () => {
+          void onDisconnectDapp(connectedSession.topic)
+        }
+  })()
 
   return (
     <>
@@ -193,14 +214,8 @@ export const HomeView = (): JSX.Element => {
       <ConnectionFooter
         walletService={walletService}
         dapp={dapp}
-        dappAccountName={connectedAccountName}
-        onDisconnectDapp={
-          connectedSession === undefined
-            ? undefined
-            : () => {
-                void onDisconnectDapp(connectedSession.topic)
-              }
-        }
+        dappAccountName={footerDappAccountName}
+        onDisconnectDapp={footerDisconnect}
         onOpenSettings={() => setSettingsOpen(true)}
       />
     </>

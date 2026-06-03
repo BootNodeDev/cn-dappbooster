@@ -25,7 +25,13 @@ interface ChromeApi {
 
 export type DappConnectionStatus =
   | { kind: 'none' }
-  | { kind: 'detected' | 'connected'; label: string; subtitle: string; faviconUrl?: string }
+  | {
+      kind: 'detected' | 'connected'
+      label: string
+      subtitle: string
+      faviconUrl?: string
+      origin: string
+    }
 
 interface DappConnectionSources {
   extensionMode: boolean
@@ -53,6 +59,15 @@ export const faviconUrlForPage = (pageUrl: string): string | undefined => {
 const labelFromUrl = (url: string): string => {
   try {
     return new URL(url).host
+  } catch {
+    return url
+  }
+}
+
+// The dApp origin used as the disconnect key for direct injected-provider connections.
+const originFromUrl = (url: string): string => {
+  try {
+    return new URL(url).origin
   } catch {
     return url
   }
@@ -113,6 +128,7 @@ export const dappConnectionFromSources = ({
       label: labelFromUrl(tab.url),
       subtitle: connected ? 'Connected' : 'Not connected',
       faviconUrl: tab.favIconUrl ?? faviconUrlForPage(tab.url),
+      origin: originFromUrl(tab.url),
     }
   }
 
@@ -126,6 +142,7 @@ export const dappConnectionFromSources = ({
           : connectedSession.name,
       subtitle: 'Connected',
       faviconUrl: faviconUrlForPage(connectedSession.url),
+      origin: originFromUrl(connectedSession.url),
     }
   }
 

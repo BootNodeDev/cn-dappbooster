@@ -95,6 +95,12 @@ export interface RuntimeConnectedOriginsChangedMessage {
   origins: string[]
 }
 
+// Popup → background: drop a direct injected-provider connection (wallet-initiated disconnect).
+export interface RuntimeForgetConnectedOrigin {
+  type: 'CARPINCHO_FORGET_CONNECTED_ORIGIN'
+  origin: string
+}
+
 // Wallet→page event broadcast. Runs popup → background (CARPINCHO_BROADCAST_EVENT)
 // → content script (CARPINCHO_EVENT_RELAY) → page (SPLICE_WALLET_EVENT).
 // `eventName` matches the dapp-api spec method names (accountsChanged,

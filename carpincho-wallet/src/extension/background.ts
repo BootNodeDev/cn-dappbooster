@@ -11,6 +11,7 @@ import {
   jsonRpcError,
   type RuntimeBroadcastEvent,
   type RuntimeEventRelay,
+  type RuntimeForgetConnectedOrigin,
   type RuntimeGetConnectedOrigins,
   type RuntimeGetPendingRequests,
   type RuntimePendingRequest,
@@ -25,6 +26,7 @@ type RuntimeMessage =
   | RuntimeProviderResponse
   | RuntimeGetPendingRequests
   | RuntimeGetConnectedOrigins
+  | RuntimeForgetConnectedOrigin
   | RuntimeBroadcastEvent
 
 type RuntimeSender = {
@@ -206,6 +208,13 @@ chromeApi?.runtime?.onMessage.addListener((message, _sender, sendResponse) => {
 
   if (message.type === 'CARPINCHO_GET_CONNECTED_ORIGINS') {
     void readDirectConnectedOrigins()
+      .then(sendResponse)
+      .catch(() => sendResponse([]))
+    return true
+  }
+
+  if (message.type === 'CARPINCHO_FORGET_CONNECTED_ORIGIN') {
+    void forgetDirectConnectedOrigin(message.origin)
       .then(sendResponse)
       .catch(() => sendResponse([]))
     return true

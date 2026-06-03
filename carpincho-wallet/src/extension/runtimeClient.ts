@@ -2,6 +2,7 @@ import { DIRECT_CONNECTED_ORIGINS_KEY, storedOrigins } from '@/extension/directC
 import {
   jsonRpcError,
   jsonRpcResult,
+  type RuntimeForgetConnectedOrigin,
   type RuntimeGetConnectedOrigins,
   type RuntimeGetPendingRequests,
   type RuntimePendingRequest,
@@ -71,6 +72,13 @@ export const getDirectConnectedOrigins = async (): Promise<string[]> =>
   await sendRuntimeMessage<string[]>({
     type: 'CARPINCHO_GET_CONNECTED_ORIGINS',
   } satisfies RuntimeGetConnectedOrigins)
+
+// Wallet-initiated disconnect for a direct injected-provider dApp; returns the remaining origins.
+export const forgetConnectedOrigin = async (origin: string): Promise<string[]> =>
+  await sendRuntimeMessage<string[]>({
+    type: 'CARPINCHO_FORGET_CONNECTED_ORIGIN',
+    origin,
+  } satisfies RuntimeForgetConnectedOrigin)
 
 export const createRuntimeResponder = (pending: RuntimePendingRequest): ProviderResponder => ({
   result: async (value) => {

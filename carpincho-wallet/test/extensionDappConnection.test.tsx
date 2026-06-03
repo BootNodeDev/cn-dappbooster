@@ -115,6 +115,7 @@ describe('extension dApp connection helpers', () => {
       label: 'localhost:3012',
       subtitle: 'Not connected',
       faviconUrl: 'http://localhost:3012/favicon.ico',
+      origin: 'http://localhost:3012',
     })
   })
 
@@ -135,6 +136,7 @@ describe('extension dApp connection helpers', () => {
       subtitle: 'Connected',
       faviconUrl:
         'chrome-extension://carpincho/_favicon/?pageUrl=http%3A%2F%2Flocalhost%3A3012&size=32',
+      origin: 'http://localhost:3012',
     })
   })
 
@@ -158,6 +160,7 @@ describe('extension dApp connection helpers', () => {
       subtitle: 'Connected',
       faviconUrl:
         'chrome-extension://carpincho/_favicon/?pageUrl=http%3A%2F%2Flocalhost%3A3012%2Fcounter&size=32',
+      origin: 'http://localhost:3012',
     })
   })
 
@@ -182,6 +185,7 @@ describe('extension dApp connection helpers', () => {
       subtitle: 'Connected',
       faviconUrl:
         'chrome-extension://carpincho/_favicon/?pageUrl=http%3A%2F%2Flocalhost%3A3012%2Fcounter&size=32',
+      origin: 'http://localhost:3012',
     })
   })
 
