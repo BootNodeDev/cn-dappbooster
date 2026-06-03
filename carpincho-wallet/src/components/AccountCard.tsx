@@ -49,7 +49,7 @@ export const AccountCard = ({ primary }: AccountCardProps): JSX.Element => {
           </button>
           <span
             aria-hidden="true"
-            className="mx-0.5 w-px shrink-0 self-stretch bg-border"
+            className="mx-0.5 -my-2.5 w-px shrink-0 self-stretch bg-border"
           />
           <button
             type="button"
