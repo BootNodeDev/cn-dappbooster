@@ -13,7 +13,7 @@
 | Language | TypeScript 5.9 (strict) | |
 | Wallet protocol | Injected CIP-0103 provider + optional WalletConnect Sign Client 2.x | Browser extension provider events by default; Reown relay only for WalletConnect fallback |
 | Cryptography | @noble/ed25519 3.x, @noble/hashes 1.x | Ed25519 signing; PBKDF2 + AES-GCM vault |
-| UI primitives | React 18 + Radix UI | `@radix-ui/react-{dropdown-menu,dialog,select,toast,tooltip}` for menus/modals/selects/toasts/tooltips; local wrappers (Button family, TextInput, PasswordInput, Alert, Card, SectionTitle, AccountAvatar, PendingActionCard, Select, Sheet, MenuRow, ToastProvider, Tooltip) for static visuals and Radix re-skins; shared icon SVG literals live in `src/components/ui/icons.tsx`; `Sheet` is the shared Radix Dialog scaffold for sheet-style flows (overlay, title, close button) and takes `side: 'bottom' | 'right'` (default `'bottom'`; right opens as a 400px-wide top-aligned drawer clamped by `100vw`); `ToastProvider` and `TooltipProvider` are both mounted once in `App.tsx`; `TextInput` and `PasswordInput` accept `error?: boolean` which applies a danger border, a persistent focus ring, and `aria-invalid`; `Button.tsx` exports `GHOST_BUTTON_CLASS` / `ICON_BUTTON_CLASS` for ad-hoc buttons (e.g. `PasswordInput`'s show/hide button) |
+| UI primitives | React 18 + Radix UI | `@radix-ui/react-{dialog,tabs,toast,tooltip}` for modals/tabs/toasts/tooltips; local wrappers (Button family, TextInput, PasswordInput, Alert, Card, AccountAvatar, PendingActionCard, Sheet, Tabs, OptionList, Stepper, DangerConfirm, MenuRow, ToastProvider, Tooltip) for static visuals and Radix re-skins; shared icon SVG literals live in `src/components/ui/icons.tsx`; `Sheet` is the shared Radix Dialog scaffold for sheet-style flows (overlay, title, close button) and takes `side: 'bottom' | 'right'` (default `'bottom'`; right opens as a 400px-wide top-aligned drawer clamped by `100vw`); `ToastProvider` and `TooltipProvider` are both mounted once in `App.tsx`; `TextInput` and `PasswordInput` accept `error?: boolean` which applies a danger border, a persistent focus ring, and `aria-invalid`; `Button.tsx` exports `GHOST_BUTTON_CLASS` / `ICON_BUTTON_CLASS` for ad-hoc buttons (e.g. `PasswordInput`'s show/hide button) |
 | Styling | Tailwind CSS v4 (`@tailwindcss/vite`) | Utility classes inline in JSX; `src/index.css` declares CSS-variable tokens on `:root` / `[data-theme="dark"]` and exposes them to Tailwind through `@theme inline`; `@layer base` holds global resets; Radix `data-[state=...]` and `data-[highlighted]` attrs drive interactive variants |
 | Fonts | `@fontsource-variable/manrope`, `@fontsource-variable/jetbrains-mono` | Self-hosted variable fonts so the extension popup works offline. Manrope is the whole UI: `font-sans` (UI chrome, body, labels, buttons) and `font-display` (hero wordmarks, view headings, section markers — heavier weight for hierarchy). JetBrains Mono is `font-mono` (party IDs, hashes, RPC URLs, JSON payloads) |
 | Theming | Light / dark / system selector in the drawer menu | `src/theme/ThemeProvider.tsx` owns a persisted `mode` (`light` \| `dark` \| `system`, default `system`), resolves `system` against `prefers-color-scheme` (re-resolving on media changes while in `system`), and writes the resolved `data-theme` on `<html>` after mount; the selector lives at Settings → Theme (`src/components/menu/ThemeMenu.tsx`) with no header toggle; the Tailwind `dark:` variant is rebound to `[data-theme='dark']` via `@custom-variant` |
@@ -26,16 +26,16 @@
 src/
   api/              JSON-RPC client for the external wallet-service backend
   assets/           SVG assets (hero illustration)
-  components/       Shared UI components (Logo, Header,
-                    WelcomeHero, AccountCard, ActivityList, ConnectionFooter,
-                    PairOrConnectedCard, NewPasswordFields, CreateAccountForm,
-                    PasswordStrengthIndicator, menu/* drawer, ui/* primitives).
-                    ui/* wraps Radix headless primitives (Select on top of
-                    @radix-ui/react-select; Sheet on top of
-                    @radix-ui/react-dialog) and provides static visuals (Button,
-                    TextInput, PasswordInput, Alert, Card, SectionTitle, Stepper,
-                    AccountAvatar, PendingActionCard).
-                    DropdownMenu is consumed directly from @radix-ui where used.
+  components/       Shared UI components (Logo, Header, WelcomeHero, AccountCard,
+                    AccountRow, AccountListRow, AccountsDialog, CopyPartyIdButton,
+                    ActivityList, HomeTabs, AssetsPanel, ConnectionFooter,
+                    NewPasswordFields, CreateAccountForm, PasswordStrengthIndicator,
+                    SecurityPanel, menu/* drawer, ui/* primitives).
+                    ui/* wraps Radix headless primitives (Tabs on top of
+                    @radix-ui/react-tabs; Sheet on top of @radix-ui/react-dialog)
+                    and provides static visuals (Button, TextInput, PasswordInput,
+                    Alert, Card, OptionList, Stepper, DangerConfirm, AccountAvatar,
+                    PendingActionCard).
   theme/            ThemeProvider + ThemeContext + useTheme hook driving the
                     [data-theme] attribute on <html>
   config/           Runtime config persisted to localStorage (RPC URL, network)
