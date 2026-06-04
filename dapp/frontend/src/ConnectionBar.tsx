@@ -1,7 +1,7 @@
 import { useConnect, useParty, useWalletStatus } from 'canton-connect-kit'
 import type { ReactNode } from 'react'
 import { useState } from 'react'
-import { DISCONNECT_ICON, MOON_ICON, SUN_ICON, SYSTEM_ICON } from '@/components/ui/icons'
+import { DISCONNECT_ICON, MOON_ICON, SUN_ICON } from '@/components/ui/icons'
 import { toast } from '@/components/ui/toast'
 import { useTheme } from '@/theme/useTheme'
 import { formatPartyId, shortenIdentifier } from './utils/formatPartyId'
@@ -31,8 +31,18 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
     undefined,
   )
 
-  const cycleTheme = (): void => {
-    setMode(mode === 'system' ? 'light' : mode === 'light' ? 'dark' : 'system')
+  // Default is `system` (set by ThemeProvider when nothing is stored yet); the
+  // toggle itself only ever flips between explicit light and dark. From the
+  // unset `system` state, resolve the active theme so the first click inverts it.
+  const resolvedTheme: 'light' | 'dark' =
+    mode === 'system'
+      ? window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light'
+      : mode
+
+  const toggleTheme = (): void => {
+    setMode(resolvedTheme === 'dark' ? 'light' : 'dark')
   }
 
   const onConnect = async (connectVia: 'extension' | 'walletconnect'): Promise<void> => {
@@ -68,12 +78,12 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
     <button
       type="button"
       data-testid="theme-toggle"
-      aria-label={`Theme: ${mode}`}
-      title={`Theme: ${mode}`}
-      onClick={cycleTheme}
+      aria-label={`Switch to ${resolvedTheme === 'dark' ? 'light' : 'dark'} theme`}
+      title={`Switch to ${resolvedTheme === 'dark' ? 'light' : 'dark'} theme`}
+      onClick={toggleTheme}
       className={ICON_CHIP_CLASS}
     >
-      {mode === 'dark' ? MOON_ICON : mode === 'light' ? SUN_ICON : SYSTEM_ICON}
+      {resolvedTheme === 'dark' ? MOON_ICON : SUN_ICON}
     </button>
   )
 
