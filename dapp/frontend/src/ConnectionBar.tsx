@@ -125,7 +125,7 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
       >
         <img src="/carpincho-icon.svg" alt="" aria-hidden="true" className="size-5 rounded-full" />
         <span>
-          {isConnecting && connectMode === 'extension' ? 'Connecting…' : 'Connect Carpincho'}
+          {isConnecting && connectMode === 'extension' ? 'Connecting…' : 'Carpincho Wallet'}
         </span>
       </button>
       <button
@@ -292,7 +292,26 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
                 aria-hidden="true"
                 className="size-6 rounded-full"
               />
-              {isConnecting && connectMode === 'extension' ? 'Connecting…' : 'Connect Carpincho'}
+              {isConnecting && connectMode === 'extension' ? 'Connecting…' : 'Carpincho Wallet'}
+            </button>
+
+            <div className="mt-4 flex items-center gap-3 text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+              <span className="h-px w-8 bg-border" />
+              or
+              <span className="h-px w-8 bg-border" />
+            </div>
+
+            <button
+              type="button"
+              data-testid="hero-connect-walletconnect"
+              onClick={() => {
+                void onConnect('walletconnect')
+              }}
+              disabled={isConnecting}
+              className="mt-4 inline-flex h-11 items-center gap-2 rounded-full border border-border-strong bg-surface px-6 text-[0.95rem] font-semibold text-foreground transition-colors enabled:hover:border-primary enabled:hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <img src="/Walletconnect-logo.png" alt="" aria-hidden="true" className="size-5" />
+              {isConnecting && connectMode === 'walletconnect' ? 'Pairing…' : 'WalletConnect'}
             </button>
           </section>
         ) : isLocked ? (
