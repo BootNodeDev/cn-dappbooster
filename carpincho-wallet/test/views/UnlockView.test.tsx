@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert'
 import { afterEach, describe, it } from 'node:test'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TooltipProvider } from '@/components/ui/Tooltip'
 import { VaultContext, type VaultContextValue } from '@/vault/VaultContext'
@@ -40,9 +40,30 @@ describe('UnlockView reset vault', () => {
   it('calls destroyVault when the reset is confirmed', async () => {
     const user = userEvent.setup()
     const calls: number[] = []
-    renderUnlock({ destroyVault: () => calls.push(1) })
+    renderUnlock({
+      destroyVault: async () => {
+        calls.push(1)
+      },
+    })
     await user.click(screen.getByTestId('reset-vault-trigger'))
     await user.click(await screen.findByTestId('confirm-reset-vault'))
     assert.equal(calls.length, 1)
+  })
+
+  it('does not destroy the vault when the dialog is dismissed with Escape', async () => {
+    const user = userEvent.setup()
+    const calls: number[] = []
+    renderUnlock({
+      destroyVault: async () => {
+        calls.push(1)
+      },
+    })
+    await user.click(screen.getByTestId('reset-vault-trigger'))
+    await screen.findByRole('dialog')
+    await user.keyboard('{Escape}')
+    await waitFor(() => {
+      assert.equal(screen.queryByRole('dialog'), null)
+    })
+    assert.equal(calls.length, 0)
   })
 })

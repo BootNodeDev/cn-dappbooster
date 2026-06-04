@@ -37,4 +37,39 @@ describe('wipeAllPersistedData', () => {
     wipeAllPersistedData()
     assert.equal(localStorage.length, 0)
   })
+
+  it('keeps wiping the remaining keys when one removal throws', () => {
+    // happy-dom's Storage ignores method monkeypatching, so swap the whole global for a
+    // fake whose removeItem throws on one key to prove the wipe does not abort midway.
+    const map = new Map<string, string>([
+      ['carpincho.vault', 'blob'],
+      ['carpincho.autoLockOption', '5m'],
+    ])
+    const fake = {
+      get length(): number {
+        return map.size
+      },
+      key: (index: number): string | null => [...map.keys()][index] ?? null,
+      getItem: (key: string): string | null => map.get(key) ?? null,
+      setItem: (key: string, value: string): void => {
+        map.set(key, value)
+      },
+      removeItem: (key: string): void => {
+        if (key === 'carpincho.vault') {
+          throw new Error('storage disabled')
+        }
+        map.delete(key)
+      },
+    }
+    const real = globalThis.localStorage
+    Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: fake })
+
+    try {
+      wipeAllPersistedData()
+    } finally {
+      Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: real })
+    }
+
+    assert.equal(map.get('carpincho.autoLockOption'), undefined)
+  })
 })

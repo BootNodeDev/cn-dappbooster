@@ -10,6 +10,7 @@ import {
   useRef,
   useState,
 } from 'react'
+import { clearDirectConnectedOrigins } from '@/extension/directConnections'
 import { broadcastWalletEvent } from '@/extension/eventBroadcast'
 import { persistWalletSnapshot } from '@/extension/walletSnapshot'
 import { accountToCip103Wallet } from '@/provider/accounts'
@@ -35,6 +36,7 @@ import {
   writeFreshVault,
 } from '@/vault/storage'
 import type { AccountPublic, AccountSecret, TransactionRecord, VaultPlaintext } from '@/vault/types'
+import { wipeWalletConnectStorage } from '@/wc/storage'
 
 const AUTO_LOCK_MS: Record<AutoLockOption, number | null> = {
   never: null,
@@ -89,7 +91,7 @@ export interface VaultContextValue {
   setup: (password: string) => Promise<void>
   unlock: (password: string) => Promise<void>
   lock: () => void
-  destroyVault: () => void
+  destroyVault: () => Promise<void>
   accounts: AccountPublic[]
   primary: AccountPublic | null
   transactions: TransactionRecord[]
@@ -211,17 +213,23 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
     [bump, broadcastConnectionState],
   )
 
-  const destroyVault = useCallback((): void => {
-    void (async () => {
-      // Await the async session/snapshot wipes (they survive a reload) before clearing
-      // localStorage, then reload so every provider re-inits from empty storage.
-      await wipeMemory().catch(() => undefined)
-      await persistWalletSnapshot(null).catch(() => undefined)
-      wipeAllPersistedData()
-      broadcastConnectionState(false)
-      window.location.reload()
-    })()
-  }, [broadcastConnectionState])
+  const destroyVault = useCallback(async (): Promise<void> => {
+    // Await every persistence surface that survives a reload: in-memory keys + session token,
+    // the snapshot, WalletConnect's IndexedDB sessions, and the direct connected origins in
+    // chrome.storage.session. The carpincho localStorage prefix wipe only covers localStorage.
+    await wipeMemory().catch(() => undefined)
+    await persistWalletSnapshot(null).catch(() => undefined)
+    await wipeWalletConnectStorage().catch(() => undefined)
+    await clearDirectConnectedOrigins().catch(() => undefined)
+    wipeAllPersistedData()
+    // Reload re-inits every provider from empty storage and is the primary reset mechanism,
+    // but reset the React state too so the UI is consistent if a reload is ever a no-op.
+    setVaultExists(false)
+    setIsLocked(true)
+    bump()
+    broadcastConnectionState(false)
+    window.location.reload()
+  }, [bump, broadcastConnectionState])
 
   // dapp-api AccountsChangedEvent payload (Wallet[]); [] when locked.
   const accountsChangedPayload = useCallback((): unknown[] => {
