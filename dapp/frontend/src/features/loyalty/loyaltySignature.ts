@@ -124,6 +124,54 @@ export const stampStats = (value: number): StampStats => ({
 export const canStamp = (tally: TallyContract, partyId: string): boolean =>
   tally.issuer === partyId || tally.writers.some(([party]) => party === partyId)
 
+// Canton party ids are `hint::fingerprint`; require the `::` separator.
+export const isPartyIdShape = (value: string): boolean => value.trim().includes('::')
+
+// Keep card order stable across reloads: a recreated Tally (new contractId)
+// reuses the slot of the contract it descends from (`from`); new cards append.
+export interface Reconciled {
+  tally: TallyContract
+  from: string | undefined
+}
+export const reconcileOrder = (prev: TallyContract[], next: TallyContract[]): Reconciled[] => {
+  const prevIds = new Set(prev.map((t) => t.contractId))
+  const byId = new Map(next.map((t) => [t.contractId, t]))
+  const claimed = new Set<string>()
+  const result: Reconciled[] = []
+  for (const old of prev) {
+    const same = byId.get(old.contractId)
+    if (same !== undefined) {
+      result.push({ tally: same, from: old.contractId })
+      claimed.add(same.contractId)
+      continue
+    }
+    const successor = next.find(
+      (t) => !prevIds.has(t.contractId) && !claimed.has(t.contractId) && t.issuer === old.issuer,
+    )
+    if (successor !== undefined) {
+      result.push({ tally: successor, from: old.contractId })
+      claimed.add(successor.contractId)
+    }
+  }
+  for (const t of next) {
+    if (!claimed.has(t.contractId)) {
+      result.push({ tally: t, from: undefined })
+    }
+  }
+  return result
+}
+
+// After a stamp recreates the card, reconcile the optimistic slot overlay with
+// the live stamp count: a completed card wraps to 0 stamps so the overlay
+// resets (returns undefined); otherwise keep the most recent `filled` clicks.
+export const reconcileOverlay = (
+  overlay: number[],
+  successorValue: number,
+): number[] | undefined => {
+  const { filled } = stampStats(successorValue)
+  return filled === 0 ? undefined : overlay.slice(-filled)
+}
+
 // --- Command builders ---
 
 export const createTallyCommand = (partyId: string): unknown => ({

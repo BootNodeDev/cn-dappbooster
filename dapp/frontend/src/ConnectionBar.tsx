@@ -69,6 +69,16 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
 
   const connectMenuRef = useRef<HTMLDivElement>(null)
   const accountMenuRef = useRef<HTMLDivElement>(null)
+  // Set by a user-initiated connect; the success toast fires from the effect
+  // below once `party` lands (connect() resolves before the context updates).
+  const connectToastPending = useRef(false)
+
+  useEffect(() => {
+    if (party !== undefined && connectToastPending.current) {
+      connectToastPending.current = false
+      toast.success(`Connected as ${formatPartyId(party.partyId)}`)
+    }
+  }, [party])
 
   // Close header menus on outside click / Escape (header backdrop-blur traps a
   // fixed backdrop, so use a document listener).
@@ -128,13 +138,12 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
 
   const onConnect = async (connectVia: 'extension' | 'walletconnect'): Promise<void> => {
     setConnectMode(connectVia)
+    connectToastPending.current = true
     try {
       await connect(connectVia)
       writeReconnect(connectVia)
-      if (party !== undefined) {
-        toast.success(`Connected as ${formatPartyId(party.partyId)}`)
-      }
     } catch (err) {
+      connectToastPending.current = false
       toast.error(errorMessage(err))
     } finally {
       setConnectMode(undefined)
@@ -153,17 +162,25 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
     if (party === undefined) {
       return
     }
-    await navigator.clipboard.writeText(party.partyId)
-    toast.success('Party id copied.')
+    try {
+      await navigator.clipboard.writeText(party.partyId)
+      toast.success('Party id copied.')
+    } catch (err) {
+      toast.error(errorMessage(err))
+    }
   }
 
   const copyPairingUri = async (): Promise<void> => {
     if (pairingUri === undefined) {
       return
     }
-    await navigator.clipboard.writeText(pairingUri)
-    setPairingCopied(true)
-    window.setTimeout(() => setPairingCopied(false), 1400)
+    try {
+      await navigator.clipboard.writeText(pairingUri)
+      setPairingCopied(true)
+      window.setTimeout(() => setPairingCopied(false), 1400)
+    } catch (err) {
+      toast.error(errorMessage(err))
+    }
   }
 
   const themeToggle = (

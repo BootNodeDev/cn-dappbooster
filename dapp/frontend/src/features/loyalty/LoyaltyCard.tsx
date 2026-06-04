@@ -15,7 +15,10 @@ import {
   createTallyCommand,
   grantViewerCommand,
   grantWriterCommand,
+  isPartyIdShape,
   normalizeTallyContract,
+  reconcileOrder,
+  reconcileOverlay,
   stampStats,
   TALLY_PACKAGE_ID,
   TALLY_TEMPLATE_ID,
@@ -30,40 +33,6 @@ type PartyDrafts = Record<string, Partial<Record<ManageRole, string>>>
 
 // Stable per-slot keys for the fixed 10-slot punch card (avoids index-as-key).
 const SLOT_KEYS = Array.from({ length: 10 }, (_, i) => `slot-${i}`)
-
-// Keep card order stable across reloads: a recreated Tally (new contractId)
-// reuses the slot of the contract it descends from (`from`); new cards append.
-interface Reconciled {
-  tally: TallyContract
-  from: string | undefined
-}
-const reconcileOrder = (prev: TallyContract[], next: TallyContract[]): Reconciled[] => {
-  const prevIds = new Set(prev.map((t) => t.contractId))
-  const byId = new Map(next.map((t) => [t.contractId, t]))
-  const claimed = new Set<string>()
-  const result: Reconciled[] = []
-  for (const old of prev) {
-    const same = byId.get(old.contractId)
-    if (same !== undefined) {
-      result.push({ tally: same, from: old.contractId })
-      claimed.add(same.contractId)
-      continue
-    }
-    const successor = next.find(
-      (t) => !prevIds.has(t.contractId) && !claimed.has(t.contractId) && t.issuer === old.issuer,
-    )
-    if (successor !== undefined) {
-      result.push({ tally: successor, from: old.contractId })
-      claimed.add(successor.contractId)
-    }
-  }
-  for (const t of next) {
-    if (!claimed.has(t.contractId)) {
-      result.push({ tally: t, from: undefined })
-    }
-  }
-  return result
-}
 
 // 10-slot punch card: `filledSlots` are stamped; the rest are clickable "+".
 const PunchCard = ({
@@ -124,9 +93,6 @@ type ManageSectionProps = {
   onDraftChange: (value: string) => void
   title: string
 }
-
-// Canton party ids are `hint::fingerprint`; require the `::` separator.
-const isPartyIdShape = (value: string): boolean => value.trim().includes('::')
 
 const ManageSection = ({
   addTestId,
@@ -201,8 +167,12 @@ export const LoyaltyCard = (): JSX.Element | null => {
   const busy = isExecuting
 
   const copyText = async (text: string, message: string): Promise<void> => {
-    await navigator.clipboard.writeText(text)
-    toast.success(message)
+    try {
+      await navigator.clipboard.writeText(text)
+      toast.success(message)
+    } catch (err) {
+      toast.error(errorMessage(err))
+    }
   }
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: re-read the ACS only when the active party identity changes
@@ -320,7 +290,8 @@ export const LoyaltyCard = (): JSX.Element | null => {
           }
           const rest = { ...prev }
           delete rest[tally.contractId]
-          return { ...rest, [successor.contractId]: overlay }
+          const next = reconcileOverlay(overlay, successor.value)
+          return next === undefined ? rest : { ...rest, [successor.contractId]: next }
         })
       }
       toast.success('Stamp added')
