@@ -70,6 +70,12 @@
     },
     {
       "includes": ["dapp/frontend/**"],
+      "css": {
+        "parser": {
+          "cssModules": false,
+          "tailwindDirectives": true
+        }
+      },
       "linter": {
         "rules": {
           "style": {
