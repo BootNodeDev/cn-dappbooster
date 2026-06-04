@@ -42,9 +42,9 @@ test('txChanged lifecycle reaches the dApp during prepareExecuteAndWait', async 
   const dapp = await context.newPage()
   await dapp.goto(DAPP_URL)
   await dapp.getByTestId('connect-extension').click()
-  // The visible New counter action is the connected, unlocked workspace state
+  // The visible New card action is the connected, unlocked workspace state
   // that can dispatch prepareExecuteAndWait.
-  await expect(dapp.getByTestId('new-counter')).toBeVisible()
+  await expect(dapp.getByTestId('new-card')).toBeVisible()
 
   // Install a capture for all SPLICE_WALLET_EVENT messages with eventName=txChanged
   // BEFORE clicking the button — otherwise the pending/signed events that fire
@@ -59,8 +59,8 @@ test('txChanged lifecycle reaches the dApp during prepareExecuteAndWait', async 
     })
   })
 
-  // Trigger a transaction. "New counter" exercises prepareExecuteAndWait.
-  await dapp.getByTestId('new-counter').click()
+  // Trigger a transaction. "New card" exercises prepareExecuteAndWait.
+  await dapp.getByTestId('new-card').click()
 
   // Approve in Carpincho.
   await wallet.bringToFront()
