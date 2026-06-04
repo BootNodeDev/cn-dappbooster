@@ -37,3 +37,6 @@ docs/
 **/.playwright-mcp/
 test-results/
 playwright-report/
+
+# brainstorming visual companion
+.superpowers/
