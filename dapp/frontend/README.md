@@ -17,6 +17,9 @@ meant to be deleted once you start building your own app.
 
 ## Run
 
+For the full local stack, follow the root [quick start](../../README.md#quick-start).
+This package can also run by itself against the configured wallet URL:
+
 ```bash
 npm install
 npm run dev

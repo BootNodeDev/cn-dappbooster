@@ -26,6 +26,9 @@ artifact. The hook signatures are stable enough to depend on; the
 implementation underneath may swap to delegate to `@partylayer/sdk` if that
 ecosystem matures.
 
+For the full local stack that consumes this package, follow the root
+[quick start](../README.md#quick-start).
+
 ## Hook surface
 
 ```tsx
@@ -76,17 +79,7 @@ function Counter() {
 
 ## Architecture
 
-- `ConnectKitProvider` — React context holding the active `DappClient`,
-  the current party, the connection status, and the wallet-lock flag. All
-  hooks read from this context.
-- `connectors/extension.ts` — uses `@canton-network/dapp-sdk`'s
-  `ExtensionAdapter`. Detects providers announced via
-  `canton:requestProvider` / `canton:announceProvider`.
-- `connectors/walletconnect.ts` — WalletConnect Sign Client (opt-in
-  fallback). Returns the same `DappClient` shape.
-- Hooks subscribe to wallet-pushed events
-  (`accountsChanged`, `txChanged`, `connected`, `statusChanged`) and expose
-  them as React state.
+See [`architecture.md`](architecture.md) for provider, connector, hook, and event-flow structure.
 
 ## Relationship to PartyLayer
 

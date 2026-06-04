@@ -5,6 +5,7 @@ export const DIRECT_CONNECTED_ORIGINS_KEY = 'carpincho.direct.connectedOrigins'
 type ChromeSessionStorage = {
   set: (items: Record<string, unknown>) => Promise<void> | void
   get: (key: string) => Promise<Record<string, unknown>> | Record<string, unknown>
+  remove: (key: string) => Promise<void> | void
 }
 
 const fallbackOrigins = new Set<string>()
@@ -77,6 +78,19 @@ export const rememberDirectConnectedOrigin = async (origin: string): Promise<str
   return await withWriteLock(async () =>
     writeDirectConnectedOrigins([...(await readDirectConnectedOrigins()), normalized]),
   )
+}
+
+// Drops every remembered direct connection. Called on vault reset so the next wallet does not
+// inherit the previous one's connected dApp origins from chrome.storage.session.
+export const clearDirectConnectedOrigins = async (): Promise<void> => {
+  await withWriteLock(async () => {
+    fallbackOrigins.clear()
+    const storage = chromeSessionStorage()
+    if (storage === undefined) {
+      return
+    }
+    await storage.remove(DIRECT_CONNECTED_ORIGINS_KEY)
+  })
 }
 
 // Removes one direct dApp origin after an injected-provider disconnect response.

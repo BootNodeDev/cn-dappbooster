@@ -22,7 +22,6 @@ This package depends on **nothing in this repo** at the TypeScript level. Every 
 | Door | Default | Override |
 |---|---|---|
 | wallet-service HTTP | `http://localhost:3010` | `WALLET_SERVICE_URL` |
-| Carpincho web | `http://localhost:3011` | `CARPINCHO_URL` |
 | dApp | `http://localhost:3012` | `DAPP_URL` |
 | Carpincho extension bundle | `../../carpincho-wallet/dist-extension` | `EXTENSION_PATH` |
 
@@ -35,22 +34,9 @@ When the four packages publish independently and the dev kit becomes a monorepo 
 
 ### Prerequisites
 
-The full local stack must be running. From the repo root:
-
-```bash
-# Start the canton stack (postgres + canton + wallet-service)
-npm run canton:up && npm run canton:health
-
-# Deploy the Counter DAR
-./canton-barebones/scripts/deploy-dar.sh dapp/daml/.daml/dist/quickstart-counter-0.0.1.dar
-
-# Build the Carpincho extension
-npm --prefix carpincho-wallet run build:extension
-
-# In separate terminals:
-npm run wallet:dev              # terminal 1 — Carpincho web UI on :3011
-npm run app:dev                 # terminal 2 — dApp on :3012
-```
+The full local stack must be running. Follow the root
+[quick start](../../README.md#quick-start), including the dApp startup and
+Carpincho extension build/load setup steps.
 
 ### First-time setup
 

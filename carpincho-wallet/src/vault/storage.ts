@@ -43,9 +43,27 @@ export const rotateVault = (blob: EncryptedVault): void => {
   localStorage.removeItem(KEY_VAULT_NEXT)
 }
 
-export const wipeVault = (): void => {
-  localStorage.removeItem(KEY_VAULT)
-  localStorage.removeItem(KEY_VAULT_NEXT)
+// Reset wipes every `carpincho`-namespaced key (vault + all prefs) by prefix, so
+// preferences added later are cleared without touching this.
+const STORAGE_PREFIX = 'carpincho'
+
+export const wipeAllPersistedData = (): void => {
+  const stale: string[] = []
+  for (let i = 0; i < localStorage.length; i += 1) {
+    const key = localStorage.key(i)
+    if (key?.startsWith(STORAGE_PREFIX)) {
+      stale.push(key)
+    }
+  }
+  for (const key of stale) {
+    // Remove defensively: one failing key (e.g. storage disabled mid-wipe) must not
+    // strand the rest, since destroyVault reloads regardless of what survives here.
+    try {
+      localStorage.removeItem(key)
+    } catch {
+      // Best effort; a key that cannot be removed is left for the reload to surface.
+    }
+  }
 }
 
 const KEY_AUTO_LOCK = 'carpincho.autoLockOption'
