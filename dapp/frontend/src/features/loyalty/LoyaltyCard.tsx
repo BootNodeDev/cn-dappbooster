@@ -87,7 +87,6 @@ type ManageSectionProps = {
   buttonLabel: string
   disabled: boolean
   draft: string
-  emptyMessage: string
   inputTestId: string
   onAdd: () => void
   onDraftChange: (value: string) => void
@@ -95,60 +94,69 @@ type ManageSectionProps = {
   title: string
 }
 
+// A Canton party id is `hint::fingerprint`; reject a non-empty draft that lacks
+// the `::` separator before it reaches the ledger.
+const isPartyIdShape = (value: string): boolean => value.trim().includes('::')
+
 const ManageSection = ({
   addTestId,
   buttonLabel,
   disabled,
   draft,
-  emptyMessage,
   inputTestId,
   onAdd,
   onDraftChange,
   parties,
   title,
-}: ManageSectionProps): JSX.Element => (
-  <section className="mb-6">
-    <h3 className="mb-2 font-display text-base font-semibold text-foreground">{title}</h3>
-    {parties.length === 0 ? (
-      <p className="text-sm text-muted-foreground">{emptyMessage}</p>
-    ) : (
-      <ul className="mb-3 flex flex-col gap-1">
-        {parties.map((partyId) => (
-          <li key={partyId} className="break-all font-mono text-sm text-foreground">
-            {formatPartyId(partyId)}
-          </li>
-        ))}
-      </ul>
-    )}
-    <form
-      className="flex flex-col gap-2"
-      onSubmit={(event) => {
-        event.preventDefault()
-        if (!disabled && draft.trim() !== '') {
-          onAdd()
-        }
-      }}
-    >
-      <TextInput
-        data-testid={inputTestId}
-        className="w-full font-mono text-sm"
-        value={draft}
-        aria-label={`${title} party id`}
-        onChange={(event) => onDraftChange(event.target.value)}
-        placeholder="party id"
-        disabled={disabled}
-      />
-      <SecondaryButton
-        type="submit"
-        data-testid={addTestId}
-        className="w-full"
-        disabled={disabled || draft.trim() === ''}
+}: ManageSectionProps): JSX.Element => {
+  const trimmed = draft.trim()
+  const invalid = trimmed !== '' && !isPartyIdShape(trimmed)
+  return (
+    <section className="mb-6">
+      <h3 className="mb-2 font-display text-base font-semibold text-foreground">{title}</h3>
+      {parties.length > 0 && (
+        <ul className="mb-3 flex flex-col gap-1">
+          {parties.map((partyId) => (
+            <li key={partyId} className="break-all font-mono text-sm text-foreground">
+              {formatPartyId(partyId)}
+            </li>
+          ))}
+        </ul>
+      )}
+      <form
+        className="flex flex-col gap-2"
+        onSubmit={(event) => {
+          event.preventDefault()
+          if (!disabled && trimmed !== '' && !invalid) {
+            onAdd()
+          }
+        }}
       >
-        {buttonLabel}
-      </SecondaryButton>
-    </form>
-  </section>
-)
+        <TextInput
+          data-testid={inputTestId}
+          className="w-full font-mono text-sm"
+          value={draft}
+          error={invalid}
+          aria-label={`${title} party id`}
+          onChange={(event) => onDraftChange(event.target.value)}
+          placeholder="party::fingerprint"
+          disabled={disabled}
+        />
+        {invalid && (
+          <p className="text-xs text-danger">Enter a full party id (party::fingerprint).</p>
+        )}
+        <SecondaryButton
+          type="submit"
+          data-testid={addTestId}
+          className="w-full"
+          disabled={disabled || trimmed === '' || invalid}
+        >
+          {buttonLabel}
+        </SecondaryButton>
+      </form>
+    </section>
+  )
+}
 
 // Loyalty stamp card feature. Removable: delete this folder, its import + the
 // <LoyaltyCard /> line in App.tsx, ../e2e/tests/features/loyalty, and the
@@ -427,12 +435,15 @@ export const LoyaltyCard = (): JSX.Element | null => {
       >
         {managed !== undefined && (
           <>
+            <p className="mb-5 text-sm text-muted-foreground">
+              Add staff and cardholders by party id. Create accounts in your wallet, then copy a
+              party id from there to paste here.
+            </p>
             <ManageSection
               addTestId="add-staff"
               buttonLabel="Add staff"
               disabled={managed.issuer !== party.partyId || busy}
               draft={draftFor(managed.contractId, 'staff')}
-              emptyMessage="No staff yet."
               inputTestId="staff-party-id-input"
               onAdd={() => {
                 void runManageCommand(
@@ -451,7 +462,6 @@ export const LoyaltyCard = (): JSX.Element | null => {
               buttonLabel="Add cardholder"
               disabled={managed.issuer !== party.partyId || busy}
               draft={draftFor(managed.contractId, 'cardholder')}
-              emptyMessage="No cardholders yet."
               inputTestId="cardholder-party-id-input"
               onAdd={() => {
                 void runManageCommand(
