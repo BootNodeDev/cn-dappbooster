@@ -60,7 +60,16 @@ const emit = (variant: ToastVariant, input: ToastInput | string): string => {
     existing.message === entry.message
   const withoutDuplicate = entries.filter((existing) => !isDuplicate(existing))
   const next = [...withoutDuplicate, entry]
-  entries = next.length > MAX_VISIBLE ? next.slice(next.length - MAX_VISIBLE) : next
+  // Cap only the auto-dismissing toasts; persistent ones (errors) stay until the
+  // user dismisses them, so a burst of transient toasts can't silently evict them.
+  const transient = next.filter((existing) => Number.isFinite(existing.durationMs))
+  const overflow = transient.length - MAX_VISIBLE
+  if (overflow > 0) {
+    const dropped = new Set(transient.slice(0, overflow))
+    entries = next.filter((existing) => !dropped.has(existing))
+  } else {
+    entries = next
+  }
   notify()
   return entry.id
 }
@@ -72,12 +81,6 @@ const dismiss = (id: string): void => {
   notify()
 }
 
-const clear = (): void => {
-  if (entries.length === 0) return
-  entries = []
-  notify()
-}
-
 export const subscribeToasts = (listener: Listener): (() => void) => {
   listeners.add(listener)
   listener(entries)
@@ -86,13 +89,10 @@ export const subscribeToasts = (listener: Listener): (() => void) => {
   }
 }
 
-export const getToastEntries = (): ReadonlyArray<ToastEntry> => entries
-
 export const toast = {
   info: (input: ToastInput | string): string => emit('info', input),
   success: (input: ToastInput | string): string => emit('success', input),
   warning: (input: ToastInput | string): string => emit('warning', input),
   error: (input: ToastInput | string): string => emit('error', input),
   dismiss,
-  clear,
 }

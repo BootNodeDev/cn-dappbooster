@@ -299,6 +299,14 @@ describe('findSuccessor (attribute the recreated card after a stamp)', () => {
     const a = tally({ contractId: 'a', issuer: 'm::fp' })
     assert.equal(findSuccessor(reconcileOrder([a], [a]), 'missing'), undefined)
   })
+
+  it('attributes the stamp successor by value, not a concurrently created card', () => {
+    const a = tally({ contractId: 'a', issuer: 'm::fp', value: 2 })
+    const fresh = tally({ contractId: 'new', issuer: 'm::fp', value: 0 })
+    const a2 = tally({ contractId: 'a2', issuer: 'm::fp', value: 3 })
+    const reconciled = reconcileOrder([a], [fresh, a2])
+    assert.equal(findSuccessor(reconciled, 'a')?.contractId, 'a2')
+  })
 })
 
 describe('applyOptimisticSlot (mark a clicked slot stamped)', () => {

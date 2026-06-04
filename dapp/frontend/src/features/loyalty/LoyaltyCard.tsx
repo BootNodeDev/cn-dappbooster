@@ -1,18 +1,20 @@
 import { useExecute, useLedger, useParty } from 'canton-connect-kit'
 import { useEffect, useRef, useState } from 'react'
-import { SecondaryButton } from '@/components/ui/Button'
+import { ICON_BUTTON_CLASS, SecondaryButton } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { COPY_ICON, EYE_ICON } from '@/components/ui/icons'
 import { Sheet } from '@/components/ui/Sheet'
 import { TextInput } from '@/components/ui/TextInput'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { toast } from '@/components/ui/toast'
+import { cn } from '@/utils/cn'
 import { copyToClipboard } from '../../utils/clipboard'
 import { errorMessage } from '../../utils/errorMessage'
 import { formatPartyId, shortenIdentifier } from '../../utils/formatPartyId'
 import {
   addStampCommand,
   applyOptimisticSlot,
+  CARD_SIZE,
   canStamp,
   createTallyCommand,
   dropOverlay,
@@ -27,7 +29,6 @@ import {
   rollbackSlot,
   type SlotOverlay,
   stampStats,
-  TALLY_PACKAGE_ID,
   TALLY_TEMPLATE_ID,
   type TallyContract,
 } from './loyaltySignature'
@@ -38,10 +39,10 @@ const commandId = (prefix: string): string =>
 type ManageRole = 'staff' | 'cardholder'
 type PartyDrafts = Record<string, Partial<Record<ManageRole, string>>>
 
-// Stable per-slot keys for the fixed 10-slot punch card (avoids index-as-key).
-const SLOT_KEYS = Array.from({ length: 10 }, (_, i) => `slot-${i}`)
+// Stable per-slot keys (avoids index-as-key).
+const SLOT_KEYS = Array.from({ length: CARD_SIZE }, (_, i) => `slot-${i}`)
 
-// 10-slot punch card: `filledSlots` are stamped; the rest are clickable "+".
+// `filledSlots` are stamped; the rest are clickable "+".
 const PunchCard = ({
   filledSlots,
   canAdd,
@@ -77,7 +78,7 @@ const PunchCard = ({
         <button
           key={key}
           type="button"
-          aria-label={`Add stamp to slot ${i + 1} of 10`}
+          aria-label={`Add stamp to slot ${i + 1} of ${CARD_SIZE}`}
           data-testid="add-stamp"
           onClick={() => onAdd(i)}
           disabled={busy}
@@ -170,6 +171,11 @@ export const LoyaltyCard = (): JSX.Element | null => {
   // Stable React keys carried across contractId rotation (avoids remount flicker).
   const cardKeys = useRef<Map<string, string>>(new Map())
   const cardKeySeq = useRef(0)
+  // Latest committed cards, read by loadTalliesFor so reconciliation never diffs
+  // against a stale render closure when reloads overlap.
+  const talliesRef = useRef<TallyContract[]>([])
+  // Monotonic reload id: a superseded in-flight reload must not clobber state.
+  const loadSeq = useRef(0)
   // Serialize stamping: blocks a same-frame second click before `busy` re-renders.
   const stamping = useRef(false)
 
@@ -178,6 +184,7 @@ export const LoyaltyCard = (): JSX.Element | null => {
   // biome-ignore lint/correctness/useExhaustiveDependencies: re-read the ACS only when the active party identity changes
   useEffect(() => {
     if (party === undefined) {
+      talliesRef.current = []
       setTallies([])
       return
     }
@@ -185,6 +192,8 @@ export const LoyaltyCard = (): JSX.Element | null => {
   }, [party?.partyId])
 
   const loadTalliesFor = async (partyId: string): Promise<Reconciled[]> => {
+    loadSeq.current += 1
+    const seq = loadSeq.current
     try {
       const ledgerEnd = (await ledgerApi({
         requestMethod: 'get',
@@ -220,7 +229,13 @@ export const LoyaltyCard = (): JSX.Element | null => {
         const tally = normalizeTallyContract(row)
         return tally === undefined ? [] : [tally]
       })
-      const reconciled = reconcileOrder(tallies, parsed)
+      // Diff against the latest committed cards, not this call's render closure.
+      const reconciled = reconcileOrder(talliesRef.current, parsed)
+      // Superseded by a newer reload: return the reconcile for the caller, but
+      // let the newer load own committed state.
+      if (seq !== loadSeq.current) {
+        return reconciled
+      }
       // Carry stable keys across recreation; mint fresh keys for new cards.
       const nextKeys = new Map<string, string>()
       for (const { tally, from } of reconciled) {
@@ -229,7 +244,8 @@ export const LoyaltyCard = (): JSX.Element | null => {
         nextKeys.set(tally.contractId, inherited ?? `card-${cardKeySeq.current}`)
       }
       cardKeys.current = nextKeys
-      setTallies(reconciled.map((r) => r.tally))
+      talliesRef.current = reconciled.map((r) => r.tally)
+      setTallies(talliesRef.current)
       return reconciled
     } catch (err) {
       toast.error(errorMessage(err))
@@ -251,7 +267,6 @@ export const LoyaltyCard = (): JSX.Element | null => {
         commands: [command],
         actAs: [party.partyId],
         readAs: [party.partyId],
-        packageIdSelectionPreference: [TALLY_PACKAGE_ID],
       })
       const next = await loadTalliesFor(party.partyId)
       toast.success(successMessage)
@@ -262,24 +277,28 @@ export const LoyaltyCard = (): JSX.Element | null => {
     }
   }
 
-  // Stamping recreates the Tally; reload to get the live contractId for the next
-  // stamp, and migrate the overlay onto the successor so clicked slots stick.
+  // Stamping recreates the Tally; runCommand reloads to get the live contractId
+  // for the next stamp, then migrate the overlay onto the successor so clicked
+  // slots stick (or roll the optimistic fill back if the tx failed).
   const addStamp = async (tally: TallyContract, slot: number): Promise<void> => {
     if (party === undefined) {
       stamping.current = false
       return
     }
     try {
-      await execute({
-        commandId: commandId('add-stamp'),
-        commands: [addStampCommand(tally, party.partyId)],
-        actAs: [party.partyId],
-        readAs: [party.partyId],
-        packageIdSelectionPreference: [TALLY_PACKAGE_ID],
-      })
+      const reconciled = await runCommand(
+        'add-stamp',
+        addStampCommand(tally, party.partyId),
+        'Stamp added',
+      )
+      if (reconciled === undefined) {
+        // runCommand already surfaced the error and re-read the ACS; just undo the
+        // optimistic fill so the card reconverges to ledger truth.
+        setFilledSlots((prev) => rollbackSlot(prev, tally.contractId, slot))
+        return
+      }
       // Stamping archived this Tally and recreated it; migrate the overlay onto
       // the successor `reconcileOrder` attributed to this contract id.
-      const reconciled = await loadTalliesFor(party.partyId)
       const successor = findSuccessor(reconciled, tally.contractId)
       setFilledSlots((prev) =>
         successor !== undefined
@@ -288,13 +307,6 @@ export const LoyaltyCard = (): JSX.Element | null => {
             // overlay so its entry can't linger under the archived contract id.
             dropOverlay(prev, tally.contractId),
       )
-      toast.success('Stamp added')
-    } catch (err) {
-      toast.error(errorMessage(err))
-      // Tx rejected/failed: roll back the optimistic fill, then re-read the ACS
-      // so the card reconverges to ledger truth (e.g. a partial/late success).
-      setFilledSlots((prev) => rollbackSlot(prev, tally.contractId, slot))
-      void loadTalliesFor(party.partyId)
     } finally {
       stamping.current = false
     }
@@ -415,7 +427,9 @@ export const LoyaltyCard = (): JSX.Element | null => {
                 <div className="rounded-xl bg-[image:var(--bg-gradient-brand)] p-3 text-white">
                   <div className="flex items-center justify-between">
                     <span className="font-display text-sm font-bold">Stamps</span>
-                    <span className="text-xs opacity-85">{slots.length} / 10</span>
+                    <span className="text-xs opacity-85">
+                      {slots.length} / {CARD_SIZE}
+                    </span>
                   </div>
                   <PunchCard
                     filledSlots={slots}
@@ -450,7 +464,10 @@ export const LoyaltyCard = (): JSX.Element | null => {
                     onClick={() => {
                       void copyToClipboard(tally.contractId, 'Card id copied.')
                     }}
-                    className="inline-grid shrink-0 place-items-center text-muted-foreground transition-colors hover:text-primary [&_svg]:size-3.5"
+                    className={cn(
+                      ICON_BUTTON_CLASS,
+                      'shrink-0 [&_svg]:size-3.5 enabled:hover:bg-transparent',
+                    )}
                   >
                     {COPY_ICON}
                   </button>
@@ -464,7 +481,10 @@ export const LoyaltyCard = (): JSX.Element | null => {
                       aria-label="View staff"
                       title="View staff"
                       onClick={() => setView({ contractId: tally.contractId, role: 'staff' })}
-                      className="inline-grid place-items-center text-muted-foreground transition-colors hover:text-primary [&_svg]:size-3.5"
+                      className={cn(
+                        ICON_BUTTON_CLASS,
+                        'shrink-0 [&_svg]:size-3.5 enabled:hover:bg-transparent',
+                      )}
                     >
                       {EYE_ICON}
                     </button>
@@ -489,7 +509,10 @@ export const LoyaltyCard = (): JSX.Element | null => {
                       aria-label="View cardholders"
                       title="View cardholders"
                       onClick={() => setView({ contractId: tally.contractId, role: 'cardholder' })}
-                      className="inline-grid place-items-center text-muted-foreground transition-colors hover:text-primary [&_svg]:size-3.5"
+                      className={cn(
+                        ICON_BUTTON_CLASS,
+                        'shrink-0 [&_svg]:size-3.5 enabled:hover:bg-transparent',
+                      )}
                     >
                       {EYE_ICON}
                     </button>

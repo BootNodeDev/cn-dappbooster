@@ -1,4 +1,5 @@
-export const TALLY_PACKAGE_ID = '3abfebd483c1b2c67a79dc3ba091c4cb548b7dc8a263c0beb80c775d91c0e336'
+// Template ids use the `#package-name` reference so the participant resolves the
+// deployed package by name — no hardcoded package-id hash to keep in sync.
 export const TALLY_TEMPLATE_ID = '#quickstart-tally:Tally.Tally:Tally'
 export const TALLY_WRITER_TEMPLATE_ID = '#quickstart-tally:Tally.Tally:TallyWriter'
 
@@ -115,10 +116,13 @@ export interface StampStats {
   rewards: number
 }
 
-// 10-slot card over an unbounded value: `filled` on the current card, `rewards` completed.
+// Slots per punch card; a completed card wraps and counts as one earned reward.
+export const CARD_SIZE = 10
+
+// `filled` on the current card, `rewards` completed, over an unbounded value.
 export const stampStats = (value: number): StampStats => ({
-  filled: ((value % 10) + 10) % 10,
-  rewards: Math.max(0, Math.floor(value / 10)),
+  filled: ((value % CARD_SIZE) + CARD_SIZE) % CARD_SIZE,
+  rewards: Math.max(0, Math.floor(value / CARD_SIZE)),
 })
 
 export const canStamp = (tally: TallyContract, partyId: string): boolean =>
@@ -149,9 +153,14 @@ export const reconcileOrder = (prev: TallyContract[], next: TallyContract[]): Re
       claimed.add(same.contractId)
       continue
     }
-    const successor = next.find(
-      (t) => !prevIds.has(t.contractId) && !claimed.has(t.contractId) && t.issuer === old.issuer,
-    )
+    const candidate = (t: TallyContract): boolean =>
+      !prevIds.has(t.contractId) && !claimed.has(t.contractId) && t.issuer === old.issuer
+    // A recreated card preserves its value (grant) or increments it by one
+    // (stamp); prefer that over an unrelated same-issuer card (e.g. one just
+    // created at value 0) so a concurrent create can't steal the successor.
+    const successor =
+      next.find((t) => candidate(t) && (t.value === old.value || t.value === old.value + 1)) ??
+      next.find(candidate)
     if (successor !== undefined) {
       result.push({ tally: successor, from: old.contractId })
       claimed.add(successor.contractId)

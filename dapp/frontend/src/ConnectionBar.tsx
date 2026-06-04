@@ -73,6 +73,8 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
   // Set by a user-initiated connect; the success toast fires from the effect
   // below once `party` lands (connect() resolves before the context updates).
   const connectToastPending = useRef(false)
+  // Guards the mount-only silent reconnect against StrictMode's double-invoke.
+  const reconnectStarted = useRef(false)
 
   useEffect(() => {
     if (party !== undefined && connectToastPending.current) {
@@ -129,13 +131,13 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
       setReconnecting(false)
       return
     }
-    // Silent reconnect must stay silent: never arm the connect toast here.
-    connectToastPending.current = false
+    if (reconnectStarted.current) {
+      return
+    }
+    reconnectStarted.current = true
     void connect('extension')
-      .catch(() => {
-        // Wallet no longer authorized / not present — stay on the welcome screen.
-        writeReconnect(null)
-      })
+      // Wallet no longer authorized / not present — stay on the welcome screen.
+      .catch(() => writeReconnect(null))
       .finally(() => setReconnecting(false))
   }, [])
 
