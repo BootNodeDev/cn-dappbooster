@@ -43,6 +43,7 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
 
   const [pairingCopied, setPairingCopied] = useState(false)
   const [accountOpen, setAccountOpen] = useState(false)
+  const [connectMenuOpen, setConnectMenuOpen] = useState(false)
   const [connectMode, setConnectMode] = useState<'extension' | 'walletconnect' | undefined>(
     undefined,
   )
@@ -113,35 +114,70 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
   )
 
   const connectControls = !isConnected ? (
-    <div className="flex items-center gap-2">
+    <div className="relative">
       <button
         type="button"
-        data-testid="connect-extension"
-        onClick={() => {
-          void onConnect('extension')
-        }}
+        data-testid="connect-menu"
+        onClick={() => setConnectMenuOpen((open) => !open)}
+        aria-haspopup="menu"
+        aria-expanded={connectMenuOpen}
         disabled={isConnecting}
-        className="relative isolate inline-flex h-9 items-center gap-2 overflow-hidden rounded-full border border-primary bg-primary px-3.5 text-sm font-semibold text-primary-foreground transition before:absolute before:inset-0 before:-z-10 before:bg-[image:var(--bg-gradient-brand)] before:opacity-0 before:transition-opacity enabled:hover:border-transparent enabled:hover:shadow-glow enabled:hover:before:opacity-100 disabled:cursor-not-allowed disabled:opacity-60"
+        className="relative isolate inline-flex h-9 items-center gap-2 overflow-hidden rounded-full border border-primary bg-primary pl-4 pr-3 text-sm font-semibold text-primary-foreground transition before:absolute before:inset-0 before:-z-10 before:bg-[image:var(--bg-gradient-brand)] before:opacity-0 before:transition-opacity enabled:hover:border-transparent enabled:hover:shadow-glow enabled:hover:before:opacity-100 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        <img src="/carpincho-icon.svg" alt="" aria-hidden="true" className="size-5 rounded-full" />
-        <span>
-          {isConnecting && connectMode === 'extension' ? 'Connecting…' : 'Carpincho Wallet'}
-        </span>
+        <span>{isConnecting ? 'Connecting…' : 'Connect wallet'}</span>
+        <span className="[&_svg]:size-4">{CHEVRON_DOWN_ICON}</span>
       </button>
-      <button
-        type="button"
-        data-testid="connect-walletconnect"
-        onClick={() => {
-          void onConnect('walletconnect')
-        }}
-        disabled={isConnecting}
-        className="inline-flex h-9 items-center gap-2 rounded-full border border-border-strong bg-surface px-3 text-sm font-semibold text-foreground transition-colors enabled:hover:border-primary enabled:hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        <img src="/Walletconnect-logo.png" alt="" aria-hidden="true" className="size-[18px]" />
-        <span>
-          {isConnecting && connectMode === 'walletconnect' ? 'Pairing…' : 'WalletConnect'}
-        </span>
-      </button>
+      {connectMenuOpen && (
+        <>
+          <button
+            type="button"
+            aria-label="Close connect menu"
+            className="fixed inset-0 z-40 cursor-default"
+            onClick={() => setConnectMenuOpen(false)}
+          />
+          <div
+            role="menu"
+            className="absolute right-0 z-50 mt-2 w-64 rounded-xl border border-border bg-surface p-2 shadow-popover"
+          >
+            <button
+              type="button"
+              data-testid="connect-extension"
+              onClick={() => {
+                setConnectMenuOpen(false)
+                void onConnect('extension')
+              }}
+              disabled={isConnecting}
+              className="flex w-full items-center gap-2.5 rounded-lg p-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <img
+                src="/carpincho-icon.svg"
+                alt=""
+                aria-hidden="true"
+                className="size-6 rounded-full"
+              />
+              {isConnecting && connectMode === 'extension' ? 'Connecting…' : 'Carpincho Wallet'}
+            </button>
+            <button
+              type="button"
+              data-testid="connect-walletconnect"
+              onClick={() => {
+                setConnectMenuOpen(false)
+                void onConnect('walletconnect')
+              }}
+              disabled={isConnecting}
+              className="mt-1 flex w-full items-center gap-2.5 rounded-lg p-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <img
+                src="/Walletconnect-logo.png"
+                alt=""
+                aria-hidden="true"
+                className="size-[18px]"
+              />
+              {isConnecting && connectMode === 'walletconnect' ? 'Pairing…' : 'WalletConnect'}
+            </button>
+          </div>
+        </>
+      )}
     </div>
   ) : (
     <div className="relative">
@@ -270,12 +306,14 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
           <section className="flex flex-col items-center pt-10 pb-6 text-center sm:pt-20">
             <StarMark className="animate-drift mb-7 size-28 rounded-3xl" />
             <h1 className="max-w-xl font-display text-4xl font-extrabold leading-[1.05] tracking-[-0.02em] text-foreground sm:text-5xl">
-              Loyalty stamp cards, on-ledger
+              Loyalty stamp cards,
+              <br />
+              on-ledger
             </h1>
             <p className="mt-4 max-w-lg text-base leading-relaxed text-muted-foreground">
-              A demo on the Canton barebones stack. A merchant issues a stamp card, delegates
-              stamping to staff, and cardholders watch their stamps add up toward a reward — every
-              stamp a real Canton transaction.
+              Stampbook demo: a merchant issues a stamp card, delegates stamping to staff, and
+              cardholders watch their stamps add up toward a reward — every stamp a real Canton
+              transaction.
             </p>
             <button
               type="button"
