@@ -406,8 +406,14 @@ export const LoyaltyCard = (): JSX.Element | null => {
 
   return (
     <>
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="font-display text-lg font-semibold text-foreground">Your stamp cards</h2>
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <h2 className="font-display text-lg font-semibold text-foreground">Your stamp cards</h2>
+          <p className="mt-1 max-w-prose text-sm text-muted-foreground">
+            You're the merchant: issue stamp cards, let staff add stamps, and add cardholders who
+            collect stamps toward a reward.
+          </p>
+        </div>
         <button
           type="button"
           data-testid="new-card"
@@ -417,7 +423,7 @@ export const LoyaltyCard = (): JSX.Element | null => {
             void runCommand('create-tally', createTallyCommand(party.partyId), 'Card created')
           }}
           disabled={busy}
-          className="inline-grid size-10 place-items-center rounded-full border border-border-strong bg-surface text-2xl leading-none text-foreground transition-colors enabled:hover:border-primary enabled:hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-grid size-10 shrink-0 place-items-center rounded-full border border-border-strong bg-surface text-2xl leading-none text-foreground transition-colors enabled:hover:border-primary enabled:hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
         >
           +
         </button>
