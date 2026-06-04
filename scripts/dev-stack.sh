@@ -21,7 +21,7 @@
 # What `up` starts (in order; Docker must already be running):
 #   1. Canton + Postgres + wallet-service containers (npm run canton:up)
 #   2. Health checks (canton + wallet-service)
-#   3. Builds and deploys the quickstart-tally DAR
+#   3. Builds and deploys the Daml DAR (name derived from daml.yaml)
 #   4. Carpincho wallet dev server  -> http://localhost:3011  (background)
 #   5. dApp frontend dev server     -> http://localhost:3012  (background)
 #   6. Builds the Chrome extension and copies it to ~/Desktop/dist-extension
@@ -43,7 +43,10 @@ DAPP_PID="$RUN_DIR/dapp-dev.pid"
 MOCK_WS_LOG="$RUN_DIR/mock-wallet-service.log"
 MOCK_WS_PID="$RUN_DIR/mock-wallet-service.pid"
 
-DAR_PATH="dapp/daml/.daml/dist/quickstart-tally-0.0.1.dar"
+# Derive the DAR name from daml.yaml so renames/bumps need no edits here.
+DAML_DIR="dapp/daml"
+DAR_NAME="$(awk '/^name:/{n=$2} /^version:/{v=$2} END{print n"-"v".dar"}' "$DAML_DIR/daml.yaml")"
+DAR_PATH="$DAML_DIR/.daml/dist/$DAR_NAME"
 EXT_SRC="carpincho-wallet/dist-extension"
 EXT_DEST="$HOME/Desktop/$(basename "$EXT_SRC")"
 
@@ -128,8 +131,8 @@ up() {
   npm run wallet-service:health && echo
 
   # 3. Build + deploy DAR
-  log "Building the quickstart-tally DAR..."
-  npm run build-dar -- dapp/daml
+  log "Building the $DAR_NAME DAR..."
+  npm run build-dar -- "$DAML_DIR"
   log "Deploying the DAR to Canton..."
   npm run deploy-dar -- "$DAR_PATH"
 
