@@ -12,7 +12,7 @@ describe('dapp shell', () => {
     // Shell invariant only — it must NOT require any specific feature to be
     // present, so removing every feature still leaves a passing skeleton.
     assert.match(app, /ConnectKitProvider/)
-    assert.match(app, /import \{ ConnectionBar \} from '\.\/ConnectionBar\.js'/)
+    assert.match(app, /import \{ ConnectionBar \} from '\.\/ConnectionBar'/)
     assert.match(app, /<ConnectionBar>/)
   })
 
@@ -52,7 +52,7 @@ describe('dapp shell', () => {
     const bar = readText('src/ConnectionBar.tsx')
     const css = readText('src/index.css')
 
-    assert.match(bar, /import \{[^}]*\bformatPartyId\b[^}]*\} from '\.\/utils\/formatPartyId\.js'/)
+    assert.match(bar, /import \{[^}]*\bformatPartyId\b[^}]*\} from '\.\/utils\/formatPartyId'/)
     assert.match(bar, /formatPartyId\(party\.partyId\)/)
     assert.match(bar, /formatPartyId\(party\?\.partyId \?\? ''\)/)
     assert.doesNotMatch(bar, /network-separator/)

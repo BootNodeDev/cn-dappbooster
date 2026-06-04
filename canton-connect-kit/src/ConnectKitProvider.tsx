@@ -20,9 +20,9 @@ import {
   useRef,
   useState,
 } from 'react'
-import { createExtensionConnector } from './connectors/extension.ts'
-import { createWalletConnectConnector } from './connectors/walletconnect.ts'
-import { type RawWalletAccount, selectPrimaryAccount, toParty } from './lib/walletAccount.ts'
+import { createExtensionConnector } from './connectors/extension'
+import { createWalletConnectConnector } from './connectors/walletconnect'
+import { type RawWalletAccount, selectPrimaryAccount, toParty } from './lib/walletAccount'
 import type {
   ConnectionStatus,
   ConnectKitConfig,
@@ -30,7 +30,7 @@ import type {
   ExtensionConnector,
   Party,
   WalletConnectConnector,
-} from './types.ts'
+} from './types'
 
 export interface TxStatusSnapshot {
   status: string

@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert'
 import { afterEach, describe, it } from 'node:test'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
-import { useWalletServiceStatus } from '@/hooks/useWalletServiceStatus.ts'
+import { useWalletServiceStatus } from '@/hooks/useWalletServiceStatus'
 
 const originalFetch = globalThis.fetch
 

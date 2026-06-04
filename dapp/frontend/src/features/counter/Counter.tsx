@@ -1,7 +1,7 @@
 import { useExecute, useLedger, useParty } from 'canton-connect-kit'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { formatPartyId, shortenIdentifier } from '../../utils/formatPartyId.js'
+import { formatPartyId, shortenIdentifier } from '../../utils/formatPartyId'
 import {
   addUserCommand,
   addViewerCommand,
@@ -11,7 +11,7 @@ import {
   createCounterCommand,
   incrementCounterCommand,
   normalizeCounterContract,
-} from './counterSignature.js'
+} from './counterSignature'
 import './counter.css'
 
 const commandId = (prefix: string): string =>

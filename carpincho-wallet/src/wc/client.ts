@@ -3,7 +3,8 @@ import { formatJsonRpcError, formatJsonRpcResult } from '@walletconnect/jsonrpc-
 import SignClient from '@walletconnect/sign-client'
 import type { SignClientTypes } from '@walletconnect/types'
 import { getSdkError } from '@walletconnect/utils'
-import { loadRuntimeConfig } from '@/config/runtimeConfig.ts'
+import { loadRuntimeConfig } from '@/config/runtimeConfig'
+import type { ProviderResponder } from '@/provider/types'
 
 export const CANTON_NAMESPACE = 'canton'
 
@@ -146,15 +147,6 @@ export const rejectProposal = async (proposalId: number): Promise<void> => {
   await client.reject({ id: proposalId, reason: getSdkError('USER_REJECTED') })
 }
 
-// CIP-103 wraps the signature in an object; bare strings get rejected.
-export const respondWithSignMessage = async (
-  topic: string,
-  requestId: number,
-  signatureBase64: string,
-): Promise<void> => {
-  await respond({ topic, response: formatJsonRpcResult(requestId, { signature: signatureBase64 }) })
-}
-
 export const respondWithResult = async <T>(
   topic: string,
   requestId: number,
@@ -172,26 +164,19 @@ export const respondWithError = async (
   await respond({ topic, response: formatJsonRpcError(requestId, { code, message }) })
 }
 
+// Adapts a WalletConnect request event to the provider responder used by request handling.
+export const walletConnectResponder = (req: RequestEvent): ProviderResponder => ({
+  result: async (value) => {
+    await respondWithResult(req.topic, req.id, value)
+  },
+  error: async (code, message) => {
+    await respondWithError(req.topic, req.id, code, message)
+  },
+})
+
 export const pairWithUri = async (uri: string): Promise<void> => {
   const client = await getSignClient()
   await client.core.pairing.pair({ uri })
-}
-
-export const disconnectAllSessions = async (): Promise<void> => {
-  const client = await getSignClient()
-  const sessions = client.session.getAll()
-  await Promise.all(
-    sessions.map(async (s) => {
-      try {
-        await client.disconnect({
-          topic: s.topic,
-          reason: { code: 6000, message: 'wallet locked' },
-        })
-      } catch {
-        // ignore
-      }
-    }),
-  )
 }
 
 export interface ConnectedDappSession {
@@ -199,7 +184,26 @@ export interface ConnectedDappSession {
   name: string
   url: string
   description: string
+  // Party IDs the session was approved with (decoded from the CAIP account strings).
+  accounts: string[]
 }
+
+// CAIP account is `<chain>:<encodeURIComponent(partyId)>`; party id is the last segment.
+const partyIdsFromNamespaces = (
+  namespaces: ReturnType<
+    InstanceType<typeof SignClient>['session']['getAll']
+  >[number]['namespaces'],
+): string[] =>
+  Object.values(namespaces).flatMap((ns) =>
+    ns.accounts.map((account) => {
+      const encoded = account.split(':').pop() ?? ''
+      try {
+        return decodeURIComponent(encoded)
+      } catch {
+        return encoded
+      }
+    }),
+  )
 
 const toConnectedDappSession = (
   session: ReturnType<InstanceType<typeof SignClient>['session']['getAll']>[number],
@@ -208,6 +212,7 @@ const toConnectedDappSession = (
   name: session.peer.metadata.name,
   url: session.peer.metadata.url,
   description: session.peer.metadata.description,
+  accounts: partyIdsFromNamespaces(session.namespaces),
 })
 
 export const getConnectedDappSessions = async (): Promise<ConnectedDappSession[]> => {

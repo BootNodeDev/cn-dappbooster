@@ -18,10 +18,11 @@ type Listener = (entries: ReadonlyArray<ToastEntry>) => void
 
 const MAX_VISIBLE = 3
 
+// Only errors persist until dismissed; everything else clears after 3 s.
 const DEFAULT_DURATION_MS: Record<ToastVariant, number> = {
-  info: 5000,
-  success: 5000,
-  warning: 8000,
+  info: 3000,
+  success: 3000,
+  warning: 3000,
   error: Number.POSITIVE_INFINITY,
 }
 
@@ -50,7 +51,15 @@ const emit = (variant: ToastVariant, input: ToastInput | string): string => {
     message: normalized.message,
     durationMs: normalized.durationMs ?? DEFAULT_DURATION_MS[variant],
   }
-  const next = [...entries, entry]
+  // Collapse exact duplicates: same variant + identical string message replaces the existing
+  // toast (restarting its timer via the fresh id). ReactNode messages are always distinct.
+  const isDuplicate = (existing: ToastEntry): boolean =>
+    existing.variant === variant &&
+    typeof existing.message === 'string' &&
+    typeof entry.message === 'string' &&
+    existing.message === entry.message
+  const withoutDuplicate = entries.filter((existing) => !isDuplicate(existing))
+  const next = [...withoutDuplicate, entry]
   entries = next.length > MAX_VISIBLE ? next.slice(next.length - MAX_VISIBLE) : next
   notify()
   return entry.id

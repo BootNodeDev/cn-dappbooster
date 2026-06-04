@@ -1,11 +1,11 @@
 import { useEffect, useId, useRef } from 'react'
-import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator.tsx'
-import { PasswordInput } from '@/components/ui/PasswordInput.tsx'
+import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator'
+import { PasswordInput } from '@/components/ui/PasswordInput'
 import {
   isConfirmMismatch,
   isNewPasswordPairValid,
   usePasswordStrengthReady,
-} from '@/vault/passwordStrength.ts'
+} from '@/vault/passwordStrength'
 
 type Props = {
   password: string

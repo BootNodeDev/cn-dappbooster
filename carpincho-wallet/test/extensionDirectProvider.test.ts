@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { createDirectProviderResponse } from '@/extension/directProvider.ts'
-import type { AccountPublic } from '@/vault/types.ts'
+import { createDirectProviderResponse } from '@/extension/directProvider'
+import type { AccountPublic } from '@/vault/types'
 
 const account: AccountPublic = {
   id: 'account-1',

@@ -2,7 +2,7 @@ import { useConnect, useParty, useWalletStatus } from 'canton-connect-kit'
 import type { ReactNode } from 'react'
 import { useState } from 'react'
 import { Toaster, toast } from 'sonner'
-import { formatPartyId, shortenIdentifier } from './utils/formatPartyId.js'
+import { formatPartyId, shortenIdentifier } from './utils/formatPartyId'
 
 // Wallet-connectivity container for the dApp starter. Owns connect/disconnect,
 // the pairing popover, the connected-party display, and lock handling — and

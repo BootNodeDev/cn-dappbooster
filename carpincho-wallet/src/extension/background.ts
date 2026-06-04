@@ -1,30 +1,32 @@
-import { directConnectionUpdateFromProviderResponse } from '@/extension/directConnectionState.ts'
+import { directConnectionUpdateFromProviderResponse } from '@/extension/directConnectionState'
 import {
   forgetDirectConnectedOrigin,
   readDirectConnectedOrigins,
   rememberDirectConnectedOrigin,
-} from '@/extension/directConnections.ts'
-import { createDirectProviderResponse } from '@/extension/directProvider.ts'
+} from '@/extension/directConnections'
+import { createDirectProviderResponse } from '@/extension/directProvider'
 import {
   type JsonRpcRequest,
   type JsonRpcResponse,
   jsonRpcError,
   type RuntimeBroadcastEvent,
   type RuntimeEventRelay,
+  type RuntimeForgetConnectedOrigin,
   type RuntimeGetConnectedOrigins,
   type RuntimeGetPendingRequests,
   type RuntimePendingRequest,
   type RuntimePendingRequestMessage,
   type RuntimeProviderRequest,
   type RuntimeProviderResponse,
-} from '@/extension/messages.ts'
-import { readWalletSnapshot } from '@/extension/walletSnapshot.ts'
+} from '@/extension/messages'
+import { readWalletSnapshot } from '@/extension/walletSnapshot'
 
 type RuntimeMessage =
   | RuntimeProviderRequest
   | RuntimeProviderResponse
   | RuntimeGetPendingRequests
   | RuntimeGetConnectedOrigins
+  | RuntimeForgetConnectedOrigin
   | RuntimeBroadcastEvent
 
 type RuntimeSender = {
@@ -68,8 +70,7 @@ const chromeApi = (
   }
 ).chrome
 
-// Match patterns kept in sync with public/manifest.json `content_scripts.matches`.
-// Any drift here means the event broadcast misses some pages.
+// Keep in sync with public/manifest.json `content_scripts.matches`; drift means missed pages.
 const CONTENT_SCRIPT_MATCHES = [
   'http://localhost/*',
   'http://127.0.0.1/*',
@@ -206,6 +207,13 @@ chromeApi?.runtime?.onMessage.addListener((message, _sender, sendResponse) => {
 
   if (message.type === 'CARPINCHO_GET_CONNECTED_ORIGINS') {
     void readDirectConnectedOrigins()
+      .then(sendResponse)
+      .catch(() => sendResponse([]))
+    return true
+  }
+
+  if (message.type === 'CARPINCHO_FORGET_CONNECTED_ORIGIN') {
+    void forgetDirectConnectedOrigin(message.origin)
       .then(sendResponse)
       .catch(() => sendResponse([]))
     return true

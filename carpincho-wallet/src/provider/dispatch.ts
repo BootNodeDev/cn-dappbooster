@@ -1,4 +1,4 @@
-import { accountToCip103Wallet } from '@/provider/accounts.ts'
+import { accountToCip103Wallet } from '@/provider/accounts'
 import {
   CANTON_METHOD_CONNECT,
   CANTON_METHOD_DISCONNECT,
@@ -12,24 +12,24 @@ import {
   isExecuteApprovalMethod,
   normalizeMethod,
   pendingApprovalMethod,
-} from '@/provider/methods.ts'
-import { buildStatus, getCantonNetwork } from '@/provider/status.ts'
+} from '@/provider/methods'
+import { buildStatus, getCantonNetwork } from '@/provider/status'
 import type {
   AccountResolver,
   DispatchResult,
   ProviderRequest,
   ProviderResponder,
-} from '@/provider/types.ts'
-import { forwardToWalletService } from '@/provider/walletService.ts'
-import { accountConnection } from '@/wc/accounts.ts'
+} from '@/provider/types'
+import { forwardToWalletService } from '@/provider/walletService'
+import { accountConnection } from '@/wc/accounts'
 
-export * from '@/provider/methods.ts'
+export * from '@/provider/methods'
 export type {
   AccountResolver,
   DispatchResult,
   ProviderRequest,
   ProviderResponder,
-} from '@/provider/types.ts'
+} from '@/provider/types'
 
 export const dispatchProviderRequest = async (
   request: ProviderRequest,

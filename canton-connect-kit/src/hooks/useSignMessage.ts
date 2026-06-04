@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { useConnectKitContext } from '../ConnectKitProvider.tsx'
+import { useConnectKitContext } from '../ConnectKitProvider'
 
 export interface UseSignMessageResult {
   signMessage: (message: string) => Promise<string>

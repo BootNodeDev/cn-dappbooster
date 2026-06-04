@@ -1,14 +1,14 @@
 import { strict as assert } from 'node:assert'
 import { afterEach, describe, it } from 'node:test'
 import { act, cleanup, render } from '@testing-library/react'
-import { ToastProvider } from '@/components/ui/Toast.tsx'
+import { ToastProvider } from '@/components/ui/ToastProvider'
 import {
   getToastEntries,
   NEVER_DISMISS_MS,
   resolveDurationMs,
   subscribeToasts,
   toast,
-} from '@/components/ui/toast.ts'
+} from '@/components/ui/toast'
 
 describe('toast emitter', () => {
   afterEach(() => {
@@ -34,8 +34,8 @@ describe('toast emitter', () => {
     toast.warning('careful')
     toast.error('boom')
     const [info, warning, error] = getToastEntries()
-    assert.equal(info?.durationMs, 5000)
-    assert.equal(warning?.durationMs, 8000)
+    assert.equal(info?.durationMs, 3000)
+    assert.equal(warning?.durationMs, 3000)
     assert.equal(error?.durationMs, Number.POSITIVE_INFINITY)
   })
 
@@ -44,18 +44,41 @@ describe('toast emitter', () => {
     assert.equal(getToastEntries()[0]?.durationMs, 1234)
   })
 
-  it('evicts the oldest entry when a fourth toast is fired', () => {
+  it('collapses repeats of the same message, replacing the previous one', () => {
+    const first = toast.success('Party ID copied')
+    const second = toast.success('Party ID copied')
+    const successes = getToastEntries().filter((entry) => entry.variant === 'success')
+    assert.equal(successes.length, 1)
+    assert.notEqual(first, second)
+    assert.equal(successes[0]?.id, second)
+  })
+
+  it('keeps distinct messages of the same variant', () => {
+    toast.success('Party ID copied')
+    toast.success('wallet-service reachable: canton-local')
+    const messages = getToastEntries().map((entry) => entry.message)
+    assert.deepEqual(messages, ['Party ID copied', 'wallet-service reachable: canton-local'])
+  })
+
+  it('does not collapse toasts of different variants', () => {
     toast.info('a')
-    toast.info('b')
-    toast.info('c')
-    toast.info('d')
+    toast.success('b')
+    toast.error('c')
+    assert.equal(getToastEntries().length, 3)
+  })
+
+  it('evicts the oldest entry when more than three variants are active', () => {
+    toast.info('a')
+    toast.success('b')
+    toast.warning('c')
+    toast.error('d')
     const messages = getToastEntries().map((entry) => entry.message)
     assert.deepEqual(messages, ['b', 'c', 'd'])
   })
 
   it('dismiss removes a specific entry by id', () => {
     const idA = toast.info('a')
-    toast.info('b')
+    toast.success('b')
     toast.dismiss(idA)
     const messages = getToastEntries().map((entry) => entry.message)
     assert.deepEqual(messages, ['b'])
@@ -63,7 +86,7 @@ describe('toast emitter', () => {
 
   it('clear empties every active entry', () => {
     toast.info('a')
-    toast.info('b')
+    toast.success('b')
     toast.clear()
     assert.equal(getToastEntries().length, 0)
   })
@@ -103,13 +126,15 @@ describe('ToastProvider', () => {
   })
 
   it('renders newest entries on top of the visible stack', () => {
-    const { container } = render(<ToastProvider>nothing</ToastProvider>)
+    // The viewport portals to document.body (to escape the #root stacking context), so the toast
+    // list items live under body rather than the render container.
+    render(<ToastProvider>nothing</ToastProvider>)
     act(() => {
       toast.info('first')
-      toast.info('second')
-      toast.info('third')
+      toast.success('second')
+      toast.warning('third')
     })
-    const messages = Array.from(container.querySelectorAll('li[data-state="open"]')).map(
+    const messages = Array.from(document.body.querySelectorAll('li[data-state="open"]')).map(
       (li) => li.querySelector('div')?.textContent ?? '',
     )
     assert.deepEqual(messages, ['third', 'second', 'first'])

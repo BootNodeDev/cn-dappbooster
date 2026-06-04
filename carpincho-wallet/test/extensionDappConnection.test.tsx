@@ -1,22 +1,15 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
-import {
-  dappConnectionFromSources,
-  faviconUrlForPage,
-  useExtensionDappConnection,
-} from '@/extension/dappConnection.ts'
-import type { ConnectedDappSession } from '@/wc/client.ts'
+import { dappConnectionFromSources, useExtensionDappConnection } from '@/extension/dappConnection'
+import type { ConnectedDappSession } from '@/wc/client'
 
 type FakeChrome = {
   api: {
-    runtime: {
-      getURL: (path: string) => string
-    }
     tabs: {
       query: (
         queryInfo: { active: true; currentWindow: true },
-        callback: (tabs: Array<{ url?: string; title?: string; favIconUrl?: string }>) => void,
+        callback: (tabs: Array<{ url?: string; title?: string }>) => void,
       ) => void
     }
   }
@@ -30,6 +23,7 @@ const session: ConnectedDappSession = {
   name: 'Counter dApp',
   url: 'http://localhost:3012',
   description: 'Counter app',
+  accounts: [],
 }
 
 const DappProbe = (): JSX.Element => {
@@ -38,17 +32,10 @@ const DappProbe = (): JSX.Element => {
   return <div>{dapp.kind === 'none' ? 'No Dapp found' : `${dapp.label} ${dapp.subtitle}`}</div>
 }
 
-// Installs runtime.getURL and tabs.query APIs used by the popup dApp connection hook.
-const installChrome = (activeTab?: {
-  url?: string
-  title?: string
-  favIconUrl?: string
-}): FakeChrome => {
+// Installs the tabs.query API used by the popup dApp connection hook.
+const installChrome = (activeTab?: { url?: string; title?: string }): FakeChrome => {
   const fake: FakeChrome = {
     api: {
-      runtime: {
-        getURL: (path) => `chrome-extension://carpincho${path}`,
-      },
       tabs: {
         query: (_queryInfo, callback) => {
           callback(activeTab === undefined ? [] : [activeTab])
@@ -72,20 +59,6 @@ describe('extension dApp connection helpers', () => {
     })
   })
 
-  it('builds a Chrome MV3 favicon URL for a communicating page', () => {
-    // Scenario: the extension knows a page origin and should render that site's favicon locally.
-    installChrome()
-
-    // Build the favicon URL from the communicating page origin.
-    const result = faviconUrlForPage('http://localhost:3012')
-
-    // The URL must use Chrome's extension favicon endpoint and preserve the page URL as a query param.
-    assert.equal(
-      result,
-      'chrome-extension://carpincho/_favicon/?pageUrl=http%3A%2F%2Flocalhost%3A3012&size=32',
-    )
-  })
-
   it('returns an empty state when no active web tab exists', () => {
     // Scenario: the popup opens with no readable http/https browser tab.
     const result = dappConnectionFromSources({ extensionMode: true, sessions: [] })
@@ -104,7 +77,6 @@ describe('extension dApp connection helpers', () => {
       sessions: [],
       activeTab: {
         url: 'http://localhost:3012/counter',
-        favIconUrl: 'http://localhost:3012/favicon.ico',
       },
     })
 
@@ -113,7 +85,7 @@ describe('extension dApp connection helpers', () => {
       kind: 'detected',
       label: 'localhost:3012',
       subtitle: 'Not connected',
-      faviconUrl: 'http://localhost:3012/favicon.ico',
+      origin: 'http://localhost:3012',
     })
   })
 
@@ -132,8 +104,7 @@ describe('extension dApp connection helpers', () => {
       kind: 'connected',
       label: 'Counter dApp',
       subtitle: 'Connected',
-      faviconUrl:
-        'chrome-extension://carpincho/_favicon/?pageUrl=http%3A%2F%2Flocalhost%3A3012&size=32',
+      origin: 'http://localhost:3012',
     })
   })
 
@@ -155,8 +126,7 @@ describe('extension dApp connection helpers', () => {
       kind: 'connected',
       label: 'localhost:3012',
       subtitle: 'Connected',
-      faviconUrl:
-        'chrome-extension://carpincho/_favicon/?pageUrl=http%3A%2F%2Flocalhost%3A3012%2Fcounter&size=32',
+      origin: 'http://localhost:3012',
     })
   })
 
@@ -179,8 +149,7 @@ describe('extension dApp connection helpers', () => {
       kind: 'connected',
       label: 'localhost:3012',
       subtitle: 'Connected',
-      faviconUrl:
-        'chrome-extension://carpincho/_favicon/?pageUrl=http%3A%2F%2Flocalhost%3A3012%2Fcounter&size=32',
+      origin: 'http://localhost:3012',
     })
   })
 
@@ -188,7 +157,6 @@ describe('extension dApp connection helpers', () => {
     // Scenario: the active tab points at GitHub and has not communicated with the wallet.
     installChrome({
       url: 'https://github.com/BootNodeDev/cn-dappbooster',
-      favIconUrl: 'https://github.githubassets.com/favicons/favicon.svg',
     })
 
     // Render the popup hook with no pending requests and no connected sessions.

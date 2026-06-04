@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert'
 import { afterEach, describe, it } from 'node:test'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { PasswordInput } from '@/components/ui/PasswordInput.tsx'
+import { PasswordInput } from '@/components/ui/PasswordInput'
 
 describe('PasswordInput', () => {
   afterEach(() => {

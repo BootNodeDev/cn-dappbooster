@@ -1,4 +1,4 @@
-import { normalizeDirectConnectionOrigin } from '@/extension/directConnectionState.ts'
+import { normalizeDirectConnectionOrigin } from '@/extension/directConnectionState'
 
 export const DIRECT_CONNECTED_ORIGINS_KEY = 'carpincho.direct.connectedOrigins'
 

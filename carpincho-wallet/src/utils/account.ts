@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react'
+import type { AccountPublic } from '@/vault/types'
 
 export const shortMiddle = (value: string, head = 10, tail = 6): string => {
   if (value.length <= head + tail + 1) {
@@ -33,3 +34,8 @@ export const avatarStyle = (partyId: string): CSSProperties => {
 }
 
 export const initials = (name: string): string => name.slice(0, 2).toUpperCase()
+
+export const sortAccounts = (accounts: AccountPublic[]): AccountPublic[] =>
+  [...accounts].sort((a, b) =>
+    a.isPrimary === b.isPrimary ? a.createdAt - b.createdAt : a.isPrimary ? -1 : 1,
+  )

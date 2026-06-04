@@ -1,4 +1,4 @@
-import type { AccountPublic } from '@/vault/types.ts'
+import type { AccountPublic } from '@/vault/types'
 
 export interface AccountSnapshot {
   accounts: AccountPublic[]

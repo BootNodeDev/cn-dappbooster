@@ -1,1 +1,1 @@
-export { SignMessageDemo } from './SignMessageDemo.js'
+export { SignMessageDemo } from './SignMessageDemo'

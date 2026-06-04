@@ -1,8 +1,8 @@
 import { type ComponentPropsWithoutRef, forwardRef, useState } from 'react'
-import { ICON_BUTTON_CLASS } from '@/components/ui/Button.tsx'
-import { EYE_ICON, EYE_OFF_ICON } from '@/components/ui/icons.tsx'
-import { TextInput } from '@/components/ui/TextInput.tsx'
-import { cn } from '@/utils/cn.ts'
+import { ICON_BUTTON_CLASS } from '@/components/ui/Button'
+import { EYE_ICON, EYE_OFF_ICON } from '@/components/ui/icons'
+import { TextInput } from '@/components/ui/TextInput'
+import { cn } from '@/utils/cn'
 
 type PasswordInputProps = Omit<ComponentPropsWithoutRef<'input'>, 'type'> & {
   error?: boolean

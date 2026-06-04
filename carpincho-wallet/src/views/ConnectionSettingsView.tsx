@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { walletServiceRequest } from '@/api/walletService.ts'
-import { GhostButton, PrimaryButton, SecondaryButton } from '@/components/ui/Button.tsx'
-import { TextInput } from '@/components/ui/TextInput.tsx'
-import { toast } from '@/components/ui/toast.ts'
-import type { RuntimeConfig } from '@/config/runtimeConfig.ts'
-import { useRuntimeConfig } from '@/config/useRuntimeConfig.ts'
+import { walletServiceRequest } from '@/api/walletService'
+import { GhostButton, PrimaryButton } from '@/components/ui/Button'
+import { TextInput } from '@/components/ui/TextInput'
+import { toast } from '@/components/ui/toast'
+import type { RuntimeConfig } from '@/config/runtimeConfig'
+import { useRuntimeConfig } from '@/config/useRuntimeConfig'
 
 interface WalletServiceStatus {
   connection?: {
@@ -52,12 +52,20 @@ export const ConnectionSettingsView = (): JSX.Element => {
 
   return (
     <section className="flex flex-col gap-4 pt-1">
-      <div className="flex items-center justify-end">
-        <GhostButton onClick={() => setDraft(config)}>Reset</GhostButton>
-      </div>
-
       <div>
-        <label htmlFor="wallet-service-rpc">Wallet-service RPC URL</label>
+        <div className="flex items-baseline justify-between gap-3">
+          <label htmlFor="wallet-service-rpc">Wallet-service RPC URL</label>
+          <GhostButton
+            type="button"
+            onClick={() => {
+              void onTest()
+            }}
+            disabled={busy}
+            className="text-[0.82rem]"
+          >
+            {busy ? 'Testing…' : 'Test'}
+          </GhostButton>
+        </div>
         <TextInput
           id="wallet-service-rpc"
           type="url"
@@ -69,7 +77,7 @@ export const ConnectionSettingsView = (): JSX.Element => {
       </div>
 
       <div>
-        <label htmlFor="canton-network">WalletConnect Canton network</label>
+        <label htmlFor="canton-network">Canton network</label>
         <TextInput
           id="canton-network"
           type="text"
@@ -80,17 +88,12 @@ export const ConnectionSettingsView = (): JSX.Element => {
         />
       </div>
 
-      <div className="flex gap-3 mt-1">
-        <PrimaryButton onClick={onSave}>Save</PrimaryButton>
-        <SecondaryButton
-          onClick={() => {
-            void onTest()
-          }}
-          disabled={busy}
-        >
-          {busy ? 'Testing…' : 'Test wallet-service'}
-        </SecondaryButton>
-      </div>
+      <PrimaryButton
+        className="w-full mt-1"
+        onClick={onSave}
+      >
+        Save
+      </PrimaryButton>
     </section>
   )
 }

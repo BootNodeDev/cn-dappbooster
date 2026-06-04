@@ -1,4 +1,4 @@
-import { loadRuntimeConfig } from '@/config/runtimeConfig.ts'
+import { loadRuntimeConfig } from '@/config/runtimeConfig'
 
 export interface JsonRpcErrorObject {
   code: number

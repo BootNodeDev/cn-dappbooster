@@ -1,24 +1,40 @@
 import { useEffect, useState } from 'react'
-import { Header } from '@/components/Header.tsx'
-import { MenuSheet } from '@/components/MenuSheet.tsx'
-import { ThemeToggle } from '@/components/ThemeToggle.tsx'
-import { SPINNER_ICON } from '@/components/ui/icons.tsx'
-import { ToastProvider } from '@/components/ui/Toast.tsx'
-import { TooltipProvider } from '@/components/ui/Tooltip.tsx'
-import { useVault } from '@/vault/useVault.ts'
-import { VaultProvider } from '@/vault/VaultContext.tsx'
-import { HomeView } from '@/views/HomeView.tsx'
-import { SetupView } from '@/views/SetupView.tsx'
-import { UnlockView } from '@/views/UnlockView.tsx'
+import { Header } from '@/components/Header'
+import { MenuSheet } from '@/components/menu/MenuSheet'
+import { SPINNER_ICON } from '@/components/ui/icons'
+import { ToastProvider } from '@/components/ui/ToastProvider'
+import { TooltipProvider } from '@/components/ui/Tooltip'
+import { cn } from '@/utils/cn'
+import { useVault } from '@/vault/useVault'
+import type { VaultContextValue } from '@/vault/VaultContext'
+import { VaultProvider } from '@/vault/VaultContext'
+import { HomeView } from '@/views/HomeView'
+import { OnboardingFlow } from '@/views/onboarding/OnboardingFlow'
+import { UnlockView } from '@/views/UnlockView'
+
+export type ShellView = 'loading' | 'unlock' | 'onboarding' | 'home'
+
+// First-run routing; order matters. OnboardingFlow picks step 1 (no vault) vs step 2
+// (unlocked vault, no account), so both onboarding cases collapse to one branch.
+export const selectShellView = (
+  v: Pick<VaultContextValue, 'isLoading' | 'hasVault' | 'isLocked' | 'accounts'>,
+): ShellView => {
+  if (v.isLoading) return 'loading'
+  if (!v.hasVault) return 'onboarding'
+  if (v.isLocked) return 'unlock'
+  if (v.accounts.length === 0) return 'onboarding'
+  return 'home'
+}
 
 const Shell = (): JSX.Element => {
   const v = useVault()
   const [menuOpen, setMenuOpen] = useState(false)
-  const showHeader = v.hasVault && !v.isLocked
+  const view = selectShellView(v)
+  const showHeader = view === 'home'
   useEffect(() => {
     if (!showHeader) setMenuOpen(false)
   }, [showHeader])
-  if (v.isLoading) {
+  if (view === 'loading') {
     return (
       <div className="w-popup mx-auto px-3 pt-3 pb-8 min-h-screen flex flex-col items-center justify-center gap-3 text-muted-foreground">
         {SPINNER_ICON}
@@ -27,17 +43,17 @@ const Shell = (): JSX.Element => {
     )
   }
   return (
-    <div className={`w-popup mx-auto px-3 pt-3 ${showHeader ? 'pb-20' : 'pb-8'}`}>
-      {showHeader ? (
-        <Header onOpenMenu={() => setMenuOpen(true)} />
-      ) : (
-        <div className="flex justify-end pt-1 pb-3">
-          <ThemeToggle />
-        </div>
+    <div
+      className={cn(
+        'w-popup mx-auto px-3 pt-3',
+        // Home is a fixed-height shell (only the tab body scrolls); other views flow naturally.
+        view === 'home' ? 'flex h-screen flex-col' : 'pb-8',
       )}
-      {!v.hasVault && <SetupView />}
-      {v.hasVault && v.isLocked && <UnlockView />}
-      {v.hasVault && !v.isLocked && <HomeView />}
+    >
+      {showHeader && <Header onOpenMenu={() => setMenuOpen(true)} />}
+      {view === 'unlock' && <UnlockView />}
+      {view === 'onboarding' && <OnboardingFlow />}
+      {view === 'home' && <HomeView />}
       {showHeader && (
         <MenuSheet
           open={menuOpen}

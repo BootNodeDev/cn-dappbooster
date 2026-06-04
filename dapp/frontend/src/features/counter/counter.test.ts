@@ -148,7 +148,7 @@ describe('counter feature UI', () => {
     const src = readText('src/features/counter/Counter.tsx')
     assert.match(
       src,
-      /import \{[^}]*\bformatPartyId\b[^}]*\} from '\.\.\/\.\.\/utils\/formatPartyId\.js'/,
+      /import \{[^}]*\bformatPartyId\b[^}]*\} from '\.\.\/\.\.\/utils\/formatPartyId'/,
     )
     assert.match(src, /formatPartyId\(counter\.issuer\)/)
     assert.match(src, /formatPartyId\(partyId\)/)

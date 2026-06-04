@@ -1,4 +1,4 @@
-import type { EncryptedVault } from '@/vault/types.ts'
+import type { EncryptedVault } from '@/vault/types'
 
 const KEY_VAULT = 'carpincho.vault'
 const KEY_VAULT_NEXT = 'carpincho.vault.next'

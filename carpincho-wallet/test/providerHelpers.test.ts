@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { accountToCip103Wallet } from '@/provider/accounts.ts'
+import { accountToCip103Wallet } from '@/provider/accounts'
 import {
   CANTON_METHOD_PREPARE_EXECUTE,
   CANTON_METHOD_PREPARE_EXECUTE_AND_WAIT,
@@ -9,7 +9,7 @@ import {
   LEGACY_CANTON_METHOD_PREPARE_SIGN_EXECUTE,
   normalizeMethod,
   pendingApprovalMethod,
-} from '@/provider/methods.ts'
+} from '@/provider/methods'
 
 const account = {
   id: 'acct-1',

@@ -19,8 +19,7 @@
     "@noble/ed25519": "^3.1.0",
     "@noble/hashes": "^1.7.0",
     "@radix-ui/react-dialog": "^1.1.15",
-    "@radix-ui/react-dropdown-menu": "^2.1.16",
-    "@radix-ui/react-select": "^2.2.6",
+    "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-toast": "^1.2.15",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@walletconnect/core": "^2.23.9",
@@ -32,8 +31,7 @@
     "@zxcvbn-ts/language-common": "^3.0.4",
     "@zxcvbn-ts/language-en": "^3.0.2",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-router-dom": "^6.30.3"
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@happy-dom/global-registrator": "^20.9.0",

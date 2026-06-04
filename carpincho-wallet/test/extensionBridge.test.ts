@@ -9,7 +9,7 @@ import {
   isForCarpincho,
   isSpliceWalletRequest,
   WalletEvent,
-} from '@/extension/messages.ts'
+} from '@/extension/messages'
 
 const readJson = <T>(path: string): T => JSON.parse(readFileSync(path, 'utf8')) as T
 const readText = (path: string): string => readFileSync(path, 'utf8')
