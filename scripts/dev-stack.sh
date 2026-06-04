@@ -43,7 +43,7 @@ DAPP_PID="$RUN_DIR/dapp-dev.pid"
 MOCK_WS_LOG="$RUN_DIR/mock-wallet-service.log"
 MOCK_WS_PID="$RUN_DIR/mock-wallet-service.pid"
 
-DAR_PATH="dapp/daml/.daml/dist/quickstart-counter-0.0.1.dar"
+DAR_PATH="dapp/daml/.daml/dist/quickstart-tally-0.0.1.dar"
 EXT_SRC="carpincho-wallet/dist-extension"
 EXT_DEST="$HOME/Desktop/$(basename "$EXT_SRC")"
 

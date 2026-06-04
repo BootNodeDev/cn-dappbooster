@@ -4,7 +4,6 @@ node_modules/
 # build output
 dist/
 dist-extension/
-counter/daml/.daml/
 
 # env
 .env
