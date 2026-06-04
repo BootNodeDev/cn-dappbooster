@@ -31,7 +31,6 @@ export const HomeView = (): JSX.Element => {
   const [disconnectConfirmOpen, setDisconnectConfirmOpen] = useState(false)
   const [sessions, setSessions] = useState<ConnectedDappSession[]>([])
   const [proposal, setProposal] = useState<ProposalEvent | undefined>(undefined)
-  const [proposalAccount, setProposalAccount] = useState<string | null>(null)
   const [pendingSign, setPendingSign] = useState<PendingSignRequest | undefined>(undefined)
   const [pendingExecute, setPendingExecute] = useState<PendingExecuteRequest | undefined>(undefined)
   const [busy, setBusy] = useState(false)
@@ -39,13 +38,9 @@ export const HomeView = (): JSX.Element => {
   const extensionMode = isExtensionRuntime()
   const walletService = useWalletServiceStatus()
 
-  useEffect(() => {
-    if (proposal === undefined) {
-      setProposalAccount(null)
-      return
-    }
-    setProposalAccount((prev) => prev ?? v.primary?.id ?? v.accounts[0]?.id ?? null)
-  }, [proposal, v.primary, v.accounts])
+  // Connect proposals always use the active account; no in-flow account picker any more.
+  const proposalAccount =
+    proposal === undefined ? null : (v.primary?.id ?? v.accounts[0]?.id ?? null)
 
   useEffect(() => {
     accountSnapshotRef.current = { accounts: v.accounts, primary: v.primary }
