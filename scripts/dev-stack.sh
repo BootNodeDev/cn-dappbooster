@@ -21,7 +21,7 @@
 # What `up` starts (in order; Docker must already be running):
 #   1. Canton + Postgres + wallet-service containers (npm run canton:up)
 #   2. Health checks (canton + wallet-service)
-#   3. Builds and deploys the quickstart-counter DAR
+#   3. Builds and deploys the quickstart-tally DAR
 #   4. Carpincho wallet dev server  -> http://localhost:3011  (background)
 #   5. dApp frontend dev server     -> http://localhost:3012  (background)
 #   6. Builds the Chrome extension and copies it to ~/Desktop/dist-extension
@@ -128,7 +128,7 @@ up() {
   npm run wallet-service:health && echo
 
   # 3. Build + deploy DAR
-  log "Building the quickstart-counter DAR..."
+  log "Building the quickstart-tally DAR..."
   npm run build-dar -- dapp/daml
   log "Deploying the DAR to Canton..."
   npm run deploy-dar -- "$DAR_PATH"
