@@ -10,10 +10,10 @@
 | Subproject | Stack | Purpose |
 |------------|-------|---------|
 | `canton-barebones/` | Docker Compose + Bash + Node scripts | Local Canton participant node, Postgres, mint-token helper, DAR deploy script, health-check |
-| `dapp/daml/` | DAML (`dpm` build) | `quickstart-counter` model — DAR consumed by Canton |
+| `dapp/daml/` | DAML (`dpm` build) | `quickstart-tally` model — DAR consumed by Canton |
 | `canton-barebones/wallet-service/` | Node 24 + Express 5 + TypeScript + `@canton-network/wallet-sdk` | JSON-RPC bridge between the wallet and the Canton participant JSON API. Started by `npm run canton:up` as a docker-compose service. Self-mints its Canton JWT at boot from `CANTON_AUTH_AUDIENCE` / `CANTON_AUTH_SECRET`. `WALLET_SERVICE_MOCK=1` (`src/mock.ts`) short-circuits the dispatcher with canned responses. |
 | `carpincho-wallet/` | Vite 6 + React 18 + Tailwind v4 + Radix UI + Biome + WalletConnect Sign Client 2.x + `@noble/ed25519` | CIP-0103 wallet (web + Chrome extension), encrypted local vault, signing, injected provider, optional WalletConnect |
-| `dapp/frontend/` | Vite + React + `@canton-network/dapp-sdk` + Biome | dApp UI that talks to the wallet through the injected CIP-0103 provider, with optional WalletConnect fallback |
+| `dapp/frontend/` | Vite + React + `@canton-network/dapp-sdk` + Tailwind v4 + Radix UI + Biome | dApp UI that talks to the wallet through the injected CIP-0103 provider, with optional WalletConnect fallback |
 | `dapp/e2e/` | Playwright + TypeScript | Black-box integration tests for the dApp, Carpincho, wallet-service, and Canton stack |
 
 ## Project Structure
@@ -31,7 +31,7 @@
 ├── canton-connect-kit/            React hooks for CIP-0103 wallet connections
 ├── carpincho-wallet/              CIP-0103 wallet (web + Chrome extension)
 ├── dapp/
-│   ├── daml/                      quickstart-counter DAML model
+│   ├── daml/                      quickstart-tally DAML model
 │   ├── frontend/                  dApp UI
 │   └── e2e/                       Black-box integration tests
 ├── AGENTS.md                      Agent rules — monorepo-wide
@@ -46,7 +46,7 @@
 
 ## Data Flow
 
-The whole local stack is one signing loop. The dApp frontend discovers Carpincho through the injected CIP-0103 browser provider; Carpincho signs locally and routes the signed transaction through the wallet-service JSON-RPC bridge, which calls the Canton participant's JSON API; the participant materialises the change against the deployed `quickstart-counter` DAR. WalletConnect remains available as an opt-in fallback path.
+The whole local stack is one signing loop. The dApp frontend discovers Carpincho through the injected CIP-0103 browser provider; Carpincho signs locally and routes the signed transaction through the wallet-service JSON-RPC bridge, which calls the Canton participant's JSON API; the participant materialises the change against the deployed `quickstart-tally` DAR. WalletConnect remains available as an opt-in fallback path.
 
 ```mermaid
 flowchart TD
@@ -54,7 +54,7 @@ flowchart TD
   wallet["carpincho-wallet<br/>Vault + signer<br/>http://localhost:3011"]
   ws["canton-barebones/wallet-service<br/>Canton bridge<br/>http://localhost:3010"]
   cb["canton-barebones<br/>Participant JSON API http://localhost:3013<br/>Ledger/Admin gRPC localhost:3014 / 3015"]
-  dar["dapp/daml<br/>quickstart-counter DAR<br/>.daml/dist/*.dar"]
+  dar["dapp/daml<br/>quickstart-tally DAR<br/>.daml/dist/*.dar"]
 
   fe <-->|"Injected CIP-0103 provider<br/>optional WalletConnect"| wallet
   wallet -->|"JSON-RPC /rpc<br/>prepare, execute, read, onboard"| ws

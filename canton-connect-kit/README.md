@@ -44,13 +44,13 @@ import {
 
 function App() {
   return (
-    <ConnectKitProvider config={{ appName: 'Counter' }}>
-      <Counter />
+    <ConnectKitProvider config={{ appName: 'My dApp' }}>
+      <Dapp />
     </ConnectKitProvider>
   )
 }
 
-function Counter() {
+function Dapp() {
   const { connect, disconnect, isConnecting } = useConnect()
   const { party, isConnected } = useParty()
   const { isLocked } = useWalletStatus()

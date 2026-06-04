@@ -81,7 +81,7 @@ Or from the repo root: `npm run e2e`.
 ## Not tested today (out of scope)
 
 - WC fallback path (would need a real Reown project ID)
-- dApp's Increment / Add user / Add viewer flows (covered manually via agent-browser; could add Playwright if we want full UI coverage)
+- dApp's Create card / Add stamp / Add staff / Add viewer flows (covered manually via agent-browser; could add Playwright if we want full UI coverage)
 - `connected` and `statusChanged` are emitted by the wallet on vault lifecycle transitions but no dApp surface consumes them yet, so there is no e2e test for them. `messageSignature` lifecycle events are not emitted (`signMessage` is request/response via the Promise; lifecycle events would have no consumer).
 
 ## Conventions

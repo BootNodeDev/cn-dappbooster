@@ -58,10 +58,10 @@ Subproject docs must not restate root rules. They should describe only their loc
 | Path | Purpose | Stack | Port |
 |------|---------|-------|------|
 | [`canton-barebones/`](canton-barebones/) | Local Canton participant + Postgres via docker-compose; deploy + health + token scripts | Docker, Bash, Node scripts | 3013/3014/3015/3016/3017/3018 |
-| [`dapp/daml/`](dapp/daml/) | `quickstart-counter` DAML model | DAML | n/a (DAR artifact) |
+| [`dapp/daml/`](dapp/daml/) | `quickstart-tally` DAML model | DAML | n/a (DAR artifact) |
 | [`canton-barebones/wallet-service/`](canton-barebones/wallet-service/) | JSON-RPC bridge between the wallet and the Canton participant. Started by `npm run canton:up`. Self-mints its Canton JWT. | Node + Express + TypeScript | 3010 |
 | [`carpincho-wallet/`](carpincho-wallet/) | CIP-0103 wallet — vault, signing, WalletConnect, Chrome extension | Vite 6 + React 18 + Tailwind v4 + Biome | 3011 |
-| [`dapp/frontend/`](dapp/frontend/) | dApp UI | Vite + React + Biome | 3012 |
+| [`dapp/frontend/`](dapp/frontend/) | dApp UI | Vite + React + Tailwind v4 + Radix UI + Biome | 3012 |
 | [`dapp/e2e/`](dapp/e2e/) | dApp integration tests | Playwright + TypeScript | n/a |
 | [`canton-connect-kit/`](canton-connect-kit/) | wagmi-style React hooks for connecting Canton dApps to CIP-0103 wallets | TypeScript + React 18 + Biome | n/a (library) |
 

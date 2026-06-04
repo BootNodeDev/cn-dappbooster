@@ -8,7 +8,7 @@ The wallet-service is an app-agnostic Express JSON-RPC bridge between Carpincho 
 
 ## Working Rules
 
-- Keep this service app-agnostic. Do not add dApp-specific routes, template IDs, or Counter-specific command logic.
+- Keep this service app-agnostic. Do not add dApp-specific routes, template IDs, or Tally-specific command logic.
 - Keep the public dApp-facing API in Carpincho. This service exposes only the HTTP bridge Carpincho needs.
 - Keep wallet-internal party onboarding under `/admin/party/*`, not on the `/rpc` dApp surface.
 - Keep `ledgerApi` as a participant-native pass-through. Do not silently translate request bodies or wrap participant responses.

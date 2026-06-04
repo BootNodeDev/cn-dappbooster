@@ -2,7 +2,7 @@
 
 Minimal local Canton barebones for wallet-first app experiments.
 
-For the full Counter stack, follow the root runbook:
+For the full dApp stack, follow the root runbook:
 
 - [Quick Start](../README.md#quick-start)
 

@@ -41,9 +41,11 @@ The active Carpincho account must already have a Canton party on the participant
 src/
   App.tsx                provider + <ConnectionBar> wrapping the feature slots
   ConnectionBar.tsx      wallet connectivity: connect/lock UX + workspace gate
+  components/ui/         shared UI primitives (Button, Card, Sheet, TextInput, Tooltip, ToastProvider, icons)
+  theme/                 ThemeProvider + useTheme
   index.css              shell + base styles
   runtimeConfig.ts       network / wallet URL (localStorage)
-  utils/formatPartyId.ts shared party-id formatter
+  utils/                 shared helpers (clipboard, cn, errorMessage, formatPartyId)
   features/
     loyalty/             demo feature (DAML-backed stamp card) — removable
     sign-message/        demo feature (CIP-0103 signMessage)  — removable
