@@ -18,6 +18,40 @@ flowchart TD
 
 The dApp frontend knows the Counter DAML signature and talks to Carpincho through the injected CIP-0103 browser provider. Carpincho owns the local signing key and uses the wallet service to prepare, read, and execute against the Canton participant. WalletConnect remains available as an optional fallback path.
 
+## Dev stack script
+
+[`scripts/dev-stack.sh`](scripts/dev-stack.sh) automates the manual Quick Start below. Run it with no arguments for an interactive menu (navigate with arrow keys or `j`/`k`, jump with number keys `1`-`8`, select with Enter, quit with `q`):
+
+```bash
+./scripts/dev-stack.sh
+```
+
+Or call an action directly:
+
+```bash
+./scripts/dev-stack.sh <action>
+```
+
+| Menu item | Action | What it does |
+|-----------|--------|--------------|
+| Docker up | `docker-up` | Launch Docker Desktop and wait for the daemon (macOS only). |
+| Docker down | `docker-down` | Quit Docker Desktop (macOS only). |
+| Stack up | `up` | Bring up containers, build + deploy the DAR, start the wallet (3011) and dApp (3012) dev servers, build the extension. |
+| Stack down | `down` | Stop the dev servers and tear down the containers. |
+| Wallet up | `mock-up` | Start the mocked wallet-service (3010) + Carpincho web app (3011) with no Docker. |
+| Wallet down | `mock-down` | Stop the mocked wallet-service + Carpincho web app only. |
+| Build extension | `extension` | Build the Chrome extension and copy it to `~/Desktop/dist-extension`. |
+| (CLI only) | `status` | Show running containers and listening ports. |
+
+Notes:
+
+- Docker lifecycle is managed separately from the stack: `up` and `down` assume Docker is already running and never start or quit it. Start/quit Docker with `docker-up` / `docker-down`, the Docker app, or your own CLI.
+- `up` requires Docker running and `dpm` on `PATH` (for the DAR build). It fails fast with a clear message if the daemon is not reachable.
+- Background dev-server PIDs and logs live under `${TMPDIR:-/tmp}/cn-dev-stack/`.
+- The two Docker actions are macOS only; on other platforms they warn and no-op, while every other action runs unchanged.
+
+For the manual, step-by-step flow (and the underlying `npm` scripts the helper wraps), follow the rest of this document.
+
 ## Quick Start
 
 Run the packages in this order for the local dApp flow.
