@@ -1,6 +1,6 @@
 import { useExecute, useLedger, useParty } from 'canton-connect-kit'
 import { useEffect, useState } from 'react'
-import { GhostButton, PrimaryButton, SecondaryButton } from '@/components/ui/Button'
+import { SecondaryButton } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { COPY_ICON, EYE_ICON } from '@/components/ui/icons'
 import { Sheet } from '@/components/ui/Sheet'
@@ -110,8 +110,7 @@ const ManageSection = ({
   const trimmed = draft.trim()
   const invalid = trimmed !== '' && !isPartyIdShape(trimmed)
   return (
-    <section className="mb-6">
-      <h3 className="mb-2 font-display text-base font-semibold text-foreground">{title}</h3>
+    <section>
       <form
         className="flex flex-col gap-2"
         onSubmit={(event) => {
@@ -157,8 +156,11 @@ export const LoyaltyCard = (): JSX.Element | null => {
 
   const [tallies, setTallies] = useState<TallyContract[]>([])
   const [partyDrafts, setPartyDrafts] = useState<PartyDrafts>({})
-  const [manageId, setManageId] = useState<string | undefined>(undefined)
+  // Which card + role the "view parties" modal and the "add party" modal target.
   const [view, setView] = useState<{ contractId: string; role: ManageRole } | undefined>(undefined)
+  const [addTo, setAddTo] = useState<{ contractId: string; role: ManageRole } | undefined>(
+    undefined,
+  )
   // Per-card set of slot indices shown as stamped. Undefined until the user
   // clicks a slot; then it's frozen to "what was sequentially filled at that
   // moment, plus the clicked slot" so further stamps don't reflow the layout.
@@ -254,7 +256,7 @@ export const LoyaltyCard = (): JSX.Element | null => {
   // do NOT reload the ACS here: that would swap the card's contractId and drop
   // the per-card filled-slot overlay. The stamp is written on-ledger; the visual
   // stays optimistic until a page reload re-derives stamps sequentially.
-  const addStamp = async (tally: TallyContract): Promise<void> => {
+  const addStamp = async (tally: TallyContract, slot: number): Promise<void> => {
     if (party === undefined) {
       return
     }
@@ -269,6 +271,14 @@ export const LoyaltyCard = (): JSX.Element | null => {
       toast.success('Stamp added')
     } catch (err) {
       toast.error((err as Error).message)
+      // Tx rejected/failed: roll back the optimistic fill for this slot.
+      setFilledSlots((prev) => {
+        const current = prev[tally.contractId]
+        if (current === undefined) {
+          return prev
+        }
+        return { ...prev, [tally.contractId]: current.filter((s) => s !== slot) }
+      })
     }
   }
 
@@ -285,7 +295,7 @@ export const LoyaltyCard = (): JSX.Element | null => {
     if (next === undefined) {
       return
     }
-    setManageId(undefined)
+    setAddTo(undefined)
     setPartyDrafts((prev) => {
       const rest = { ...prev }
       delete rest[card.contractId]
@@ -306,7 +316,8 @@ export const LoyaltyCard = (): JSX.Element | null => {
     return null
   }
 
-  const managed = tallies.find((t) => t.contractId === manageId)
+  const adding =
+    addTo !== undefined ? tallies.find((t) => t.contractId === addTo.contractId) : undefined
   const viewed =
     view !== undefined ? tallies.find((t) => t.contractId === view.contractId) : undefined
   const viewedParties =
@@ -320,15 +331,19 @@ export const LoyaltyCard = (): JSX.Element | null => {
     <>
       <div className="mb-4 flex items-center justify-between gap-3">
         <h2 className="font-display text-lg font-semibold text-foreground">Your stamp cards</h2>
-        <PrimaryButton
+        <button
+          type="button"
           data-testid="new-card"
+          aria-label="New card"
+          title="New card"
           onClick={() => {
             void runCommand('create-tally', createTallyCommand(party.partyId), 'Card created')
           }}
           disabled={busy}
+          className="inline-grid size-10 place-items-center rounded-full border border-border-strong bg-surface text-2xl leading-none text-foreground transition-colors enabled:hover:border-primary enabled:hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
         >
-          New card
-        </PrimaryButton>
+          +
+        </button>
       </div>
 
       {tallies.length === 0 ? (
@@ -371,7 +386,7 @@ export const LoyaltyCard = (): JSX.Element | null => {
                           [tally.contractId]: base.includes(slot) ? base : [...base, slot],
                         }
                       })
-                      void addStamp(tally)
+                      void addStamp(tally, slot)
                     }}
                   />
                   {rewards > 0 && (
@@ -398,29 +413,58 @@ export const LoyaltyCard = (): JSX.Element | null => {
                   </button>
                 </div>
 
-                <div className="flex items-center justify-between gap-2 border-t border-border pt-2">
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-border pt-2 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <span>{tally.writers.length} staff</span>
                     <button
                       type="button"
+                      aria-label="View staff"
+                      title="View staff"
                       onClick={() => setView({ contractId: tally.contractId, role: 'staff' })}
-                      className="inline-flex items-center gap-1 transition-colors hover:text-primary [&_svg]:size-3.5"
+                      className="inline-grid place-items-center text-muted-foreground transition-colors hover:text-primary [&_svg]:size-3.5"
                     >
-                      {tally.writers.length} staff {EYE_ICON}
+                      {EYE_ICON}
                     </button>
+                    {tally.issuer === party.partyId && (
+                      <button
+                        type="button"
+                        data-testid="open-add-staff"
+                        aria-label="Add staff"
+                        title="Add staff"
+                        onClick={() => setAddTo({ contractId: tally.contractId, role: 'staff' })}
+                        className="inline-grid size-5 place-items-center rounded-full border border-border-strong bg-surface text-sm leading-none text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                      >
+                        +
+                      </button>
+                    )}
+                  </div>
+                  <span className="h-4 w-px bg-border" aria-hidden="true" />
+                  <div className="flex items-center gap-2">
+                    <span>{tally.viewers.length} cardholders</span>
                     <button
                       type="button"
+                      aria-label="View cardholders"
+                      title="View cardholders"
                       onClick={() => setView({ contractId: tally.contractId, role: 'cardholder' })}
-                      className="inline-flex items-center gap-1 transition-colors hover:text-primary [&_svg]:size-3.5"
+                      className="inline-grid place-items-center text-muted-foreground transition-colors hover:text-primary [&_svg]:size-3.5"
                     >
-                      {tally.viewers.length} cardholders {EYE_ICON}
+                      {EYE_ICON}
                     </button>
+                    {tally.issuer === party.partyId && (
+                      <button
+                        type="button"
+                        data-testid="open-add-cardholder"
+                        aria-label="Add cardholder"
+                        title="Add cardholder"
+                        onClick={() =>
+                          setAddTo({ contractId: tally.contractId, role: 'cardholder' })
+                        }
+                        className="inline-grid size-5 place-items-center rounded-full border border-border-strong bg-surface text-sm leading-none text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                      >
+                        +
+                      </button>
+                    )}
                   </div>
-                  <GhostButton
-                    data-testid="manage-card"
-                    onClick={() => setManageId(tally.contractId)}
-                  >
-                    Manage
-                  </GhostButton>
                 </div>
               </Card>
             )
@@ -429,51 +473,42 @@ export const LoyaltyCard = (): JSX.Element | null => {
       )}
 
       <Sheet
-        open={managed !== undefined}
-        onOpenChange={(open) => setManageId(open ? manageId : undefined)}
+        open={addTo !== undefined && adding !== undefined}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAddTo(undefined)
+          }
+        }}
         side="center"
-        title="Manage"
-        description="Add staff who can stamp this card, or cardholders who can view it."
+        title={addTo?.role === 'staff' ? 'Add staff' : 'Add cardholder'}
+        description="Grant another party access to this card by their party id."
       >
-        {managed !== undefined && (
+        {addTo !== undefined && adding !== undefined && (
           <>
             <p className="mb-5 text-sm text-muted-foreground">
-              Add staff and cardholders by party id. Create accounts in your wallet, then copy a
-              party id from there to paste here.
+              Create accounts in your wallet, then copy a party id from there to paste here.
             </p>
             <ManageSection
-              addTestId="add-staff"
-              buttonLabel="Add staff"
-              disabled={managed.issuer !== party.partyId || busy}
-              draft={draftFor(managed.contractId, 'staff')}
-              inputTestId="staff-party-id-input"
+              addTestId={addTo.role === 'staff' ? 'add-staff' : 'add-cardholder'}
+              buttonLabel={addTo.role === 'staff' ? 'Add staff' : 'Add cardholder'}
+              disabled={adding.issuer !== party.partyId || busy}
+              draft={draftFor(adding.contractId, addTo.role)}
+              inputTestId={
+                addTo.role === 'staff' ? 'staff-party-id-input' : 'cardholder-party-id-input'
+              }
               onAdd={() => {
+                const value = draftFor(adding.contractId, addTo.role).trim()
                 void runManageCommand(
-                  'grant-writer',
-                  grantWriterCommand(managed, draftFor(managed.contractId, 'staff').trim()),
-                  'Staff added',
-                  managed,
+                  addTo.role === 'staff' ? 'grant-writer' : 'grant-viewer',
+                  addTo.role === 'staff'
+                    ? grantWriterCommand(adding, value)
+                    : grantViewerCommand(adding, value),
+                  addTo.role === 'staff' ? 'Staff added' : 'Cardholder added',
+                  adding,
                 )
               }}
-              onDraftChange={(value) => updateDraft(managed.contractId, 'staff', value)}
-              title="Staff"
-            />
-            <ManageSection
-              addTestId="add-cardholder"
-              buttonLabel="Add cardholder"
-              disabled={managed.issuer !== party.partyId || busy}
-              draft={draftFor(managed.contractId, 'cardholder')}
-              inputTestId="cardholder-party-id-input"
-              onAdd={() => {
-                void runManageCommand(
-                  'grant-viewer',
-                  grantViewerCommand(managed, draftFor(managed.contractId, 'cardholder').trim()),
-                  'Cardholder added',
-                  managed,
-                )
-              }}
-              onDraftChange={(value) => updateDraft(managed.contractId, 'cardholder', value)}
-              title="Cardholders"
+              onDraftChange={(value) => updateDraft(adding.contractId, addTo.role, value)}
+              title={addTo.role === 'staff' ? 'Staff' : 'Cardholders'}
             />
           </>
         )}

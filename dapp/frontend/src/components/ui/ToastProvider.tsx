@@ -15,10 +15,10 @@ import { cn } from '@/utils/cn'
 
 const CLOSE_ANIMATION_MS = 200
 
-// Mirror the app shell width so toast cards align with the content column.
+// Bottom-right toast stack, clamped so it never overflows a narrow viewport.
 const VIEWPORT_CLASS =
-  'fixed top-2 left-1/2 -translate-x-1/2 z-[60] flex flex-col gap-2 ' +
-  'w-popup px-3 outline-none m-0 list-none'
+  'fixed bottom-3 right-3 z-[60] flex flex-col items-end gap-2 ' +
+  'w-popup max-w-[calc(100vw-1.5rem)] outline-none m-0 list-none'
 
 // Elevated surface card with a variant-tinted left accent rail.
 const BASE_TOAST_CLASS = cn(
