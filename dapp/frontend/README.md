@@ -12,7 +12,7 @@ WalletConnect available as an optional fallback:
 frontend -> injected CIP-0103 provider -> carpincho-wallet -> wallet-service -> Canton participant
 ```
 
-Two demo features ship under `src/features/` (`counter`, `sign-message`) and are
+Two demo features ship under `src/features/` (`loyalty`, `sign-message`) and are
 meant to be deleted once you start building your own app.
 
 ## Run
@@ -45,12 +45,12 @@ src/
   runtimeConfig.ts       network / wallet URL (localStorage)
   utils/formatPartyId.ts shared party-id formatter
   features/
-    counter/             demo feature (DAML-backed counter) — removable
+    loyalty/             demo feature (DAML-backed stamp card) — removable
     sign-message/        demo feature (CIP-0103 signMessage)  — removable
 ```
 
 A feature folder is self-contained: its component, styles, unit test, and DAML
-signature (counter only) live together, and it is wired into the app by a single
+signature (loyalty only) live together, and it is wired into the app by a single
 import + render line in `App.tsx`.
 
 ## Removing a feature
@@ -61,8 +61,8 @@ Each `src/features/<name>/` folder is a removable demo. To drop one:
 2. Delete its `import` and its `<…/>` line in `src/App.tsx`.
 3. Delete its e2e specs at `../e2e/tests/features/<name>/`.
 
-To fully remove the **counter** specifically, also delete its DAML module
-directory `../daml/daml/Counter/`, then rebuild the DAR and regenerate codegen
+To fully remove the **loyalty** specifically, also delete its DAML module
+directory `../daml/daml/Tally/`, then rebuild the DAR and regenerate codegen
 (the frontend's generated types go away with the deleted feature folder).
 
 Delete every feature and you are left with a clean connect-shell starter

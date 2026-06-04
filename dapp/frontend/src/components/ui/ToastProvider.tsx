@@ -1,7 +1,6 @@
 import * as RadixToast from '@radix-ui/react-toast'
 import { type ReactNode, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import type { FeedbackVariant } from '@/components/ui/Alert'
 import { ICON_BUTTON_CLASS } from '@/components/ui/Button'
 import {
   ALERT_CIRCLE_ICON,
@@ -10,7 +9,13 @@ import {
   INFO_ICON,
   X_ICON,
 } from '@/components/ui/icons'
-import { resolveDurationMs, subscribeToasts, type ToastEntry, toast } from '@/components/ui/toast'
+import {
+  resolveDurationMs,
+  subscribeToasts,
+  type ToastEntry,
+  type ToastVariant,
+  toast,
+} from '@/components/ui/toast'
 import { cn } from '@/utils/cn'
 
 const CLOSE_ANIMATION_MS = 200
@@ -32,23 +37,22 @@ const BASE_TOAST_CLASS = cn(
 )
 
 // Per-variant accent: only the rail and icon badge carry colour; message text stays neutral.
-const VARIANT_ACCENT: Record<FeedbackVariant, { rail: string; badge: string; icon: JSX.Element }> =
-  {
-    info: { rail: 'before:bg-primary', badge: 'bg-primary-soft text-primary', icon: INFO_ICON },
-    success: { rail: 'before:bg-success', badge: 'bg-success-soft text-success', icon: CHECK_ICON },
-    warning: {
-      rail: 'before:bg-warning',
-      badge: 'bg-warning-soft text-warning',
-      icon: ALERT_TRIANGLE_ICON,
-    },
-    error: {
-      rail: 'before:bg-danger',
-      badge: 'bg-danger-soft text-danger',
-      icon: ALERT_CIRCLE_ICON,
-    },
-  }
+const VARIANT_ACCENT: Record<ToastVariant, { rail: string; badge: string; icon: JSX.Element }> = {
+  info: { rail: 'before:bg-primary', badge: 'bg-primary-soft text-primary', icon: INFO_ICON },
+  success: { rail: 'before:bg-success', badge: 'bg-success-soft text-success', icon: CHECK_ICON },
+  warning: {
+    rail: 'before:bg-warning',
+    badge: 'bg-warning-soft text-warning',
+    icon: ALERT_TRIANGLE_ICON,
+  },
+  error: {
+    rail: 'before:bg-danger',
+    badge: 'bg-danger-soft text-danger',
+    icon: ALERT_CIRCLE_ICON,
+  },
+}
 
-const ANNOUNCE_TYPE: Record<FeedbackVariant, 'foreground' | 'background'> = {
+const ANNOUNCE_TYPE: Record<ToastVariant, 'foreground' | 'background'> = {
   info: 'background',
   success: 'background',
   warning: 'foreground',

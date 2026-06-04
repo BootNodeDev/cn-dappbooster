@@ -6,6 +6,7 @@ import {
   applyOptimisticSlot,
   canStamp,
   createTallyCommand,
+  dropOverlay,
   findSuccessor,
   grantViewerCommand,
   grantWriterCommand,
@@ -87,11 +88,15 @@ describe('stampStats (10-slot punch card)', () => {
 })
 
 describe('isPartyIdShape', () => {
-  it('requires the hint::fingerprint separator', () => {
+  it('requires a non-empty hint and fingerprint around a single ::', () => {
     assert.equal(isPartyIdShape('merchant::fp'), true)
     assert.equal(isPartyIdShape('  merchant::fp  '), true)
     assert.equal(isPartyIdShape('nospace'), false)
     assert.equal(isPartyIdShape(''), false)
+    assert.equal(isPartyIdShape('::fp'), false)
+    assert.equal(isPartyIdShape('merchant::'), false)
+    assert.equal(isPartyIdShape('::'), false)
+    assert.equal(isPartyIdShape('a::b::c'), false)
   })
 })
 
@@ -323,6 +328,17 @@ describe('rollbackSlot (undo a failed optimistic stamp)', () => {
   it('is a no-op when the card has no overlay', () => {
     const overlay = { a: [0] }
     assert.equal(rollbackSlot(overlay, 'b', 2), overlay)
+  })
+})
+
+describe('dropOverlay (discard a stamped card whose successor is unresolved)', () => {
+  it('removes the card entry and leaves others intact', () => {
+    assert.deepEqual(dropOverlay({ a: [0, 1], b: [2] }, 'a'), { b: [2] })
+  })
+
+  it('is a no-op when the card has no overlay', () => {
+    const overlay = { b: [1] }
+    assert.equal(dropOverlay(overlay, 'a'), overlay)
   })
 })
 

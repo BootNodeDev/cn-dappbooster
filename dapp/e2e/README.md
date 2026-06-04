@@ -74,7 +74,7 @@ Or from the repo root: `npm run e2e`.
 **Full dApp ↔ wallet flows** (each walks vault setup → party create → dApp connect → action):
 - `tests/features/sign-message/sign-message.spec.ts` — `signMessage` round-trips a base64 signature
 - `tests/accounts-changed.spec.ts` — switching primary in Carpincho propagates to the dApp via `accountsChanged`
-- `tests/features/counter/tx-changed.spec.ts` — captures the full `pending → signed → executed` lifecycle during `prepareExecuteAndWait`
+- `tests/features/loyalty/tx-changed.spec.ts` — captures the full `pending → signed → executed` lifecycle during `prepareExecuteAndWait`
 
 **13 tests total.** All deterministic via `data-testid` + `data-*` attribute reads, no sleep guesses.
 

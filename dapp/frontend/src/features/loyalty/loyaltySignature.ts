@@ -124,8 +124,12 @@ export const stampStats = (value: number): StampStats => ({
 export const canStamp = (tally: TallyContract, partyId: string): boolean =>
   tally.issuer === partyId || tally.writers.some(([party]) => party === partyId)
 
-// Canton party ids are `hint::fingerprint`; require the `::` separator.
-export const isPartyIdShape = (value: string): boolean => value.trim().includes('::')
+// Canton party ids are `hint::fingerprint`: exactly one `::` with a non-empty
+// hint and fingerprint on either side.
+export const isPartyIdShape = (value: string): boolean => {
+  const parts = value.trim().split('::')
+  return parts.length === 2 && parts[0].length > 0 && parts[1].length > 0
+}
 
 // Keep card order stable across reloads: a recreated Tally (new contractId)
 // reuses the slot of the contract it descends from (`from`); new cards append.
@@ -205,6 +209,17 @@ export const rollbackSlot = (
     return overlay
   }
   return { ...overlay, [contractId]: current.filter((s) => s !== slot) }
+}
+
+// Drop a card's overlay entry entirely — e.g. a stamp that succeeded but whose
+// successor contract couldn't be resolved, so its overlay can't leak forever.
+export const dropOverlay = (overlay: SlotOverlay, contractId: string): SlotOverlay => {
+  if (overlay[contractId] === undefined) {
+    return overlay
+  }
+  const rest = { ...overlay }
+  delete rest[contractId]
+  return rest
 }
 
 // After a stamp recreates the card, move the overlay from the old contract id

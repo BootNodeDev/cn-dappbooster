@@ -15,6 +15,7 @@ import {
   applyOptimisticSlot,
   canStamp,
   createTallyCommand,
+  dropOverlay,
   findSuccessor,
   grantViewerCommand,
   grantWriterCommand,
@@ -76,7 +77,7 @@ const PunchCard = ({
         <button
           key={key}
           type="button"
-          aria-label="Add stamp"
+          aria-label={`Add stamp to slot ${i + 1} of 10`}
           data-testid="add-stamp"
           onClick={() => onAdd(i)}
           disabled={busy}
@@ -280,9 +281,13 @@ export const LoyaltyCard = (): JSX.Element | null => {
       // the successor `reconcileOrder` attributed to this contract id.
       const reconciled = await loadTalliesFor(party.partyId)
       const successor = findSuccessor(reconciled, tally.contractId)
-      if (successor !== undefined) {
-        setFilledSlots((prev) => migrateOverlay(prev, tally.contractId, successor))
-      }
+      setFilledSlots((prev) =>
+        successor !== undefined
+          ? migrateOverlay(prev, tally.contractId, successor)
+          : // No successor resolved (e.g. an ACS read race): drop the stale
+            // overlay so its entry can't linger under the archived contract id.
+            dropOverlay(prev, tally.contractId),
+      )
       toast.success('Stamp added')
     } catch (err) {
       toast.error(errorMessage(err))

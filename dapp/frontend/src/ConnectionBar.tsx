@@ -20,7 +20,7 @@ const ICON_CHIP_CLASS =
   'text-muted-foreground transition-colors hover:text-primary hover:bg-primary-soft'
 
 // Remember an extension connection so a reload can silently reconnect.
-const RECONNECT_KEY = 'stampbook:reconnect'
+const RECONNECT_KEY = 'bn-canton-stampbook:reconnect'
 const readReconnect = (): string | null => {
   try {
     return window.localStorage.getItem(RECONNECT_KEY)
@@ -129,6 +129,8 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
       setReconnecting(false)
       return
     }
+    // Silent reconnect must stay silent: never arm the connect toast here.
+    connectToastPending.current = false
     void connect('extension')
       .catch(() => {
         // Wallet no longer authorized / not present — stay on the welcome screen.
@@ -154,6 +156,9 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
   const onDisconnect = async (): Promise<void> => {
     setAccountOpen(false)
     setPairingCopied(false)
+    // Drop any armed connect toast so a later party change can't fire a stale
+    // "Connected as" after this disconnect.
+    connectToastPending.current = false
     writeReconnect(null)
     await disconnect()
     toast.success('Disconnected.')

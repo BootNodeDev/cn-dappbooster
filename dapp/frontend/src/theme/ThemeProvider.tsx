@@ -1,7 +1,7 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import { ThemeContext, type ThemeMode } from '@/theme/ThemeContext'
 
-const STORAGE_KEY = 'carpincho-theme'
+const STORAGE_KEY = 'bn-canton-stampbook:theme'
 
 const readStoredMode = (): ThemeMode | null => {
   if (typeof window === 'undefined') {
