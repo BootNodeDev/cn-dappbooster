@@ -1,6 +1,6 @@
 import { useSignMessage } from 'canton-connect-kit'
 import { useState } from 'react'
-import { toast } from 'sonner'
+import { toast } from '@/components/ui/toast'
 import { shortenIdentifier } from '../../utils/formatPartyId'
 import './sign-message.css'
 

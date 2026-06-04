@@ -1,28 +1,44 @@
 import { useConnect, useParty, useWalletStatus } from 'canton-connect-kit'
 import type { ReactNode } from 'react'
 import { useState } from 'react'
-import { Toaster, toast } from 'sonner'
+import { DISCONNECT_ICON, MOON_ICON, SUN_ICON, SYSTEM_ICON } from '@/components/ui/icons'
+import { toast } from '@/components/ui/toast'
+import { useTheme } from '@/theme/useTheme'
 import { formatPartyId, shortenIdentifier } from './utils/formatPartyId'
 
+const CHIP_CLASS =
+  'inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-muted px-3 ' +
+  'text-xs font-extrabold text-primary-ink transition-colors enabled:hover:border-primary ' +
+  'disabled:cursor-not-allowed disabled:opacity-55'
+
+const ICON_CHIP_CLASS =
+  'inline-grid size-9 place-items-center rounded-full border border-border bg-surface ' +
+  'text-muted-foreground transition-colors hover:text-primary hover:bg-primary-soft'
+
 // Wallet-connectivity container for the dApp starter. Owns connect/disconnect,
-// the pairing popover, the connected-party display, and lock handling — and
-// gates the workspace: it renders `children` only when the wallet is connected,
-// unlocked, and an active party is selected, behind a feature-independent
-// `workspace-ready` marker.
+// the pairing popover, the connected-party display, lock handling, and the theme
+// toggle — and gates the workspace: it renders `children` only when the wallet is
+// connected, unlocked, and an active party is selected, behind a feature-
+// independent `workspace-ready` marker.
 export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Element => {
   const { connect, disconnect, isConnecting, isConnected, pairingUri } = useConnect()
   const { party } = useParty()
   const { isLocked } = useWalletStatus()
+  const { mode, setMode } = useTheme()
 
   const [pairingCopied, setPairingCopied] = useState(false)
   const [connectMode, setConnectMode] = useState<'extension' | 'walletconnect' | undefined>(
     undefined,
   )
 
-  const onConnect = async (mode: 'extension' | 'walletconnect'): Promise<void> => {
-    setConnectMode(mode)
+  const cycleTheme = (): void => {
+    setMode(mode === 'system' ? 'light' : mode === 'light' ? 'dark' : 'system')
+  }
+
+  const onConnect = async (connectVia: 'extension' | 'walletconnect'): Promise<void> => {
+    setConnectMode(connectVia)
     try {
-      await connect(mode)
+      await connect(connectVia)
       if (party !== undefined) {
         toast.success(`Connected as ${formatPartyId(party.partyId)}`)
       }
@@ -48,15 +64,32 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
     window.setTimeout(() => setPairingCopied(false), 1400)
   }
 
+  const themeToggle = (
+    <button
+      type="button"
+      data-testid="theme-toggle"
+      aria-label={`Theme: ${mode}`}
+      title={`Theme: ${mode}`}
+      onClick={cycleTheme}
+      className={ICON_CHIP_CLASS}
+    >
+      {mode === 'dark' ? MOON_ICON : mode === 'light' ? SUN_ICON : SYSTEM_ICON}
+    </button>
+  )
+
   return (
-    <main className="shell">
-      <Toaster position="bottom-center" richColors />
-      <h1 className="app-title">Canton dApp Starter</h1>
+    <main className="mx-auto w-[min(600px,calc(100vw-28px))] rounded-3xl bg-surface p-5 shadow-card">
+      <h1 className="mb-3.5 text-center font-display text-2xl font-extrabold text-foreground">
+        Canton dApp Starter
+      </h1>
 
       {!isConnected ? (
-        <section className="session-controls" aria-label="Connect wallet">
+        <section
+          className="mb-3.5 flex items-center justify-center gap-2"
+          aria-label="Connect wallet"
+        >
           <button
-            className="connect-chip carpincho-connect"
+            className={CHIP_CLASS}
             data-testid="connect-extension"
             type="button"
             onClick={() => {
@@ -64,13 +97,16 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
             }}
             disabled={isConnecting}
           >
-            <span className="connect-glyph" aria-hidden="true">
+            <span
+              className="grid size-5 place-items-center rounded-md bg-primary text-[0.7rem] font-extrabold text-primary-foreground"
+              aria-hidden="true"
+            >
               C
             </span>
             <span>{isConnecting && connectMode === 'extension' ? 'Connecting' : 'Carpincho'}</span>
           </button>
           <button
-            className="connect-chip"
+            className={CHIP_CLASS}
             data-testid="connect-walletconnect"
             type="button"
             onClick={() => {
@@ -78,21 +114,22 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
             }}
             disabled={isConnecting}
           >
-            <img src="/Walletconnect-logo.png" alt="" aria-hidden="true" />
+            <img src="/Walletconnect-logo.png" alt="" aria-hidden="true" className="size-[18px]" />
             <span>{isConnecting && connectMode === 'walletconnect' ? 'Pairing' : 'WC'}</span>
           </button>
+          {themeToggle}
         </section>
       ) : (
-        <div className="session-controls">
+        <div className="mb-3.5 flex items-center justify-center gap-2">
           <span
-            className="connected-party"
+            className="max-w-[min(170px,42vw)] truncate text-xs font-extrabold leading-9 text-foreground"
             data-testid="connected-party"
             data-party-id={party?.partyId ?? ''}
           >
             party:{formatPartyId(party?.partyId ?? '')}
           </span>
           <button
-            className="logout-icon"
+            className="inline-grid size-9 place-items-center rounded-full border border-danger/40 bg-surface text-danger transition-colors hover:bg-danger-soft"
             data-testid="logout"
             type="button"
             onClick={() => {
@@ -101,20 +138,17 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
             aria-label="Disconnect wallet"
             title="Disconnect wallet"
           >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-              <path d="M16 17l5-5-5-5" />
-              <path d="M21 12H9" />
-            </svg>
+            {DISCONNECT_ICON}
           </button>
+          {themeToggle}
         </div>
       )}
 
       {!isConnected && (isConnecting || pairingUri !== undefined) && (
-        <div className="pairing-popover">
+        <div className="mx-auto mb-3 w-[min(320px,calc(100vw-32px))] rounded-2xl border border-border bg-muted p-3">
           {pairingUri === undefined ? (
-            <div className="pairing-loading">
-              <span className="spinner" />
+            <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+              <span className="size-4 animate-spin rounded-full border-2 border-primary/25 border-t-primary" />
               <span>
                 {connectMode === 'walletconnect'
                   ? 'Preparing WalletConnect...'
@@ -123,12 +157,20 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
             </div>
           ) : (
             <>
-              <span>Paste in Carpincho</span>
-              <code>{shortenIdentifier(pairingUri)}</code>
-              <div>
+              <span className="mb-2 block text-sm font-extrabold text-primary-ink">
+                Paste in Carpincho
+              </span>
+              <code className="block truncate rounded-lg border border-border bg-surface p-2 font-mono text-xs text-muted-foreground">
+                {shortenIdentifier(pairingUri)}
+              </code>
+              <div className="mt-2.5 flex justify-end">
                 <button
-                  className={pairingCopied ? 'copied' : undefined}
                   type="button"
+                  className={
+                    pairingCopied
+                      ? 'inline-flex h-8 items-center rounded-full border border-success/30 bg-success-soft px-2.5 text-sm font-semibold text-success'
+                      : 'inline-flex h-8 items-center rounded-full border border-border bg-surface px-2.5 text-sm font-semibold text-foreground hover:border-primary'
+                  }
                   onClick={() => {
                     void copyPairingUri()
                   }}
@@ -142,28 +184,30 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
       )}
 
       {isConnected && isLocked && (
-        <section className="workspace-panel" data-testid="wallet-locked-banner">
-          <div className="panel-title-row">
-            <div>
-              <span className="section-kicker">Wallet locked</span>
-              <h2>Unlock Carpincho to continue</h2>
-            </div>
-          </div>
-          <p>
+        <section className="mb-3.5 rounded-2xl bg-muted p-4" data-testid="wallet-locked-banner">
+          <span className="text-[0.65rem] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+            Wallet locked
+          </span>
+          <h2 className="font-display text-lg font-semibold text-foreground">
+            Unlock Carpincho to continue
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
             Your wallet is locked. Open Carpincho and enter your password — this dApp will resume
             automatically.
           </p>
         </section>
       )}
 
-      <section className="workspace-panel">
+      <section className="rounded-2xl bg-muted p-4">
         {!isConnected || party === undefined ? (
-          <div className="empty">
-            <p className="empty-title">Connect to continue</p>
+          <div className="rounded-xl bg-surface p-4 text-muted-foreground">
+            <p className="m-0 font-semibold text-soft">Connect to continue</p>
           </div>
         ) : isLocked ? (
-          <div className="empty">
-            <p className="empty-title">Wallet locked — unlock Carpincho to continue.</p>
+          <div className="rounded-xl bg-surface p-4 text-muted-foreground">
+            <p className="m-0 font-semibold text-soft">
+              Wallet locked — unlock Carpincho to continue.
+            </p>
           </div>
         ) : (
           <div data-testid="workspace-ready">{children}</div>
