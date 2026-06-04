@@ -147,15 +147,6 @@ export const rejectProposal = async (proposalId: number): Promise<void> => {
   await client.reject({ id: proposalId, reason: getSdkError('USER_REJECTED') })
 }
 
-// CIP-103 wraps the signature in an object; bare strings get rejected.
-export const respondWithSignMessage = async (
-  topic: string,
-  requestId: number,
-  signatureBase64: string,
-): Promise<void> => {
-  await respond({ topic, response: formatJsonRpcResult(requestId, { signature: signatureBase64 }) })
-}
-
 export const respondWithResult = async <T>(
   topic: string,
   requestId: number,
@@ -186,23 +177,6 @@ export const walletConnectResponder = (req: RequestEvent): ProviderResponder => 
 export const pairWithUri = async (uri: string): Promise<void> => {
   const client = await getSignClient()
   await client.core.pairing.pair({ uri })
-}
-
-export const disconnectAllSessions = async (): Promise<void> => {
-  const client = await getSignClient()
-  const sessions = client.session.getAll()
-  await Promise.all(
-    sessions.map(async (s) => {
-      try {
-        await client.disconnect({
-          topic: s.topic,
-          reason: { code: 6000, message: 'wallet locked' },
-        })
-      } catch {
-        // ignore
-      }
-    }),
-  )
 }
 
 export interface ConnectedDappSession {

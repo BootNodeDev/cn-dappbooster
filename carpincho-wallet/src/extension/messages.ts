@@ -88,11 +88,6 @@ export interface RuntimeGetConnectedOrigins {
   type: 'CARPINCHO_GET_CONNECTED_ORIGINS'
 }
 
-export interface RuntimeConnectedOriginsChangedMessage {
-  type: 'CARPINCHO_CONNECTED_ORIGINS_CHANGED'
-  origins: string[]
-}
-
 // Popup → background: drop a direct injected-provider connection (wallet-initiated disconnect).
 export interface RuntimeForgetConnectedOrigin {
   type: 'CARPINCHO_FORGET_CONNECTED_ORIGIN'
@@ -112,20 +107,8 @@ export interface RuntimeEventRelay {
   payload: unknown
 }
 
-export interface SpliceWalletEventMessage {
-  type: WalletEventValue<'SPLICE_WALLET_EVENT'>
-  eventName: string
-  payload: unknown
-  target?: string
-}
-
 export const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null
-
-export const isSpliceWalletEvent = (value: unknown): value is SpliceWalletEventMessage =>
-  isRecord(value) &&
-  value.type === WalletEvent.SPLICE_WALLET_EVENT &&
-  typeof value.eventName === 'string'
 
 export const isForCarpincho = (message: { target?: unknown }): boolean =>
   message.target === undefined || message.target === CARPINCHO_PROVIDER_ID
