@@ -24,9 +24,7 @@ import {
 const commandId = (prefix: string): string =>
   `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`
 
-// Ledger/RPC rejections aren't always Error instances — Canton surfaces a
-// structured `{ cause, code, ... }` object. Pull out a readable message instead
-// of letting a bare object render as "[object Object]".
+// Pull a readable message from Canton's structured error objects (not Errors).
 const errorMessage = (err: unknown): string => {
   if (err instanceof Error) {
     return err.message
@@ -57,13 +55,8 @@ type PartyDrafts = Record<string, Partial<Record<ManageRole, string>>>
 // Stable per-slot keys for the fixed 10-slot punch card (avoids index-as-key).
 const SLOT_KEYS = Array.from({ length: 10 }, (_, i) => `slot-${i}`)
 
-// Reconcile a fresh ACS read against the previous list. Daml choices recreate
-// the Tally with a new contractId, and the active-contracts response doesn't
-// preserve position — so a recreated card would otherwise jump and remount.
-// Each previous card keeps its slot, adopting the newly-created same-issuer
-// successor; genuinely new cards append. `from` records which previous
-// contractId each entry descends from so the caller can carry a stable React
-// key (and the filled-slot overlay) across the recreation.
+// Keep card order stable across reloads: a recreated Tally (new contractId)
+// reuses the slot of the contract it descends from (`from`); new cards append.
 interface Reconciled {
   tally: TallyContract
   from: string | undefined
@@ -96,11 +89,7 @@ const reconcileOrder = (prev: TallyContract[], next: TallyContract[]): Reconcile
   return result
 }
 
-// 10-slot punch card. `filledSlots` is the exact set of slot indices to show as
-// stamped; the rest become clickable "+" buttons when the active party may stamp.
-// Clicking a slot fills THAT slot (not the next sequential one) — a transient,
-// unstored visual: on page reload the set is reseeded sequentially from the
-// on-ledger count.
+// 10-slot punch card: `filledSlots` are stamped; the rest are clickable "+".
 const PunchCard = ({
   filledSlots,
   canAdd,
@@ -160,8 +149,7 @@ type ManageSectionProps = {
   title: string
 }
 
-// A Canton party id is `hint::fingerprint`; reject a non-empty draft that lacks
-// the `::` separator before it reaches the ledger.
+// Canton party ids are `hint::fingerprint`; require the `::` separator.
 const isPartyIdShape = (value: string): boolean => value.trim().includes('::')
 
 const ManageSection = ({
@@ -228,14 +216,9 @@ export const LoyaltyCard = (): JSX.Element | null => {
   const [addTo, setAddTo] = useState<{ contractId: string; role: ManageRole } | undefined>(
     undefined,
   )
-  // Per-card set of slot indices shown as stamped. Undefined until the user
-  // clicks a slot; then it's frozen to "what was sequentially filled at that
-  // moment, plus the clicked slot" so further stamps don't reflow the layout.
-  // Not persisted — a page reload drops it and the card reseeds sequentially.
+  // Transient per-card stamped-slot overlay; reseeds sequentially on reload.
   const [filledSlots, setFilledSlots] = useState<Record<string, number[]>>({})
-  // Stable React keys per logical card. A card's contractId rotates on every
-  // choice, so keying the grid on it would remount (and replay the fade) each
-  // stamp. We carry a fixed key across recreations to keep the DOM in place.
+  // Stable React keys carried across contractId rotation (avoids remount flicker).
   const cardKeys = useRef<Map<string, string>>(new Map())
   const cardKeySeq = useRef(0)
 
@@ -292,8 +275,7 @@ export const LoyaltyCard = (): JSX.Element | null => {
         return tally === undefined ? [] : [tally]
       })
       const reconciled = reconcileOrder(tallies, parsed)
-      // Carry each card's stable key across its recreation (inherit from the
-      // contract it descends from; mint a fresh key for genuinely new cards).
+      // Carry stable keys across recreation; mint fresh keys for new cards.
       const nextKeys = new Map<string, string>()
       for (const { tally, from } of reconciled) {
         const inherited = from !== undefined ? cardKeys.current.get(from) : undefined
@@ -335,11 +317,8 @@ export const LoyaltyCard = (): JSX.Element | null => {
     }
   }
 
-  // Stamping is a consuming choice: it archives the Tally and creates a new one
-  // with a fresh contractId. We must reload so the NEXT stamp targets the live
-  // contract (otherwise the second stamp hits an archived contract and fails) —
-  // then migrate the optimistic filled-slot overlay onto the recreated card so
-  // the clicked positions stick instead of snapping back to sequential.
+  // Stamping recreates the Tally; reload to get the live contractId for the next
+  // stamp, and migrate the overlay onto the successor so clicked slots stick.
   const addStamp = async (tally: TallyContract, slot: number): Promise<void> => {
     if (party === undefined) {
       return
@@ -382,9 +361,7 @@ export const LoyaltyCard = (): JSX.Element | null => {
     }
   }
 
-  // Grant writer/viewer, then close the manage modal on success (and clear its
-  // drafts). A failed grant returns undefined and leaves the modal open with the
-  // typed value so the user can correct it.
+  // Grant, then close the modal and clear drafts on success; stay open on failure.
   const runManageCommand = async (
     prefix: string,
     command: unknown,

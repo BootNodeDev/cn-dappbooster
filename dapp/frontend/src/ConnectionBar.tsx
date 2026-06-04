@@ -17,8 +17,7 @@ const ICON_CHIP_CLASS =
   'inline-grid size-9 place-items-center rounded-full border border-border bg-surface ' +
   'text-muted-foreground transition-colors hover:text-primary hover:bg-primary-soft'
 
-// Remembers that the user connected via the extension so a page reload can
-// silently re-establish the session (the wallet keeps the dApp authorized).
+// Remember an extension connection so a reload can silently reconnect.
 const RECONNECT_KEY = 'stampbook:reconnect'
 const readReconnect = (): string | null => {
   try {
@@ -39,9 +38,7 @@ const writeReconnect = (value: string | null): void => {
   }
 }
 
-// App brand mark — a stamp on the brand gradient. This is the dApp's own logo
-// (the loyalty stamp metaphor); carpincho's capybara is reserved for the wallet
-// connect buttons, where it identifies the wallet you connect with.
+// App brand mark (stamp on the brand gradient); carpincho's logo marks the wallet.
 const StarMark = ({ className }: { className: string }): JSX.Element => (
   <span
     className={`grid place-items-center bg-[image:var(--bg-gradient-brand)] text-white ${className}`}
@@ -52,12 +49,8 @@ const StarMark = ({ className }: { className: string }): JSX.Element => (
   </span>
 )
 
-// Wallet-connectivity container for the dApp starter. Owns the header (brand +
-// connect / account controls + theme toggle), the welcome hero shown while
-// disconnected, the WalletConnect pairing popover, and lock handling — and gates
-// the workspace: it renders `children` only when the wallet is connected,
-// unlocked, and an active party is selected, behind a feature-independent
-// `workspace-ready` marker.
+// Wallet header (connect/account + theme), welcome hero, WC pairing, and lock
+// gating; renders children only when connected + unlocked behind workspace-ready.
 export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Element => {
   const { connect, disconnect, isConnecting, isConnected, pairingUri } = useConnect()
   const { party } = useParty()
@@ -67,8 +60,7 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
   const [pairingCopied, setPairingCopied] = useState(false)
   const [accountOpen, setAccountOpen] = useState(false)
   const [connectMenuOpen, setConnectMenuOpen] = useState(false)
-  // Seeded before first paint so the reconnect check shows a spinner instead of
-  // briefly flashing the welcome hero on reload.
+  // Seeded before first paint so the reconnect check shows a spinner, not the hero.
   const [reconnecting, setReconnecting] = useState(() => readReconnect() === 'extension')
   const [connectMode, setConnectMode] = useState<'extension' | 'walletconnect' | undefined>(
     undefined,
@@ -77,9 +69,8 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
   const connectMenuRef = useRef<HTMLDivElement>(null)
   const accountMenuRef = useRef<HTMLDivElement>(null)
 
-  // Close the header menus on an outside click or Escape. A `fixed` backdrop
-  // can't be used here: the header's `backdrop-blur` makes it the containing
-  // block for fixed descendants, trapping the backdrop inside the header bar.
+  // Close header menus on outside click / Escape (header backdrop-blur traps a
+  // fixed backdrop, so use a document listener).
   useEffect(() => {
     if (!connectMenuOpen && !accountOpen) {
       return
@@ -107,9 +98,7 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
     }
   }, [connectMenuOpen, accountOpen])
 
-  // The toggle only flips between explicit light and dark; the default stays
-  // `system` (set by ThemeProvider) until the user picks one. Resolve the active
-  // theme so the first click from the unset state inverts what's on screen.
+  // Toggle flips light/dark only; resolve `system` so the first click inverts.
   const resolvedTheme: 'light' | 'dark' =
     mode === 'system'
       ? window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -121,9 +110,7 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
     setMode(resolvedTheme === 'dark' ? 'light' : 'dark')
   }
 
-  // On reload, silently re-establish a prior extension session so a connected
-  // user lands back on their cards instead of the welcome screen. WalletConnect
-  // sessions aren't restored here — those reconnect manually.
+  // Silently reconnect a prior extension session on reload (WC reconnects manually).
   // biome-ignore lint/correctness/useExhaustiveDependencies: run once on mount
   useEffect(() => {
     if (isConnected || readReconnect() !== 'extension') {

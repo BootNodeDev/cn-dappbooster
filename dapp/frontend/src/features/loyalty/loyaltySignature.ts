@@ -115,8 +115,7 @@ export interface StampStats {
   rewards: number
 }
 
-// A fixed 10-slot punch card over an unbounded value: `filled` slots on the
-// current card (0–9), `rewards` completed cards earned so far.
+// 10-slot card over an unbounded value: `filled` on the current card, `rewards` completed.
 export const stampStats = (value: number): StampStats => ({
   filled: ((value % 10) + 10) % 10,
   rewards: Math.max(0, Math.floor(value / 10)),
