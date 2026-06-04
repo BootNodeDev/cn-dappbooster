@@ -66,6 +66,9 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
   const [pairingCopied, setPairingCopied] = useState(false)
   const [accountOpen, setAccountOpen] = useState(false)
   const [connectMenuOpen, setConnectMenuOpen] = useState(false)
+  // Seeded before first paint so the reconnect check shows a spinner instead of
+  // briefly flashing the welcome hero on reload.
+  const [reconnecting, setReconnecting] = useState(() => readReconnect() === 'extension')
   const [connectMode, setConnectMode] = useState<'extension' | 'walletconnect' | undefined>(
     undefined,
   )
@@ -123,12 +126,15 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
   // biome-ignore lint/correctness/useExhaustiveDependencies: run once on mount
   useEffect(() => {
     if (isConnected || readReconnect() !== 'extension') {
+      setReconnecting(false)
       return
     }
-    void connect('extension').catch(() => {
-      // Wallet no longer authorized / not present — stay on the welcome screen.
-      writeReconnect(null)
-    })
+    void connect('extension')
+      .catch(() => {
+        // Wallet no longer authorized / not present — stay on the welcome screen.
+        writeReconnect(null)
+      })
+      .finally(() => setReconnecting(false))
   }, [])
 
   const onConnect = async (connectVia: 'extension' | 'walletconnect'): Promise<void> => {
@@ -307,7 +313,17 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
           </div>
           <div className="flex items-center gap-2">
             {themeToggle}
-            {connectControls}
+            {reconnecting && !isConnected ? (
+              <span
+                role="status"
+                aria-label="Checking wallet"
+                className="inline-grid size-9 place-items-center"
+              >
+                <span className="size-4 animate-spin rounded-full border-2 border-primary/25 border-t-primary" />
+              </span>
+            ) : (
+              connectControls
+            )}
           </div>
         </div>
       </header>
@@ -352,7 +368,16 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
       )}
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6">
-        {!isConnected ? (
+        {reconnecting && !isConnected ? (
+          <section className="flex flex-col items-center gap-3 pt-20 text-center text-muted-foreground">
+            <span
+              role="status"
+              aria-label="Checking wallet"
+              className="size-8 animate-spin rounded-full border-2 border-primary/25 border-t-primary"
+            />
+            <p className="text-sm font-semibold">Checking your wallet…</p>
+          </section>
+        ) : !isConnected ? (
           <section className="flex flex-col items-center pt-10 pb-6 text-center sm:pt-20">
             <StarMark className="animate-drift mb-7 size-28 rounded-3xl" />
             <h1 className="max-w-xl font-display text-4xl font-extrabold leading-[1.05] tracking-[-0.02em] text-foreground sm:text-5xl">
