@@ -8,6 +8,7 @@ import {
   MOON_ICON,
   SUN_ICON,
 } from '@/components/ui/icons'
+import { Sheet } from '@/components/ui/Sheet'
 import { toast } from '@/components/ui/toast'
 import { useTheme } from '@/theme/useTheme'
 import { formatPartyId, shortenIdentifier } from './utils/formatPartyId'
@@ -328,44 +329,52 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
         </div>
       </header>
 
-      {!isConnected && (isConnecting || pairingUri !== undefined) && (
-        <div className="fixed left-1/2 top-20 z-40 w-[min(360px,calc(100vw-32px))] -translate-x-1/2 rounded-2xl border border-border bg-surface p-3 shadow-popover">
-          {pairingUri === undefined ? (
-            <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
-              <span className="size-4 animate-spin rounded-full border-2 border-primary/25 border-t-primary" />
-              <span>
-                {connectMode === 'walletconnect'
-                  ? 'Preparing WalletConnect…'
-                  : 'Waiting for Carpincho…'}
-              </span>
+      <Sheet
+        open={
+          !isConnected &&
+          connectMode === 'walletconnect' &&
+          (isConnecting || pairingUri !== undefined)
+        }
+        onOpenChange={(open) => {
+          if (!open) {
+            void disconnect()
+          }
+        }}
+        side="center"
+        title="WalletConnect"
+        description="Pair a WalletConnect-compatible wallet."
+      >
+        {pairingUri === undefined ? (
+          <div className="flex items-center gap-2.5 py-2 text-sm text-muted-foreground">
+            <span className="size-4 animate-spin rounded-full border-2 border-primary/25 border-t-primary" />
+            <span>Preparing WalletConnect…</span>
+          </div>
+        ) : (
+          <>
+            <p className="mb-3 text-sm text-muted-foreground">
+              Paste this pairing link into your WalletConnect-compatible wallet.
+            </p>
+            <code className="block break-all rounded-lg bg-muted p-3 font-mono text-xs text-foreground">
+              {shortenIdentifier(pairingUri)}
+            </code>
+            <div className="mt-4 flex justify-end">
+              <button
+                type="button"
+                className={
+                  pairingCopied
+                    ? 'inline-flex h-9 items-center rounded-full border border-success/30 bg-success-soft px-4 text-sm font-semibold text-success'
+                    : 'inline-flex h-9 items-center rounded-full border border-border-strong bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:border-primary hover:text-primary'
+                }
+                onClick={() => {
+                  void copyPairingUri()
+                }}
+              >
+                {pairingCopied ? 'Copied' : 'Copy link'}
+              </button>
             </div>
-          ) : (
-            <>
-              <span className="mb-2 block text-sm font-extrabold text-primary-ink">
-                Paste in your WalletConnect-compatible wallet
-              </span>
-              <code className="block truncate rounded-lg border border-border bg-muted p-2 font-mono text-xs text-muted-foreground">
-                {shortenIdentifier(pairingUri)}
-              </code>
-              <div className="mt-2.5 flex justify-end">
-                <button
-                  type="button"
-                  className={
-                    pairingCopied
-                      ? 'inline-flex h-8 items-center rounded-full border border-success/30 bg-success-soft px-2.5 text-sm font-semibold text-success'
-                      : 'inline-flex h-8 items-center rounded-full border border-border bg-surface px-2.5 text-sm font-semibold text-foreground hover:border-primary'
-                  }
-                  onClick={() => {
-                    void copyPairingUri()
-                  }}
-                >
-                  {pairingCopied ? 'Copied' : 'Copy'}
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      )}
+          </>
+        )}
+      </Sheet>
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6">
         {reconnecting && !isConnected ? (

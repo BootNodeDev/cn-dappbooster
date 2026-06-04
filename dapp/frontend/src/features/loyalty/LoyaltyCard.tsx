@@ -90,7 +90,6 @@ type ManageSectionProps = {
   inputTestId: string
   onAdd: () => void
   onDraftChange: (value: string) => void
-  parties: string[]
   title: string
 }
 
@@ -106,7 +105,6 @@ const ManageSection = ({
   inputTestId,
   onAdd,
   onDraftChange,
-  parties,
   title,
 }: ManageSectionProps): JSX.Element => {
   const trimmed = draft.trim()
@@ -114,15 +112,6 @@ const ManageSection = ({
   return (
     <section className="mb-6">
       <h3 className="mb-2 font-display text-base font-semibold text-foreground">{title}</h3>
-      {parties.length > 0 && (
-        <ul className="mb-3 flex flex-col gap-1">
-          {parties.map((partyId) => (
-            <li key={partyId} className="break-all font-mono text-sm text-foreground">
-              {formatPartyId(partyId)}
-            </li>
-          ))}
-        </ul>
-      )}
       <form
         className="flex flex-col gap-2"
         onSubmit={(event) => {
@@ -261,25 +250,42 @@ export const LoyaltyCard = (): JSX.Element | null => {
     }
   }
 
-  // Management choices (grant writer/viewer) archive the Tally and recreate it
-  // with a fresh contractId, so the open Sheet — keyed on contractId — would lose
-  // its target and close. Re-point manageId at the recreated card (the one new
-  // contractId for this issuer) so the Sheet stays open across multiple adds.
+  // Stamping is a consuming choice that rotates the contractId. We deliberately
+  // do NOT reload the ACS here: that would swap the card's contractId and drop
+  // the per-card filled-slot overlay. The stamp is written on-ledger; the visual
+  // stays optimistic until a page reload re-derives stamps sequentially.
+  const addStamp = async (tally: TallyContract): Promise<void> => {
+    if (party === undefined) {
+      return
+    }
+    try {
+      await execute({
+        commandId: commandId('add-stamp'),
+        commands: [addStampCommand(tally, party.partyId)],
+        actAs: [party.partyId],
+        readAs: [party.partyId],
+        packageIdSelectionPreference: [TALLY_PACKAGE_ID],
+      })
+      toast.success('Stamp added')
+    } catch (err) {
+      toast.error((err as Error).message)
+    }
+  }
+
+  // Grant writer/viewer, then close the manage modal on success (and clear its
+  // drafts). A failed grant returns undefined and leaves the modal open with the
+  // typed value so the user can correct it.
   const runManageCommand = async (
     prefix: string,
     command: unknown,
     successMessage: string,
     card: TallyContract,
   ): Promise<void> => {
-    const previousIds = new Set(tallies.map((t) => t.contractId))
     const next = await runCommand(prefix, command, successMessage)
     if (next === undefined) {
       return
     }
-    // Grant succeeded: clear the field and follow the recreated card so the
-    // modal stays open on it.
-    const successor = next.find((t) => !previousIds.has(t.contractId) && t.issuer === card.issuer)
-    setManageId(successor?.contractId)
+    setManageId(undefined)
     setPartyDrafts((prev) => {
       const rest = { ...prev }
       delete rest[card.contractId]
@@ -365,11 +371,7 @@ export const LoyaltyCard = (): JSX.Element | null => {
                           [tally.contractId]: base.includes(slot) ? base : [...base, slot],
                         }
                       })
-                      void runCommand(
-                        'add-stamp',
-                        addStampCommand(tally, party.partyId),
-                        'Stamp added',
-                      )
+                      void addStamp(tally)
                     }}
                   />
                   {rewards > 0 && (
@@ -379,7 +381,7 @@ export const LoyaltyCard = (): JSX.Element | null => {
                   )}
                 </div>
 
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5">
                   <span className="font-mono text-xs text-muted-foreground">
                     Card {shortenIdentifier(tally.contractId)}
                   </span>
@@ -390,7 +392,7 @@ export const LoyaltyCard = (): JSX.Element | null => {
                     onClick={() => {
                       void copyText(tally.contractId, 'Card id copied.')
                     }}
-                    className="inline-grid size-7 shrink-0 place-items-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary [&_svg]:size-3.5"
+                    className="inline-grid shrink-0 place-items-center text-muted-foreground transition-colors hover:text-primary [&_svg]:size-3.5"
                   >
                     {COPY_ICON}
                   </button>
@@ -430,7 +432,7 @@ export const LoyaltyCard = (): JSX.Element | null => {
         open={managed !== undefined}
         onOpenChange={(open) => setManageId(open ? manageId : undefined)}
         side="center"
-        title="Manage card"
+        title="Manage"
         description="Add staff who can stamp this card, or cardholders who can view it."
       >
         {managed !== undefined && (
@@ -454,7 +456,6 @@ export const LoyaltyCard = (): JSX.Element | null => {
                 )
               }}
               onDraftChange={(value) => updateDraft(managed.contractId, 'staff', value)}
-              parties={managed.writers.map(([writer]) => writer)}
               title="Staff"
             />
             <ManageSection
@@ -472,7 +473,6 @@ export const LoyaltyCard = (): JSX.Element | null => {
                 )
               }}
               onDraftChange={(value) => updateDraft(managed.contractId, 'cardholder', value)}
-              parties={managed.viewers}
               title="Cardholders"
             />
           </>
@@ -495,7 +495,7 @@ export const LoyaltyCard = (): JSX.Element | null => {
             {view?.role === 'staff' ? 'No staff yet.' : 'No cardholders yet.'}
           </p>
         ) : (
-          <ul className="flex max-h-72 flex-col gap-1 overflow-y-auto">
+          <ul className="flex h-72 flex-col gap-1 overflow-y-auto">
             {viewedParties.map((partyId) => (
               <li
                 key={partyId}
