@@ -3,7 +3,6 @@ import { defineConfig } from '@playwright/test'
 // All endpoints and artifact paths are env-driven so the suite can target either
 // the in-tree dev stack (default) or a published-package monorepo build later.
 const WALLET_SERVICE_URL = process.env.WALLET_SERVICE_URL ?? 'http://localhost:3010'
-const CARPINCHO_URL = process.env.CARPINCHO_URL ?? 'http://localhost:3011'
 const DAPP_URL = process.env.DAPP_URL ?? 'http://localhost:3012'
 
 export default defineConfig({
@@ -32,7 +31,6 @@ export default defineConfig({
       },
       metadata: {
         walletServiceUrl: WALLET_SERVICE_URL,
-        carpinchoUrl: CARPINCHO_URL,
         dappUrl: DAPP_URL,
       },
     },

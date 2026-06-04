@@ -22,7 +22,6 @@ This package depends on **nothing in this repo** at the TypeScript level. Every 
 | Door | Default | Override |
 |---|---|---|
 | wallet-service HTTP | `http://localhost:3010` | `WALLET_SERVICE_URL` |
-| Carpincho web | `http://localhost:3011` | `CARPINCHO_URL` |
 | dApp | `http://localhost:3012` | `DAPP_URL` |
 | Carpincho extension bundle | `../../carpincho-wallet/dist-extension` | `EXTENSION_PATH` |
 
@@ -36,8 +35,8 @@ When the four packages publish independently and the dev kit becomes a monorepo 
 ### Prerequisites
 
 The full local stack must be running. Follow the root
-[quick start](../../README.md#quick-start), including the wallet, dApp, and
-extension setup steps.
+[quick start](../../README.md#quick-start), including the dApp startup and
+Carpincho extension build/load setup steps.
 
 ### First-time setup
 
