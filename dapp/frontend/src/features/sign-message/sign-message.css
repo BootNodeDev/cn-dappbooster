@@ -1,5 +1,5 @@
 .capability-card {
   border-radius: 16px;
-  background: var(--surface);
+  background: var(--color-surface);
   padding: 16px;
 }

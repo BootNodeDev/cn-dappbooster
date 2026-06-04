@@ -59,6 +59,10 @@ type ManageSectionProps = {
   title: string
 }
 
+// A Canton party id is `hint::fingerprint`; treat a non-empty draft without the
+// `::` separator as invalid so the field flags it before we hit the ledger.
+const isPartyIdShape = (value: string): boolean => value.trim().includes('::')
+
 const ManageSection = ({
   addTestId,
   buttonLabel,
@@ -70,40 +74,51 @@ const ManageSection = ({
   onDraftChange,
   parties,
   title,
-}: ManageSectionProps): JSX.Element => (
-  <section className="mb-6">
-    <h3 className="mb-2 font-display text-base font-semibold text-foreground">{title}</h3>
-    {parties.length === 0 ? (
-      <p className="text-sm text-muted-foreground">{emptyMessage}</p>
-    ) : (
-      <ul className="mb-3 flex flex-col gap-1">
-        {parties.map((partyId) => (
-          <li key={partyId} className="break-all font-mono text-sm text-foreground">
-            {formatPartyId(partyId)}
-          </li>
-        ))}
-      </ul>
-    )}
-    <div className="flex items-center gap-2">
-      <TextInput
-        data-testid={inputTestId}
-        className="font-mono text-sm"
-        value={draft}
-        onChange={(event) => onDraftChange(event.target.value)}
-        placeholder="party id"
-        disabled={disabled}
-      />
-      <SecondaryButton
-        data-testid={addTestId}
-        className="shrink-0"
-        onClick={onAdd}
-        disabled={disabled || draft.trim() === ''}
-      >
-        {buttonLabel}
-      </SecondaryButton>
-    </div>
-  </section>
-)
+}: ManageSectionProps): JSX.Element => {
+  const trimmed = draft.trim()
+  const invalid = trimmed !== '' && !isPartyIdShape(trimmed)
+  return (
+    <section className="mb-6">
+      <h3 className="mb-2 font-display text-base font-semibold text-foreground">{title}</h3>
+      {parties.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{emptyMessage}</p>
+      ) : (
+        <ul className="mb-3 flex flex-col gap-1">
+          {parties.map((partyId) => (
+            <li key={partyId} className="break-all font-mono text-sm text-foreground">
+              {formatPartyId(partyId)}
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <TextInput
+            data-testid={inputTestId}
+            className="font-mono text-sm"
+            value={draft}
+            error={invalid}
+            aria-label={`${title} party id`}
+            onChange={(event) => onDraftChange(event.target.value)}
+            placeholder="party::fingerprint"
+            disabled={disabled}
+          />
+          {invalid && (
+            <p className="mt-1 text-xs text-danger">Enter a full party id (party::fingerprint).</p>
+          )}
+        </div>
+        <SecondaryButton
+          data-testid={addTestId}
+          className="shrink-0"
+          onClick={onAdd}
+          disabled={disabled || trimmed === '' || invalid}
+        >
+          {buttonLabel}
+        </SecondaryButton>
+      </div>
+    </section>
+  )
+}
 
 // Loyalty stamp card feature. Removable: delete this folder, its import + the
 // <LoyaltyCard /> line in App.tsx, ../e2e/tests/features/loyalty, and the
@@ -128,7 +143,7 @@ export const LoyaltyCard = (): JSX.Element | null => {
     void loadTalliesFor(party.partyId)
   }, [party?.partyId])
 
-  const loadTalliesFor = async (partyId: string): Promise<void> => {
+  const loadTalliesFor = async (partyId: string): Promise<TallyContract[]> => {
     try {
       const ledgerEnd = (await ledgerApi({
         requestMethod: 'get',
@@ -160,14 +175,15 @@ export const LoyaltyCard = (): JSX.Element | null => {
           verbose: true,
         },
       })) as unknown[]
-      setTallies(
-        (Array.isArray(response) ? response : []).flatMap((row) => {
-          const tally = normalizeTallyContract(row)
-          return tally === undefined ? [] : [tally]
-        }),
-      )
+      const next = (Array.isArray(response) ? response : []).flatMap((row) => {
+        const tally = normalizeTallyContract(row)
+        return tally === undefined ? [] : [tally]
+      })
+      setTallies(next)
+      return next
     } catch (err) {
       toast.error((err as Error).message)
+      return []
     }
   }
 
@@ -175,9 +191,9 @@ export const LoyaltyCard = (): JSX.Element | null => {
     prefix: string,
     command: unknown,
     successMessage: string,
-  ): Promise<void> => {
+  ): Promise<TallyContract[] | undefined> => {
     if (party === undefined) {
-      return
+      return undefined
     }
     try {
       await execute({
@@ -187,11 +203,32 @@ export const LoyaltyCard = (): JSX.Element | null => {
         readAs: [party.partyId],
         packageIdSelectionPreference: [TALLY_PACKAGE_ID],
       })
-      await loadTalliesFor(party.partyId)
+      const next = await loadTalliesFor(party.partyId)
       toast.success(successMessage)
+      return next
     } catch (err) {
       toast.error((err as Error).message)
+      return undefined
     }
+  }
+
+  // Management choices (grant writer/viewer) archive the Tally and recreate it
+  // with a fresh contractId, so the open Sheet — keyed on contractId — would lose
+  // its target and close. Re-point manageId at the recreated card (the one new
+  // contractId for this issuer) so the Sheet stays open across multiple adds.
+  const runManageCommand = async (
+    prefix: string,
+    command: unknown,
+    successMessage: string,
+    card: TallyContract,
+  ): Promise<void> => {
+    const previousIds = new Set(tallies.map((t) => t.contractId))
+    const next = await runCommand(prefix, command, successMessage)
+    if (next === undefined) {
+      return
+    }
+    const successor = next.find((t) => !previousIds.has(t.contractId) && t.issuer === card.issuer)
+    setManageId(successor?.contractId)
   }
 
   const draftFor = (contractId: string, role: ManageRole): string =>
@@ -311,10 +348,11 @@ export const LoyaltyCard = (): JSX.Element | null => {
               emptyMessage="No staff yet."
               inputTestId="staff-party-id-input"
               onAdd={() => {
-                void runCommand(
+                void runManageCommand(
                   'grant-writer',
                   grantWriterCommand(managed, draftFor(managed.contractId, 'staff').trim()),
                   'Staff added',
+                  managed,
                 )
               }}
               onDraftChange={(value) => updateDraft(managed.contractId, 'staff', value)}
@@ -329,10 +367,11 @@ export const LoyaltyCard = (): JSX.Element | null => {
               emptyMessage="No cardholders yet."
               inputTestId="cardholder-party-id-input"
               onAdd={() => {
-                void runCommand(
+                void runManageCommand(
                   'grant-viewer',
                   grantViewerCommand(managed, draftFor(managed.contractId, 'cardholder').trim()),
                   'Cardholder added',
+                  managed,
                 )
               }}
               onDraftChange={(value) => updateDraft(managed.contractId, 'cardholder', value)}
