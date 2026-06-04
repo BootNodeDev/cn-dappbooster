@@ -11,6 +11,7 @@ import {
 import { Sheet } from '@/components/ui/Sheet'
 import { toast } from '@/components/ui/toast'
 import { useTheme } from '@/theme/useTheme'
+import { errorMessage } from './utils/errorMessage'
 import { formatPartyId, shortenIdentifier } from './utils/formatPartyId'
 
 const ICON_CHIP_CLASS =
@@ -134,7 +135,7 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
         toast.success(`Connected as ${formatPartyId(party.partyId)}`)
       }
     } catch (err) {
-      toast.error((err as Error).message)
+      toast.error(errorMessage(err))
     } finally {
       setConnectMode(undefined)
     }

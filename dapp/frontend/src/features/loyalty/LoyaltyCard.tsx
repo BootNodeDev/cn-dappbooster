@@ -7,6 +7,7 @@ import { Sheet } from '@/components/ui/Sheet'
 import { TextInput } from '@/components/ui/TextInput'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { toast } from '@/components/ui/toast'
+import { errorMessage } from '../../utils/errorMessage'
 import { formatPartyId, shortenIdentifier } from '../../utils/formatPartyId'
 import {
   addStampCommand,
@@ -23,31 +24,6 @@ import {
 
 const commandId = (prefix: string): string =>
   `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`
-
-// Pull a readable message from Canton's structured error objects (not Errors).
-const errorMessage = (err: unknown): string => {
-  if (err instanceof Error) {
-    return err.message
-  }
-  if (typeof err === 'string') {
-    return err
-  }
-  if (err !== null && typeof err === 'object') {
-    const record = err as Record<string, unknown>
-    if (typeof record.cause === 'string') {
-      return record.cause
-    }
-    if (typeof record.message === 'string') {
-      return record.message
-    }
-    try {
-      return JSON.stringify(err)
-    } catch {
-      return 'Unexpected error'
-    }
-  }
-  return 'Unexpected error'
-}
 
 type ManageRole = 'staff' | 'cardholder'
 type PartyDrafts = Record<string, Partial<Record<ManageRole, string>>>

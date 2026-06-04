@@ -1,6 +1,7 @@
 import { useSignMessage } from 'canton-connect-kit'
 import { useState } from 'react'
 import { toast } from '@/components/ui/toast'
+import { errorMessage } from '../../utils/errorMessage'
 import { shortenIdentifier } from '../../utils/formatPartyId'
 import './sign-message.css'
 
@@ -15,7 +16,7 @@ export const SignMessageDemo = (): JSX.Element => {
       await signMessage(signInput)
       toast.success('Message signed.')
     } catch (err) {
-      toast.error((err as Error).message)
+      toast.error(errorMessage(err))
     }
   }
 
