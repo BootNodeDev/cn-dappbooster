@@ -16,6 +16,28 @@ const ICON_CHIP_CLASS =
   'inline-grid size-9 place-items-center rounded-full border border-border bg-surface ' +
   'text-muted-foreground transition-colors hover:text-primary hover:bg-primary-soft'
 
+// Remembers that the user connected via the extension so a page reload can
+// silently re-establish the session (the wallet keeps the dApp authorized).
+const RECONNECT_KEY = 'stampbook:reconnect'
+const readReconnect = (): string | null => {
+  try {
+    return window.localStorage.getItem(RECONNECT_KEY)
+  } catch {
+    return null
+  }
+}
+const writeReconnect = (value: string | null): void => {
+  try {
+    if (value === null) {
+      window.localStorage.removeItem(RECONNECT_KEY)
+    } else {
+      window.localStorage.setItem(RECONNECT_KEY, value)
+    }
+  } catch {
+    // ignore quota / privacy errors
+  }
+}
+
 // App brand mark — a stamp on the brand gradient. This is the dApp's own logo
 // (the loyalty stamp metaphor); carpincho's capybara is reserved for the wallet
 // connect buttons, where it identifies the wallet you connect with.
@@ -95,10 +117,25 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
     setMode(resolvedTheme === 'dark' ? 'light' : 'dark')
   }
 
+  // On reload, silently re-establish a prior extension session so a connected
+  // user lands back on their cards instead of the welcome screen. WalletConnect
+  // sessions aren't restored here — those reconnect manually.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: run once on mount
+  useEffect(() => {
+    if (isConnected || readReconnect() !== 'extension') {
+      return
+    }
+    void connect('extension').catch(() => {
+      // Wallet no longer authorized / not present — stay on the welcome screen.
+      writeReconnect(null)
+    })
+  }, [])
+
   const onConnect = async (connectVia: 'extension' | 'walletconnect'): Promise<void> => {
     setConnectMode(connectVia)
     try {
       await connect(connectVia)
+      writeReconnect(connectVia)
       if (party !== undefined) {
         toast.success(`Connected as ${formatPartyId(party.partyId)}`)
       }
@@ -112,6 +149,7 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
   const onDisconnect = async (): Promise<void> => {
     setAccountOpen(false)
     setPairingCopied(false)
+    writeReconnect(null)
     await disconnect()
     toast.success('Disconnected.')
   }
