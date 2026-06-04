@@ -271,8 +271,8 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
             Connected party
           </span>
           <div className="mt-1 flex items-stretch gap-2">
-            <code className="min-w-0 flex-1 break-all rounded-lg bg-muted p-2 font-mono text-xs text-foreground">
-              {party?.partyId ?? ''}
+            <code className="min-w-0 flex-1 truncate rounded-lg bg-muted p-2 font-mono text-xs text-foreground">
+              {formatPartyId(party?.partyId ?? '')}
             </code>
             <button
               type="button"

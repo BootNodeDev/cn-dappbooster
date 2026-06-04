@@ -534,9 +534,9 @@ export const LoyaltyCard = (): JSX.Element | null => {
             {viewedParties.map((partyId) => (
               <li
                 key={partyId}
-                className="break-all rounded-lg bg-muted p-2 font-mono text-xs text-foreground"
+                className="truncate rounded-lg bg-muted p-2 font-mono text-xs text-foreground"
               >
-                {partyId}
+                {formatPartyId(partyId)}
               </li>
             ))}
           </ul>
