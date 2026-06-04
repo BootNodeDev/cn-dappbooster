@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/Card'
 import { COPY_ICON, EYE_ICON } from '@/components/ui/icons'
 import { Sheet } from '@/components/ui/Sheet'
 import { TextInput } from '@/components/ui/TextInput'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { toast } from '@/components/ui/toast'
 import { formatPartyId, shortenIdentifier } from '../../utils/formatPartyId'
 import {
@@ -409,9 +410,32 @@ export const LoyaltyCard = (): JSX.Element | null => {
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <h2 className="font-display text-lg font-semibold text-foreground">Your stamp cards</h2>
-          <p className="mt-1 max-w-prose text-sm text-muted-foreground">
-            You're the merchant: issue stamp cards, let staff add stamps, and add cardholders who
-            collect stamps toward a reward.
+          <p className="mt-1 flex max-w-prose flex-wrap items-center gap-x-1 text-sm text-muted-foreground">
+            You're the
+            <span className="inline-flex items-center gap-0.5 font-medium text-foreground">
+              merchant
+              <Tooltip
+                label="What is a merchant?"
+                content="The party that issues a card. You create stamp cards, add stamps, and grant access to staff and cardholders."
+              />
+            </span>
+            : issue stamp cards, let
+            <span className="inline-flex items-center gap-0.5 font-medium text-foreground">
+              staff
+              <Tooltip
+                label="What is staff?"
+                content="A party you delegate stamping to. Staff can add stamps but can't manage who has access."
+              />
+            </span>
+            add stamps, and add
+            <span className="inline-flex items-center gap-0.5 font-medium text-foreground">
+              cardholders
+              <Tooltip
+                label="What is a cardholder?"
+                content="A party who can view a card and follow its stamps toward a reward, but can't add stamps."
+              />
+            </span>
+            who collect stamps toward a reward.
           </p>
         </div>
         <button
