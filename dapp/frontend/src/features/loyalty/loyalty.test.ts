@@ -3,14 +3,18 @@ import { describe, it } from 'node:test'
 
 import {
   addStampCommand,
+  applyOptimisticSlot,
   canStamp,
   createTallyCommand,
+  findSuccessor,
   grantViewerCommand,
   grantWriterCommand,
   isPartyIdShape,
+  migrateOverlay,
   normalizeTallyContract,
   reconcileOrder,
   reconcileOverlay,
+  rollbackSlot,
   stampStats,
   type TallyContract,
 } from './loyaltySignature.ts'
@@ -100,11 +104,16 @@ describe('canStamp', () => {
 })
 
 describe('command builders', () => {
-  it('create uses string-zero value and empty writers/viewers', () => {
+  it('create uses string-zero value and empty writers/viewers as { map: [] }', () => {
     assert.deepEqual(createTallyCommand('m::fp'), {
       CreateCommand: {
         templateId: '#quickstart-tally:Tally.Tally:Tally',
-        createArguments: { issuer: 'm::fp', value: '0', writers: [], viewers: { map: [] } },
+        createArguments: {
+          issuer: 'm::fp',
+          value: '0',
+          writers: { map: [] },
+          viewers: { map: [] },
+        },
       },
     })
   })
@@ -258,5 +267,90 @@ describe('tally contract normalization (edge cases)', () => {
     })
     assert.deepEqual(result?.writers, [['s::fp', 'deleg-9']])
     assert.deepEqual(result?.viewers, ['h::fp'])
+  })
+})
+
+describe('findSuccessor (attribute the recreated card after a stamp)', () => {
+  it('returns the contract reconcileOrder mapped from the stamped id', () => {
+    const a = tally({ contractId: 'a', issuer: 'm::fp', value: 0 })
+    const a2 = tally({ contractId: 'a2', issuer: 'm::fp', value: 1 })
+    const reconciled = reconcileOrder([a], [a2])
+    assert.equal(findSuccessor(reconciled, 'a')?.contractId, 'a2')
+  })
+
+  it('disambiguates two same-issuer cards by their own predecessor', () => {
+    const a = tally({ contractId: 'a', issuer: 'm::fp' })
+    const b = tally({ contractId: 'b', issuer: 'm::fp' })
+    const a2 = tally({ contractId: 'a2', issuer: 'm::fp' })
+    const b2 = tally({ contractId: 'b2', issuer: 'm::fp' })
+    const reconciled = reconcileOrder([a, b], [a2, b2])
+    const stampedA = findSuccessor(reconciled, 'a')?.contractId
+    const stampedB = findSuccessor(reconciled, 'b')?.contractId
+    assert.notEqual(stampedA, stampedB)
+    assert.ok(stampedA === 'a2' || stampedA === 'b2')
+  })
+
+  it('returns undefined when the id has no successor', () => {
+    const a = tally({ contractId: 'a', issuer: 'm::fp' })
+    assert.equal(findSuccessor(reconcileOrder([a], [a]), 'missing'), undefined)
+  })
+})
+
+describe('applyOptimisticSlot (mark a clicked slot stamped)', () => {
+  it('seeds from the sequential baseline on the first click of a card', () => {
+    // value 2 -> sequential [0,1]; clicking slot 5 appends it
+    assert.deepEqual(applyOptimisticSlot({}, 'a', [0, 1], 5), { a: [0, 1, 5] })
+  })
+
+  it('appends to an existing overlay without duplicating an already-filled slot', () => {
+    assert.deepEqual(applyOptimisticSlot({ a: [0, 3] }, 'a', [0], 7), { a: [0, 3, 7] })
+    assert.deepEqual(applyOptimisticSlot({ a: [0, 3] }, 'a', [0], 3), { a: [0, 3] })
+  })
+
+  it('leaves other cards untouched', () => {
+    assert.deepEqual(applyOptimisticSlot({ a: [0], b: [1] }, 'a', [0], 4), {
+      a: [0, 4],
+      b: [1],
+    })
+  })
+})
+
+describe('rollbackSlot (undo a failed optimistic stamp)', () => {
+  it('drops the slot from the card overlay', () => {
+    assert.deepEqual(rollbackSlot({ a: [0, 1, 5] }, 'a', 5), { a: [0, 1] })
+  })
+
+  it('is a no-op when the card has no overlay', () => {
+    const overlay = { a: [0] }
+    assert.equal(rollbackSlot(overlay, 'b', 2), overlay)
+  })
+})
+
+describe('migrateOverlay (carry the overlay onto the recreated card)', () => {
+  it('moves a still-filling overlay onto the successor id', () => {
+    // successor value 3 -> filled 3, overlay of 3 survives intact under the new id
+    assert.deepEqual(migrateOverlay({ a: [2, 0, 5] }, 'a', { contractId: 'a2', value: 3 }), {
+      a2: [2, 0, 5],
+    })
+  })
+
+  it('drops the overlay entirely when the card completes and wraps to 0', () => {
+    assert.deepEqual(
+      migrateOverlay({ a: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] }, 'a', { contractId: 'a2', value: 10 }),
+      {},
+    )
+  })
+
+  it('trims to the live filled count past a card boundary', () => {
+    // matches reconcileOverlay: value 11 -> filled 1, keep the most recent click
+    assert.deepEqual(reconcileOverlay([8, 4], 11), [4])
+    assert.deepEqual(migrateOverlay({ a: [8, 4] }, 'a', { contractId: 'a2', value: 11 }), {
+      a2: [4],
+    })
+  })
+
+  it('is a no-op when the stamped card had no overlay', () => {
+    const overlay = { b: [1] }
+    assert.equal(migrateOverlay(overlay, 'a', { contractId: 'a2', value: 2 }), overlay)
   })
 })

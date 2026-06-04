@@ -172,6 +172,58 @@ export const reconcileOverlay = (
   return filled === 0 ? undefined : overlay.slice(-filled)
 }
 
+// The successor of a just-stamped contract: stamping archives the source Tally
+// and recreates it, so `reconcileOrder` maps the old id (`from`) to the new one.
+export const findSuccessor = (
+  reconciled: Reconciled[],
+  fromContractId: string,
+): TallyContract | undefined => reconciled.find((r) => r.from === fromContractId)?.tally
+
+// Per-card optimistic stamp overlay (contractId -> clicked slot indices).
+export type SlotOverlay = Record<string, number[]>
+
+// Optimistically mark `slot` stamped on `contractId`, seeding from the
+// sequential baseline when the card has no overlay yet.
+export const applyOptimisticSlot = (
+  overlay: SlotOverlay,
+  contractId: string,
+  sequentialSlots: number[],
+  slot: number,
+): SlotOverlay => {
+  const base = overlay[contractId] ?? sequentialSlots
+  return { ...overlay, [contractId]: base.includes(slot) ? base : [...base, slot] }
+}
+
+// Roll back a failed stamp: drop `slot` from the card's overlay.
+export const rollbackSlot = (
+  overlay: SlotOverlay,
+  contractId: string,
+  slot: number,
+): SlotOverlay => {
+  const current = overlay[contractId]
+  if (current === undefined) {
+    return overlay
+  }
+  return { ...overlay, [contractId]: current.filter((s) => s !== slot) }
+}
+
+// After a stamp recreates the card, move the overlay from the old contract id
+// onto its successor, trimmed to the live stamp count (dropped on wrap to 0).
+export const migrateOverlay = (
+  overlay: SlotOverlay,
+  fromContractId: string,
+  successor: { contractId: string; value: number },
+): SlotOverlay => {
+  const current = overlay[fromContractId]
+  if (current === undefined) {
+    return overlay
+  }
+  const rest = { ...overlay }
+  delete rest[fromContractId]
+  const next = reconcileOverlay(current, successor.value)
+  return next === undefined ? rest : { ...rest, [successor.contractId]: next }
+}
+
 // --- Command builders ---
 
 export const createTallyCommand = (partyId: string): unknown => ({
@@ -180,7 +232,7 @@ export const createTallyCommand = (partyId: string): unknown => ({
     createArguments: {
       issuer: partyId,
       value: '0',
-      writers: [],
+      writers: { map: [] },
       viewers: { map: [] },
     },
   },

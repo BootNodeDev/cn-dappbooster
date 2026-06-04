@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { forwardRef, type ReactNode } from 'react'
 import { cn } from '@/utils/cn'
 
 export type FeedbackVariant = 'info' | 'error' | 'warning' | 'success'
@@ -23,32 +23,33 @@ interface AlertProps {
 
 const BASE_CLASS = cn(FEEDBACK_BASE_CLASS, 'animate-slide-down-and-fade')
 
-export const Alert = ({
-  variant,
-  onDismiss,
-  dismissLabel = 'Dismiss',
-  className,
-  children,
-}: AlertProps): JSX.Element => {
-  const base = cn(
-    BASE_CLASS,
-    FEEDBACK_VARIANT_CLASS[variant],
-    onDismiss !== undefined && 'flex items-center justify-between gap-3',
-    className,
-  )
-  if (onDismiss === undefined) {
-    return <div className={base}>{children}</div>
-  }
-  return (
-    <div className={base}>
-      <span className="min-w-0">{children}</span>
-      <button
-        type="button"
-        className="shrink-0 border-0 bg-transparent text-current font-semibold text-[0.82rem] uppercase tracking-wider p-0 hover:underline"
-        onClick={onDismiss}
-      >
-        {dismissLabel}
-      </button>
-    </div>
-  )
-}
+export const Alert = forwardRef<HTMLDivElement, AlertProps>(
+  ({ variant, onDismiss, dismissLabel = 'Dismiss', className, children }, ref) => {
+    const base = cn(
+      BASE_CLASS,
+      FEEDBACK_VARIANT_CLASS[variant],
+      onDismiss !== undefined && 'flex items-center justify-between gap-3',
+      className,
+    )
+    if (onDismiss === undefined) {
+      return (
+        <div ref={ref} className={base}>
+          {children}
+        </div>
+      )
+    }
+    return (
+      <div ref={ref} className={base}>
+        <span className="min-w-0">{children}</span>
+        <button
+          type="button"
+          className="shrink-0 border-0 bg-transparent text-current font-semibold text-[0.82rem] uppercase tracking-wider p-0 hover:underline"
+          onClick={onDismiss}
+        >
+          {dismissLabel}
+        </button>
+      </div>
+    )
+  },
+)
+Alert.displayName = 'Alert'

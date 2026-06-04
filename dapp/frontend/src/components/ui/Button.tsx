@@ -1,4 +1,4 @@
-import type { ComponentPropsWithoutRef } from 'react'
+import { type ComponentPropsWithoutRef, forwardRef } from 'react'
 import { cn } from '@/utils/cn'
 
 type ButtonProps = ComponentPropsWithoutRef<'button'>
@@ -36,26 +36,30 @@ const VARIANT_CLASS = {
   ghost: GHOST_BUTTON_CLASS,
 } as const
 
-export const PrimaryButton = ({
-  type = 'button',
-  className,
-  ...rest
-}: ButtonProps): JSX.Element => (
-  <button type={type} className={cn(VARIANT_CLASS.primary, className)} {...rest} />
+export const PrimaryButton = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ type = 'button', className, ...rest }, ref) => (
+    <button ref={ref} type={type} className={cn(VARIANT_CLASS.primary, className)} {...rest} />
+  ),
 )
+PrimaryButton.displayName = 'PrimaryButton'
 
-export const SecondaryButton = ({
-  type = 'button',
-  className,
-  ...rest
-}: ButtonProps): JSX.Element => (
-  <button type={type} className={cn(VARIANT_CLASS.secondary, className)} {...rest} />
+export const SecondaryButton = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ type = 'button', className, ...rest }, ref) => (
+    <button ref={ref} type={type} className={cn(VARIANT_CLASS.secondary, className)} {...rest} />
+  ),
 )
+SecondaryButton.displayName = 'SecondaryButton'
 
-export const GhostButton = ({ type = 'button', className, ...rest }: ButtonProps): JSX.Element => (
-  <button type={type} className={cn(VARIANT_CLASS.ghost, className)} {...rest} />
+export const GhostButton = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ type = 'button', className, ...rest }, ref) => (
+    <button ref={ref} type={type} className={cn(VARIANT_CLASS.ghost, className)} {...rest} />
+  ),
 )
+GhostButton.displayName = 'GhostButton'
 
-export const DangerButton = ({ className, ...rest }: ButtonProps): JSX.Element => (
-  <PrimaryButton className={cn(DANGER_OVERRIDE, className)} {...rest} />
+export const DangerButton = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, ...rest }, ref) => (
+    <PrimaryButton ref={ref} className={cn(DANGER_OVERRIDE, className)} {...rest} />
+  ),
 )
+DangerButton.displayName = 'DangerButton'

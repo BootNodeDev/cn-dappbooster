@@ -12,14 +12,19 @@ import { errorMessage } from '../../utils/errorMessage'
 import { formatPartyId, shortenIdentifier } from '../../utils/formatPartyId'
 import {
   addStampCommand,
+  applyOptimisticSlot,
   canStamp,
   createTallyCommand,
+  findSuccessor,
   grantViewerCommand,
   grantWriterCommand,
   isPartyIdShape,
+  migrateOverlay,
   normalizeTallyContract,
+  type Reconciled,
   reconcileOrder,
-  reconcileOverlay,
+  rollbackSlot,
+  type SlotOverlay,
   stampStats,
   TALLY_PACKAGE_ID,
   TALLY_TEMPLATE_ID,
@@ -160,10 +165,12 @@ export const LoyaltyCard = (): JSX.Element | null => {
     undefined,
   )
   // Transient per-card stamped-slot overlay; reseeds sequentially on reload.
-  const [filledSlots, setFilledSlots] = useState<Record<string, number[]>>({})
+  const [filledSlots, setFilledSlots] = useState<SlotOverlay>({})
   // Stable React keys carried across contractId rotation (avoids remount flicker).
   const cardKeys = useRef<Map<string, string>>(new Map())
   const cardKeySeq = useRef(0)
+  // Serialize stamping: blocks a same-frame second click before `busy` re-renders.
+  const stamping = useRef(false)
 
   const busy = isExecuting
 
@@ -176,7 +183,7 @@ export const LoyaltyCard = (): JSX.Element | null => {
     void loadTalliesFor(party.partyId)
   }, [party?.partyId])
 
-  const loadTalliesFor = async (partyId: string): Promise<TallyContract[]> => {
+  const loadTalliesFor = async (partyId: string): Promise<Reconciled[]> => {
     try {
       const ledgerEnd = (await ledgerApi({
         requestMethod: 'get',
@@ -221,9 +228,8 @@ export const LoyaltyCard = (): JSX.Element | null => {
         nextKeys.set(tally.contractId, inherited ?? `card-${cardKeySeq.current}`)
       }
       cardKeys.current = nextKeys
-      const ordered = reconciled.map((r) => r.tally)
-      setTallies(ordered)
-      return ordered
+      setTallies(reconciled.map((r) => r.tally))
+      return reconciled
     } catch (err) {
       toast.error(errorMessage(err))
       return []
@@ -234,7 +240,7 @@ export const LoyaltyCard = (): JSX.Element | null => {
     prefix: string,
     command: unknown,
     successMessage: string,
-  ): Promise<TallyContract[] | undefined> => {
+  ): Promise<Reconciled[] | undefined> => {
     if (party === undefined) {
       return undefined
     }
@@ -259,6 +265,7 @@ export const LoyaltyCard = (): JSX.Element | null => {
   // stamp, and migrate the overlay onto the successor so clicked slots stick.
   const addStamp = async (tally: TallyContract, slot: number): Promise<void> => {
     if (party === undefined) {
+      stamping.current = false
       return
     }
     try {
@@ -269,34 +276,22 @@ export const LoyaltyCard = (): JSX.Element | null => {
         readAs: [party.partyId],
         packageIdSelectionPreference: [TALLY_PACKAGE_ID],
       })
-      const previousIds = new Set(tallies.map((t) => t.contractId))
-      const ordered = await loadTalliesFor(party.partyId)
-      const successor = ordered.find(
-        (t) => !previousIds.has(t.contractId) && t.issuer === tally.issuer,
-      )
+      // Stamping archived this Tally and recreated it; migrate the overlay onto
+      // the successor `reconcileOrder` attributed to this contract id.
+      const reconciled = await loadTalliesFor(party.partyId)
+      const successor = findSuccessor(reconciled, tally.contractId)
       if (successor !== undefined) {
-        setFilledSlots((prev) => {
-          const overlay = prev[tally.contractId]
-          if (overlay === undefined) {
-            return prev
-          }
-          const rest = { ...prev }
-          delete rest[tally.contractId]
-          const next = reconcileOverlay(overlay, successor.value)
-          return next === undefined ? rest : { ...rest, [successor.contractId]: next }
-        })
+        setFilledSlots((prev) => migrateOverlay(prev, tally.contractId, successor))
       }
       toast.success('Stamp added')
     } catch (err) {
       toast.error(errorMessage(err))
-      // Tx rejected/failed: roll back the optimistic fill for this slot.
-      setFilledSlots((prev) => {
-        const current = prev[tally.contractId]
-        if (current === undefined) {
-          return prev
-        }
-        return { ...prev, [tally.contractId]: current.filter((s) => s !== slot) }
-      })
+      // Tx rejected/failed: roll back the optimistic fill, then re-read the ACS
+      // so the card reconverges to ledger truth (e.g. a partial/late success).
+      setFilledSlots((prev) => rollbackSlot(prev, tally.contractId, slot))
+      void loadTalliesFor(party.partyId)
+    } finally {
+      stamping.current = false
     }
   }
 
@@ -422,13 +417,13 @@ export const LoyaltyCard = (): JSX.Element | null => {
                     canAdd={canStamp(tally, party.partyId)}
                     busy={busy}
                     onAdd={(slot) => {
-                      setFilledSlots((prev) => {
-                        const base = prev[tally.contractId] ?? sequentialSlots
-                        return {
-                          ...prev,
-                          [tally.contractId]: base.includes(slot) ? base : [...base, slot],
-                        }
-                      })
+                      if (busy || stamping.current) {
+                        return
+                      }
+                      stamping.current = true
+                      setFilledSlots((prev) =>
+                        applyOptimisticSlot(prev, tally.contractId, sequentialSlots, slot),
+                      )
                       void addStamp(tally, slot)
                     }}
                   />

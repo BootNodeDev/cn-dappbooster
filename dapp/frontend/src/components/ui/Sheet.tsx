@@ -1,5 +1,5 @@
 import * as Dialog from '@radix-ui/react-dialog'
-import type { ReactNode } from 'react'
+import { forwardRef, type ReactNode } from 'react'
 import { ICON_BUTTON_CLASS } from '@/components/ui/Button'
 import { BACK_ICON, X_ICON } from '@/components/ui/icons'
 import { cn } from '@/utils/cn'
@@ -52,65 +52,71 @@ interface SheetProps {
   children: ReactNode
 }
 
-export const Sheet = ({
-  open,
-  onOpenChange,
-  title,
-  description,
-  onBack,
-  hideClose = false,
-  hideTitle = false,
-  titleClassName,
-  onClose,
-  side = 'bottom',
-  children,
-}: SheetProps): JSX.Element => (
-  <Dialog.Root open={open} onOpenChange={onOpenChange}>
-    <Dialog.Portal>
-      <Dialog.Overlay className={OVERLAY_CLASS} />
-      <Dialog.Content className={CONTENT_CLASS_BY_SIDE[side]}>
-        <div className="flex items-center justify-between gap-3 mb-6">
-          <div className="flex items-center gap-2 min-w-0">
-            {onBack !== undefined && (
-              <button
-                type="button"
-                aria-label="Back"
-                onClick={onBack}
-                className={SHEET_ICON_BUTTON_CLASS}
-              >
-                {BACK_ICON}
-              </button>
-            )}
-            <Dialog.Title
-              className={cn(
-                'm-0 font-display text-lg font-semibold tracking-[-0.02em] leading-tight text-foreground truncate',
-                titleClassName,
-                hideTitle && 'sr-only',
+export const Sheet = forwardRef<HTMLDivElement, SheetProps>(
+  (
+    {
+      open,
+      onOpenChange,
+      title,
+      description,
+      onBack,
+      hideClose = false,
+      hideTitle = false,
+      titleClassName,
+      onClose,
+      side = 'bottom',
+      children,
+    },
+    ref,
+  ) => (
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Overlay className={OVERLAY_CLASS} />
+        <Dialog.Content ref={ref} className={CONTENT_CLASS_BY_SIDE[side]}>
+          <div className="flex items-center justify-between gap-3 mb-6">
+            <div className="flex items-center gap-2 min-w-0">
+              {onBack !== undefined && (
+                <button
+                  type="button"
+                  aria-label="Back"
+                  onClick={onBack}
+                  className={SHEET_ICON_BUTTON_CLASS}
+                >
+                  {BACK_ICON}
+                </button>
               )}
-            >
-              {title}
-            </Dialog.Title>
-          </div>
-          {!hideClose &&
-            (onClose !== undefined ? (
-              <button
-                type="button"
-                aria-label="Close"
-                onClick={onClose}
-                className={SHEET_ICON_BUTTON_CLASS}
+              <Dialog.Title
+                className={cn(
+                  'm-0 font-display text-lg font-semibold tracking-[-0.02em] leading-tight text-foreground truncate',
+                  titleClassName,
+                  hideTitle && 'sr-only',
+                )}
               >
-                {X_ICON}
-              </button>
-            ) : (
-              <Dialog.Close aria-label="Close" className={SHEET_ICON_BUTTON_CLASS}>
-                {X_ICON}
-              </Dialog.Close>
-            ))}
-        </div>
-        <Dialog.Description className="sr-only">{description}</Dialog.Description>
-        {/* -m-1 p-1 gives focus glows room so overflow clipping doesn't shear them. */}
-        <div className="-m-1 flex-1 overflow-y-auto p-1">{children}</div>
-      </Dialog.Content>
-    </Dialog.Portal>
-  </Dialog.Root>
+                {title}
+              </Dialog.Title>
+            </div>
+            {!hideClose &&
+              (onClose !== undefined ? (
+                <button
+                  type="button"
+                  aria-label="Close"
+                  onClick={onClose}
+                  className={SHEET_ICON_BUTTON_CLASS}
+                >
+                  {X_ICON}
+                </button>
+              ) : (
+                <Dialog.Close aria-label="Close" className={SHEET_ICON_BUTTON_CLASS}>
+                  {X_ICON}
+                </Dialog.Close>
+              ))}
+          </div>
+          <Dialog.Description className="sr-only">{description}</Dialog.Description>
+          {/* -m-1 p-1 gives focus glows room so overflow clipping doesn't shear them. */}
+          <div className="-m-1 flex-1 overflow-y-auto p-1">{children}</div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  ),
 )
+Sheet.displayName = 'Sheet'
