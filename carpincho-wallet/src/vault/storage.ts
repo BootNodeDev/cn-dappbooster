@@ -43,11 +43,6 @@ export const rotateVault = (blob: EncryptedVault): void => {
   localStorage.removeItem(KEY_VAULT_NEXT)
 }
 
-export const wipeVault = (): void => {
-  localStorage.removeItem(KEY_VAULT)
-  localStorage.removeItem(KEY_VAULT_NEXT)
-}
-
 // Reset wipes every `carpincho`-namespaced key (vault + all prefs) by prefix, so
 // preferences added later are cleared without touching this.
 const STORAGE_PREFIX = 'carpincho'

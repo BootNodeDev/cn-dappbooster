@@ -10,22 +10,16 @@ export const wipeWalletConnectStorage = async (): Promise<void> => {
     return
   }
   await new Promise<void>((resolve) => {
-    let settled = false
-    const finish = (): void => {
-      if (!settled) {
-        settled = true
-        resolve()
-      }
-    }
     try {
       const request = idb.deleteDatabase(WALLET_CONNECT_DB)
-      request.onsuccess = finish
-      request.onerror = finish
+      request.onsuccess = () => resolve()
+      request.onerror = () => resolve()
       // An open WC connection blocks deletion; the reload that follows a reset closes it and
       // the queued delete completes, so treat blocked as done rather than hanging the reset.
-      request.onblocked = finish
+      // (onblocked may later be followed by onsuccess, but resolving an already-settled promise is a no-op.)
+      request.onblocked = () => resolve()
     } catch {
-      finish()
+      resolve()
     }
   })
 }
