@@ -95,6 +95,7 @@ export const CreateAccountForm = ({
             type="text"
             className="font-mono"
             data-testid="add-account-hint-input"
+            autoFocus
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="alice"
