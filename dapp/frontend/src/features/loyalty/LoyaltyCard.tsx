@@ -29,6 +29,38 @@ type PartyDrafts = Record<string, Partial<Record<ManageRole, string>>>
 // Stable per-slot keys for the fixed 10-slot punch card (avoids index-as-key).
 const SLOT_KEYS = Array.from({ length: 10 }, (_, i) => `slot-${i}`)
 
+// Preserve card order across ACS reloads. Daml choices recreate the Tally with a
+// new contractId, and the active-contracts response doesn't preserve position —
+// so a recreated card would otherwise jump. Each previous card keeps its slot,
+// adopting the newly-created same-issuer successor; genuinely new cards append.
+const reconcileOrder = (prev: TallyContract[], next: TallyContract[]): TallyContract[] => {
+  const prevIds = new Set(prev.map((t) => t.contractId))
+  const byId = new Map(next.map((t) => [t.contractId, t]))
+  const claimed = new Set<string>()
+  const result: TallyContract[] = []
+  for (const old of prev) {
+    const same = byId.get(old.contractId)
+    if (same !== undefined) {
+      result.push(same)
+      claimed.add(same.contractId)
+      continue
+    }
+    const successor = next.find(
+      (t) => !prevIds.has(t.contractId) && !claimed.has(t.contractId) && t.issuer === old.issuer,
+    )
+    if (successor !== undefined) {
+      result.push(successor)
+      claimed.add(successor.contractId)
+    }
+  }
+  for (const t of next) {
+    if (!claimed.has(t.contractId)) {
+      result.push(t)
+    }
+  }
+  return result
+}
+
 // 10-slot punch card. `filledSlots` is the exact set of slot indices to show as
 // stamped; the rest become clickable "+" buttons when the active party may stamp.
 // Clicking a slot fills THAT slot (not the next sequential one) — a transient,
@@ -215,12 +247,13 @@ export const LoyaltyCard = (): JSX.Element | null => {
           verbose: true,
         },
       })) as unknown[]
-      const next = (Array.isArray(response) ? response : []).flatMap((row) => {
+      const parsed = (Array.isArray(response) ? response : []).flatMap((row) => {
         const tally = normalizeTallyContract(row)
         return tally === undefined ? [] : [tally]
       })
-      setTallies(next)
-      return next
+      const ordered = reconcileOrder(tallies, parsed)
+      setTallies(ordered)
+      return ordered
     } catch (err) {
       toast.error((err as Error).message)
       return []
@@ -369,7 +402,7 @@ export const LoyaltyCard = (): JSX.Element | null => {
               >
                 <div className="rounded-xl bg-[image:var(--bg-gradient-brand)] p-3 text-white">
                   <div className="flex items-center justify-between">
-                    <span className="font-display text-sm font-bold">Stamp card</span>
+                    <span className="font-display text-sm font-bold">Stamps</span>
                     <span className="text-xs opacity-85">{slots.length} / 10</span>
                   </div>
                   <PunchCard
