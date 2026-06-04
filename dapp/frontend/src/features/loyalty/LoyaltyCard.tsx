@@ -1,5 +1,5 @@
 import { useExecute, useLedger, useParty } from 'canton-connect-kit'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { SecondaryButton } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { COPY_ICON, EYE_ICON } from '@/components/ui/icons'
@@ -57,19 +57,26 @@ type PartyDrafts = Record<string, Partial<Record<ManageRole, string>>>
 // Stable per-slot keys for the fixed 10-slot punch card (avoids index-as-key).
 const SLOT_KEYS = Array.from({ length: 10 }, (_, i) => `slot-${i}`)
 
-// Preserve card order across ACS reloads. Daml choices recreate the Tally with a
-// new contractId, and the active-contracts response doesn't preserve position —
-// so a recreated card would otherwise jump. Each previous card keeps its slot,
-// adopting the newly-created same-issuer successor; genuinely new cards append.
-const reconcileOrder = (prev: TallyContract[], next: TallyContract[]): TallyContract[] => {
+// Reconcile a fresh ACS read against the previous list. Daml choices recreate
+// the Tally with a new contractId, and the active-contracts response doesn't
+// preserve position — so a recreated card would otherwise jump and remount.
+// Each previous card keeps its slot, adopting the newly-created same-issuer
+// successor; genuinely new cards append. `from` records which previous
+// contractId each entry descends from so the caller can carry a stable React
+// key (and the filled-slot overlay) across the recreation.
+interface Reconciled {
+  tally: TallyContract
+  from: string | undefined
+}
+const reconcileOrder = (prev: TallyContract[], next: TallyContract[]): Reconciled[] => {
   const prevIds = new Set(prev.map((t) => t.contractId))
   const byId = new Map(next.map((t) => [t.contractId, t]))
   const claimed = new Set<string>()
-  const result: TallyContract[] = []
+  const result: Reconciled[] = []
   for (const old of prev) {
     const same = byId.get(old.contractId)
     if (same !== undefined) {
-      result.push(same)
+      result.push({ tally: same, from: old.contractId })
       claimed.add(same.contractId)
       continue
     }
@@ -77,13 +84,13 @@ const reconcileOrder = (prev: TallyContract[], next: TallyContract[]): TallyCont
       (t) => !prevIds.has(t.contractId) && !claimed.has(t.contractId) && t.issuer === old.issuer,
     )
     if (successor !== undefined) {
-      result.push(successor)
+      result.push({ tally: successor, from: old.contractId })
       claimed.add(successor.contractId)
     }
   }
   for (const t of next) {
     if (!claimed.has(t.contractId)) {
-      result.push(t)
+      result.push({ tally: t, from: undefined })
     }
   }
   return result
@@ -226,6 +233,11 @@ export const LoyaltyCard = (): JSX.Element | null => {
   // moment, plus the clicked slot" so further stamps don't reflow the layout.
   // Not persisted — a page reload drops it and the card reseeds sequentially.
   const [filledSlots, setFilledSlots] = useState<Record<string, number[]>>({})
+  // Stable React keys per logical card. A card's contractId rotates on every
+  // choice, so keying the grid on it would remount (and replay the fade) each
+  // stamp. We carry a fixed key across recreations to keep the DOM in place.
+  const cardKeys = useRef<Map<string, string>>(new Map())
+  const cardKeySeq = useRef(0)
 
   const busy = isExecuting
 
@@ -279,7 +291,17 @@ export const LoyaltyCard = (): JSX.Element | null => {
         const tally = normalizeTallyContract(row)
         return tally === undefined ? [] : [tally]
       })
-      const ordered = reconcileOrder(tallies, parsed)
+      const reconciled = reconcileOrder(tallies, parsed)
+      // Carry each card's stable key across its recreation (inherit from the
+      // contract it descends from; mint a fresh key for genuinely new cards).
+      const nextKeys = new Map<string, string>()
+      for (const { tally, from } of reconciled) {
+        const inherited = from !== undefined ? cardKeys.current.get(from) : undefined
+        cardKeySeq.current += 1
+        nextKeys.set(tally.contractId, inherited ?? `card-${cardKeySeq.current}`)
+      }
+      cardKeys.current = nextKeys
+      const ordered = reconciled.map((r) => r.tally)
       setTallies(ordered)
       return ordered
     } catch (err) {
@@ -465,7 +487,7 @@ export const LoyaltyCard = (): JSX.Element | null => {
             const slots = filledSlots[tally.contractId] ?? sequentialSlots
             return (
               <Card
-                key={tally.contractId}
+                key={cardKeys.current.get(tally.contractId) ?? tally.contractId}
                 className="flex flex-col gap-3"
                 data-testid="tally-card"
                 data-value={tally.value}
