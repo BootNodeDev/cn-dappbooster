@@ -28,21 +28,53 @@ type PartyDrafts = Record<string, Partial<Record<ManageRole, string>>>
 // Stable per-slot keys for the fixed 10-slot punch card (avoids index-as-key).
 const SLOT_KEYS = Array.from({ length: 10 }, (_, i) => `slot-${i}`)
 
-// 10-slot punch card. `filled` slots are stamped; the rest are open.
-const PunchCard = ({ filled }: { filled: number }): JSX.Element => (
-  <div className="mt-2 grid grid-cols-5 gap-1.5">
-    {SLOT_KEYS.map((key, i) => (
-      <div
-        key={key}
-        className={
-          i < filled
-            ? 'grid aspect-square place-items-center rounded-full bg-white font-extrabold text-primary'
-            : 'grid aspect-square place-items-center rounded-full border-2 border-dashed border-white/55'
-        }
-      >
-        {i < filled ? '★' : ''}
-      </div>
-    ))}
+// 10-slot punch card. Filled slots show a star; empty slots become clickable
+// "+" stamp buttons when the active party may stamp (issuer or delegated staff).
+const PunchCard = ({
+  filled,
+  canAdd,
+  busy,
+  onAdd,
+}: {
+  filled: number
+  canAdd: boolean
+  busy: boolean
+  onAdd: () => void
+}): JSX.Element => (
+  <div className="mt-2 grid grid-cols-5 gap-2">
+    {SLOT_KEYS.map((key, i) => {
+      if (i < filled) {
+        return (
+          <div
+            key={key}
+            className="grid aspect-square place-items-center rounded-full bg-white text-3xl font-extrabold leading-none text-primary"
+          >
+            ★
+          </div>
+        )
+      }
+      if (!canAdd) {
+        return (
+          <div
+            key={key}
+            className="aspect-square rounded-full border-2 border-dashed border-white/55"
+          />
+        )
+      }
+      return (
+        <button
+          key={key}
+          type="button"
+          aria-label="Add stamp"
+          data-testid="add-stamp"
+          onClick={onAdd}
+          disabled={busy}
+          className="grid aspect-square place-items-center rounded-full border-2 border-dashed border-white/55 text-3xl leading-none text-white/70 transition-colors enabled:hover:border-white enabled:hover:bg-white/20 enabled:hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          +
+        </button>
+      )
+    })}
   </div>
 )
 
@@ -59,10 +91,6 @@ type ManageSectionProps = {
   title: string
 }
 
-// A Canton party id is `hint::fingerprint`; treat a non-empty draft without the
-// `::` separator as invalid so the field flags it before we hit the ledger.
-const isPartyIdShape = (value: string): boolean => value.trim().includes('::')
-
 const ManageSection = ({
   addTestId,
   buttonLabel,
@@ -74,51 +102,41 @@ const ManageSection = ({
   onDraftChange,
   parties,
   title,
-}: ManageSectionProps): JSX.Element => {
-  const trimmed = draft.trim()
-  const invalid = trimmed !== '' && !isPartyIdShape(trimmed)
-  return (
-    <section className="mb-6">
-      <h3 className="mb-2 font-display text-base font-semibold text-foreground">{title}</h3>
-      {parties.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{emptyMessage}</p>
-      ) : (
-        <ul className="mb-3 flex flex-col gap-1">
-          {parties.map((partyId) => (
-            <li key={partyId} className="break-all font-mono text-sm text-foreground">
-              {formatPartyId(partyId)}
-            </li>
-          ))}
-        </ul>
-      )}
-      <div className="flex items-start gap-2">
-        <div className="min-w-0 flex-1">
-          <TextInput
-            data-testid={inputTestId}
-            className="font-mono text-sm"
-            value={draft}
-            error={invalid}
-            aria-label={`${title} party id`}
-            onChange={(event) => onDraftChange(event.target.value)}
-            placeholder="party::fingerprint"
-            disabled={disabled}
-          />
-          {invalid && (
-            <p className="mt-1 text-xs text-danger">Enter a full party id (party::fingerprint).</p>
-          )}
-        </div>
-        <SecondaryButton
-          data-testid={addTestId}
-          className="shrink-0"
-          onClick={onAdd}
-          disabled={disabled || trimmed === '' || invalid}
-        >
-          {buttonLabel}
-        </SecondaryButton>
-      </div>
-    </section>
-  )
-}
+}: ManageSectionProps): JSX.Element => (
+  <section className="mb-6">
+    <h3 className="mb-2 font-display text-base font-semibold text-foreground">{title}</h3>
+    {parties.length === 0 ? (
+      <p className="text-sm text-muted-foreground">{emptyMessage}</p>
+    ) : (
+      <ul className="mb-3 flex flex-col gap-1">
+        {parties.map((partyId) => (
+          <li key={partyId} className="break-all font-mono text-sm text-foreground">
+            {formatPartyId(partyId)}
+          </li>
+        ))}
+      </ul>
+    )}
+    <div className="flex items-center gap-2">
+      <TextInput
+        data-testid={inputTestId}
+        className="font-mono text-sm"
+        value={draft}
+        aria-label={`${title} party id`}
+        onChange={(event) => onDraftChange(event.target.value)}
+        placeholder="party id"
+        disabled={disabled}
+      />
+      <SecondaryButton
+        data-testid={addTestId}
+        className="shrink-0"
+        onClick={onAdd}
+        disabled={disabled || draft.trim() === ''}
+      >
+        {buttonLabel}
+      </SecondaryButton>
+    </div>
+  </section>
+)
 
 // Loyalty stamp card feature. Removable: delete this folder, its import + the
 // <LoyaltyCard /> line in App.tsx, ../e2e/tests/features/loyalty, and the
@@ -287,7 +305,18 @@ export const LoyaltyCard = (): JSX.Element | null => {
                     </span>
                     <span className="text-xs opacity-85">{filled} / 10</span>
                   </div>
-                  <PunchCard filled={filled} />
+                  <PunchCard
+                    filled={filled}
+                    canAdd={canStamp(tally, party.partyId)}
+                    busy={busy}
+                    onAdd={() => {
+                      void runCommand(
+                        'add-stamp',
+                        addStampCommand(tally, party.partyId),
+                        'Stamp added',
+                      )
+                    }}
+                  />
                   {rewards > 0 && (
                     <p className="m-0 mt-2 text-xs font-semibold opacity-90">
                       {rewards} reward{rewards === 1 ? '' : 's'} earned
@@ -299,19 +328,6 @@ export const LoyaltyCard = (): JSX.Element | null => {
                   <span className="font-mono text-xs text-muted-foreground">
                     Card {shortenIdentifier(tally.contractId)}
                   </span>
-                  <PrimaryButton
-                    data-testid="add-stamp"
-                    onClick={() => {
-                      void runCommand(
-                        'add-stamp',
-                        addStampCommand(tally, party.partyId),
-                        'Stamp added',
-                      )
-                    }}
-                    disabled={busy || !canStamp(tally, party.partyId)}
-                  >
-                    Add stamp
-                  </PrimaryButton>
                 </div>
 
                 <div className="flex items-center justify-between gap-2 border-t border-border pt-2">
