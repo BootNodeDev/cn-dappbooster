@@ -563,11 +563,21 @@ export const LoyaltyCard = (): JSX.Element | null => {
         ) : (
           <ul className="flex h-72 flex-col gap-1 overflow-y-auto">
             {viewedParties.map((partyId) => (
-              <li
-                key={partyId}
-                className="truncate rounded-lg bg-muted p-2 font-mono text-xs text-foreground"
-              >
-                {formatPartyId(partyId)}
+              <li key={partyId} className="flex items-center gap-2 rounded-lg bg-muted p-2">
+                <span className="min-w-0 flex-1 truncate font-mono text-xs text-foreground">
+                  {formatPartyId(partyId)}
+                </span>
+                <button
+                  type="button"
+                  aria-label="Copy party id"
+                  title="Copy party id"
+                  onClick={() => {
+                    void copyText(partyId, 'Party id copied.')
+                  }}
+                  className="inline-grid shrink-0 place-items-center text-muted-foreground transition-colors hover:text-primary [&_svg]:size-3.5"
+                >
+                  {COPY_ICON}
+                </button>
               </li>
             ))}
           </ul>
