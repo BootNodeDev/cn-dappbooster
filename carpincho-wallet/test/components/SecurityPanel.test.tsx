@@ -3,10 +3,10 @@ import { afterEach, describe, it } from 'node:test'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ReactNode } from 'react'
-import { AutoLockList, PasswordForm } from '@/components/SecurityPanel.tsx'
-import { TooltipProvider } from '@/components/ui/Tooltip.tsx'
-import { getToastEntries, toast } from '@/components/ui/toast.ts'
-import { VaultContext, type VaultContextValue } from '@/vault/VaultContext.tsx'
+import { AutoLockList, PasswordForm } from '@/components/SecurityPanel'
+import { TooltipProvider } from '@/components/ui/Tooltip'
+import { getToastEntries, toast } from '@/components/ui/toast'
+import { VaultContext, type VaultContextValue } from '@/vault/VaultContext'
 
 const baseVault = (): VaultContextValue => ({
   isLocked: false,
@@ -31,7 +31,7 @@ const baseVault = (): VaultContextValue => ({
   }),
   removeAccount: async () => undefined,
   signMessage: async () => '',
-  recordTransaction: async () => ({}) as unknown as import('@/vault/types.ts').TransactionRecord,
+  recordTransaction: async () => ({}) as unknown as import('@/vault/types').TransactionRecord,
   changePassword: async () => undefined,
   verifyPassword: () => false,
   autoLockOption: 'never',

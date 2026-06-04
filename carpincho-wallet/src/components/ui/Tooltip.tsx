@@ -1,6 +1,6 @@
 import * as RadixTooltip from '@radix-ui/react-tooltip'
 import type { ReactNode } from 'react'
-import { INFO_ICON } from '@/components/ui/icons.tsx'
+import { INFO_ICON } from '@/components/ui/icons'
 
 type TooltipProps = {
   content: ReactNode

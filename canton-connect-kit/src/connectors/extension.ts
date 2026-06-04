@@ -12,7 +12,7 @@
 import type { Provider } from '@canton-network/core-splice-provider'
 import type { RpcTypes as DappRpcTypes } from '@canton-network/core-wallet-dapp-rpc-client'
 import { ExtensionAdapter } from '@canton-network/dapp-sdk'
-import type { ConnectorProvider, ExtensionConnector } from '../types.ts'
+import type { ConnectorProvider, ExtensionConnector } from '../types'
 
 // Default extension target. Carpincho's provider id used by ExtensionAdapter.
 // The kit pre-configures for Carpincho since this scaffold is the primary

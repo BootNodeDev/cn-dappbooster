@@ -1,4 +1,4 @@
-import type { AccountPublic } from '@/vault/types.ts'
+import type { AccountPublic } from '@/vault/types'
 
 const WALLET_SNAPSHOT_KEY = 'carpincho.wallet.snapshot'
 

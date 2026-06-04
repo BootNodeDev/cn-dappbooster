@@ -5,25 +5,25 @@ export type {
   ConnectKitContextValue,
   ConnectKitProviderProps,
   TxStatusSnapshot,
-} from './ConnectKitProvider.tsx'
-export { ConnectKitProvider, useConnectKitContext } from './ConnectKitProvider.tsx'
-export type { CreateExtensionConnectorOptions } from './connectors/extension.ts'
-export { createExtensionConnector, DEFAULT_EXTENSION_TARGET } from './connectors/extension.ts'
-export { createWalletConnectConnector } from './connectors/walletconnect.ts'
-export type { UseConnectResult } from './hooks/useConnect.ts'
-export { useConnect } from './hooks/useConnect.ts'
-export type { ExecuteParams, UseExecuteResult } from './hooks/useExecute.ts'
-export { useExecute } from './hooks/useExecute.ts'
-export type { LedgerApiParams, UseLedgerResult } from './hooks/useLedger.ts'
-export { useLedger } from './hooks/useLedger.ts'
-export type { UsePartyResult } from './hooks/useParty.ts'
-export { useParty } from './hooks/useParty.ts'
-export type { UseSignMessageResult } from './hooks/useSignMessage.ts'
-export { useSignMessage } from './hooks/useSignMessage.ts'
-export type { UseWalletStatusResult } from './hooks/useWalletStatus.ts'
-export { useWalletStatus } from './hooks/useWalletStatus.ts'
-export type { RawWalletAccount } from './lib/walletAccount.ts'
-export { selectPrimaryAccount, toParty } from './lib/walletAccount.ts'
+} from './ConnectKitProvider'
+export { ConnectKitProvider, useConnectKitContext } from './ConnectKitProvider'
+export type { CreateExtensionConnectorOptions } from './connectors/extension'
+export { createExtensionConnector, DEFAULT_EXTENSION_TARGET } from './connectors/extension'
+export { createWalletConnectConnector } from './connectors/walletconnect'
+export type { UseConnectResult } from './hooks/useConnect'
+export { useConnect } from './hooks/useConnect'
+export type { ExecuteParams, UseExecuteResult } from './hooks/useExecute'
+export { useExecute } from './hooks/useExecute'
+export type { LedgerApiParams, UseLedgerResult } from './hooks/useLedger'
+export { useLedger } from './hooks/useLedger'
+export type { UsePartyResult } from './hooks/useParty'
+export { useParty } from './hooks/useParty'
+export type { UseSignMessageResult } from './hooks/useSignMessage'
+export { useSignMessage } from './hooks/useSignMessage'
+export type { UseWalletStatusResult } from './hooks/useWalletStatus'
+export { useWalletStatus } from './hooks/useWalletStatus'
+export type { RawWalletAccount } from './lib/walletAccount'
+export { selectPrimaryAccount, toParty } from './lib/walletAccount'
 
 export type {
   ConnectionStatus,
@@ -35,4 +35,4 @@ export type {
   Party,
   WalletConnectConnector,
   WalletConnectConnectorOptions,
-} from './types.ts'
+} from './types'

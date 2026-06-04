@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert'
 import { afterEach, beforeEach, describe, it } from 'node:test'
-import { loadAutoLockOption, writeAutoLockOption } from '@/vault/storage.ts'
+import { loadAutoLockOption, writeAutoLockOption } from '@/vault/storage'
 
 describe('auto-lock option storage', () => {
   beforeEach(() => {

@@ -4,14 +4,15 @@ import type {
   RuntimePendingRequest,
   RuntimePendingRequestMessage,
   RuntimeProviderResponse,
-} from '@/extension/messages.ts'
+} from '@/extension/messages'
 import {
   createRuntimeResponder,
+  forgetConnectedOrigin,
   getDirectConnectedOrigins,
   getPendingProviderRequests,
   subscribeToDirectConnectedOrigins,
   subscribeToPendingProviderRequests,
-} from '@/extension/runtimeClient.ts'
+} from '@/extension/runtimeClient'
 
 const originalChrome = (globalThis as { chrome?: unknown }).chrome
 
@@ -97,6 +98,18 @@ describe('extension runtime client', () => {
     // The client should send the connected-origins message and expose the recorded dApp origin.
     assert.deepEqual(runtime.sent, [{ type: 'CARPINCHO_GET_CONNECTED_ORIGINS' }])
     assert.deepEqual(result, ['http://localhost:3012'])
+  })
+
+  it('asks the background worker to forget a connected origin', async () => {
+    // Scenario: the user clicks Disconnect in the footer for a direct injected-provider dApp.
+    const runtime = installChromeRuntime()
+
+    await forgetConnectedOrigin('http://localhost:3012')
+
+    // The client should send a wallet-initiated forget message carrying the origin to drop.
+    assert.deepEqual(runtime.sent, [
+      { type: 'CARPINCHO_FORGET_CONNECTED_ORIGIN', origin: 'http://localhost:3012' },
+    ])
   })
 
   it('converts provider responses into runtime messages', async () => {

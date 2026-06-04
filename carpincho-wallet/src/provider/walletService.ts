@@ -1,5 +1,5 @@
-import { WalletServiceRpcError, walletServiceRequest } from '@/api/walletService.ts'
-import type { DispatchResult, ProviderRequest, ProviderResponder } from '@/provider/types.ts'
+import { WalletServiceRpcError, walletServiceRequest } from '@/api/walletService'
+import type { DispatchResult, ProviderRequest, ProviderResponder } from '@/provider/types'
 
 export const forwardToWalletService = async (
   request: ProviderRequest,

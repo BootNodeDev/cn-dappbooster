@@ -1,13 +1,11 @@
 import { type FormEvent, useState } from 'react'
-import { NewPasswordFields } from '@/components/NewPasswordFields.tsx'
-import { PrimaryButton } from '@/components/ui/Button.tsx'
-import { CHECK_ICON } from '@/components/ui/icons.tsx'
-import { MENU_ROW_BASE_CLASS } from '@/components/ui/MenuRow.tsx'
-import { PasswordInput } from '@/components/ui/PasswordInput.tsx'
-import { toast } from '@/components/ui/toast.ts'
-import { cn } from '@/utils/cn.ts'
-import type { AutoLockOption } from '@/vault/storage.ts'
-import { useVault } from '@/vault/useVault.ts'
+import { NewPasswordFields } from '@/components/NewPasswordFields'
+import { PrimaryButton } from '@/components/ui/Button'
+import { OptionList } from '@/components/ui/OptionList'
+import { PasswordInput } from '@/components/ui/PasswordInput'
+import { toast } from '@/components/ui/toast'
+import type { AutoLockOption } from '@/vault/storage'
+import { useVault } from '@/vault/useVault'
 
 const AUTO_LOCK_LABELS: Array<{ value: AutoLockOption; label: string }> = [
   { value: 'never', label: 'Never' },
@@ -116,27 +114,10 @@ export const PasswordForm = (): JSX.Element => {
 export const AutoLockList = (): JSX.Element => {
   const v = useVault()
   return (
-    <ul className="flex flex-col gap-1.5 list-none m-0 p-0">
-      {AUTO_LOCK_LABELS.map((opt) => {
-        const active = v.autoLockOption === opt.value
-        return (
-          <li key={opt.value}>
-            <button
-              type="button"
-              aria-current={active ? 'true' : undefined}
-              onClick={() => v.setAutoLockOption(opt.value)}
-              className={cn(
-                MENU_ROW_BASE_CLASS,
-                'flex items-center justify-between text-left text-foreground',
-                active && 'border-primary text-primary',
-              )}
-            >
-              <span className="font-medium">{opt.label}</span>
-              {active && CHECK_ICON}
-            </button>
-          </li>
-        )
-      })}
-    </ul>
+    <OptionList
+      options={AUTO_LOCK_LABELS}
+      value={v.autoLockOption}
+      onSelect={v.setAutoLockOption}
+    />
   )
 }

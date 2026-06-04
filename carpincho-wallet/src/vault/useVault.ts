@@ -1,5 +1,5 @@
 import { useContext } from 'react'
-import { VaultContext, type VaultContextValue } from '@/vault/VaultContext.tsx'
+import { VaultContext, type VaultContextValue } from '@/vault/VaultContext'
 
 export const useVault = (): VaultContextValue => {
   const v = useContext(VaultContext)

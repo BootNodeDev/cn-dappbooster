@@ -10,11 +10,11 @@ import {
   useRef,
   useState,
 } from 'react'
-import { broadcastWalletEvent } from '@/extension/eventBroadcast.ts'
-import { persistWalletSnapshot } from '@/extension/walletSnapshot.ts'
-import { accountToCip103Wallet } from '@/provider/accounts.ts'
-import { assertSecureContext, decryptVault, encryptVault } from '@/vault/crypto.ts'
-import { signMessageBase64 } from '@/vault/keypair.ts'
+import { broadcastWalletEvent } from '@/extension/eventBroadcast'
+import { persistWalletSnapshot } from '@/extension/walletSnapshot'
+import { accountToCip103Wallet } from '@/provider/accounts'
+import { assertSecureContext, decryptVault, encryptVault } from '@/vault/crypto'
+import { signMessageBase64 } from '@/vault/keypair'
 import {
   clearLockAt,
   clearSessionPassword,
@@ -23,7 +23,7 @@ import {
   readLockAt,
   readSessionPassword,
   shouldWipeMemoryOnPageHide,
-} from '@/vault/sessionUnlock.ts'
+} from '@/vault/sessionUnlock'
 import {
   type AutoLockOption,
   hasVault as hasVaultOnDisk,
@@ -33,13 +33,8 @@ import {
   wipeVault,
   writeAutoLockOption,
   writeFreshVault,
-} from '@/vault/storage.ts'
-import type {
-  AccountPublic,
-  AccountSecret,
-  TransactionRecord,
-  VaultPlaintext,
-} from '@/vault/types.ts'
+} from '@/vault/storage'
+import type { AccountPublic, AccountSecret, TransactionRecord, VaultPlaintext } from '@/vault/types'
 
 const AUTO_LOCK_MS: Record<AutoLockOption, number | null> = {
   never: null,
@@ -133,13 +128,9 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
 
   const bump = useCallback((): void => setTick((t) => t + 1), [])
 
-  // dapp-api connect lifecycle events. `connected` fires once on every
-  // transition into the unlocked state (matching the canonical SDK's "fires
-  // when the wallet becomes connected" semantic). `statusChanged` fires on
-  // every transition, including back to locked. isNetworkConnected stays
-  // true because Carpincho always operates against the configured
-  // wallet-service; participant reachability surfaces through subsequent
-  // RPC calls, not through this lifecycle signal.
+  // dapp-api lifecycle events: `connected` on unlock, `statusChanged` on every
+  // transition. isNetworkConnected stays true (Carpincho always targets the
+  // configured wallet-service; reachability surfaces through later RPC calls).
   const broadcastConnectionState = useCallback((isConnected: boolean): void => {
     const connection = { isConnected, isNetworkConnected: true }
     if (isConnected) {
@@ -229,8 +220,7 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
     broadcastConnectionState(false)
   }, [bump, broadcastConnectionState])
 
-  // Build the dapp-api AccountsChangedEvent payload (Wallet[]) from current
-  // plaintext. Returns [] if locked — broadcast is a no-op in that case.
+  // dapp-api AccountsChangedEvent payload (Wallet[]); [] when locked.
   const accountsChangedPayload = useCallback((): unknown[] => {
     if (unlockedPlaintext === null) {
       return []
@@ -255,8 +245,8 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
     [persist, bump, accountsChangedPayload],
   )
 
-  // Caller (AddAccountView) generates the keypair before creating the Canton external party.
-  // Generating a new key here would desync the vault entry from the account UI.
+  // Caller supplies the keypair (already used to create the Canton party);
+  // generating one here would desync the vault entry from the account.
   const addAccount = useCallback(
     async (args: {
       name: string
@@ -315,6 +305,9 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
     async (id: string): Promise<void> => {
       if (unlockedPlaintext === null) {
         throw new Error('vault locked')
+      }
+      if (unlockedPlaintext.accounts.length <= 1) {
+        throw new Error('cannot remove the last account')
       }
       unlockedPlaintext.accounts = unlockedPlaintext.accounts.filter((a) => a.id !== id)
       if (unlockedPlaintext.primaryAccountId === id) {
@@ -408,9 +401,8 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
       void clearLockAt()
       return
     }
-    // The in-tab setTimeout enforces the deadline; lockAt only needs to be
-    // accurate enough for the next reload, so coalesce writes from rapid
-    // activity events (mousemove, scroll) to avoid hammering storage.
+    // setTimeout enforces the deadline; lockAt only matters for the next reload,
+    // so throttle writes from rapid activity events to avoid hammering storage.
     const PERSIST_THROTTLE_MS = 5000
     let lastPersistedAt = 0
     const reset = (): void => {
@@ -447,8 +439,7 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
 
   useEffect(() => {
     const onUnload = (): void => {
-      // 'never' means the user opted out of automatic locking, so leave the
-      // session token in place and let refresh restore the unlocked state.
+      // 'never' opts out of auto-lock: keep the session token so refresh restores unlock.
       if (shouldWipeMemoryOnPageHide() && autoLockOption !== 'never') {
         void wipeMemory().catch(() => undefined)
       }
@@ -459,9 +450,8 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
     }
   }, [autoLockOption])
 
-  // `tick` is the version counter bumped by every mutation to
-  // `unlockedPlaintext`; including it here forces the memo to recompute
-  // `accounts`/`primary`/`transactions` from the latest in-place state.
+  // `tick` is bumped by every in-place mutation of `unlockedPlaintext`, forcing
+  // this memo to recompute accounts/primary/transactions from the latest state.
   // biome-ignore lint/correctness/useExhaustiveDependencies: see comment above
   const value = useMemo<VaultContextValue>(() => {
     const primaryId = unlockedPlaintext?.primaryAccountId ?? null

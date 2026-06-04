@@ -1,4 +1,5 @@
-import { cn } from '@/utils/cn.ts'
+import type { ReactNode } from 'react'
+import { cn } from '@/utils/cn'
 
 export const MENU_ROW_BASE_CLASS =
   'w-full px-4 py-3 rounded-lg bg-surface border border-border ' +
@@ -8,20 +9,23 @@ interface MenuRowProps {
   label: string
   onClick: () => void
   tone?: 'default' | 'danger'
+  // Optional trailing icon rendered at the right edge of the row.
+  icon?: ReactNode
 }
 
-export const MenuRow = ({ label, onClick, tone = 'default' }: MenuRowProps): JSX.Element => (
+export const MenuRow = ({ label, onClick, tone = 'default', icon }: MenuRowProps): JSX.Element => (
   <li>
     <button
       type="button"
       onClick={onClick}
       className={cn(
         MENU_ROW_BASE_CLASS,
-        'text-left',
+        'flex items-center justify-between gap-3 text-left',
         tone === 'danger' && 'text-danger hover:border-danger',
       )}
     >
-      {label}
+      <span>{label}</span>
+      {icon !== undefined && <span className="shrink-0">{icon}</span>}
     </button>
   </li>
 )

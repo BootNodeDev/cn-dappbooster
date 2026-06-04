@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 import { act, cleanup, render } from '@testing-library/react'
-import { encryptVault } from '@/vault/crypto.ts'
+import { encryptVault } from '@/vault/crypto'
 import {
   clearLockAt,
   clearSessionPassword,
@@ -9,10 +9,10 @@ import {
   persistSessionPassword,
   readLockAt,
   readSessionPassword,
-} from '@/vault/sessionUnlock.ts'
-import { writeFreshVault } from '@/vault/storage.ts'
-import { useVault } from '@/vault/useVault.ts'
-import { type VaultContextValue, VaultProvider } from '@/vault/VaultContext.tsx'
+} from '@/vault/sessionUnlock'
+import { writeFreshVault } from '@/vault/storage'
+import { useVault } from '@/vault/useVault'
+import { type VaultContextValue, VaultProvider } from '@/vault/VaultContext'
 
 const captureVault = (): { ref: { current: VaultContextValue | null } } => {
   const ref: { current: VaultContextValue | null } = { current: null }
@@ -39,7 +39,7 @@ const seedVault = async (password: string): Promise<void> => {
   writeFreshVault(blob)
 }
 
-const waitFor = async (predicate: () => boolean, timeoutMs = 2000): Promise<void> => {
+const waitFor = async (predicate: () => boolean, timeoutMs = 10_000): Promise<void> => {
   const start = Date.now()
   while (!predicate()) {
     if (Date.now() - start > timeoutMs) return

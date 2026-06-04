@@ -3,9 +3,9 @@ import {
   type JsonRpcResponse,
   jsonRpcError,
   jsonRpcResult,
-} from '@/extension/messages.ts'
-import { dispatchProviderRequest } from '@/provider/dispatch.ts'
-import type { AccountPublic } from '@/vault/types.ts'
+} from '@/extension/messages'
+import { dispatchProviderRequest } from '@/provider/dispatch'
+import type { AccountPublic } from '@/vault/types'
 
 export interface DirectProviderSnapshot {
   accounts: AccountPublic[]

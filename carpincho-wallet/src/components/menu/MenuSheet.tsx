@@ -1,42 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
-import { AutoLockList, PasswordForm } from '@/components/SecurityPanel.tsx'
-import { MenuRow } from '@/components/ui/MenuRow.tsx'
-import { Sheet } from '@/components/ui/Sheet.tsx'
-import { useVault } from '@/vault/useVault.ts'
-
-type Screen = 'root' | 'security' | 'password' | 'auto-lock'
-type Direction = 'forward' | 'back'
-
-interface ScreenConfig {
-  title: string
-  description: string
-  parent: Screen | null
-}
-
-const SCREENS: Record<Screen, ScreenConfig> = {
-  root: {
-    title: 'Menu',
-    description: 'Wallet menu.',
-    parent: null,
-  },
-  security: {
-    title: 'Security & Password',
-    description: 'Choose between password change and auto-lock configuration.',
-    parent: 'root',
-  },
-  password: {
-    title: 'Password',
-    description: 'Verify the current password and set a new one.',
-    parent: 'security',
-  },
-  'auto-lock': {
-    title: 'Auto-lock',
-    description: 'Choose how long the wallet stays unlocked while idle.',
-    parent: 'security',
-  },
-}
-
-const MENU_LIST_CLASS = 'flex flex-col gap-2 list-none m-0 p-0'
+import { MenuList } from '@/components/menu/MenuList'
+import { type Direction, MENU_LISTS, SCREENS, type Screen } from '@/components/menu/screens'
+import { ThemeMenu } from '@/components/menu/ThemeMenu'
+import { WalletConnectMenu } from '@/components/menu/WalletConnectMenu'
+import { AutoLockList, PasswordForm } from '@/components/SecurityPanel'
+import { Sheet } from '@/components/ui/Sheet'
+import { isExtensionRuntime } from '@/extension/runtimeClient'
+import { useVault } from '@/vault/useVault'
 
 interface MenuSheetProps {
   open: boolean
@@ -75,7 +45,10 @@ export const MenuSheet = ({ open, onOpenChange }: MenuSheetProps): JSX.Element =
 
   const goBack = (): void => {
     const parent = SCREENS[screen].parent
-    if (parent === null) return
+    if (parent === null) {
+      handleOpenChange(false)
+      return
+    }
     setDirection('back')
     setScreen(parent)
   }
@@ -86,6 +59,11 @@ export const MenuSheet = ({ open, onOpenChange }: MenuSheetProps): JSX.Element =
   }
 
   const config = SCREENS[screen]
+  // WalletConnect URI pairing is web-only (inert in extension mode), so drop it from the drawer there.
+  const list =
+    screen === 'root' && isExtensionRuntime()
+      ? MENU_LISTS.root?.filter((row) => row.to !== 'wallet-connect')
+      : MENU_LISTS[screen]
   const animationClass =
     direction === 'forward' ? 'animate-slide-in-right' : 'animate-slide-in-left'
 
@@ -95,7 +73,10 @@ export const MenuSheet = ({ open, onOpenChange }: MenuSheetProps): JSX.Element =
       onOpenChange={handleOpenChange}
       title={config.title}
       description={config.description}
-      onBack={config.parent !== null ? goBack : undefined}
+      onBack={goBack}
+      hideClose
+      hideTitle={screen === 'root'}
+      titleClassName="text-lg"
       side="right"
     >
       <div
@@ -103,31 +84,17 @@ export const MenuSheet = ({ open, onOpenChange }: MenuSheetProps): JSX.Element =
         ref={screenRef}
         className={animationClass}
       >
-        {screen === 'root' && (
-          <ul className={MENU_LIST_CLASS}>
-            <MenuRow
-              label="Security & Password"
-              onClick={() => goTo('security')}
-            />
-            <MenuRow
-              label="Log out"
-              tone="danger"
-              onClick={onLogout}
-            />
-          </ul>
+        {list !== undefined && (
+          <MenuList
+            rows={list}
+            onNavigate={goTo}
+            onLogout={onLogout}
+          />
         )}
-        {screen === 'security' && (
-          <ul className={MENU_LIST_CLASS}>
-            <MenuRow
-              label="Password"
-              onClick={() => goTo('password')}
-            />
-            <MenuRow
-              label="Auto-lock"
-              onClick={() => goTo('auto-lock')}
-            />
-          </ul>
+        {screen === 'wallet-connect' && (
+          <WalletConnectMenu onPaired={() => handleOpenChange(false)} />
         )}
+        {screen === 'theme' && <ThemeMenu />}
         {screen === 'password' && <PasswordForm />}
         {screen === 'auto-lock' && <AutoLockList />}
       </div>

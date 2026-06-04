@@ -1,5 +1,5 @@
-import { useConnectKitContext } from '../ConnectKitProvider.tsx'
-import type { ConnectMode } from '../types.ts'
+import { useConnectKitContext } from '../ConnectKitProvider'
+import type { ConnectMode } from '../types'
 
 export interface UseConnectResult {
   connect: (mode?: ConnectMode) => Promise<void>

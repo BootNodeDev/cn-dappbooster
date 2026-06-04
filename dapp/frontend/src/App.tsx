@@ -1,9 +1,9 @@
 import { ConnectKitProvider } from 'canton-connect-kit'
 import { useState } from 'react'
-import { ConnectionBar } from './ConnectionBar.js'
-import { Counter } from './features/counter/index.js'
-import { SignMessageDemo } from './features/sign-message/index.js'
-import { loadRuntimeConfig } from './runtimeConfig.js'
+import { ConnectionBar } from './ConnectionBar'
+import { Counter } from './features/counter/index'
+import { SignMessageDemo } from './features/sign-message/index'
+import { loadRuntimeConfig } from './runtimeConfig'
 
 const envString = (name: string): string =>
   ((import.meta.env[name] as string | undefined) ?? '').trim()

@@ -1,7 +1,7 @@
 import { useSignMessage } from 'canton-connect-kit'
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { shortenIdentifier } from '../../utils/formatPartyId.js'
+import { shortenIdentifier } from '../../utils/formatPartyId'
 import './sign-message.css'
 
 // CIP-0103 signMessage demo. Removable feature: delete this folder + its import

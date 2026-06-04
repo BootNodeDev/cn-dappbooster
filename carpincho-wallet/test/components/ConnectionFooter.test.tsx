@@ -6,7 +6,7 @@ import {
   ConnectionFooter,
   type DappFooterStatus,
   type WalletServiceFooterStatus,
-} from '@/components/ConnectionFooter.tsx'
+} from '@/components/ConnectionFooter'
 
 const connectedService: WalletServiceFooterStatus = {
   // Wallet-service fixture representing a healthy Canton network connection.
@@ -29,7 +29,6 @@ const detectedDapp: DappFooterStatus = {
   kind: 'detected',
   label: 'localhost:3012',
   subtitle: 'Not connected',
-  faviconUrl: 'chrome-extension://test/_favicon/?pageUrl=http%3A%2F%2Flocalhost%3A3012&size=32',
 }
 
 describe('ConnectionFooter', () => {
@@ -90,8 +89,8 @@ describe('ConnectionFooter', () => {
     assert.ok(screen.getByText('unknown'))
   })
 
-  it('renders dApp empty and detected states', () => {
-    // Scenario: first no dApp has communicated, then a localhost page has contacted the extension.
+  it('hides the dApp row while no dApp is connected', () => {
+    // Scenario: neither an empty nor a merely-detected page should render a dApp row anymore.
     const { rerender } = render(
       <ConnectionFooter
         walletService={connectedService}
@@ -99,9 +98,7 @@ describe('ConnectionFooter', () => {
         onOpenSettings={() => undefined}
       />,
     )
-
-    // Empty state mirrors the requested Rabby-style "No Dapp found" row.
-    assert.ok(screen.getByText('No Dapp found'))
+    assert.equal(screen.queryByText(/no dapp found/i), null)
 
     rerender(
       <ConnectionFooter
@@ -110,10 +107,28 @@ describe('ConnectionFooter', () => {
         onOpenSettings={() => undefined}
       />,
     )
+    assert.equal(screen.queryByText('localhost:3012'), null)
+  })
 
-    // Detected state shows the communicating page, connection state, and favicon image.
-    assert.ok(screen.getByText('localhost:3012'))
-    assert.ok(screen.getByText('Not connected'))
-    assert.equal(screen.getByAltText('').getAttribute('src'), detectedDapp.faviconUrl)
+  it('shows the connected dApp with account address and a disconnect button', async () => {
+    // Scenario: a dApp is connected, so the footer shows the app, the connected account address, and disconnect.
+    const user = userEvent.setup()
+    let disconnects = 0
+    render(
+      <ConnectionFooter
+        walletService={connectedService}
+        dapp={{ kind: 'connected', label: 'Counter dApp', subtitle: 'Connected' }}
+        dappAccountAddress="bn-dev::mock...79f7ec4"
+        onDisconnectDapp={() => {
+          disconnects += 1
+        }}
+        onOpenSettings={() => undefined}
+      />,
+    )
+
+    assert.ok(screen.getByText('Counter dApp'))
+    assert.ok(screen.getByText('bn-dev::mock...79f7ec4'))
+    await user.click(screen.getByRole('button', { name: /disconnect/i }))
+    assert.equal(disconnects, 1)
   })
 })
