@@ -50,6 +50,7 @@ For the system shape (data flow, components, ports), see [`architecture.md`](arc
   - `npm run build-dar -- <daml-project>` / `npm run deploy-dar -- <dar>`
   - `npm run carpincho:build:extension`
   - `npm run app:dev`
+- For local-stack convenience, [`scripts/dev-stack.sh`](scripts/dev-stack.sh) wraps the shortcuts above behind an interactive menu (run with no args) or direct subcommands (`docker-up`, `up`, `down`, `docker-down`, `mock-up`, `mock-down`, `extension`, `status`). The `npm` scripts remain canonical; the helper just orchestrates them. See [`README.md`](README.md).
 - Local ports are intentionally assigned in the `3010+` range (see table above). Do not change them without updating every subproject's defaults.
 - Treat `package-lock.json` files as authoritative. Do not delete or regenerate them as part of unrelated changes.
 - Do not commit `.env.local`, `node_modules`, `dist/`, `dist-extension/`, or `.claude/settings.local.json` (covered by root `.gitignore`).
