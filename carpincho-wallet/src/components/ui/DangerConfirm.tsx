@@ -2,7 +2,8 @@ import type { ReactNode } from 'react'
 import { DangerButton } from '@/components/ui/Button'
 
 interface DangerConfirmProps {
-  identifier: string
+  // A mono identifier box (party id, origin, …). Omit for confirms with nothing to echo back.
+  identifier?: string
   message: ReactNode
   note?: ReactNode
   confirmLabel: string
@@ -26,11 +27,13 @@ export const DangerConfirm = ({
     data-testid={testId}
     className="flex flex-col gap-4"
   >
-    <div className="rounded-md border border-border bg-muted/50 px-3 py-2.5">
-      <span className="block break-all font-mono text-[0.8rem] leading-relaxed text-foreground">
-        {identifier}
-      </span>
-    </div>
+    {identifier !== undefined && (
+      <div className="rounded-md border border-border bg-muted/50 px-3 py-2.5">
+        <span className="block break-all font-mono text-[0.8rem] leading-relaxed text-foreground">
+          {identifier}
+        </span>
+      </div>
+    )}
     <p className="text-soft text-[0.95rem] leading-relaxed">{message}</p>
     {note !== undefined && <p className="font-semibold text-foreground">{note}</p>}
     <DangerButton

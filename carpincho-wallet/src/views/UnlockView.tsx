@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { Alert } from '@/components/ui/Alert'
 import { PrimaryButton } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
+import { DangerConfirm } from '@/components/ui/DangerConfirm'
 import { PasswordInput } from '@/components/ui/PasswordInput'
+import { Sheet } from '@/components/ui/Sheet'
 import { toast } from '@/components/ui/toast'
 import { WelcomeHero } from '@/components/WelcomeHero'
 import { useVault } from '@/vault/useVault'
@@ -12,6 +14,7 @@ export const UnlockView = (): JSX.Element => {
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | undefined>(undefined)
+  const [resetOpen, setResetOpen] = useState(false)
 
   const onSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault()
@@ -28,15 +31,6 @@ export const UnlockView = (): JSX.Element => {
       }
     } finally {
       setBusy(false)
-    }
-  }
-
-  const onReset = (): void => {
-    const ok = window.confirm(
-      'This wipes the vault from this browser. If you have not exported your private keys, your accounts will be unrecoverable. Continue?',
-    )
-    if (ok) {
-      v.destroyVault()
     }
   }
 
@@ -76,12 +70,35 @@ export const UnlockView = (): JSX.Element => {
         </form>
         <button
           type="button"
+          data-testid="reset-vault-trigger"
           className="block w-full mt-5 py-2 px-2 text-[0.85rem] bg-transparent border-0 text-muted-foreground font-semibold tracking-wide hover:text-danger transition-colors"
-          onClick={onReset}
+          onClick={() => setResetOpen(true)}
         >
           Forgot password? Reset vault
         </button>
       </Card>
+      <Sheet
+        open={resetOpen}
+        onOpenChange={setResetOpen}
+        side="center"
+        title="Reset vault"
+        description="Wipe this vault from the browser."
+      >
+        <DangerConfirm
+          testId="reset-vault"
+          message={
+            <>
+              This wipes the vault from this browser. If you have not exported your private keys,
+              your accounts will be{' '}
+              <span className="font-semibold text-foreground">unrecoverable</span>.
+            </>
+          }
+          note="This cannot be undone."
+          confirmLabel="Reset vault"
+          confirmTestId="confirm-reset-vault"
+          onConfirm={() => v.destroyVault()}
+        />
+      </Sheet>
     </div>
   )
 }

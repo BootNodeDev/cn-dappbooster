@@ -92,6 +92,7 @@ Manages the WalletConnect sign client lifecycle and session event handling.
 
 - **`client.ts`** — Creates the Reown `Core` and `SignClient` instances, declares the supported CIP-0103 methods and events, and exposes the session lifecycle API: the `subscribeToProposals` / `subscribeToRequests` / `subscribeToSessionChanges` subscribers, the `approveProposal` / `rejectProposal` / `respondWithResult` / `respondWithError` responders, and `pairWithUri` for URI pairing. The subscriptions are wired up in `src/views/home/useWalletConnectLifecycle.ts`, which forwards approved requests to `src/provider/dispatch.ts` and responds with the result or rejection.
 - **`accounts.ts`** — Formats internal `AccountPublic` records into the `eip155`-style account strings WalletConnect expects.
+- **`storage.ts`** — `wipeWalletConnectStorage` deletes the WalletConnect IndexedDB database (`WALLET_CONNECT_V2_INDEXED_DB`, where `@walletconnect/keyvaluestorage` persists sessions, pairings, and the keychain) on vault reset, since the `carpincho` localStorage-prefix wipe never reaches it.
 
 ### Chrome Extension Bridge (`src/extension/`)
 
@@ -102,7 +103,7 @@ Connects the extension popup UI to web pages and the extension background.
 - **`directProvider.ts`** — Handles direct injected-provider requests inside the background worker when the cached wallet snapshot can answer without opening the popup; approval-required methods are queued for the popup.
 - **`messages.ts`** — Shared message-type constants and type guards used by all three extension scripts.
 - **`runtimeClient.ts`** — Popup-side client for sending requests to the background and receiving responses.
-- **`directConnections.ts`** — Persists the set of direct injected-provider dApp origins that have completed a connect (and removes them on disconnect) in `chrome.storage.session`, with an in-memory fallback when not running as an extension, so the popup footer can show connection state for non-WalletConnect dApps.
+- **`directConnections.ts`** — Persists the set of direct injected-provider dApp origins that have completed a connect (and removes them on disconnect) in `chrome.storage.session`, with an in-memory fallback when not running as an extension, so the popup footer can show connection state for non-WalletConnect dApps; `clearDirectConnectedOrigins` drops all remembered origins (used on vault reset).
 - **`directConnectionState.ts`** — Pure helper that normalizes page URLs to stable http(s) origins and derives a remember/forget/none update from a provider request/response pair: remembers on a successful `connect` whose result reports `isConnected: true`, forgets on `disconnect`.
 - **`walletSnapshot.ts`** — Serialises the current wallet state (accounts, network, lock status) into a plain object the background caches so the popup can render without unlocking the vault.
 
@@ -203,6 +204,7 @@ Authentication is local-only; there is no remote auth service.
 - **Unlock** — `VaultContext.unlock(password)` re-derives the key, decrypts the vault, and stores the plaintext in a module-scope closure. The password is cached in `sessionStorage` via `sessionUnlock.ts` so hot-reloads do not require re-entry.
 - **Auto-lock** — Configurable from the Menu drawer (`Never` / `1 min` / `5 min` / `1 hour`, default `Never`, persisted to `localStorage.carpincho.autoLockOption`). Any timed option installs a `setTimeout`-based idle reset on window activity and also writes `Date.now() + idleMs` to `sessionStorage` as `carpincho.session.lockAt`. On mount, the session-restore effect refuses to auto-unlock if the persisted `lockAt` has elapsed, so the timeout is enforced across reloads, not just within a single tab session. On `pagehide` the in-memory vault is wiped when the active option is not `Never`.
 - **Lock** — `VaultContext.lock()` clears the module-scope closure, the cached session password, and the `lockAt` deadline.
+- **Reset** — `VaultContext.destroyVault()` (triggered from the Unlock screen's "Reset vault" confirmation) wipes every persistence surface that survives a reload: the in-memory keys and session token, every `carpincho`-prefixed `localStorage` key via `wipeAllPersistedData()` in `storage.ts`, the cached wallet snapshot, the WalletConnect IndexedDB (`wipeWalletConnectStorage`), and the direct-connected dApp origins in `chrome.storage.session` (`clearDirectConnectedOrigins`), then reloads the page so every provider re-inits from empty storage.
 
 No JWT, cookie, or server-side session is involved.
 
