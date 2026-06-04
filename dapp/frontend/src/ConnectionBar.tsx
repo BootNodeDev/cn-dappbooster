@@ -11,6 +11,7 @@ import {
 import { Sheet } from '@/components/ui/Sheet'
 import { toast } from '@/components/ui/toast'
 import { useTheme } from '@/theme/useTheme'
+import { copyToClipboard } from './utils/clipboard'
 import { errorMessage } from './utils/errorMessage'
 import { formatPartyId, shortenIdentifier } from './utils/formatPartyId'
 
@@ -162,33 +163,27 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
     if (party === undefined) {
       return
     }
-    try {
-      await navigator.clipboard.writeText(party.partyId)
-      toast.success('Party id copied.')
-    } catch (err) {
-      toast.error(errorMessage(err))
-    }
+    await copyToClipboard(party.partyId, 'Party id copied.')
   }
 
   const copyPairingUri = async (): Promise<void> => {
     if (pairingUri === undefined) {
       return
     }
-    try {
-      await navigator.clipboard.writeText(pairingUri)
+    await copyToClipboard(pairingUri, () => {
       setPairingCopied(true)
       window.setTimeout(() => setPairingCopied(false), 1400)
-    } catch (err) {
-      toast.error(errorMessage(err))
-    }
+    })
   }
+
+  const nextTheme = resolvedTheme === 'dark' ? 'light' : 'dark'
 
   const themeToggle = (
     <button
       type="button"
       data-testid="theme-toggle"
-      aria-label={`Switch to ${resolvedTheme === 'dark' ? 'light' : 'dark'} theme`}
-      title={`Switch to ${resolvedTheme === 'dark' ? 'light' : 'dark'} theme`}
+      aria-label={`Switch to ${nextTheme} theme`}
+      title={`Switch to ${nextTheme} theme`}
       onClick={toggleTheme}
       className={ICON_CHIP_CLASS}
     >

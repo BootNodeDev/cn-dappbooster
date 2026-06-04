@@ -7,6 +7,7 @@ import { Sheet } from '@/components/ui/Sheet'
 import { TextInput } from '@/components/ui/TextInput'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { toast } from '@/components/ui/toast'
+import { copyToClipboard } from '../../utils/clipboard'
 import { errorMessage } from '../../utils/errorMessage'
 import { formatPartyId, shortenIdentifier } from '../../utils/formatPartyId'
 import {
@@ -165,15 +166,6 @@ export const LoyaltyCard = (): JSX.Element | null => {
   const cardKeySeq = useRef(0)
 
   const busy = isExecuting
-
-  const copyText = async (text: string, message: string): Promise<void> => {
-    try {
-      await navigator.clipboard.writeText(text)
-      toast.success(message)
-    } catch (err) {
-      toast.error(errorMessage(err))
-    }
-  }
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: re-read the ACS only when the active party identity changes
   useEffect(() => {
@@ -456,7 +448,7 @@ export const LoyaltyCard = (): JSX.Element | null => {
                     aria-label="Copy card id"
                     title="Copy card id"
                     onClick={() => {
-                      void copyText(tally.contractId, 'Card id copied.')
+                      void copyToClipboard(tally.contractId, 'Card id copied.')
                     }}
                     className="inline-grid shrink-0 place-items-center text-muted-foreground transition-colors hover:text-primary [&_svg]:size-3.5"
                   >
@@ -592,7 +584,7 @@ export const LoyaltyCard = (): JSX.Element | null => {
                   aria-label="Copy party id"
                   title="Copy party id"
                   onClick={() => {
-                    void copyText(partyId, 'Party id copied.')
+                    void copyToClipboard(partyId, 'Party id copied.')
                   }}
                   className="inline-grid shrink-0 place-items-center text-muted-foreground transition-colors hover:text-primary [&_svg]:size-3.5"
                 >
