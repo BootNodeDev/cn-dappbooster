@@ -13,7 +13,7 @@
 | Language | TypeScript 5.9 (strict) | |
 | Wallet protocol | Injected CIP-0103 provider + optional WalletConnect Sign Client 2.x | Browser extension provider events by default; Reown relay only for WalletConnect fallback |
 | Cryptography | @noble/ed25519 3.x, @noble/hashes 1.x | Ed25519 signing; PBKDF2 + AES-GCM vault |
-| UI primitives | React 18 + Radix UI | `@radix-ui/react-{dialog,tabs,toast,tooltip}` for modals/tabs/toasts/tooltips; local wrappers (Button family, TextInput, PasswordInput, Alert, Card, AccountAvatar, PendingActionCard, Sheet, Tabs, OptionList, Stepper, DangerConfirm, MenuRow, ToastProvider, Tooltip) for static visuals and Radix re-skins; shared icon SVG literals live in `src/components/ui/icons.tsx`; `Sheet` is the shared Radix Dialog scaffold for sheet-style flows (overlay, title, close button) and takes `side: 'bottom' | 'right'` (default `'bottom'`; right opens as a 400px-wide top-aligned drawer clamped by `100vw`); `ToastProvider` and `TooltipProvider` are both mounted once in `App.tsx`; `TextInput` and `PasswordInput` accept `error?: boolean` which applies a danger border, a persistent focus ring, and `aria-invalid`; `Button.tsx` exports `GHOST_BUTTON_CLASS` / `ICON_BUTTON_CLASS` for ad-hoc buttons (e.g. `PasswordInput`'s show/hide button) |
+| UI primitives | React 18 + Radix UI | `@radix-ui/react-{dialog,tabs,toast,tooltip}` for modals/tabs/toasts/tooltips; local wrappers (Button family, TextInput, PasswordInput, Alert, Card, AccountAvatar, PendingActionCard, Sheet, Tabs, OptionList, Stepper, DangerConfirm, MenuRow, ToastProvider, Tooltip) for static visuals and Radix re-skins; shared icon SVG literals live in `src/components/ui/icons.tsx`; `Sheet` is the shared Radix Dialog scaffold for sheet-style flows (overlay, title, close button) and takes `side: 'bottom' | 'right' | 'center'` (default `'bottom'`; right opens as a 400px-wide top-aligned drawer clamped by `100vw`; center renders a centered modal dialog); `ToastProvider` and `TooltipProvider` are both mounted once in `App.tsx`; `TextInput` and `PasswordInput` accept `error?: boolean` which applies a danger border, a persistent focus ring, and `aria-invalid`; `Button.tsx` exports `GHOST_BUTTON_CLASS` / `ICON_BUTTON_CLASS` for ad-hoc buttons (e.g. `PasswordInput`'s show/hide button) |
 | Styling | Tailwind CSS v4 (`@tailwindcss/vite`) | Utility classes inline in JSX; `src/index.css` declares CSS-variable tokens on `:root` / `[data-theme="dark"]` and exposes them to Tailwind through `@theme inline`; `@layer base` holds global resets; Radix `data-[state=...]` and `data-[highlighted]` attrs drive interactive variants |
 | Fonts | `@fontsource-variable/manrope`, `@fontsource-variable/jetbrains-mono` | Self-hosted variable fonts so the extension popup works offline. Manrope is the whole UI: `font-sans` (UI chrome, body, labels, buttons) and `font-display` (hero wordmarks, view headings, section markers — heavier weight for hierarchy). JetBrains Mono is `font-mono` (party IDs, hashes, RPC URLs, JSON payloads) |
 | Theming | Light / dark / system selector in the drawer menu | `src/theme/ThemeProvider.tsx` owns a persisted `mode` (`light` \| `dark` \| `system`, default `system`), resolves `system` against `prefers-color-scheme` (re-resolving on media changes while in `system`), and writes the resolved `data-theme` on `<html>` after mount; the selector lives at Settings → Theme (`src/components/menu/ThemeMenu.tsx`) with no header toggle; the Tailwind `dark:` variant is rebound to `[data-theme='dark']` via `@custom-variant` |
@@ -25,7 +25,7 @@
 ```
 src/
   api/              JSON-RPC client for the external wallet-service backend
-  assets/           SVG assets (hero illustration)
+  assets/           SVG brand assets (carpincho-logo.svg)
   components/       Shared UI components (Logo, Header, WelcomeHero, AccountCard,
                     AccountRow, AccountListRow, AccountsDialog, CopyPartyIdButton,
                     ActivityList, HomeTabs, AssetsPanel, ConnectionFooter,
@@ -42,14 +42,18 @@ src/
   extension/        Chrome extension scripts: background, content script, provider injection
   provider/         CIP-0103 wallet provider — request dispatcher and method handlers
   vault/            Encrypted local vault: PBKDF2 key derivation, AES-GCM storage, React context
-  views/            Top-level UI views (onboarding/* two-step wizard, Unlock, Home, ConnectionSettings)
-  wc/               WalletConnect sign client setup and session event handlers
+  utils/            Pure helpers (account formatting, clipboard, classnames cn, JSON pretty-print)
+  views/            Top-level UI views (onboarding/* two-step wizard, Unlock, Home,
+                    ConnectionSettings) plus home/* — the extracted HomeView logic
+                    (pending-actions state, extension/provider request handling,
+                    WalletConnect lifecycle, transaction summarising)
+  wc/               WalletConnect sign client setup and session lifecycle API
   App.tsx           Root component — selects the active view based on vault state
   main.tsx          Entry point — detects chrome-extension:// vs web runtime
 public/
   manifest.json     Chrome extension manifest (consumed during extension build)
   icons/            Extension icons (16, 32, 48, 128 px)
-test/               Node test runner suite (11 test files)
+test/               Node test runner suite (mirrors src/ layout)
 ```
 
 ## Key Abstractions
@@ -86,8 +90,7 @@ Implements the Canton wallet provider standard. Any dApp request (from WalletCon
 
 Manages the WalletConnect sign client lifecycle and session event handling.
 
-- **`client.ts`** — Creates the Reown `Core` and `SignClient` instances. Declares the supported CIP-0103 methods and events used during session proposals.
-- **`handlers.ts`** — Subscribes to `session_proposal` and `session_request` events. Forwards approved requests to `src/provider/dispatch.ts` and responds with the result or rejection.
+- **`client.ts`** — Creates the Reown `Core` and `SignClient` instances, declares the supported CIP-0103 methods and events, and exposes the session lifecycle API: the `subscribeToProposals` / `subscribeToRequests` / `subscribeToSessionChanges` subscribers, the `approveProposal` / `rejectProposal` / `respondWithResult` / `respondWithError` responders, and `pairWithUri` for URI pairing. The subscriptions are wired up in `src/views/home/useWalletConnectLifecycle.ts`, which forwards approved requests to `src/provider/dispatch.ts` and responds with the result or rejection.
 - **`accounts.ts`** — Formats internal `AccountPublic` records into the `eip155`-style account strings WalletConnect expects.
 
 ### Chrome Extension Bridge (`src/extension/`)
@@ -113,14 +116,14 @@ The app communicates with two external systems:
 | Injected extension provider | `src/extension/contentScript.ts` | Announces Carpincho to dApps through `canton:requestProvider` / `canton:announceProvider` and relays provider requests through the extension runtime |
 | WalletConnect relay | `src/wc/client.ts` | Optional fallback sign client connected to Reown relay using `VITE_WC_PROJECT_ID` |
 
-Components must never call these systems directly. All wallet-service calls go through `src/provider/walletService.ts`; injected-provider requests are bridged by `src/extension/contentScript.ts` / `src/extension/background.ts`, and WalletConnect events are handled in `src/wc/handlers.ts`. Both paths forward to the provider dispatcher.
+Components must never call these systems directly. All wallet-service calls go through `src/provider/walletService.ts`; injected-provider requests are bridged by `src/extension/contentScript.ts` / `src/extension/background.ts`, and WalletConnect events are handled by the `src/wc/client.ts` subscriptions wired in `src/views/home/useWalletConnectLifecycle.ts`. Both paths forward to the provider dispatcher.
 
 ## Data Flow
 
 ```mermaid
 flowchart TD
   dapp["dApp (browser page)"]
-  wc["src/wc/handlers.ts"]
+  wc["src/wc/client.ts subscriptions"]
   direct["src/extension/directProvider.ts"]
   dispatch["src/provider/dispatch.ts"]
   api["src/api/walletService.ts"]

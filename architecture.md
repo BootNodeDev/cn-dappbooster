@@ -115,7 +115,7 @@ For the full bring-up sequence, follow [`README.md`](README.md).
 
 ## Further Reading
 
-- [`carpincho-wallet/architecture.md`](carpincho-wallet/architecture.md) — wallet-internal architecture: Vault crypto, CIP-0103 dispatcher, WalletConnect handlers, Chrome extension bridge, theming, auth/session
+- [`carpincho-wallet/architecture.md`](carpincho-wallet/architecture.md) — wallet-internal architecture: Vault crypto, CIP-0103 dispatcher, WalletConnect integration, Chrome extension bridge, theming, auth/session
 - [`canton-connect-kit/architecture.md`](canton-connect-kit/architecture.md) — connect-kit internals: provider context, connectors, hooks, event bridge
 - [`canton-barebones/README.md`](canton-barebones/README.md) — local participant setup
 - [`dapp/daml/README.md`](dapp/daml/README.md) — DAML model
