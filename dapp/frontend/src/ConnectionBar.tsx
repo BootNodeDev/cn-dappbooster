@@ -1,6 +1,6 @@
 import { useConnect, useParty, useWalletStatus } from 'canton-connect-kit'
 import type { ReactNode } from 'react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   CHEVRON_DOWN_ICON,
   COPY_ICON,
@@ -47,6 +47,39 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
   const [connectMode, setConnectMode] = useState<'extension' | 'walletconnect' | undefined>(
     undefined,
   )
+
+  const connectMenuRef = useRef<HTMLDivElement>(null)
+  const accountMenuRef = useRef<HTMLDivElement>(null)
+
+  // Close the header menus on an outside click or Escape. A `fixed` backdrop
+  // can't be used here: the header's `backdrop-blur` makes it the containing
+  // block for fixed descendants, trapping the backdrop inside the header bar.
+  useEffect(() => {
+    if (!connectMenuOpen && !accountOpen) {
+      return
+    }
+    const onPointerDown = (event: PointerEvent): void => {
+      const target = event.target as Node
+      if (connectMenuRef.current !== null && !connectMenuRef.current.contains(target)) {
+        setConnectMenuOpen(false)
+      }
+      if (accountMenuRef.current !== null && !accountMenuRef.current.contains(target)) {
+        setAccountOpen(false)
+      }
+    }
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') {
+        setConnectMenuOpen(false)
+        setAccountOpen(false)
+      }
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [connectMenuOpen, accountOpen])
 
   // The toggle only flips between explicit light and dark; the default stays
   // `system` (set by ThemeProvider) until the user picks one. Resolve the active
@@ -114,7 +147,7 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
   )
 
   const connectControls = !isConnected ? (
-    <div className="relative">
+    <div className="relative" ref={connectMenuRef}>
       <button
         type="button"
         data-testid="connect-menu"
@@ -122,65 +155,52 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
         aria-haspopup="menu"
         aria-expanded={connectMenuOpen}
         disabled={isConnecting}
-        className="relative isolate inline-flex h-9 items-center gap-2 overflow-hidden rounded-full border border-primary bg-primary pl-4 pr-3 text-sm font-semibold text-primary-foreground transition before:absolute before:inset-0 before:-z-10 before:bg-[image:var(--bg-gradient-brand)] before:opacity-0 before:transition-opacity enabled:hover:border-transparent enabled:hover:shadow-glow enabled:hover:before:opacity-100 disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex h-9 items-center gap-2 rounded-full border border-border-strong bg-surface pl-4 pr-3 text-sm font-semibold text-foreground transition-colors enabled:hover:border-primary enabled:hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
       >
         <span>{isConnecting ? 'Connecting…' : 'Connect wallet'}</span>
         <span className="[&_svg]:size-4">{CHEVRON_DOWN_ICON}</span>
       </button>
       {connectMenuOpen && (
-        <>
+        <div
+          role="menu"
+          className="absolute right-0 z-50 mt-2 w-64 rounded-xl border border-border bg-surface p-2 shadow-popover"
+        >
           <button
             type="button"
-            aria-label="Close connect menu"
-            className="fixed inset-0 z-40 cursor-default"
-            onClick={() => setConnectMenuOpen(false)}
-          />
-          <div
-            role="menu"
-            className="absolute right-0 z-50 mt-2 w-64 rounded-xl border border-border bg-surface p-2 shadow-popover"
+            data-testid="connect-extension"
+            onClick={() => {
+              setConnectMenuOpen(false)
+              void onConnect('extension')
+            }}
+            disabled={isConnecting}
+            className="flex w-full items-center gap-2.5 rounded-lg p-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <button
-              type="button"
-              data-testid="connect-extension"
-              onClick={() => {
-                setConnectMenuOpen(false)
-                void onConnect('extension')
-              }}
-              disabled={isConnecting}
-              className="flex w-full items-center gap-2.5 rounded-lg p-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <img
-                src="/carpincho-icon.svg"
-                alt=""
-                aria-hidden="true"
-                className="size-6 rounded-full"
-              />
-              {isConnecting && connectMode === 'extension' ? 'Connecting…' : 'Carpincho Wallet'}
-            </button>
-            <button
-              type="button"
-              data-testid="connect-walletconnect"
-              onClick={() => {
-                setConnectMenuOpen(false)
-                void onConnect('walletconnect')
-              }}
-              disabled={isConnecting}
-              className="mt-1 flex w-full items-center gap-2.5 rounded-lg p-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <img
-                src="/Walletconnect-logo.png"
-                alt=""
-                aria-hidden="true"
-                className="size-[18px]"
-              />
-              {isConnecting && connectMode === 'walletconnect' ? 'Pairing…' : 'WalletConnect'}
-            </button>
-          </div>
-        </>
+            <img
+              src="/carpincho-icon.svg"
+              alt=""
+              aria-hidden="true"
+              className="size-6 rounded-full"
+            />
+            {isConnecting && connectMode === 'extension' ? 'Connecting…' : 'Carpincho Wallet'}
+          </button>
+          <button
+            type="button"
+            data-testid="connect-walletconnect"
+            onClick={() => {
+              setConnectMenuOpen(false)
+              void onConnect('walletconnect')
+            }}
+            disabled={isConnecting}
+            className="mt-1 flex w-full items-center gap-2.5 rounded-lg p-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <img src="/Walletconnect-logo.png" alt="" aria-hidden="true" className="size-[18px]" />
+            {isConnecting && connectMode === 'walletconnect' ? 'Pairing…' : 'WalletConnect'}
+          </button>
+        </div>
       )}
     </div>
   ) : (
-    <div className="relative">
+    <div className="relative" ref={accountMenuRef}>
       <button
         type="button"
         data-testid="connected-party"
@@ -198,49 +218,41 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
         <span className="text-muted-foreground">{CHEVRON_DOWN_ICON}</span>
       </button>
       {accountOpen && (
-        <>
-          <button
-            type="button"
-            aria-label="Close account menu"
-            className="fixed inset-0 z-40 cursor-default"
-            onClick={() => setAccountOpen(false)}
-          />
-          <div
-            role="menu"
-            className="absolute right-0 z-50 mt-2 w-72 rounded-xl border border-border bg-surface p-3 shadow-popover"
-          >
-            <span className="text-[0.65rem] font-bold uppercase tracking-[0.08em] text-muted-foreground">
-              Connected party
-            </span>
-            <div className="mt-1 flex items-stretch gap-2">
-              <code className="min-w-0 flex-1 break-all rounded-lg bg-muted p-2 font-mono text-xs text-foreground">
-                {party?.partyId ?? ''}
-              </code>
-              <button
-                type="button"
-                aria-label="Copy party id"
-                title="Copy party id"
-                onClick={() => {
-                  void copyPartyId()
-                }}
-                className="inline-grid size-9 shrink-0 place-items-center rounded-lg border border-border bg-surface text-muted-foreground transition-colors hover:border-primary hover:text-primary [&_svg]:size-4"
-              >
-                {COPY_ICON}
-              </button>
-            </div>
+        <div
+          role="menu"
+          className="absolute right-0 z-50 mt-2 w-72 rounded-xl border border-border bg-surface p-3 shadow-popover"
+        >
+          <span className="text-[0.65rem] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+            Connected party
+          </span>
+          <div className="mt-1 flex items-stretch gap-2">
+            <code className="min-w-0 flex-1 break-all rounded-lg bg-muted p-2 font-mono text-xs text-foreground">
+              {party?.partyId ?? ''}
+            </code>
             <button
               type="button"
-              data-testid="logout"
+              aria-label="Copy party id"
+              title="Copy party id"
               onClick={() => {
-                void onDisconnect()
+                void copyPartyId()
               }}
-              className="mt-3 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-danger/40 bg-surface text-sm font-semibold text-danger transition-colors hover:bg-danger-soft [&_svg]:size-4"
+              className="inline-grid size-9 shrink-0 place-items-center rounded-lg border border-border bg-surface text-muted-foreground transition-colors hover:border-primary hover:text-primary [&_svg]:size-4"
             >
-              {DISCONNECT_ICON}
-              Disconnect
+              {COPY_ICON}
             </button>
           </div>
-        </>
+          <button
+            type="button"
+            data-testid="logout"
+            onClick={() => {
+              void onDisconnect()
+            }}
+            className="mt-3 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-danger/40 bg-surface text-sm font-semibold text-danger transition-colors hover:bg-danger-soft [&_svg]:size-4"
+          >
+            {DISCONNECT_ICON}
+            Disconnect
+          </button>
+        </div>
       )}
     </div>
   )
@@ -315,7 +327,9 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
               cardholders watch their stamps add up toward a reward — every stamp a real Canton
               transaction.
             </p>
-            <p className="mt-8 text-sm font-semibold text-soft">Connect your wallet to begin</p>
+            <p className="mt-8 font-display text-lg font-bold text-foreground">
+              Connect your wallet to begin
+            </p>
             <button
               type="button"
               data-testid="hero-connect"
@@ -333,6 +347,7 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
               />
               {isConnecting && connectMode === 'extension' ? 'Connecting…' : 'Carpincho Wallet'}
             </button>
+            <p className="mt-1.5 text-xs text-muted-foreground">(browser extension)</p>
 
             <div className="mt-4 flex items-center gap-3 text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
               <span className="h-px w-8 bg-border" />
@@ -352,6 +367,7 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
               <img src="/Walletconnect-logo.png" alt="" aria-hidden="true" className="size-5" />
               {isConnecting && connectMode === 'walletconnect' ? 'Pairing…' : 'WalletConnect'}
             </button>
+            <p className="mt-1.5 text-xs text-muted-foreground">(carpincho web app)</p>
           </section>
         ) : isLocked ? (
           <section
