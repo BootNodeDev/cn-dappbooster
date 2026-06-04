@@ -315,6 +315,7 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
               cardholders watch their stamps add up toward a reward — every stamp a real Canton
               transaction.
             </p>
+            <p className="mt-8 text-sm font-semibold text-soft">Connect your wallet to begin</p>
             <button
               type="button"
               data-testid="hero-connect"
@@ -322,7 +323,7 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
                 void onConnect('extension')
               }}
               disabled={isConnecting}
-              className="relative isolate mt-8 inline-flex h-11 items-center gap-2 overflow-hidden rounded-full border border-primary bg-primary px-6 text-[0.95rem] font-semibold text-primary-foreground transition before:absolute before:inset-0 before:-z-10 before:bg-[image:var(--bg-gradient-brand)] before:opacity-0 before:transition-opacity enabled:hover:border-transparent enabled:hover:shadow-glow enabled:hover:before:opacity-100 disabled:cursor-not-allowed disabled:opacity-60"
+              className="relative isolate mt-4 inline-flex h-11 items-center gap-2 overflow-hidden rounded-full border border-primary bg-primary px-6 text-[0.95rem] font-semibold text-primary-foreground transition before:absolute before:inset-0 before:-z-10 before:bg-[image:var(--bg-gradient-brand)] before:opacity-0 before:transition-opacity enabled:hover:border-transparent enabled:hover:shadow-glow enabled:hover:before:opacity-100 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <img
                 src="/carpincho-icon.svg"
