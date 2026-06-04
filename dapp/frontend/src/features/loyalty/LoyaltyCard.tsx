@@ -29,27 +29,25 @@ type PartyDrafts = Record<string, Partial<Record<ManageRole, string>>>
 // Stable per-slot keys for the fixed 10-slot punch card (avoids index-as-key).
 const SLOT_KEYS = Array.from({ length: 10 }, (_, i) => `slot-${i}`)
 
-// 10-slot punch card. Filled slots (sequential `filled` from the ledger value,
-// plus any locally `clicked` slots this session) show a star; remaining slots
-// become clickable "+" buttons when the active party may stamp. The clicked-slot
-// fill is a transient visual nicety — a page reload re-derives stamps sequentially
-// from the on-ledger count.
+// 10-slot punch card. `filledSlots` is the exact set of slot indices to show as
+// stamped; the rest become clickable "+" buttons when the active party may stamp.
+// Clicking a slot fills THAT slot (not the next sequential one) — a transient,
+// unstored visual: on page reload the set is reseeded sequentially from the
+// on-ledger count.
 const PunchCard = ({
-  filled,
-  clicked,
+  filledSlots,
   canAdd,
   busy,
   onAdd,
 }: {
-  filled: number
-  clicked: number[]
+  filledSlots: number[]
   canAdd: boolean
   busy: boolean
   onAdd: (slot: number) => void
 }): JSX.Element => (
   <div className="mt-2 grid grid-cols-5 gap-2">
     {SLOT_KEYS.map((key, i) => {
-      if (i < filled || clicked.includes(i)) {
+      if (filledSlots.includes(i)) {
         return (
           <div
             key={key}
@@ -164,8 +162,11 @@ export const LoyaltyCard = (): JSX.Element | null => {
   const [partyDrafts, setPartyDrafts] = useState<PartyDrafts>({})
   const [manageId, setManageId] = useState<string | undefined>(undefined)
   const [view, setView] = useState<{ contractId: string; role: ManageRole } | undefined>(undefined)
-  // Transient, per-session "filled the slot you clicked" overlay; not persisted.
-  const [clickedSlots, setClickedSlots] = useState<Record<string, number[]>>({})
+  // Per-card set of slot indices shown as stamped. Undefined until the user
+  // clicks a slot; then it's frozen to "what was sequentially filled at that
+  // moment, plus the clicked slot" so further stamps don't reflow the layout.
+  // Not persisted — a page reload drops it and the card reseeds sequentially.
+  const [filledSlots, setFilledSlots] = useState<Record<string, number[]>>({})
 
   const busy = isExecuting
 
@@ -324,10 +325,8 @@ export const LoyaltyCard = (): JSX.Element | null => {
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {tallies.map((tally) => {
             const { filled, rewards } = stampStats(tally.value)
-            const clicked = clickedSlots[tally.contractId] ?? []
-            const displayedFilled = Array.from({ length: 10 }, (_, i) => i).filter(
-              (i) => i < filled || clicked.includes(i),
-            ).length
+            const sequentialSlots = Array.from({ length: filled }, (_, i) => i)
+            const slots = filledSlots[tally.contractId] ?? sequentialSlots
             return (
               <Card
                 key={tally.contractId}
@@ -344,18 +343,20 @@ export const LoyaltyCard = (): JSX.Element | null => {
                     <span className="font-display text-sm font-bold">
                       {formatPartyId(tally.issuer)}
                     </span>
-                    <span className="text-xs opacity-85">{displayedFilled} / 10</span>
+                    <span className="text-xs opacity-85">{slots.length} / 10</span>
                   </div>
                   <PunchCard
-                    filled={filled}
-                    clicked={clicked}
+                    filledSlots={slots}
                     canAdd={canStamp(tally, party.partyId)}
                     busy={busy}
                     onAdd={(slot) => {
-                      setClickedSlots((prev) => ({
-                        ...prev,
-                        [tally.contractId]: [...(prev[tally.contractId] ?? []), slot],
-                      }))
+                      setFilledSlots((prev) => {
+                        const base = prev[tally.contractId] ?? sequentialSlots
+                        return {
+                          ...prev,
+                          [tally.contractId]: base.includes(slot) ? base : [...base, slot],
+                        }
+                      })
                       void runCommand(
                         'add-stamp',
                         addStampCommand(tally, party.partyId),
