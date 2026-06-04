@@ -70,6 +70,7 @@ Subproject docs must not restate root rules. They should describe only their loc
 - All source code in English regardless of conversation language.
 - TypeScript preferred over JavaScript across Node subprojects.
 - **No semicolons** in TypeScript / JavaScript across the repo.
+- **Comments are terse and explain *why*, not *what*.** Prefer one line. Do not restate what the code already says, narrate steps, or write multi-line prose where a short clause suffices. If the code needs a paragraph to be understood, simplify the code instead.
 - Lint and formatting are centralized in the root `biome.json`. Add project-specific rules under `overrides` keyed by path; do not create per-subproject Biome configs.
 
 ## Working Rules

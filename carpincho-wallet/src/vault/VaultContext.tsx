@@ -30,7 +30,7 @@ import {
   loadAutoLockOption,
   loadVault,
   rotateVault,
-  wipeVault,
+  wipeAllPersistedData,
   writeAutoLockOption,
   writeFreshVault,
 } from '@/vault/storage'
@@ -212,13 +212,16 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
   )
 
   const destroyVault = useCallback((): void => {
-    void wipeMemory().catch(() => undefined)
-    wipeVault()
-    setVaultExists(false)
-    setIsLocked(true)
-    bump()
-    broadcastConnectionState(false)
-  }, [bump, broadcastConnectionState])
+    void (async () => {
+      // Await the async session/snapshot wipes (they survive a reload) before clearing
+      // localStorage, then reload so every provider re-inits from empty storage.
+      await wipeMemory().catch(() => undefined)
+      await persistWalletSnapshot(null).catch(() => undefined)
+      wipeAllPersistedData()
+      broadcastConnectionState(false)
+      window.location.reload()
+    })()
+  }, [broadcastConnectionState])
 
   // dapp-api AccountsChangedEvent payload (Wallet[]); [] when locked.
   const accountsChangedPayload = useCallback((): unknown[] => {

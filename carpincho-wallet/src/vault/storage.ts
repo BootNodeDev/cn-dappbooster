@@ -48,6 +48,23 @@ export const wipeVault = (): void => {
   localStorage.removeItem(KEY_VAULT_NEXT)
 }
 
+// Reset wipes every `carpincho`-namespaced key (vault + all prefs) by prefix, so
+// preferences added later are cleared without touching this.
+const STORAGE_PREFIX = 'carpincho'
+
+export const wipeAllPersistedData = (): void => {
+  const stale: string[] = []
+  for (let i = 0; i < localStorage.length; i += 1) {
+    const key = localStorage.key(i)
+    if (key?.startsWith(STORAGE_PREFIX) === true) {
+      stale.push(key)
+    }
+  }
+  for (const key of stale) {
+    localStorage.removeItem(key)
+  }
+}
+
 const KEY_AUTO_LOCK = 'carpincho.autoLockOption'
 
 export const AUTO_LOCK_OPTIONS = ['never', '1m', '5m', '1h'] as const
