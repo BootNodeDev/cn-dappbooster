@@ -23,6 +23,33 @@ import {
 const commandId = (prefix: string): string =>
   `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`
 
+// Ledger/RPC rejections aren't always Error instances — Canton surfaces a
+// structured `{ cause, code, ... }` object. Pull out a readable message instead
+// of letting a bare object render as "[object Object]".
+const errorMessage = (err: unknown): string => {
+  if (err instanceof Error) {
+    return err.message
+  }
+  if (typeof err === 'string') {
+    return err
+  }
+  if (err !== null && typeof err === 'object') {
+    const record = err as Record<string, unknown>
+    if (typeof record.cause === 'string') {
+      return record.cause
+    }
+    if (typeof record.message === 'string') {
+      return record.message
+    }
+    try {
+      return JSON.stringify(err)
+    } catch {
+      return 'Unexpected error'
+    }
+  }
+  return 'Unexpected error'
+}
+
 type ManageRole = 'staff' | 'cardholder'
 type PartyDrafts = Record<string, Partial<Record<ManageRole, string>>>
 
@@ -255,7 +282,7 @@ export const LoyaltyCard = (): JSX.Element | null => {
       setTallies(ordered)
       return ordered
     } catch (err) {
-      toast.error((err as Error).message)
+      toast.error(errorMessage(err))
       return []
     }
   }
@@ -280,15 +307,16 @@ export const LoyaltyCard = (): JSX.Element | null => {
       toast.success(successMessage)
       return next
     } catch (err) {
-      toast.error((err as Error).message)
+      toast.error(errorMessage(err))
       return undefined
     }
   }
 
-  // Stamping is a consuming choice that rotates the contractId. We deliberately
-  // do NOT reload the ACS here: that would swap the card's contractId and drop
-  // the per-card filled-slot overlay. The stamp is written on-ledger; the visual
-  // stays optimistic until a page reload re-derives stamps sequentially.
+  // Stamping is a consuming choice: it archives the Tally and creates a new one
+  // with a fresh contractId. We must reload so the NEXT stamp targets the live
+  // contract (otherwise the second stamp hits an archived contract and fails) —
+  // then migrate the optimistic filled-slot overlay onto the recreated card so
+  // the clicked positions stick instead of snapping back to sequential.
   const addStamp = async (tally: TallyContract, slot: number): Promise<void> => {
     if (party === undefined) {
       return
@@ -301,9 +329,25 @@ export const LoyaltyCard = (): JSX.Element | null => {
         readAs: [party.partyId],
         packageIdSelectionPreference: [TALLY_PACKAGE_ID],
       })
+      const previousIds = new Set(tallies.map((t) => t.contractId))
+      const ordered = await loadTalliesFor(party.partyId)
+      const successor = ordered.find(
+        (t) => !previousIds.has(t.contractId) && t.issuer === tally.issuer,
+      )
+      if (successor !== undefined) {
+        setFilledSlots((prev) => {
+          const overlay = prev[tally.contractId]
+          if (overlay === undefined) {
+            return prev
+          }
+          const rest = { ...prev }
+          delete rest[tally.contractId]
+          return { ...rest, [successor.contractId]: overlay }
+        })
+      }
       toast.success('Stamp added')
     } catch (err) {
-      toast.error((err as Error).message)
+      toast.error(errorMessage(err))
       // Tx rejected/failed: roll back the optimistic fill for this slot.
       setFilledSlots((prev) => {
         const current = prev[tally.contractId]
