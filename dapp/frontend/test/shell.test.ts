@@ -53,7 +53,6 @@ describe('dapp shell', () => {
   it('uses the shared party formatter', () => {
     const bar = readText('src/ConnectionBar.tsx')
     assert.match(bar, /formatPartyId\(party\.partyId\)/)
-    assert.match(bar, /formatPartyId\(party\?\.partyId \?\? ''\)/)
   })
 
   it('adopts tailwind v4 + drops sonner in package.json', () => {

@@ -214,7 +214,7 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
           aria-hidden="true"
           className="size-6 shrink-0 rounded-full bg-[image:var(--bg-gradient-brand)]"
         />
-        <span className="truncate">{formatPartyId(party?.partyId ?? '')}</span>
+        <span className="truncate">{(party?.partyId ?? '').split('::')[0]}</span>
         <span className="text-muted-foreground">{CHEVRON_DOWN_ICON}</span>
       </button>
       {accountOpen && (

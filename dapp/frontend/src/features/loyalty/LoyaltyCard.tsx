@@ -2,6 +2,7 @@ import { useExecute, useLedger, useParty } from 'canton-connect-kit'
 import { useEffect, useState } from 'react'
 import { GhostButton, PrimaryButton, SecondaryButton } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
+import { COPY_ICON, EYE_ICON } from '@/components/ui/icons'
 import { Sheet } from '@/components/ui/Sheet'
 import { TextInput } from '@/components/ui/TextInput'
 import { toast } from '@/components/ui/toast'
@@ -28,22 +29,27 @@ type PartyDrafts = Record<string, Partial<Record<ManageRole, string>>>
 // Stable per-slot keys for the fixed 10-slot punch card (avoids index-as-key).
 const SLOT_KEYS = Array.from({ length: 10 }, (_, i) => `slot-${i}`)
 
-// 10-slot punch card. Filled slots show a star; empty slots become clickable
-// "+" stamp buttons when the active party may stamp (issuer or delegated staff).
+// 10-slot punch card. Filled slots (sequential `filled` from the ledger value,
+// plus any locally `clicked` slots this session) show a star; remaining slots
+// become clickable "+" buttons when the active party may stamp. The clicked-slot
+// fill is a transient visual nicety — a page reload re-derives stamps sequentially
+// from the on-ledger count.
 const PunchCard = ({
   filled,
+  clicked,
   canAdd,
   busy,
   onAdd,
 }: {
   filled: number
+  clicked: number[]
   canAdd: boolean
   busy: boolean
-  onAdd: () => void
+  onAdd: (slot: number) => void
 }): JSX.Element => (
   <div className="mt-2 grid grid-cols-5 gap-2">
     {SLOT_KEYS.map((key, i) => {
-      if (i < filled) {
+      if (i < filled || clicked.includes(i)) {
         return (
           <div
             key={key}
@@ -67,7 +73,7 @@ const PunchCard = ({
           type="button"
           aria-label="Add stamp"
           data-testid="add-stamp"
-          onClick={onAdd}
+          onClick={() => onAdd(i)}
           disabled={busy}
           className="grid aspect-square place-items-center rounded-full border-2 border-dashed border-white/55 text-3xl leading-none text-white/70 transition-colors enabled:hover:border-white enabled:hover:bg-white/20 enabled:hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
         >
@@ -116,10 +122,18 @@ const ManageSection = ({
         ))}
       </ul>
     )}
-    <div className="flex items-center gap-2">
+    <form
+      className="flex flex-col gap-2"
+      onSubmit={(event) => {
+        event.preventDefault()
+        if (!disabled && draft.trim() !== '') {
+          onAdd()
+        }
+      }}
+    >
       <TextInput
         data-testid={inputTestId}
-        className="font-mono text-sm"
+        className="w-full font-mono text-sm"
         value={draft}
         aria-label={`${title} party id`}
         onChange={(event) => onDraftChange(event.target.value)}
@@ -127,14 +141,14 @@ const ManageSection = ({
         disabled={disabled}
       />
       <SecondaryButton
+        type="submit"
         data-testid={addTestId}
-        className="shrink-0"
-        onClick={onAdd}
+        className="w-full"
         disabled={disabled || draft.trim() === ''}
       >
         {buttonLabel}
       </SecondaryButton>
-    </div>
+    </form>
   </section>
 )
 
@@ -149,8 +163,16 @@ export const LoyaltyCard = (): JSX.Element | null => {
   const [tallies, setTallies] = useState<TallyContract[]>([])
   const [partyDrafts, setPartyDrafts] = useState<PartyDrafts>({})
   const [manageId, setManageId] = useState<string | undefined>(undefined)
+  const [view, setView] = useState<{ contractId: string; role: ManageRole } | undefined>(undefined)
+  // Transient, per-session "filled the slot you clicked" overlay; not persisted.
+  const [clickedSlots, setClickedSlots] = useState<Record<string, number[]>>({})
 
   const busy = isExecuting
+
+  const copyText = async (text: string, message: string): Promise<void> => {
+    await navigator.clipboard.writeText(text)
+    toast.success(message)
+  }
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: re-read the ACS only when the active party identity changes
   useEffect(() => {
@@ -245,8 +267,15 @@ export const LoyaltyCard = (): JSX.Element | null => {
     if (next === undefined) {
       return
     }
+    // Grant succeeded: clear the field and follow the recreated card so the
+    // modal stays open on it.
     const successor = next.find((t) => !previousIds.has(t.contractId) && t.issuer === card.issuer)
     setManageId(successor?.contractId)
+    setPartyDrafts((prev) => {
+      const rest = { ...prev }
+      delete rest[card.contractId]
+      return rest
+    })
   }
 
   const draftFor = (contractId: string, role: ManageRole): string =>
@@ -263,6 +292,14 @@ export const LoyaltyCard = (): JSX.Element | null => {
   }
 
   const managed = tallies.find((t) => t.contractId === manageId)
+  const viewed =
+    view !== undefined ? tallies.find((t) => t.contractId === view.contractId) : undefined
+  const viewedParties =
+    viewed === undefined
+      ? []
+      : view?.role === 'staff'
+        ? viewed.writers.map(([w]) => w)
+        : viewed.viewers
 
   return (
     <>
@@ -287,6 +324,10 @@ export const LoyaltyCard = (): JSX.Element | null => {
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {tallies.map((tally) => {
             const { filled, rewards } = stampStats(tally.value)
+            const clicked = clickedSlots[tally.contractId] ?? []
+            const displayedFilled = Array.from({ length: 10 }, (_, i) => i).filter(
+              (i) => i < filled || clicked.includes(i),
+            ).length
             return (
               <Card
                 key={tally.contractId}
@@ -303,13 +344,18 @@ export const LoyaltyCard = (): JSX.Element | null => {
                     <span className="font-display text-sm font-bold">
                       {formatPartyId(tally.issuer)}
                     </span>
-                    <span className="text-xs opacity-85">{filled} / 10</span>
+                    <span className="text-xs opacity-85">{displayedFilled} / 10</span>
                   </div>
                   <PunchCard
                     filled={filled}
+                    clicked={clicked}
                     canAdd={canStamp(tally, party.partyId)}
                     busy={busy}
-                    onAdd={() => {
+                    onAdd={(slot) => {
+                      setClickedSlots((prev) => ({
+                        ...prev,
+                        [tally.contractId]: [...(prev[tally.contractId] ?? []), slot],
+                      }))
                       void runCommand(
                         'add-stamp',
                         addStampCommand(tally, party.partyId),
@@ -328,12 +374,36 @@ export const LoyaltyCard = (): JSX.Element | null => {
                   <span className="font-mono text-xs text-muted-foreground">
                     Card {shortenIdentifier(tally.contractId)}
                   </span>
+                  <button
+                    type="button"
+                    aria-label="Copy card id"
+                    title="Copy card id"
+                    onClick={() => {
+                      void copyText(tally.contractId, 'Card id copied.')
+                    }}
+                    className="inline-grid size-7 shrink-0 place-items-center rounded-md border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary [&_svg]:size-3.5"
+                  >
+                    {COPY_ICON}
+                  </button>
                 </div>
 
                 <div className="flex items-center justify-between gap-2 border-t border-border pt-2">
-                  <span className="text-xs text-muted-foreground">
-                    {tally.writers.length} staff · {tally.viewers.length} cardholders
-                  </span>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <button
+                      type="button"
+                      onClick={() => setView({ contractId: tally.contractId, role: 'staff' })}
+                      className="inline-flex items-center gap-1 transition-colors hover:text-primary [&_svg]:size-3.5"
+                    >
+                      {tally.writers.length} staff {EYE_ICON}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setView({ contractId: tally.contractId, role: 'cardholder' })}
+                      className="inline-flex items-center gap-1 transition-colors hover:text-primary [&_svg]:size-3.5"
+                    >
+                      {tally.viewers.length} cardholders {EYE_ICON}
+                    </button>
+                  </div>
                   <GhostButton
                     data-testid="manage-card"
                     onClick={() => setManageId(tally.contractId)}
@@ -350,7 +420,7 @@ export const LoyaltyCard = (): JSX.Element | null => {
       <Sheet
         open={managed !== undefined}
         onOpenChange={(open) => setManageId(open ? manageId : undefined)}
-        side="right"
+        side="center"
         title="Manage card"
         description="Add staff who can stamp this card, or cardholders who can view it."
       >
@@ -395,6 +465,35 @@ export const LoyaltyCard = (): JSX.Element | null => {
               title="Cardholders"
             />
           </>
+        )}
+      </Sheet>
+
+      <Sheet
+        open={view !== undefined && viewed !== undefined}
+        onOpenChange={(open) => {
+          if (!open) {
+            setView(undefined)
+          }
+        }}
+        side="center"
+        title={view?.role === 'staff' ? 'Staff' : 'Cardholders'}
+        description="Party ids with access to this card."
+      >
+        {viewedParties.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            {view?.role === 'staff' ? 'No staff yet.' : 'No cardholders yet.'}
+          </p>
+        ) : (
+          <ul className="flex max-h-72 flex-col gap-1 overflow-y-auto">
+            {viewedParties.map((partyId) => (
+              <li
+                key={partyId}
+                className="break-all rounded-lg bg-muted p-2 font-mono text-xs text-foreground"
+              >
+                {partyId}
+              </li>
+            ))}
+          </ul>
         )}
       </Sheet>
 
