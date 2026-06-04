@@ -369,9 +369,7 @@ export const LoyaltyCard = (): JSX.Element | null => {
               >
                 <div className="rounded-xl bg-[image:var(--bg-gradient-brand)] p-3 text-white">
                   <div className="flex items-center justify-between">
-                    <span className="font-display text-sm font-bold">
-                      {formatPartyId(tally.issuer)}
-                    </span>
+                    <span className="font-display text-sm font-bold">Stamp card</span>
                     <span className="text-xs opacity-85">{slots.length} / 10</span>
                   </div>
                   <PunchCard
