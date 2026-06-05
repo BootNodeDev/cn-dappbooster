@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert'
 import { describe, it } from 'node:test'
-import { createRpc } from '../src/rpc.ts'
+import { createRpc, errorData, errorMessage } from '../src/rpc.ts'
 import type { JsonRpcResponse } from '../src/types.ts'
 
 const baseConfig = () => ({
@@ -176,5 +176,54 @@ describe('ledgerApi pass-through', () => {
     assert.ok('error' in res)
     assert.notEqual(res.error.code, -32602)
     assert.ok(!String(res.error.message).includes('Only POST'))
+  })
+})
+
+describe('error serialization', () => {
+  // SDK rejections are plain JsCantonError objects, not Error instances.
+  const cantonError = {
+    code: 'LEDGER_API_INTERNAL_ERROR',
+    cause: 'Expected ujson.Arr (data: {"map":[]})',
+    errorCategory: 4,
+    correlationId: 'abc123',
+  }
+
+  it('errorMessage surfaces code and cause from a JsCantonError-shaped object', () => {
+    assert.equal(
+      errorMessage(cantonError),
+      'LEDGER_API_INTERNAL_ERROR: Expected ujson.Arr (data: {"map":[]})',
+    )
+  })
+
+  it('errorMessage keeps Error messages as-is', () => {
+    assert.equal(errorMessage(new Error('boom')), 'boom')
+  })
+
+  it('errorMessage passes strings through', () => {
+    assert.equal(errorMessage('plain failure'), 'plain failure')
+  })
+
+  it('errorMessage serializes other objects as JSON instead of "[object Object]"', () => {
+    assert.equal(errorMessage({ reason: 'no' }), '{"reason":"no"}')
+  })
+
+  it('errorMessage falls back to String() for unserializable objects', () => {
+    const circular: Record<string, unknown> = {}
+    circular.self = circular
+    assert.equal(errorMessage(circular), '[object Object]')
+  })
+
+  it('errorData passes a plain-object rejection through as data', () => {
+    assert.deepEqual(errorData(cantonError), cantonError)
+  })
+
+  it('errorData wraps primitives in { raw }', () => {
+    assert.deepEqual(errorData('boom'), { raw: 'boom' })
+  })
+
+  it('errorData keeps name and message for Error instances', () => {
+    const data = errorData(new Error('boom'))
+    assert.equal(data.name, 'Error')
+    assert.equal(data.message, 'boom')
   })
 })

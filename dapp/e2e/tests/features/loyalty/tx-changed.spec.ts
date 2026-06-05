@@ -11,9 +11,9 @@
 // the commandId it dispatched. The pending/signed events are validated by a
 // JS-side capture installed before the action.
 
+import { connectViaExtension, onboardWallet } from '../../../fixtures/onboarding.ts'
 import { DAPP_URL, expect, test } from '../../../fixtures/stack.ts'
 
-const STRONG_PASSWORD = 'correct-horse-battery-staple-2025!'
 const PARTY_HINT = `e2e-tx-${Date.now().toString(36)}`
 
 test('txChanged lifecycle reaches the dApp during prepareExecuteAndWait', async ({
@@ -24,24 +24,12 @@ test('txChanged lifecycle reaches the dApp during prepareExecuteAndWait', async 
 
   // Vault setup + party create.
   const wallet = await context.newPage()
-  await wallet.goto(`chrome-extension://${extensionId}/index.html`)
-  await wallet.getByTestId('setup-password').fill(STRONG_PASSWORD)
-  await wallet.getByTestId('setup-confirm').fill(STRONG_PASSWORD)
-  await wallet.getByTestId('setup-accept-warning').check()
-  await wallet.getByTestId('setup-create-vault').click()
-  await wallet.getByTestId('home-create-account').click()
-  await wallet.getByTestId('add-account-hint-input').fill(PARTY_HINT)
-  await wallet.getByTestId('add-account-submit').click()
-  await expect(wallet.getByTestId('add-account-hint-input')).toBeHidden({ timeout: 15_000 })
-  await expect(wallet.getByTestId('home-active-account')).toHaveAttribute(
-    'data-party-id',
-    new RegExp(`^${PARTY_HINT}::`),
-  )
+  await onboardWallet(wallet, extensionId, PARTY_HINT)
 
   // dApp connect.
   const dapp = await context.newPage()
   await dapp.goto(DAPP_URL)
-  await dapp.getByTestId('connect-extension').click()
+  await connectViaExtension(dapp)
   // The visible New card action is the connected, unlocked workspace state
   // that can dispatch prepareExecuteAndWait.
   await expect(dapp.getByTestId('new-card')).toBeVisible()

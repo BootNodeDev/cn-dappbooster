@@ -17,9 +17,9 @@
 // If anyone breaks the broadcast chain (vault → background → content script →
 // page → provider.emit), the dApp won't notice the switch and this test fails.
 
+import { connectViaExtension, onboardWallet } from '../fixtures/onboarding.ts'
 import { DAPP_URL, expect, test } from '../fixtures/stack.ts'
 
-const STRONG_PASSWORD = 'correct-horse-battery-staple-2025!'
 const FIRST_PARTY = `e2e-ac-first-${Date.now().toString(36)}`
 const SECOND_PARTY = `e2e-ac-second-${Date.now().toString(36)}`
 
@@ -29,30 +29,18 @@ test('accountsChanged propagates from Carpincho setPrimary to the dApp', async (
 }) => {
   test.setTimeout(90_000)
 
-  // 1. Vault setup
+  // 1-2a. Vault setup + first party (becomes primary automatically).
   const wallet = await context.newPage()
-  await wallet.goto(`chrome-extension://${extensionId}/index.html`)
-  await wallet.getByTestId('setup-password').fill(STRONG_PASSWORD)
-  await wallet.getByTestId('setup-confirm').fill(STRONG_PASSWORD)
-  await wallet.getByTestId('setup-accept-warning').check()
-  await wallet.getByTestId('setup-create-vault').click()
+  await onboardWallet(wallet, extensionId, FIRST_PARTY)
 
-  // 2a. First party (becomes primary automatically since vault is empty).
-  await wallet.getByTestId('home-create-account').click()
-  await wallet.getByTestId('add-account-hint-input').fill(FIRST_PARTY)
-  await wallet.getByTestId('add-account-submit').click()
-  await expect(wallet.getByTestId('add-account-hint-input')).toBeHidden({ timeout: 15_000 })
-  await expect(wallet.getByTestId('home-active-account')).toHaveAttribute(
-    'data-party-id',
-    new RegExp(`^${FIRST_PARTY}::`),
-  )
-
-  // 2b. Second party — opens via the dropdown "Add account" since one already exists.
+  // 2b. Second party — created via the Accounts dialog, which stays open; close it.
   await wallet.getByTestId('home-active-account').click()
   await wallet.getByTestId('menu-add-account').click()
   await wallet.getByTestId('add-account-hint-input').fill(SECOND_PARTY)
   await wallet.getByTestId('add-account-submit').click()
   await expect(wallet.getByTestId('add-account-hint-input')).toBeHidden({ timeout: 15_000 })
+  await wallet.getByRole('button', { name: 'Close', exact: true }).click()
+  await expect(wallet.getByTestId('accounts-dialog')).toBeHidden()
   // Active party should still be FIRST — creating a new account doesn't bump primary.
   await expect(wallet.getByTestId('home-active-account')).toHaveAttribute(
     'data-party-id',
@@ -62,7 +50,7 @@ test('accountsChanged propagates from Carpincho setPrimary to the dApp', async (
   // 3. dApp connects (picks up the current primary = FIRST).
   const dapp = await context.newPage()
   await dapp.goto(DAPP_URL)
-  await dapp.getByTestId('connect-extension').click()
+  await connectViaExtension(dapp)
   // The visible connected-party marker is the stable post-connect surface. The
   // signing harness remains mounted for protocol tests, but it is intentionally
   // hidden from the user-facing UI.

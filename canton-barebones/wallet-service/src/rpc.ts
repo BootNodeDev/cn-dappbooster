@@ -123,19 +123,41 @@ const unsupported = (id: JsonRpcId, method: string): JsonRpcError =>
     reason: 'This wallet-service has no private keys. Carpincho signs.',
   })
 
-const errorMessage = (error: unknown): string =>
-  error instanceof Error ? error.message : String(error)
+// SDK rejections are plain JsCantonError objects ({ code, cause, ... }), not
+// Error instances — String() would collapse them to "[object Object]".
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
 
-const errorData = (error: unknown): Record<string, unknown> => {
-  if (!(error instanceof Error)) {
-    return { raw: String(error) }
+export const errorMessage = (error: unknown): string => {
+  if (error instanceof Error) {
+    return error.message
   }
-  const base: Record<string, unknown> = { name: error.name, message: error.message }
-  if (process.env.NODE_ENV !== 'production') {
-    base.stack = error.stack
-    base.cause = error.cause
+  if (isPlainObject(error)) {
+    if (typeof error.code === 'string' && typeof error.cause === 'string') {
+      return `${error.code}: ${error.cause}`
+    }
+    try {
+      return JSON.stringify(error)
+    } catch {
+      return String(error)
+    }
   }
-  return base
+  return String(error)
+}
+
+export const errorData = (error: unknown): Record<string, unknown> => {
+  if (error instanceof Error) {
+    const base: Record<string, unknown> = { name: error.name, message: error.message }
+    if (process.env.NODE_ENV !== 'production') {
+      base.stack = error.stack
+      base.cause = error.cause
+    }
+    return base
+  }
+  if (isPlainObject(error)) {
+    return error
+  }
+  return { raw: String(error) }
 }
 
 export const objectParam = <T>(params: unknown, name: string): T => {

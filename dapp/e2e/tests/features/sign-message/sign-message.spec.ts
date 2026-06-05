@@ -12,9 +12,9 @@
 //   * client.signMessage({message: base64}) → {signature: base64}
 //   * The signature is non-empty and looks like base64 (Ed25519 is 64 bytes → 88 chars)
 
+import { connectViaExtension, onboardWallet } from '../../../fixtures/onboarding.ts'
 import { DAPP_URL, expect, test } from '../../../fixtures/stack.ts'
 
-const STRONG_PASSWORD = 'correct-horse-battery-staple-2025!'
 const PARTY_HINT = `e2e-sign-${Date.now().toString(36)}`
 
 test('signMessage round-trips a base64 signature through the injected provider', async ({
@@ -23,31 +23,14 @@ test('signMessage round-trips a base64 signature through the injected provider',
 }) => {
   test.setTimeout(60_000)
 
-  // 1. Open Carpincho's popup and set up a fresh vault.
+  // 1-2. Vault setup + party create — exercises wallet-service /admin/party/{prepare,complete}.
   const wallet = await context.newPage()
-  await wallet.goto(`chrome-extension://${extensionId}/index.html`)
-  await wallet.getByTestId('setup-password').fill(STRONG_PASSWORD)
-  await wallet.getByTestId('setup-confirm').fill(STRONG_PASSWORD)
-  await wallet.getByTestId('setup-accept-warning').check()
-  await wallet.getByTestId('setup-create-vault').click()
-
-  // 2. Create the party — this exercises wallet-service /admin/party/{prepare,complete}.
-  await wallet.getByTestId('home-create-account').click()
-  await wallet.getByTestId('add-account-hint-input').fill(PARTY_HINT)
-  await wallet.getByTestId('add-account-submit').click()
-  // Sheet closes after `v.addAccount` resolves — vault is updated.
-  await expect(wallet.getByTestId('add-account-hint-input')).toBeHidden({ timeout: 15_000 })
-  // VaultContext.tsx tick-bump now propagates the new account reactively;
-  // no reload required.
-  await expect(wallet.getByTestId('home-active-account')).toHaveAttribute(
-    'data-party-id',
-    new RegExp(`^${PARTY_HINT}::`),
-  )
+  await onboardWallet(wallet, extensionId, PARTY_HINT)
 
   // 3. Open the dApp and connect via the injected provider.
   const dapp = await context.newPage()
   await dapp.goto(DAPP_URL)
-  await dapp.getByTestId('connect-extension').click()
+  await connectViaExtension(dapp)
   // The connected-party marker is the visible post-connect state. The
   // signMessage controls remain mounted as a hidden protocol harness so this
   // spec can still exercise the wallet method without exposing that demo UI.
