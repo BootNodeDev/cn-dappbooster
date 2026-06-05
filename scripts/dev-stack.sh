@@ -54,6 +54,10 @@ log()  { printf '\033[1;36m==>\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m[!]\033[0m %s\n' "$*"; }
 die()  { printf '\033[1;31m[x]\033[0m %s\n' "$*" >&2; exit 1; }
 
+case "$DAR_NAME" in
+  -.dar | -*.dar | *-.dar) die "Could not derive DAR name from $DAML_DIR/daml.yaml (got '$DAR_NAME')" ;;
+esac
+
 wait_for() { # wait_for <seconds> <logfile> <grep-pattern> <label>
   local timeout="$1" file="$2" pattern="$3" label="$4" i
   for ((i = 0; i < timeout; i++)); do
