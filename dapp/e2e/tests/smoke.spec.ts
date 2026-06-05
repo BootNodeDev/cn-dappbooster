@@ -48,8 +48,8 @@ test.describe('cn-dappbooster integration smoke', () => {
   test('dApp loads and offers both connect paths', async ({ context }) => {
     const page = await context.newPage()
     await page.goto(DAPP_URL)
-    await expect(page.getByTestId('connect-extension')).toBeVisible()
-    await expect(page.getByTestId('connect-walletconnect')).toBeVisible()
+    await expect(page.getByTestId('hero-connect')).toBeVisible()
+    await expect(page.getByTestId('hero-connect-walletconnect')).toBeVisible()
   })
 
   test('Carpincho extension is discoverable from a dApp page via canton:requestProvider', async ({
