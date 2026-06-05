@@ -65,6 +65,13 @@ npm install
 
 That single command resolves and links all workspaces, so `dapp/frontend` picks up `canton-connect-kit` (and its transitive `@canton-network/core-*` imports) with no per-package install step.
 
+> **Upgrading an existing clone?** Clones made before the workspaces migration have stale per-package `node_modules` that can shadow the hoisted versions. Clear them once after pulling, then reinstall from the root:
+>
+> ```bash
+> git clean -xdf -e .env.local   # or: rm -rf node_modules **/node_modules
+> npm install
+> ```
+
 Run the packages in this order for the local dApp flow.
 
 ## canton-barebones
