@@ -257,15 +257,17 @@ export const LoyaltyCard = (): JSX.Element | null => {
     prefix: string,
     command: unknown,
     successMessage: string,
+    actAsParties?: string[],
   ): Promise<Reconciled[] | undefined> => {
     if (party === undefined) {
       return undefined
     }
+    const actAs = actAsParties ?? [party.partyId]
     try {
       await execute({
         commandId: commandId(prefix),
         commands: [command],
-        actAs: [party.partyId],
+        actAs,
         readAs: [party.partyId],
       })
       const next = await loadTalliesFor(party.partyId)
@@ -286,10 +288,13 @@ export const LoyaltyCard = (): JSX.Element | null => {
       return
     }
     try {
+      const stampActAs =
+        tally.issuer === party.partyId ? [party.partyId] : [party.partyId, tally.issuer]
       const reconciled = await runCommand(
         'add-stamp',
         addStampCommand(tally, party.partyId),
         'Stamp added',
+        stampActAs,
       )
       if (reconciled === undefined) {
         // runCommand already surfaced the error and re-read the ACS; just undo the
