@@ -9,6 +9,7 @@
 # Usage:
 #   ./scripts/dev-stack.sh             # interactive arrow-key menu (default)
 #   ./scripts/dev-stack.sh menu        # same as above
+#   ./scripts/dev-stack.sh install     # install + link every workspace from the repo root (npm install)
 #   ./scripts/dev-stack.sh docker-up   # macOS only: launch Docker Desktop, wait for the daemon
 #   ./scripts/dev-stack.sh up          # start the stack (containers, DAR, dev servers, extension)
 #   ./scripts/dev-stack.sh down        # stop dev servers and tear down containers
@@ -78,6 +79,12 @@ build_extension() {
   cp -R "$EXT_SRC" "$EXT_DEST"
   log "Extension ready at $EXT_DEST"
   echo "   Load it via chrome://extensions -> Developer mode -> Load unpacked"
+}
+
+install_deps() { # one root npm install links every workspace
+  log "Installing workspace dependencies (root npm install)..."
+  npm install
+  log "Workspaces installed and linked."
 }
 
 docker_up() { # macOS only — launch Docker Desktop and wait for the daemon
@@ -228,10 +235,11 @@ wait_http() { # wait_http <seconds> <url> <label>
 mock_up() {
   mkdir -p "$RUN_DIR"
 
-  # Mock mode needs no Docker — it short-circuits the Canton SDK.
-  if [ ! -d canton-barebones/wallet-service/node_modules ]; then
-    log "Installing wallet-service dependencies..."
-    npm --prefix canton-barebones/wallet-service install
+  # Mock mode needs no Docker — it short-circuits the Canton SDK. A fresh clone
+  # may have no deps yet; one root install links every workspace, including the
+  # wallet-service started below.
+  if [ ! -d node_modules ]; then
+    install_deps
   fi
 
   # Mocked data server (wallet-service in MOCK MODE) -> http://localhost:3010
@@ -286,9 +294,10 @@ menu() {
   fi
 
   # Display label per item; `keys` is the matching action dispatched on select.
-  local keys=(docker-up docker-down up down mock-up mock-down extension quit)
-  local labels=("Docker up" "Docker down" "Stack up" "Stack down" "Wallet up" "Wallet down" "Build extension" "Quit")
+  local keys=(install docker-up docker-down up down mock-up mock-down extension quit)
+  local labels=("Install" "Docker up" "Docker down" "Stack up" "Stack down" "Wallet up" "Wallet down" "Build extension" "Quit")
   local descs=(
+    "install + link every workspace (root npm install)"
     "start Docker Desktop, wait for daemon (macOS)"
     "quit Docker Desktop (macOS)"
     "containers, DAR, dev servers, extension"
@@ -344,6 +353,7 @@ menu() {
     # Run in a subshell so a failing action returns to the menu instead of
     # killing the whole script under `set -e`.
     case "$choice" in
+      install)     ( install_deps ) || warn "install did not finish cleanly" ;;
       docker-up)   ( docker_up ) || warn "docker-up did not finish cleanly" ;;
       docker-down) ( docker_down ) || warn "docker-down did not finish cleanly" ;;
       up)          ( up ) || warn "up did not finish cleanly (see output above)" ;;
@@ -375,6 +385,7 @@ status() {
 
 case "${1:-menu}" in
   menu)        menu ;;
+  install)     install_deps ;;
   docker-up)   docker_up ;;
   up)          up ;;
   down)        down ;;
@@ -383,5 +394,5 @@ case "${1:-menu}" in
   extension)   build_extension ;;
   mock-up)     mock_up ;;
   mock-down)   mock_down ;;
-  *)           die "Usage: $0 {menu|docker-up|up|down|docker-down|status|extension|mock-up|mock-down}" ;;
+  *)           die "Usage: $0 {menu|install|docker-up|up|down|docker-down|status|extension|mock-up|mock-down}" ;;
 esac

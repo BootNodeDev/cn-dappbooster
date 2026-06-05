@@ -3,6 +3,15 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "workspaces": [
+    "canton-connect-kit",
+    "carpincho-wallet",
+    "canton-barebones",
+    "canton-barebones/wallet-service",
+    "dapp/daml",
+    "dapp/e2e",
+    "dapp/frontend"
+  ],
   "scripts": {
     "canton:up": "npm --prefix canton-barebones run up",
     "canton:down": "npm --prefix canton-barebones run down",
@@ -22,6 +31,9 @@
     "e2e:headed": "npm --prefix dapp/e2e run test:headed",
     "e2e:ui": "npm --prefix dapp/e2e run test:ui",
     "prepare": "husky"
+  },
+  "overrides": {
+    "@canton-network/dapp-sdk": "1.1.0"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.15",

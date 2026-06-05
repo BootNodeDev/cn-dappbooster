@@ -20,7 +20,7 @@ The dApp frontend knows the Tally DAML signature and talks to Carpincho through 
 
 ## Dev stack script
 
-[`scripts/dev-stack.sh`](scripts/dev-stack.sh) automates the manual Quick Start below. Run it with no arguments for an interactive menu (navigate with arrow keys or `j`/`k`, jump with number keys `1`-`8`, select with Enter, quit with `q`):
+[`scripts/dev-stack.sh`](scripts/dev-stack.sh) automates the manual Quick Start below. Run it with no arguments for an interactive menu (navigate with arrow keys or `j`/`k`, jump with number keys `1`-`9`, select with Enter, quit with `q`):
 
 ```bash
 ./scripts/dev-stack.sh
@@ -34,6 +34,7 @@ Or call an action directly:
 
 | Menu item | Action | What it does |
 |-----------|--------|--------------|
+| Install | `install` | Install and link every workspace from the repo root (`npm install`). |
 | Docker up | `docker-up` | Launch Docker Desktop and wait for the daemon (macOS only). |
 | Docker down | `docker-down` | Quit Docker Desktop (macOS only). |
 | Stack up | `up` | Bring up containers, build + deploy the DAR, start the wallet (3011) and dApp (3012) dev servers, build the extension. |
@@ -53,6 +54,16 @@ Notes:
 For the manual, step-by-step flow (and the underlying `npm` scripts the helper wraps), follow the rest of this document.
 
 ## Quick Start
+
+### Install
+
+This is an npm workspaces monorepo. One install from the repo root links every package:
+
+```bash
+npm install
+```
+
+That single command resolves and links all workspaces, so `dapp/frontend` picks up `canton-connect-kit` (and its transitive `@canton-network/core-*` imports) with no per-package install step.
 
 Run the packages in this order for the local dApp flow.
 
@@ -113,7 +124,6 @@ The service self-mints its Canton JWT from `CANTON_AUTH_AUDIENCE` / `CANTON_AUTH
 For host-side iteration (mock mode, no Docker required):
 
 ```bash
-npm --prefix canton-barebones/wallet-service install
 WALLET_SERVICE_MOCK=1 npm run wallet-service:dev
 ```
 
@@ -128,7 +138,6 @@ WIP. The extension is not deployed there yet.
 Build the extension:
 
 ```bash
-npm --prefix carpincho-wallet install
 npm run carpincho:build:extension
 ```
 
@@ -155,11 +164,7 @@ After downloading and unpacking a release artifact, load it in Chrome with the s
 
 ## dapp
 
-Install the local connect kit first so Vite can resolve its peer/dev dependencies.
-
 ```bash
-npm --prefix canton-connect-kit install
-npm --prefix dapp/frontend install
 npm run app:dev
 ```
 
