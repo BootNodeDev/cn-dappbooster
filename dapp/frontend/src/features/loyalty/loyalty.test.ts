@@ -109,14 +109,16 @@ describe('canStamp', () => {
 })
 
 describe('command builders', () => {
-  it('create uses string-zero value and empty writers/viewers as { map: [] }', () => {
+  // daml-lf JSON encoding: `writers: Map Party _` is a GenMap (list of pairs),
+  // while `viewers: Set Party` is the DA.Set record `{ map: [...] }`.
+  it('create uses string-zero value, empty writers as [] and viewers as { map: [] }', () => {
     assert.deepEqual(createTallyCommand('m::fp'), {
       CreateCommand: {
         templateId: '#quickstart-tally:Tally.Tally:Tally',
         createArguments: {
           issuer: 'm::fp',
           value: '0',
-          writers: { map: [] },
+          writers: [],
           viewers: { map: [] },
         },
       },

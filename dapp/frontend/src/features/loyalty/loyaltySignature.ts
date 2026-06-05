@@ -250,13 +250,16 @@ export const migrateOverlay = (
 
 // --- Command builders ---
 
+// daml-lf JSON encoding: `writers: Map Party _` is a GenMap — a list of
+// [key, value] pairs — while `viewers: Set Party` is the DA.Set record
+// wrapping a map, hence `{ map: [] }`.
 export const createTallyCommand = (partyId: string): unknown => ({
   CreateCommand: {
     templateId: TALLY_TEMPLATE_ID,
     createArguments: {
       issuer: partyId,
       value: '0',
-      writers: { map: [] },
+      writers: [],
       viewers: { map: [] },
     },
   },
