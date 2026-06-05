@@ -8,7 +8,7 @@ flowchart TD
   wallet["carpincho-wallet<br/>Vault + signer<br/>http://localhost:3011"]
   ws["canton-barebones/wallet-service<br/>Canton bridge<br/>http://localhost:3010"]
   cb["canton-barebones<br/>Participant JSON API http://localhost:3013<br/>Ledger/Admin gRPC localhost:3014 / 3015"]
-  dar["dapp/daml<br/>quickstart-counter DAR<br/>.daml/dist/*.dar"]
+  dar["dapp/daml<br/>quickstart-tally DAR<br/>.daml/dist/*.dar"]
 
   fe <-->|"Injected CIP-0103 provider<br/>optional WalletConnect"| wallet
   wallet -->|"JSON-RPC /rpc<br/>prepare, execute, read, onboard"| ws
@@ -16,7 +16,7 @@ flowchart TD
   dar -->|"deploy DAR package"| cb
 ```
 
-The dApp frontend knows the Counter DAML signature and talks to Carpincho through the injected CIP-0103 browser provider. Carpincho owns the local signing key and uses the wallet service to prepare, read, and execute against the Canton participant. WalletConnect remains available as an optional fallback path.
+The dApp frontend knows the Tally DAML signature and talks to Carpincho through the injected CIP-0103 browser provider. Carpincho owns the local signing key and uses the wallet service to prepare, read, and execute against the Canton participant. WalletConnect remains available as an optional fallback path.
 
 ## Dev stack script
 
@@ -88,7 +88,7 @@ npm run canton:health
 Deploy DAR:
 
 ```bash
-npm run deploy-dar -- dapp/daml/.daml/dist/quickstart-counter-0.0.1.dar
+npm run deploy-dar -- dapp/daml/.daml/dist/quickstart-tally-0.0.1.dar
 ```
 
 Use the same format for any other DAML project and DAR:

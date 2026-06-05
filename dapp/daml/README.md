@@ -1,4 +1,4 @@
-# Counter Daml
+# Tally Daml
 
 Build the DAR:
 
@@ -9,7 +9,7 @@ dpm build
 The compiled DAR is written to:
 
 ```bash
-.daml/dist/quickstart-counter-0.0.1.dar
+.daml/dist/quickstart-tally-0.0.1.dar
 ```
 
 For local deployment, follow the root [DAR deployment step](../../README.md#deploy-dars).

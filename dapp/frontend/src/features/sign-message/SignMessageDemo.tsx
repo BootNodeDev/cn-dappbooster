@@ -1,11 +1,16 @@
 import { useSignMessage } from 'canton-connect-kit'
 import { useState } from 'react'
-import { toast } from 'sonner'
+import { SecondaryButton } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
+import { TextInput } from '@/components/ui/TextInput'
+import { toast } from '@/components/ui/toast'
+import { errorMessage } from '../../utils/errorMessage'
 import { shortenIdentifier } from '../../utils/formatPartyId'
-import './sign-message.css'
 
-// CIP-0103 signMessage demo. Removable feature: delete this folder + its import
-// and <SignMessageDemo /> line in App.tsx (see README "Removing a feature").
+// Standalone CIP-0103 signMessage example. Not part of the Stampbook app and
+// not linked from its UI; reachable only at /sign-demo (App.tsx routes by path)
+// and driven there by its e2e. Parked for a future examples page like
+// https://demo.dappbooster.dev/.
 export const SignMessageDemo = (): JSX.Element => {
   const { signMessage, signature, isSigning } = useSignMessage()
   const [signInput, setSignInput] = useState<string>('hello canton')
@@ -15,49 +20,55 @@ export const SignMessageDemo = (): JSX.Element => {
       await signMessage(signInput)
       toast.success('Message signed.')
     } catch (err) {
-      toast.error((err as Error).message)
+      toast.error(errorMessage(err))
     }
   }
 
   return (
-    <section className="workspace-panel ui-hidden" data-testid="signing-panel">
-      <div className="panel-title-row">
-        <div>
-          <span className="section-kicker">Wallet capability</span>
-          <h2>Sign message</h2>
-        </div>
+    <section data-testid="signing-panel">
+      <div className="mb-4">
+        <span className="text-[0.65rem] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+          Wallet capability
+        </span>
+        <h2 className="font-display text-lg font-semibold text-foreground">Sign message</h2>
       </div>
-      <div className="capability-card">
-        <p>
-          Exercises CIP-0103 <code>signMessage</code> against the connected wallet. The wallet asks
-          for approval, signs with the active party's key, and returns the Ed25519 signature in
-          base64. Useful for "prove you own this party" challenges from a backend.
+      <Card className="flex flex-col gap-3">
+        <p className="m-0 text-sm text-muted-foreground">
+          Exercises CIP-0103 <code className="font-mono text-foreground">signMessage</code> against
+          the connected wallet. The wallet asks for approval, signs with the active party's key, and
+          returns the Ed25519 signature in base64.
         </p>
-        <input
-          type="text"
+        <TextInput
           data-testid="sign-input"
           value={signInput}
           onChange={(event) => setSignInput(event.target.value)}
           placeholder="Message to sign"
           disabled={isSigning}
         />
-        <button
+        <SecondaryButton
           data-testid="sign-message"
-          type="button"
           onClick={() => {
             void onSignMessage()
           }}
           disabled={isSigning}
         >
-          Sign with active party
-        </button>
+          {isSigning ? 'Signing…' : 'Sign with active party'}
+        </SecondaryButton>
         {signature !== undefined && (
-          <div data-testid="signature-output" data-signature={signature}>
-            <span className="kicker">Signature (base64)</span>
-            <code>{shortenIdentifier(signature)}</code>
+          <div
+            data-testid="signature-output"
+            data-signature={signature}
+            className="flex flex-col gap-1"
+          >
+            <span className="text-[0.65rem] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+              Signature (base64)
+            </span>
+            <code className="break-all rounded-lg bg-muted p-2 font-mono text-xs text-foreground">
+              {shortenIdentifier(signature)}
+            </code>
           </div>
         )}
-      </div>
+      </Card>
     </section>
   )
 }

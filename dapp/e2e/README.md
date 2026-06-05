@@ -74,14 +74,14 @@ Or from the repo root: `npm run e2e`.
 **Full dApp ↔ wallet flows** (each walks vault setup → party create → dApp connect → action):
 - `tests/features/sign-message/sign-message.spec.ts` — `signMessage` round-trips a base64 signature
 - `tests/accounts-changed.spec.ts` — switching primary in Carpincho propagates to the dApp via `accountsChanged`
-- `tests/features/counter/tx-changed.spec.ts` — captures the full `pending → signed → executed` lifecycle during `prepareExecuteAndWait`
+- `tests/features/loyalty/tx-changed.spec.ts` — captures the full `pending → signed → executed` lifecycle during `prepareExecuteAndWait`
 
 **13 tests total.** All deterministic via `data-testid` + `data-*` attribute reads, no sleep guesses.
 
 ## Not tested today (out of scope)
 
 - WC fallback path (would need a real Reown project ID)
-- dApp's Increment / Add user / Add viewer flows (covered manually via agent-browser; could add Playwright if we want full UI coverage)
+- dApp's Create card / Add stamp / Add staff / Add viewer flows (covered manually via agent-browser; could add Playwright if we want full UI coverage)
 - `connected` and `statusChanged` are emitted by the wallet on vault lifecycle transitions but no dApp surface consumes them yet, so there is no e2e test for them. `messageSignature` lifecycle events are not emitted (`signMessage` is request/response via the Promise; lifecycle events would have no consumer).
 
 ## Conventions

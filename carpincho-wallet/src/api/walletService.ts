@@ -6,12 +6,24 @@ export interface JsonRpcErrorObject {
   data?: unknown
 }
 
+// Non-string messages would otherwise coerce to "[object Object]".
+const coerceMessage = (message: unknown, code: number): string => {
+  if (typeof message === 'string') {
+    return message
+  }
+  try {
+    return JSON.stringify(message) ?? `wallet-service error ${code}`
+  } catch {
+    return String(message)
+  }
+}
+
 export class WalletServiceRpcError extends Error {
   code: number
   data?: unknown
 
   constructor(error: JsonRpcErrorObject) {
-    super(error.message)
+    super(coerceMessage(error.message, error.code))
     this.name = 'WalletServiceRpcError'
     this.code = error.code
     this.data = error.data

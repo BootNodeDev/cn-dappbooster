@@ -21,7 +21,7 @@
 # What `up` starts (in order; Docker must already be running):
 #   1. Canton + Postgres + wallet-service containers (npm run canton:up)
 #   2. Health checks (canton + wallet-service)
-#   3. Builds and deploys the quickstart-counter DAR
+#   3. Builds and deploys the Daml DAR (name derived from daml.yaml)
 #   4. Carpincho wallet dev server  -> http://localhost:3011  (background)
 #   5. dApp frontend dev server     -> http://localhost:3012  (background)
 #   6. Builds the Chrome extension and copies it to ~/Desktop/dist-extension
@@ -43,13 +43,20 @@ DAPP_PID="$RUN_DIR/dapp-dev.pid"
 MOCK_WS_LOG="$RUN_DIR/mock-wallet-service.log"
 MOCK_WS_PID="$RUN_DIR/mock-wallet-service.pid"
 
-DAR_PATH="dapp/daml/.daml/dist/quickstart-counter-0.0.1.dar"
+# Derive the DAR name from daml.yaml so renames/bumps need no edits here.
+DAML_DIR="dapp/daml"
+DAR_NAME="$(awk '/^name:/{n=$2} /^version:/{v=$2} END{print n"-"v".dar"}' "$DAML_DIR/daml.yaml")"
+DAR_PATH="$DAML_DIR/.daml/dist/$DAR_NAME"
 EXT_SRC="carpincho-wallet/dist-extension"
 EXT_DEST="$HOME/Desktop/$(basename "$EXT_SRC")"
 
 log()  { printf '\033[1;36m==>\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m[!]\033[0m %s\n' "$*"; }
 die()  { printf '\033[1;31m[x]\033[0m %s\n' "$*" >&2; exit 1; }
+
+case "$DAR_NAME" in
+  -.dar | -*.dar | *-.dar) die "Could not derive DAR name from $DAML_DIR/daml.yaml (got '$DAR_NAME')" ;;
+esac
 
 wait_for() { # wait_for <seconds> <logfile> <grep-pattern> <label>
   local timeout="$1" file="$2" pattern="$3" label="$4" i
@@ -128,8 +135,8 @@ up() {
   npm run wallet-service:health && echo
 
   # 3. Build + deploy DAR
-  log "Building the quickstart-counter DAR..."
-  npm run build-dar -- dapp/daml
+  log "Building the $DAR_NAME DAR..."
+  npm run build-dar -- "$DAML_DIR"
   log "Deploying the DAR to Canton..."
   npm run deploy-dar -- "$DAR_PATH"
 

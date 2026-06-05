@@ -13,9 +13,9 @@
 // This test drives a manual lock from Carpincho's burger menu rather than
 // the idle timeout (faster, deterministic).
 
+import { connectViaExtension, onboardWallet, STRONG_PASSWORD } from '../fixtures/onboarding.ts'
 import { DAPP_URL, expect, test } from '../fixtures/stack.ts'
 
-const STRONG_PASSWORD = 'correct-horse-battery-staple-2025!'
 const PARTY_HINT = `e2e-lock-${Date.now().toString(36)}`
 
 test('wallet lock surfaces in the dApp and unlock recovers', async ({ context, extensionId }) => {
@@ -23,24 +23,12 @@ test('wallet lock surfaces in the dApp and unlock recovers', async ({ context, e
 
   // Vault setup + party create.
   const wallet = await context.newPage()
-  await wallet.goto(`chrome-extension://${extensionId}/index.html`)
-  await wallet.getByTestId('setup-password').fill(STRONG_PASSWORD)
-  await wallet.getByTestId('setup-confirm').fill(STRONG_PASSWORD)
-  await wallet.getByTestId('setup-accept-warning').check()
-  await wallet.getByTestId('setup-create-vault').click()
-  await wallet.getByTestId('home-create-account').click()
-  await wallet.getByTestId('add-account-hint-input').fill(PARTY_HINT)
-  await wallet.getByTestId('add-account-submit').click()
-  await expect(wallet.getByTestId('add-account-hint-input')).toBeHidden({ timeout: 15_000 })
-  await expect(wallet.getByTestId('home-active-account')).toHaveAttribute(
-    'data-party-id',
-    new RegExp(`^${PARTY_HINT}::`),
-  )
+  await onboardWallet(wallet, extensionId, PARTY_HINT)
 
   // dApp connect via the injected provider.
   const dapp = await context.newPage()
   await dapp.goto(DAPP_URL)
-  await dapp.getByTestId('connect-extension').click()
+  await connectViaExtension(dapp)
   // The shell-owned `workspace-ready` marker proves the dApp is connected and
   // unlocked, independent of any removable feature (counter, sign-message, ...).
   await expect(dapp.getByTestId('workspace-ready')).toBeVisible()

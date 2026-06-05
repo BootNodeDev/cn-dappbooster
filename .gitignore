@@ -4,7 +4,6 @@ node_modules/
 # build output
 dist/
 dist-extension/
-counter/daml/.daml/
 
 # env
 .env
@@ -37,3 +36,6 @@ docs/
 **/.playwright-mcp/
 test-results/
 playwright-report/
+
+# brainstorming visual companion
+.superpowers/
