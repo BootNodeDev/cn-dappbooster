@@ -121,6 +121,11 @@ docker_down() { # macOS only — quit Docker Desktop
 up() {
   mkdir -p "$RUN_DIR"
 
+  # A fresh clone may have no deps yet; one root install links every workspace.
+  if [ ! -d node_modules ]; then
+    install_deps
+  fi
+
   # Docker must already be running (start it via 'docker-up', the app, or your CLI).
   docker info >/dev/null 2>&1 \
     || die "Docker daemon not reachable. Start Docker first (menu: docker-up, the Docker app, or your CLI), then run 'up'."
