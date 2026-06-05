@@ -27,35 +27,26 @@ test('signMessage round-trips a base64 signature through the injected provider',
   const wallet = await context.newPage()
   await onboardWallet(wallet, extensionId, PARTY_HINT)
 
-  // 3. Open the dApp and connect via the injected provider.
+  // 3. Open the standalone signMessage example page and connect via the provider.
   const dapp = await context.newPage()
-  await dapp.goto(DAPP_URL)
+  await dapp.goto(`${DAPP_URL}/sign-demo`)
   await connectViaExtension(dapp)
-  // The connected-party marker is the visible post-connect state. The
-  // signMessage controls remain mounted as a hidden protocol harness so this
-  // spec can still exercise the wallet method without exposing that demo UI.
   await expect(dapp.getByTestId('connected-party')).toHaveAttribute(
     'data-party-id',
     new RegExp(`^${PARTY_HINT}::`),
   )
 
-  // 4. Fill input + click Sign through DOM events because the harness is
-  // intentionally hidden with display:none in the production UI.
+  // 4. Fill the message and click Sign.
   const message = 'verify this party owns the key'
-  await dapp.getByTestId('sign-input').evaluate((element, value) => {
-    const input = element as HTMLInputElement
-    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set
-    setter?.call(input, value)
-    input.dispatchEvent(new Event('input', { bubbles: true }))
-  }, message)
-  await dapp.getByTestId('sign-message').dispatchEvent('click')
+  await dapp.getByTestId('sign-input').fill(message)
+  await dapp.getByTestId('sign-message').click()
 
   // 5. Carpincho shows the pending-approval card; click Approve.
   await wallet.bringToFront()
   await expect(wallet.getByTestId('pending-approve')).toBeVisible()
   await wallet.getByTestId('pending-approve').click()
 
-  // 6. dApp records the signature in the hidden harness output.
+  // 6. dApp records the returned signature.
   await dapp.bringToFront()
   await expect(dapp.getByTestId('signature-output')).toHaveAttribute(
     'data-signature',

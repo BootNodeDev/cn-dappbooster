@@ -15,6 +15,10 @@ const envString = (name: string): string =>
 // ../e2e/tests/features/<name>/. See README "Removing a feature".
 export const App = (): JSX.Element => {
   const [runtimeConfig] = useState(() => loadRuntimeConfig())
+  // /sign-demo serves the standalone signMessage example; every other path is
+  // the Stampbook app. Keeps the off-topic demo out of the product UI while
+  // leaving it reachable (and e2e-testable) on its own route.
+  const isSignDemo = window.location.pathname === '/sign-demo'
   return (
     <TooltipProvider>
       <ToastProvider>
@@ -26,10 +30,7 @@ export const App = (): JSX.Element => {
             walletConnectProjectId: envString('VITE_WC_PROJECT_ID'),
           }}
         >
-          <ConnectionBar>
-            <LoyaltyCard />
-            <SignMessageDemo />
-          </ConnectionBar>
+          <ConnectionBar>{isSignDemo ? <SignMessageDemo /> : <LoyaltyCard />}</ConnectionBar>
         </ConnectKitProvider>
       </ToastProvider>
     </TooltipProvider>
