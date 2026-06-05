@@ -28,7 +28,7 @@ export const Tooltip = ({
         side={side}
         sideOffset={3}
         collisionPadding={8}
-        className="z-50 w-72 rounded-md border border-border bg-surface px-3 py-2 text-[0.78rem] leading-snug text-foreground shadow-[var(--shadow-popover)] animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95"
+        className="z-50 w-72 rounded-md border border-border bg-surface px-3 py-2 text-[0.78rem] leading-snug text-foreground shadow-[var(--shadow-popover)] data-[state=open]:animate-zoom-in-and-fade"
       >
         {content}
         <RadixTooltip.Arrow className="fill-surface" />
