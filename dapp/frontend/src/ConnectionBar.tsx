@@ -204,7 +204,7 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
         type="button"
         data-testid="connect-menu"
         onClick={() => setConnectMenuOpen((open) => !open)}
-        aria-haspopup="menu"
+        aria-haspopup="true"
         aria-expanded={connectMenuOpen}
         disabled={isConnecting}
         className="inline-flex h-9 items-center gap-2 rounded-full border border-border-strong bg-surface pl-4 pr-3 text-sm font-semibold text-foreground transition-colors enabled:hover:border-primary enabled:hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
@@ -213,10 +213,7 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
         <span className="[&_svg]:size-4">{CHEVRON_DOWN_ICON}</span>
       </button>
       {connectMenuOpen && (
-        <div
-          role="menu"
-          className="absolute right-0 z-50 mt-2 w-64 rounded-xl border border-border bg-surface p-2 shadow-popover"
-        >
+        <div className="absolute right-0 z-50 mt-2 w-64 rounded-xl border border-border bg-surface p-2 shadow-popover">
           <button
             type="button"
             data-testid="connect-extension"
@@ -258,7 +255,7 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
         data-testid="connected-party"
         data-party-id={party?.partyId ?? ''}
         onClick={() => setAccountOpen((open) => !open)}
-        aria-haspopup="menu"
+        aria-haspopup="true"
         aria-expanded={accountOpen}
         className="inline-flex h-9 max-w-[220px] items-center gap-2 rounded-full border border-border bg-surface pl-1.5 pr-3 text-sm font-semibold text-foreground transition-colors hover:border-primary"
       >
@@ -270,10 +267,7 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
         <span className="text-muted-foreground">{CHEVRON_DOWN_ICON}</span>
       </button>
       {accountOpen && (
-        <div
-          role="menu"
-          className="absolute right-0 z-50 mt-2 w-72 rounded-xl border border-border bg-surface p-3 shadow-popover"
-        >
+        <div className="absolute right-0 z-50 mt-2 w-72 rounded-xl border border-border bg-surface p-3 shadow-popover">
           <span className="text-[0.65rem] font-bold uppercase tracking-[0.08em] text-muted-foreground">
             Connected party
           </span>
