@@ -1,5 +1,3 @@
-import '@fontsource-variable/jetbrains-mono'
-import '@fontsource-variable/manrope'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { ThemeProvider } from '@/theme/ThemeProvider'
