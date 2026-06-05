@@ -305,6 +305,12 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
 
   return (
     <div className="flex min-h-screen flex-col">
+      <a
+        href="#main"
+        className="sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:left-4 focus-visible:top-3 focus-visible:z-[70] focus-visible:rounded-md focus-visible:border focus-visible:border-border focus-visible:bg-surface focus-visible:px-4 focus-visible:py-2 focus-visible:text-sm focus-visible:font-semibold focus-visible:text-foreground focus-visible:shadow-popover"
+      >
+        Skip to main content
+      </a>
       <header className="sticky top-0 z-30 border-b border-border bg-surface/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
           <div className="flex items-center gap-2.5">
@@ -377,7 +383,11 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
         )}
       </Sheet>
 
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6">
+      <main
+        id="main"
+        tabIndex={-1}
+        className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 outline-none sm:px-6"
+      >
         {reconnecting && !isConnected ? (
           <section className="flex flex-col items-center gap-3 pt-20 text-center text-muted-foreground">
             <span
@@ -397,7 +407,7 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
             </h1>
             <p className="mt-4 max-w-lg text-base leading-relaxed text-muted-foreground">
               Stampbook demo: a merchant issues a stamp card, delegates stamping to staff, and
-              cardholders watch their stamps add up toward a reward — every stamp a real Canton
+              cardholders watch their stamps add up toward a reward. Every stamp is a real Canton
               transaction.
             </p>
             <p className="mt-8 font-display text-lg font-bold text-foreground">

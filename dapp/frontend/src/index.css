@@ -50,7 +50,7 @@
   --shadow-focus-danger: 0 0 0 3px rgba(163, 38, 38, 0.32);
   --shadow-glow: 0 10px 26px rgba(198, 112, 229, 0.4);
 
-  --bg-gradient-brand: linear-gradient(135deg, #c670e5, #e71d73);
+  --bg-gradient-brand: linear-gradient(135deg, #a948c4, #dd1a6e);
 
   --bg-radial: radial-gradient(
     ellipse 90% 60% at 50% 0%,
@@ -103,7 +103,7 @@
   --shadow-focus-danger: 0 0 0 3px rgba(229, 115, 115, 0.4);
   --shadow-glow: 0 10px 26px rgba(198, 112, 229, 0.4);
 
-  --bg-gradient-brand: linear-gradient(135deg, #c670e5, #e71d73);
+  --bg-gradient-brand: linear-gradient(135deg, #a948c4, #dd1a6e);
 
   --bg-radial: radial-gradient(
     ellipse 90% 60% at 50% 0%,
@@ -161,11 +161,7 @@
   --animate-sheet-up: sheet-up 320ms cubic-bezier(0.2, 0.7, 0.2, 1);
   --animate-sheet-slide-right: sheet-slide-right 280ms cubic-bezier(0.16, 1, 0.3, 1);
   --animate-zoom-in-and-fade: zoom-in-and-fade 200ms cubic-bezier(0.16, 1, 0.3, 1);
-  --animate-slide-in-right: slide-in-right 220ms cubic-bezier(0.16, 1, 0.3, 1);
-  --animate-slide-in-left: slide-in-left 220ms cubic-bezier(0.16, 1, 0.3, 1);
-  --animate-soft-pulse: soft-pulse 2600ms ease-in-out infinite;
   --animate-drift: drift 3.2s ease-in-out infinite;
-  --animate-logo-shadow: logo-shadow 3.2s ease-in-out infinite;
 }
 
 @utility w-popup {
@@ -255,38 +251,6 @@
   }
 }
 
-@keyframes slide-in-right {
-  from {
-    opacity: 0;
-    transform: translateX(14px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes slide-in-left {
-  from {
-    opacity: 0;
-    transform: translateX(-14px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes soft-pulse {
-  0%,
-  100% {
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-success) 35%, transparent) inset;
-  }
-  50% {
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-success) 55%, transparent) inset;
-  }
-}
-
 @keyframes drift {
   0%,
   100% {
@@ -297,54 +261,17 @@
   }
 }
 
-@keyframes logo-shadow {
-  0%,
-  100% {
-    transform: translateX(-50%) scale(1);
-    opacity: 0.9;
-  }
-  50% {
-    transform: translateX(-50%) scale(0.68);
-    opacity: 0.45;
-  }
-}
-
-/*
- * Comet glow that traces the border once per cycle (timing in CreateVault).
- * Drawn as a stack of short SVG segments whose dash window and opacity are
- * driven per-frame in CreateVault to form a trail; the group carries the glow.
- */
-.border-trace {
-  position: relative;
-}
-
-.border-trace-svg {
-  position: absolute;
-  inset: -1px;
-  overflow: visible;
-  pointer-events: none;
-}
-
-.border-trace-glow {
-  filter: drop-shadow(0 0 2px var(--color-accent)) drop-shadow(0 0 6px var(--color-accent))
-    drop-shadow(0 0 12px color-mix(in srgb, var(--color-accent) 55%, transparent));
-}
-
-.border-trace-seg {
-  fill: none;
-  stroke: var(--color-accent);
-  stroke-width: 2.5;
-  stroke-linecap: round;
-}
-
+/* Honor reduced-motion across every animation/transition. Near-zero (not none)
+ * keeps Radix's animationend-driven unmounts firing so dialogs still close. This
+ * rule is unlayered, so it overrides Tailwind's layered animate-/transition-
+ * utilities without needing !important. */
 @media (prefers-reduced-motion: reduce) {
-  .border-trace-svg {
-    display: none;
-  }
-
-  .animate-drift,
-  .animate-logo-shadow {
-    animation: none;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+    transition-duration: 0.01ms;
   }
 }
 

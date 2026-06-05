@@ -9,7 +9,7 @@ const BASE_INTERACTIVE =
   'focus-visible:outline-none focus-visible:shadow-focus'
 
 export const ICON_BUTTON_CLASS =
-  'inline-grid place-items-center text-muted-foreground transition-colors ' +
+  'inline-grid size-6 place-items-center text-muted-foreground transition-colors ' +
   'enabled:hover:text-primary enabled:hover:bg-primary-soft ' +
   'focus-visible:outline-none focus-visible:shadow-focus'
 

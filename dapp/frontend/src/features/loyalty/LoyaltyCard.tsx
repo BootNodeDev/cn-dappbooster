@@ -70,7 +70,7 @@ const PunchCard = ({
         return (
           <div
             key={key}
-            className="aspect-square rounded-full border-2 border-dashed border-white/55"
+            className="aspect-square rounded-full border-2 border-dashed border-white/70"
           />
         )
       }
@@ -82,7 +82,7 @@ const PunchCard = ({
           data-testid="add-stamp"
           onClick={() => onAdd(i)}
           disabled={busy}
-          className="grid aspect-square place-items-center rounded-full border-2 border-dashed border-white/55 text-3xl leading-none text-white/70 transition-colors enabled:hover:border-white enabled:hover:bg-white/20 enabled:hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+          className="grid aspect-square place-items-center rounded-full border-2 border-dashed border-white/70 text-3xl leading-none text-white/80 transition-colors enabled:hover:border-white enabled:hover:bg-white/20 enabled:hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
         >
           +
         </button>
@@ -432,7 +432,7 @@ export const LoyaltyCard = (): JSX.Element | null => {
                 <div className="rounded-xl bg-[image:var(--bg-gradient-brand)] p-3 text-white">
                   <div className="flex items-center justify-between">
                     <span className="font-display text-sm font-bold">Stamps</span>
-                    <span className="text-xs opacity-85">
+                    <span className="text-xs">
                       {slots.length} / {CARD_SIZE}
                     </span>
                   </div>
@@ -452,7 +452,7 @@ export const LoyaltyCard = (): JSX.Element | null => {
                     }}
                   />
                   {rewards > 0 && (
-                    <p className="m-0 mt-2 text-xs font-semibold opacity-90">
+                    <p className="m-0 mt-2 text-xs font-semibold">
                       {rewards} reward{rewards === 1 ? '' : 's'} earned
                     </p>
                   )}
@@ -500,7 +500,7 @@ export const LoyaltyCard = (): JSX.Element | null => {
                         aria-label="Add staff"
                         title="Add staff"
                         onClick={() => setAddTo({ contractId: tally.contractId, role: 'staff' })}
-                        className="inline-grid size-5 place-items-center rounded-full border border-border-strong bg-surface text-sm leading-none text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                        className="inline-grid size-6 place-items-center rounded-full border border-border-strong bg-surface text-sm leading-none text-muted-foreground transition-colors hover:border-primary hover:text-primary"
                       >
                         +
                       </button>
@@ -530,7 +530,7 @@ export const LoyaltyCard = (): JSX.Element | null => {
                         onClick={() =>
                           setAddTo({ contractId: tally.contractId, role: 'cardholder' })
                         }
-                        className="inline-grid size-5 place-items-center rounded-full border border-border-strong bg-surface text-sm leading-none text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                        className="inline-grid size-6 place-items-center rounded-full border border-border-strong bg-surface text-sm leading-none text-muted-foreground transition-colors hover:border-primary hover:text-primary"
                       >
                         +
                       </button>
@@ -614,7 +614,7 @@ export const LoyaltyCard = (): JSX.Element | null => {
                   onClick={() => {
                     void copyToClipboard(partyId, 'Party id copied.')
                   }}
-                  className="inline-grid shrink-0 place-items-center text-muted-foreground transition-colors hover:text-primary [&_svg]:size-3.5"
+                  className="inline-grid size-6 shrink-0 place-items-center text-muted-foreground transition-colors hover:text-primary [&_svg]:size-3.5"
                 >
                   {COPY_ICON}
                 </button>
