@@ -19,7 +19,6 @@
     "@canton-network/dapp-sdk": "^1.1.0",
     "@fontsource-variable/jetbrains-mono": "^5.2.8",
     "@fontsource-variable/manrope": "^5.2.8",
-    "@fontsource/geist-sans": "^5.2.5",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-toast": "^1.2.15",
     "@radix-ui/react-tooltip": "^1.2.8",
