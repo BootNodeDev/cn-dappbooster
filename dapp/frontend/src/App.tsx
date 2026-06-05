@@ -20,8 +20,8 @@ export const App = (): JSX.Element => {
       <ToastProvider>
         <ConnectKitProvider
           config={{
-            appName: 'Canton dApp Starter',
-            appDescription: 'Starter dApp on the Canton barebones stack',
+            appName: 'dAppBooster Canton Stampbook',
+            appDescription: 'On-ledger loyalty stamp cards on Canton',
             network: runtimeConfig.cantonNetwork,
             walletConnectProjectId: envString('VITE_WC_PROJECT_ID'),
           }}

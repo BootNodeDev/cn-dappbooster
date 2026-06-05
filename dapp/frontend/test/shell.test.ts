@@ -28,9 +28,9 @@ describe('dapp shell', () => {
     assert.doesNotMatch(app, /useExecute|useLedger/)
   })
 
-  it('uses neutral starter copy, not feature branding', () => {
+  it('uses the Stampbook product name, not stale counter branding', () => {
     const app = readText('src/App.tsx')
-    assert.match(app, /appName: 'Canton dApp Starter'/)
+    assert.match(app, /appName: 'dAppBooster Canton Stampbook'/)
     assert.doesNotMatch(app, /Counter dApp/)
   })
 
