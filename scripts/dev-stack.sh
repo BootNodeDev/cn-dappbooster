@@ -72,6 +72,11 @@ wait_for() { # wait_for <seconds> <logfile> <grep-pattern> <label>
 }
 
 build_extension() {
+  # A fresh clone may have no deps yet; one root install links every workspace.
+  if [ ! -d node_modules ]; then
+    install_deps
+  fi
+
   log "Building the Carpincho Chrome extension..."
   npm run carpincho:build:extension
   log "Copying extension to $EXT_DEST"
