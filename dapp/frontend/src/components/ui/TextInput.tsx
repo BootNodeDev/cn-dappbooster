@@ -18,7 +18,7 @@ export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
       aria-invalid={error ? true : undefined}
       className={cn(
         INPUT_CLASS,
-        error && 'border-danger focus:border-danger shadow-focus-danger focus:shadow-focus-danger',
+        error && 'border-danger focus:border-danger focus:shadow-focus-danger',
         className,
       )}
       {...rest}
