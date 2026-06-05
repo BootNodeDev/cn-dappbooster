@@ -242,7 +242,7 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
             disabled={isConnecting}
             className="mt-1 flex w-full items-center gap-2.5 rounded-lg p-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <img src="/Walletconnect-logo.png" alt="" aria-hidden="true" className="size-[18px]" />
+            <img src="/walletconnect-logo.webp" alt="" aria-hidden="true" className="size-[18px]" />
             {isConnecting && connectMode === 'walletconnect' ? 'Pairing…' : 'WalletConnect'}
           </button>
         </div>
@@ -447,7 +447,7 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
               disabled={isConnecting}
               className="mt-4 inline-flex h-11 items-center gap-2 rounded-full border border-border-strong bg-surface px-6 text-[0.95rem] font-semibold text-foreground transition-colors enabled:hover:border-primary enabled:hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <img src="/Walletconnect-logo.png" alt="" aria-hidden="true" className="size-5" />
+              <img src="/walletconnect-logo.webp" alt="" aria-hidden="true" className="size-5" />
               {isConnecting && connectMode === 'walletconnect' ? 'Pairing…' : 'WalletConnect'}
             </button>
             <p className="mt-1.5 text-xs text-muted-foreground">(carpincho web app)</p>
