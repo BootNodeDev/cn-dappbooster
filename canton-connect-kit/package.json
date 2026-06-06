@@ -5,7 +5,7 @@
   "type": "module",
   "description": "wagmi-style React hooks for connecting Canton dApps to CIP-0103 wallets. Pairs with carpincho-wallet but works with any CIP-0103 provider.",
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   },
   "exports": {
     ".": "./src/index.ts"
