@@ -41,7 +41,7 @@
 ├── commitlint.config.js           Conventional Commit enforcement
 ├── .lintstagedrc.mjs              Per-subproject lint dispatch
 ├── .nvmrc                         Node 24
-└── package.json                   Root orchestration scripts (npm --prefix <dir>)
+└── package.json                   npm workspaces root + orchestration scripts (npm --prefix <dir>)
 ```
 
 ## Data Flow

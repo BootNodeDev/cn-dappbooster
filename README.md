@@ -18,9 +18,49 @@ flowchart TD
 
 The dApp frontend knows the Tally DAML signature and talks to Carpincho through the injected CIP-0103 browser provider. Carpincho owns the local signing key and uses the wallet service to prepare, read, and execute against the Canton participant. WalletConnect remains available as an optional fallback path.
 
+## Installation
+
+Prerequisites:
+
+- Node.js 24
+- npm `>=7`
+- Docker
+- `dpm` on `PATH` (DAML SDK 3.4.11), required for building DARs
+
+### Recommended: dappbooster installer
+
+```bash
+npx dappbooster --canton
+```
+
+### Manual
+
+npm workspaces monorepo; one install from the repo root links every package:
+
+```bash
+npm install
+```
+
+### Environment files
+
+#### Mandatory
+
+```bash
+cp canton-barebones/.env.example canton-barebones/.env
+```
+
+#### Optional
+
+Only for the WalletConnect fallback. Copy each and set `VITE_WC_PROJECT_ID` (see [Optional: WalletConnect connect path](#optional-walletconnect-connect-path)):
+
+```bash
+cp carpincho-wallet/.env.local.example carpincho-wallet/.env.local
+cp dapp/frontend/.env.local.example dapp/frontend/.env.local
+```
+
 ## Dev stack script
 
-[`scripts/dev-stack.sh`](scripts/dev-stack.sh) automates the manual Quick Start below. Run it with no arguments for an interactive menu (navigate with arrow keys or `j`/`k`, jump with number keys `1`-`8`, select with Enter, quit with `q`):
+[`scripts/dev-stack.sh`](scripts/dev-stack.sh) automates the manual Quick Start below. Run it with no arguments for an interactive menu (navigate with arrow keys or `j`/`k`, jump with number keys `1`-`9`, select with Enter, quit with `q`):
 
 ```bash
 ./scripts/dev-stack.sh
@@ -34,6 +74,7 @@ Or call an action directly:
 
 | Menu item | Action | What it does |
 |-----------|--------|--------------|
+| Install | `install` | Install and link every workspace from the repo root (`npm install`). |
 | Docker up | `docker-up` | Launch Docker Desktop and wait for the daemon (macOS only). |
 | Docker down | `docker-down` | Quit Docker Desktop (macOS only). |
 | Stack up | `up` | Bring up containers, build + deploy the DAR, start the wallet (3011) and dApp (3012) dev servers, build the extension. |
@@ -57,12 +98,6 @@ For the manual, step-by-step flow (and the underlying `npm` scripts the helper w
 Run the packages in this order for the local dApp flow.
 
 ## canton-barebones
-
-Configure envs:
-
-```bash
-cp canton-barebones/.env.example canton-barebones/.env
-```
 
 Start Canton:
 
@@ -113,7 +148,6 @@ The service self-mints its Canton JWT from `CANTON_AUTH_AUDIENCE` / `CANTON_AUTH
 For host-side iteration (mock mode, no Docker required):
 
 ```bash
-npm --prefix canton-barebones/wallet-service install
 WALLET_SERVICE_MOCK=1 npm run wallet-service:dev
 ```
 
@@ -128,7 +162,6 @@ WIP. The extension is not deployed there yet.
 Build the extension:
 
 ```bash
-npm --prefix carpincho-wallet install
 npm run carpincho:build:extension
 ```
 
@@ -155,11 +188,7 @@ After downloading and unpacking a release artifact, load it in Chrome with the s
 
 ## dapp
 
-Install the local connect kit first so Vite can resolve its peer/dev dependencies.
-
 ```bash
-npm --prefix canton-connect-kit install
-npm --prefix dapp/frontend install
 npm run app:dev
 ```
 

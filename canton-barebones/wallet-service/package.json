@@ -1,9 +1,10 @@
 {
   "name": "@canton-dappbooster/wallet-service",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   },
   "scripts": {
     "build": "tsc -p .",
