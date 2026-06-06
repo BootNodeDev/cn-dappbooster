@@ -22,9 +22,10 @@ The dApp frontend knows the Tally DAML signature and talks to Carpincho through 
 
 Prerequisites:
 
-- Node.js 24 (pinned in `.nvmrc`; package `engines` require `>=24`) with npm `>=7`
+- Node.js 24
+- npm `>=7`
 - Docker
-- `dpm` on `PATH` (DAML SDK 3.4.11), required only for building DARs
+- `dpm` on `PATH` (DAML SDK 3.4.11), required for building DARs
 
 ### Recommended: dappbooster installer
 
@@ -39,13 +40,6 @@ npm workspaces monorepo; one install from the repo root links every package:
 ```bash
 npm install
 ```
-
-> **Upgrading an existing clone?** Clones made before the workspaces migration have stale per-package `node_modules` that can shadow the hoisted versions. Clear them once, then reinstall from the root:
->
-> ```bash
-> git clean -xdf -e .env.local   # or: rm -rf node_modules **/node_modules
-> npm install
-> ```
 
 ### Environment files
 
