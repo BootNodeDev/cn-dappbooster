@@ -18,6 +18,52 @@ flowchart TD
 
 The dApp frontend knows the Tally DAML signature and talks to Carpincho through the injected CIP-0103 browser provider. Carpincho owns the local signing key and uses the wallet service to prepare, read, and execute against the Canton participant. WalletConnect remains available as an optional fallback path.
 
+## Installation
+
+Prerequisites:
+
+- Node.js 24 (pinned in `.nvmrc`; package `engines` require `>=24`) with npm `>=7`
+- Docker
+- `dpm` on `PATH` (DAML SDK 3.4.11), required only for building DARs
+
+### Recommended: dappbooster installer
+
+```bash
+npx dappbooster --canton
+```
+
+### Manual
+
+npm workspaces monorepo; one install from the repo root links every package:
+
+```bash
+npm install
+```
+
+> **Upgrading an existing clone?** Clones made before the workspaces migration have stale per-package `node_modules` that can shadow the hoisted versions. Clear them once, then reinstall from the root:
+>
+> ```bash
+> git clean -xdf -e .env.local   # or: rm -rf node_modules **/node_modules
+> npm install
+> ```
+
+### Environment files
+
+#### Mandatory
+
+```bash
+cp canton-barebones/.env.example canton-barebones/.env
+```
+
+#### Optional
+
+Only for the WalletConnect fallback. Copy each and set `VITE_WC_PROJECT_ID` (see [Optional: WalletConnect connect path](#optional-walletconnect-connect-path)):
+
+```bash
+cp carpincho-wallet/.env.local.example carpincho-wallet/.env.local
+cp dapp/frontend/.env.local.example dapp/frontend/.env.local
+```
+
 ## Dev stack script
 
 [`scripts/dev-stack.sh`](scripts/dev-stack.sh) automates the manual Quick Start below. Run it with no arguments for an interactive menu (navigate with arrow keys or `j`/`k`, jump with number keys `1`-`9`, select with Enter, quit with `q`):
@@ -55,32 +101,9 @@ For the manual, step-by-step flow (and the underlying `npm` scripts the helper w
 
 ## Quick Start
 
-### Install
-
-This is an npm workspaces monorepo. One install from the repo root links every package:
-
-```bash
-npm install
-```
-
-That single command resolves and links all workspaces, so `dapp/frontend` picks up `canton-connect-kit` (and its transitive `@canton-network/core-*` imports) with no per-package install step.
-
-> **Upgrading an existing clone?** Clones made before the workspaces migration have stale per-package `node_modules` that can shadow the hoisted versions. Clear them once after pulling, then reinstall from the root:
->
-> ```bash
-> git clean -xdf -e .env.local   # or: rm -rf node_modules **/node_modules
-> npm install
-> ```
-
 Run the packages in this order for the local dApp flow.
 
 ## canton-barebones
-
-Configure envs:
-
-```bash
-cp canton-barebones/.env.example canton-barebones/.env
-```
 
 Start Canton:
 
