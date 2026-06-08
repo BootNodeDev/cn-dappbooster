@@ -1,4 +1,4 @@
-name: Carpincho Wallet extension release
+name: Release
 
 on:
   release:
@@ -8,11 +8,11 @@ permissions:
   contents: write
 
 concurrency:
-  group: carpincho-release-${{ github.event.release.tag_name }}
+  group: release-${{ github.event.release.tag_name }}
   cancel-in-progress: false
 
 jobs:
-  build-and-upload:
+  carpincho-extension:
     runs-on: ubuntu-latest
     env:
       TAG: ${{ github.event.release.tag_name }}
