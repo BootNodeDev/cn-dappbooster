@@ -175,7 +175,7 @@ Then load it in Chrome with the shared steps below.
 
 ### Use the extension from GitHub release source
 
-WIP. Release artifacts are not available yet.
+Publishing a GitHub Release automatically builds the extension and attaches a `carpincho-wallet-<version>.zip` asset to that release.
 
 After downloading and unpacking a release artifact, load it in Chrome with the shared steps below.
 

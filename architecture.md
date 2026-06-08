@@ -25,7 +25,8 @@
 │   └── skills/{create-pr,issue}   Agent helper skills
 ├── .github/
 │   ├── ISSUE_TEMPLATE/            bug / feature / epic / spike templates
-│   └── PULL_REQUEST_TEMPLATE.md
+│   ├── PULL_REQUEST_TEMPLATE.md
+│   └── workflows/                 release pipeline (build + attach extension zip)
 ├── .husky/                        commit-msg, pre-commit, pre-push hooks
 ├── canton-barebones/              Local Canton participant + Postgres + wallet-service
 ├── canton-connect-kit/            React hooks for CIP-0103 wallet connections
