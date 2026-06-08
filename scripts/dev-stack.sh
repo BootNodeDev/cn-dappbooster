@@ -23,9 +23,11 @@
 #   1. Canton + Postgres + wallet-service containers (npm run canton:up)
 #   2. Health checks (canton + wallet-service)
 #   3. Builds and deploys the Daml DAR (name derived from daml.yaml)
-#   4. Carpincho wallet dev server  -> http://localhost:3011  (background)
+#   4. Carpincho Wallet dev server  -> http://localhost:3011  (background)
 #   5. dApp frontend dev server     -> http://localhost:3012  (background)
 #   6. Builds the Chrome extension and copies it to ~/Desktop/dist-extension
+#
+# Steps 4 and 6 are skipped when the Carpincho Wallet workspace is absent.
 #
 # `down` reverses 4/5 (kills the dev servers) and tears down the containers.
 
@@ -57,6 +59,7 @@ die()  { printf '\033[1;31m[x]\033[0m %s\n' "$*" >&2; exit 1; }
 
 # Carpincho is an optional workspace; a custom scaffold can omit it. Guard the
 # wallet/extension steps on its presence so the rest of the stack still works.
+# Presence means installable (deps + npm scripts), not just that the dir exists.
 has_carpincho() { [ -d carpincho-wallet ]; }
 
 case "$DAR_NAME" in
@@ -77,7 +80,7 @@ wait_for() { # wait_for <seconds> <logfile> <grep-pattern> <label>
 
 build_extension() {
   if ! has_carpincho; then
-    log "Carpincho wallet absent; skipping extension build."
+    log "Carpincho Wallet absent; skipping extension build."
     return 0
   fi
 
@@ -168,7 +171,7 @@ up() {
 
   # 4. Carpincho wallet dev server (3011)
   if ! has_carpincho; then
-    log "Carpincho wallet absent; skipping wallet dev server."
+    log "Carpincho Wallet absent; skipping wallet dev server."
   elif lsof -nP -iTCP:3011 -sTCP:LISTEN >/dev/null 2>&1; then
     warn "Port 3011 already in use; skipping wallet dev server."
   else
@@ -223,7 +226,8 @@ down() {
   # 1. Dev servers
   stop_pidfile "$WALLET_PID" "wallet dev server"
   stop_pidfile "$DAPP_PID" "dApp dev server"
-  # Belt-and-suspenders: kill any stray vite on our ports.
+  # Belt-and-suspenders: kill any stray vite on our ports. The guard is cosmetic
+  # (the pkill is already no-op-safe); the stop_pidfile above runs unconditionally.
   if has_carpincho; then
     pkill -f "carpincho-wallet run dev" 2>/dev/null || true
   fi
@@ -279,7 +283,7 @@ mock_up() {
 
   # Carpincho web app -> http://localhost:3011
   if ! has_carpincho; then
-    log "Carpincho wallet absent; skipping carpincho web app."
+    log "Carpincho Wallet absent; skipping Carpincho web app."
   elif lsof -nP -iTCP:3011 -sTCP:LISTEN >/dev/null 2>&1; then
     warn "Port 3011 already in use; skipping carpincho web app."
   else
@@ -304,6 +308,7 @@ mock_down() {
   # Belt-and-suspenders for stray processes on our ports.
   pkill -f "WALLET_SERVICE_MOCK" 2>/dev/null || true
   pkill -f "tsx watch src/server.ts" 2>/dev/null || true
+  # Guard is cosmetic; the pkill is already no-op-safe.
   if has_carpincho; then
     pkill -f "carpincho-wallet run dev" 2>/dev/null || true
   fi
