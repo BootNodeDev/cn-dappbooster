@@ -1,0 +1,52 @@
+name: Carpincho Wallet extension release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-upload:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          HUSKY: 0
+
+      - name: Set manifest version from tag
+        run: |
+          VERSION="${TAG#v}"
+          if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+(\.[0-9]+){0,3}$'; then
+            echo "::error::Release tag '$TAG' does not yield a Chrome-valid version (got '$VERSION'; expected numeric major.minor.patch)."
+            exit 1
+          fi
+          node -e "const f='carpincho-wallet/public/manifest.json';const m=require('./'+f);m.version=process.env.VERSION;require('fs').writeFileSync(f,JSON.stringify(m,null,2)+'\n')"
+          echo "manifest version set to $VERSION"
+        env:
+          VERSION: ${{ github.event.release.tag_name }}
+
+      - name: Build extension
+        run: npm --prefix carpincho-wallet run build:extension
+
+      - name: Zip extension
+        run: |
+          cd carpincho-wallet/dist-extension
+          zip -r "$GITHUB_WORKSPACE/carpincho-wallet-${TAG}.zip" .
+
+      - name: Upload asset to release
+        run: gh release upload "$TAG" "carpincho-wallet-${TAG}.zip" --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
