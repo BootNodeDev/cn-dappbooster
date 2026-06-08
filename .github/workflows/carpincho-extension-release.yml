@@ -26,6 +26,12 @@ jobs:
         env:
           HUSKY: 0
 
+      - name: Lint
+        run: npm --prefix carpincho-wallet run lint
+
+      - name: Test
+        run: npm --prefix carpincho-wallet run test
+
       - name: Set manifest version from tag
         run: |
           VERSION="${TAG#v}"
