@@ -36,7 +36,7 @@ export const buildStatus = async (): Promise<ProviderStatus> => {
   try {
     const remote = await walletServiceRequest<WalletServiceStatus>(CANTON_METHOD_STATUS)
     return {
-      provider: { id: SIGNING_PROVIDER_ID, version: '0.1.0', providerType: 'browser' },
+      provider: { id: SIGNING_PROVIDER_ID, version: __APP_VERSION__, providerType: 'browser' },
       connection: {
         isConnected: true,
         isNetworkConnected: remote.connection?.isNetworkConnected ?? false,
@@ -48,7 +48,7 @@ export const buildStatus = async (): Promise<ProviderStatus> => {
     }
   } catch (error) {
     return {
-      provider: { id: SIGNING_PROVIDER_ID, version: '0.1.0', providerType: 'browser' },
+      provider: { id: SIGNING_PROVIDER_ID, version: __APP_VERSION__, providerType: 'browser' },
       connection: {
         isConnected: true,
         isNetworkConnected: false,

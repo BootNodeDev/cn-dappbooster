@@ -30,36 +30,37 @@ jobs:
         env:
           HUSKY: 0 # disable git hooks in CI checkout
 
-      - name: Lint
-        run: npm --prefix carpincho-wallet run lint
-
-      - name: Test
-        run: npm --prefix carpincho-wallet run test
-
       - name: Resolve and validate version
         run: |
           VERSION="${TAG#v}"
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          if [ "$VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::Release tag \"$TAG\" (version \"$VERSION\") does not match root package.json version \"$PKG_VERSION\". Bump it with 'npm version' and tag that commit."
+            exit 1
+          fi
           export VERSION
           node -e '
-            const v = process.env.VERSION;
+            const v = process.env.VERSION.split(/[-+]/)[0];
             const parts = v.split(".");
             const valid =
               parts.length >= 1 && parts.length <= 4 &&
               parts.every((p) => /^(0|[1-9][0-9]{0,4})$/.test(p) && Number(p) <= 65535);
             if (!valid) {
-              console.error(`::error::Release tag "${process.env.TAG}" does not yield a Chrome-valid version (got "${v}"; expected 1-4 dot-separated integers 0-65535, no leading zeros).`);
+              console.error(`::error::Version "${process.env.VERSION}" does not yield a Chrome-valid manifest version (need 1-4 dot-separated integers 0-65535, no leading zeros).`);
               process.exit(1);
             }
           '
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
           echo "resolved version $VERSION"
 
-      - name: Set manifest version
-        run: |
-          node -e "const f='carpincho-wallet/public/manifest.json';const m=require('./'+f);m.version=process.env.VERSION;require('fs').writeFileSync(f,JSON.stringify(m,null,2)+'\n')"
+      - name: Lint
+        run: npm --prefix carpincho-wallet run lint
 
       - name: Build extension
         run: npm --prefix carpincho-wallet run build:extension
+
+      - name: Test
+        run: npm --prefix carpincho-wallet run test
 
       - name: Zip extension
         run: |
