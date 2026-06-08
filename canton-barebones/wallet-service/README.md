@@ -95,5 +95,5 @@ POST /v2/state/active-contracts
 ## References
 
 - [CIP-0103](https://github.com/canton-foundation/cips/blob/main/cip-0103/cip-0103.md)
-- [OpenRPC dApp API](https://github.com/canton-network/wallet-gateway/blob/main/api-specs/openrpc-dapp-api.json)
+- [OpenRPC dApp API](https://github.com/canton-network/wallet/blob/main/api-specs/openrpc-dapp-api.json)
 - [Vendored API specs](api-specs/README.md)

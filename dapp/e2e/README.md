@@ -75,6 +75,7 @@ Or from the repo root: `npm run e2e`.
 - `tests/features/sign-message/sign-message.spec.ts` — `signMessage` round-trips a base64 signature
 - `tests/accounts-changed.spec.ts` — switching primary in Carpincho propagates to the dApp via `accountsChanged`
 - `tests/features/loyalty/tx-changed.spec.ts` — captures the full `pending → signed → executed` lifecycle during `prepareExecuteAndWait`
+- `tests/wallet-lock.spec.ts` — locking Carpincho surfaces in the dApp via `statusChanged`, and unlocking recovers
 
 **13 tests total.** All deterministic via `data-testid` + `data-*` attribute reads, no sleep guesses.
 
@@ -82,7 +83,7 @@ Or from the repo root: `npm run e2e`.
 
 - WC fallback path (would need a real Reown project ID)
 - dApp's Create card / Add stamp / Add staff / Add viewer flows (covered manually via agent-browser; could add Playwright if we want full UI coverage)
-- `connected` and `statusChanged` are emitted by the wallet on vault lifecycle transitions but no dApp surface consumes them yet, so there is no e2e test for them. `messageSignature` lifecycle events are not emitted (`signMessage` is request/response via the Promise; lifecycle events would have no consumer).
+- `connected` is emitted by the wallet on vault unlock but no dApp surface consumes it yet, so there is no e2e test for it (`statusChanged` is now covered by `wallet-lock.spec.ts`). `messageSignature` lifecycle events are not emitted (`signMessage` is request/response via the Promise; lifecycle events would have no consumer).
 
 ## Conventions
 
@@ -92,10 +93,10 @@ Or from the repo root: `npm run e2e`.
 - Each test starts from a known browser context (the `context` fixture gives a fresh persistent profile per test)
 - Don't add `expect`s that depend on heuristic sleeps — use `expect.poll` or wait-for assertions
 
-## When this package owns the lifecycle
+## Stack lifecycle
 
-Phase 1 deliberately requires the stack to be up beforehand. This keeps the boundary clean — the package isn't a sidecar deployment tool. If we later want one-command CI that brings everything up, the right move is either:
-- a `globalSetup` script in `playwright.config.ts` that shells out to `npm run canton:up && …` (acceptable in dev / CI)
-- a docker-compose meta-service that pre-stages all four packages (more invasive, monorepo-friendly)
-
-Both can be layered later without changing tests.
+This package deliberately requires the stack to be up beforehand rather than
+starting it, which keeps the boundary clean (it is not a deployment tool). One
+command CI can be layered later without touching tests, via a `globalSetup` in
+`playwright.config.ts` that shells out to `npm run canton:up`, or a
+docker-compose meta-service that pre-stages all four packages.
