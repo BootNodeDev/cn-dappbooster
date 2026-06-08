@@ -10,25 +10,46 @@ dApp frontend -> injected CIP-0103 provider -> carpincho-wallet -> wallet-servic
 
 ## Run
 
-Use the root runbook for the full local flow and extension build/load steps:
+For the full local stack, follow the root [quick start](../README.md#quick-start).
 
-- [Root quick start](../README.md#quick-start)
-- [Root wallet step](../README.md#wallet)
-- [Root dApp step](../README.md#dapp)
-
-Optional dev server:
+This package can also run on its own as a web app:
 
 ```bash
 npm run dev
-# serves on http://localhost:3011
+# http://localhost:3011
 ```
 
-## Local Browser Extension
-
-Build and load commands live in the root [wallet step](../README.md#wallet).
+## Browser extension
 
 The extension uses its own `chrome-extension://` origin, so its encrypted vault
-is separate from the development vault at `http://localhost:3011`.
+is separate from the web dev vault at `http://localhost:3011`.
+
+### From the Chrome Web Store
+
+Not yet published.
+
+### From source
+
+```bash
+npm run carpincho:build:extension   # from the repo root
+```
+
+The build output is `carpincho-wallet/dist-extension`. Load it with the steps
+below.
+
+### From a GitHub release
+
+Publishing a GitHub Release builds the extension and attaches a
+`carpincho-wallet-<version>.zip` asset. Download, unpack, and load it with the
+steps below.
+
+### Load an unpacked extension in Chrome
+
+1. Open `chrome://extensions/`.
+2. Enable `Developer mode`.
+3. Click `Load unpacked`.
+4. Select the unpacked extension folder (`carpincho-wallet/dist-extension` for a
+   source build).
 
 ## Runtime Config
 
@@ -41,8 +62,8 @@ WalletConnect fallback still uses `.env.local`:
 
 - `VITE_WC_PROJECT_ID` - optional WalletConnect/Reown project id.
 
-For the full WalletConnect setup, use the root
-[WalletConnect section](../README.md#optional-walletconnect-connect-path).
+For the full WalletConnect setup, see the dApp frontend
+[WalletConnect fallback](../dapp/frontend/README.md#walletconnect-fallback).
 
 ## API Boundary
 

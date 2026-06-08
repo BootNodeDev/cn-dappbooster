@@ -9,18 +9,26 @@ wallet-internal party onboarding.
 
 ## Run
 
-Use the root runbook for startup, health checks, and local mock-mode commands:
+`npm run canton:up` (the root [quick start](../../README.md#quick-start)) brings
+this service up alongside Postgres and Canton. Verify it from the repo root:
 
-- [Root quick start](../../README.md#quick-start)
-- [Root wallet-service step](../../README.md#wallet-service)
+```bash
+npm run wallet-service:health
+```
+
+For host-side iteration with no Docker, run it standalone in [mock mode](#mock-mode):
+
+```bash
+WALLET_SERVICE_MOCK=1 npm run wallet-service:dev
+```
 
 ## Token
 
 Real Canton calls require a bearer token accepted by the local participant.
 For this local stack, wallet-service self-mints that HS256 JWT at boot from
-`CANTON_AUTH_AUDIENCE`, `CANTON_AUTH_SECRET`, and `CANTON_ADMIN_USER_ID`.
-
-Use the root README for the command flow.
+`CANTON_AUTH_AUDIENCE`, `CANTON_AUTH_SECRET`, and `CANTON_ADMIN_USER_ID`, so
+there is no token copy-paste step. These values live in
+[`canton-barebones/.env`](../README.md#auth-config).
 
 ## API Boundary
 

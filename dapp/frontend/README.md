@@ -23,10 +23,8 @@ This package can also run by itself against the configured wallet URL:
 ```bash
 npm install
 npm run dev
+# http://localhost:3012
 ```
-
-For the optional WalletConnect fallback, copy `.env.local.example` to `.env.local`
-and set `VITE_WC_PROJECT_ID` to a WalletConnect/Reown project id.
 
 The Canton network and Carpincho URL are read from `localStorage`. Defaults:
 
@@ -34,6 +32,28 @@ The Canton network and Carpincho URL are read from `localStorage`. Defaults:
 - Carpincho URL: `http://localhost:3011`
 
 The active Carpincho account must already have a Canton party on the participant.
+
+## Connecting
+
+1. Keep `canton:local` in settings.
+2. Click `Connect with Carpincho`.
+3. Approve the request in Carpincho.
+
+## WalletConnect fallback
+
+The Carpincho extension path uses the injected CIP-0103 provider and needs no
+Reown project id. The `Connect with WalletConnect` button is also available, but
+it requires a Reown project id; without one, connecting via WalletConnect throws.
+
+Get a project id from [cloud.reown.com](https://cloud.reown.com), then set
+`VITE_WC_PROJECT_ID` in both `.env.local` files (copy each from its
+`.env.local.example`):
+
+```bash
+# dapp/frontend/.env.local
+# carpincho-wallet/.env.local
+VITE_WC_PROJECT_ID=your_reown_project_id
+```
 
 ## Project shape
 
