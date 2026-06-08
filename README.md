@@ -186,6 +186,28 @@ After downloading and unpacking a release artifact, load it in Chrome with the s
 3. Click `Load unpacked`.
 4. Select the unpacked extension folder (`carpincho-wallet/dist-extension` for a source build).
 
+### Releasing the extension (maintainers)
+
+The extension version is sourced from the monorepo root `package.json`. To cut a release:
+
+1. Bump the version and tag it from the repo root:
+
+   ```bash
+   npm version <x.y.z>
+   ```
+
+   This updates the root `package.json`, commits, and creates the `v<x.y.z>` tag.
+
+2. Push the commit and tag:
+
+   ```bash
+   git push --follow-tags
+   ```
+
+3. Publish a GitHub Release for that tag (the GitHub UI, or `gh release create v<x.y.z>`). Pushing the tag alone does nothing; publishing the Release is what triggers the build.
+
+The `Release` workflow then builds the extension and attaches `carpincho-wallet-<x.y.z>.zip` to the release. It fails if the release tag does not match the root `package.json` version, so steps 1 and 3 must reference the same version.
+
 ## dapp
 
 ```bash
