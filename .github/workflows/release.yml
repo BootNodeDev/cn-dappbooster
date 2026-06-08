@@ -54,7 +54,7 @@ jobs:
           echo "resolved version $VERSION"
 
       - name: Lint
-        run: npm --prefix carpincho-wallet run lint
+        run: npm run lint
 
       - name: Build extension
         run: npm --prefix carpincho-wallet run build:extension

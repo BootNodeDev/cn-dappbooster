@@ -22,7 +22,7 @@ const injectManifestVersion = (): Plugin => ({
   apply: 'build',
   closeBundle() {
     const manifestPath = resolve(__dirname, 'dist-extension/manifest.json')
-    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
+    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as Record<string, unknown>
     manifest.version = manifestVersion
     writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
   },
