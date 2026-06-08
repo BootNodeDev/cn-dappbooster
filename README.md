@@ -186,28 +186,6 @@ After downloading and unpacking a release artifact, load it in Chrome with the s
 3. Click `Load unpacked`.
 4. Select the unpacked extension folder (`carpincho-wallet/dist-extension` for a source build).
 
-### Releasing the extension (maintainers)
-
-The extension version is sourced from the monorepo root `package.json`. To cut a release:
-
-1. Bump the version and tag it from the repo root:
-
-   ```bash
-   npm version <x.y.z>
-   ```
-
-   This updates the root `package.json`, commits, and creates the `v<x.y.z>` tag.
-
-2. Push the commit and tag:
-
-   ```bash
-   git push --follow-tags
-   ```
-
-3. Publish a GitHub Release for that tag (the GitHub UI, or `gh release create v<x.y.z>`). Pushing the tag alone does nothing; publishing the Release is what triggers the build.
-
-The `Release` workflow then builds the extension and attaches `carpincho-wallet-<x.y.z>.zip` to the release. It fails if the release tag does not match the root `package.json` version, so steps 1 and 3 must reference the same version.
-
 ## dapp
 
 ```bash
@@ -256,3 +234,29 @@ Local ports are intentionally assigned in the `3010+` range:
 | Canton health               | `http://localhost:3016` |
 | Canton sequencer public API | `localhost:3017`        |
 | Canton Postgres             | `localhost:3018`        |
+
+## Releasing
+
+Releases are cut from the monorepo root. The root `package.json` `version` is the single source of truth for the release, and publishing a GitHub Release is what builds and publishes the artifacts.
+
+1. Bump the version and tag it from the repo root:
+
+   ```bash
+   npm version <x.y.z>
+   ```
+
+   This updates the root `package.json`, commits, and creates the `v<x.y.z>` tag.
+
+2. Push the commit and tag:
+
+   ```bash
+   git push --follow-tags
+   ```
+
+3. Publish a GitHub Release for that tag (the GitHub UI, or `gh release create v<x.y.z>`). Pushing the tag alone does nothing; publishing the Release is what triggers the build.
+
+The `Release` workflow then builds the release artifacts and attaches them to the release. It fails if the release tag does not match the root `package.json` version, so steps 1 and 3 must reference the same version.
+
+Artifacts produced today:
+
+- `carpincho-wallet-<x.y.z>.zip` — the packaged Carpincho Wallet Chrome extension. Its manifest version is the release version, with any prerelease suffix stripped to stay Chrome-valid (e.g. `0.2.0-rc.1` ships a manifest version of `0.2.0`).
