@@ -51,7 +51,7 @@ cp canton-barebones/.env.example canton-barebones/.env
 
 #### Optional
 
-Only for the WalletConnect fallback. Copy each and set `VITE_WC_PROJECT_ID` (see [Optional: WalletConnect connect path](#optional-walletconnect-connect-path)):
+Only for the WalletConnect fallback. Copy each and set `VITE_WC_PROJECT_ID` (see the dApp frontend [WalletConnect setup](dapp/frontend/README.md#walletconnect-fallback)):
 
 ```bash
 cp carpincho-wallet/.env.local.example carpincho-wallet/.env.local
@@ -95,129 +95,36 @@ For the manual, step-by-step flow (and the underlying `npm` scripts the helper w
 
 ## Quick Start
 
-Run the packages in this order for the local dApp flow.
+Run the packages in this order for the local dApp flow. Each package owns the detail of its step; the links point to it.
 
-## canton-barebones
+1. **Start Canton + wallet-service** ([`canton-barebones`](canton-barebones/README.md)):
 
-Start Canton:
+   ```bash
+   npm run canton:up
+   npm run canton:health
+   ```
 
-```bash
-npm run canton:up
-npm run canton:health
-```
+2. **Build and deploy the Tally DAR** ([`dapp/daml`](dapp/daml/README.md) builds, [`canton-barebones`](canton-barebones/README.md#deploy-a-dar) deploys):
 
-## deploy dars
+   ```bash
+   npm run build-dar -- dapp/daml
+   npm run deploy-dar -- dapp/daml/.daml/dist/quickstart-tally-0.0.1.dar
+   ```
 
-Build:
+3. **Build and load the Carpincho extension** ([`carpincho-wallet`](carpincho-wallet/README.md#browser-extension)):
 
-```bash
-npm run build-dar -- dapp/daml
-```
+   ```bash
+   npm run carpincho:build:extension
+   ```
 
-Make sure Canton is running:
+4. **Start the dApp frontend** ([`dapp/frontend`](dapp/frontend/README.md)):
 
-```bash
-npm run canton:health
-```
+   ```bash
+   npm run app:dev
+   # http://localhost:3012
+   ```
 
-Deploy DAR:
-
-```bash
-npm run deploy-dar -- dapp/daml/.daml/dist/quickstart-tally-0.0.1.dar
-```
-
-Use the same format for any other DAML project and DAR:
-
-```bash
-npm run build-dar -- <path/to/daml/project>
-npm run deploy-dar -- <path/to/file.dar>
-```
-
-`canton:health` must return OK before deploying; otherwise the DAR upload can fail.
-
-## wallet service
-
-Already started by `npm run canton:up`. Verify with:
-
-```bash
-npm run wallet-service:health
-```
-
-The service self-mints its Canton JWT from `CANTON_AUTH_AUDIENCE` / `CANTON_AUTH_SECRET` / `CANTON_ADMIN_USER_ID` in `canton-barebones/.env`, so there is no token copy-paste step.
-
-For host-side iteration (mock mode, no Docker required):
-
-```bash
-WALLET_SERVICE_MOCK=1 npm run wallet-service:dev
-```
-
-## wallet
-
-### Install the extension from the Chrome Web Store
-
-WIP. The extension is not deployed there yet.
-
-### Use the extension from source
-
-Build the extension:
-
-```bash
-npm run carpincho:build:extension
-```
-
-The build output is:
-
-```text
-carpincho-wallet/dist-extension
-```
-
-Then load it in Chrome with the shared steps below.
-
-### Use the extension from GitHub release source
-
-Publishing a GitHub Release automatically builds the extension and attaches a `carpincho-wallet-<version>.zip` asset to that release.
-
-After downloading and unpacking a release artifact, load it in Chrome with the shared steps below.
-
-### Load an unpacked extension in Chrome
-
-1. Open `chrome://extensions/`.
-2. Enable `Developer mode`.
-3. Click `Load unpacked`.
-4. Select the unpacked extension folder (`carpincho-wallet/dist-extension` for a source build).
-
-## dapp
-
-```bash
-npm run app:dev
-```
-
-Open:
-
-```text
-http://localhost:3012
-```
-
-In the frontend:
-
-1. Keep `canton:local` in settings.
-2. Click `Connect with Carpincho`.
-3. Approve the request in Carpincho.
-
-### Optional: WalletConnect connect path
-
-The Carpincho extension path above works through the injected CIP-0103 provider and does not require a Reown project id. The `Connect with WalletConnect` button is also available, but it requires a Reown project id. Without it, connecting via WalletConnect throws.
-
-Get a project id from https://cloud.reown.com, then set `VITE_WC_PROJECT_ID` in both:
-
-```text
-dapp/frontend/.env.local
-carpincho-wallet/.env.local
-```
-
-```bash
-VITE_WC_PROJECT_ID=your_reown_project_id
-```
+For host-side iteration without Docker, see the wallet-service [mock mode](canton-barebones/wallet-service/README.md#mock-mode). For the WalletConnect fallback, see the dApp frontend [WalletConnect setup](dapp/frontend/README.md#walletconnect-fallback).
 
 ## Ports
 
