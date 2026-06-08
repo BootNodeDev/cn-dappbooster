@@ -7,15 +7,19 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: carpincho-release-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
 jobs:
   build-and-upload:
     runs-on: ubuntu-latest
     env:
       TAG: ${{ github.event.release.tag_name }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -24,7 +28,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
         env:
-          HUSKY: 0
+          HUSKY: 0 # disable git hooks in CI checkout
 
       - name: Lint
         run: npm --prefix carpincho-wallet run lint
@@ -32,17 +36,27 @@ jobs:
       - name: Test
         run: npm --prefix carpincho-wallet run test
 
-      - name: Set manifest version from tag
+      - name: Resolve and validate version
         run: |
           VERSION="${TAG#v}"
-          if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+(\.[0-9]+){0,3}$'; then
-            echo "::error::Release tag '$TAG' does not yield a Chrome-valid version (got '$VERSION'; expected numeric major.minor.patch)."
-            exit 1
-          fi
+          export VERSION
+          node -e '
+            const v = process.env.VERSION;
+            const parts = v.split(".");
+            const valid =
+              parts.length >= 1 && parts.length <= 4 &&
+              parts.every((p) => /^(0|[1-9][0-9]{0,4})$/.test(p) && Number(p) <= 65535);
+            if (!valid) {
+              console.error(`::error::Release tag "${process.env.TAG}" does not yield a Chrome-valid version (got "${v}"; expected 1-4 dot-separated integers 0-65535, no leading zeros).`);
+              process.exit(1);
+            }
+          '
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "resolved version $VERSION"
+
+      - name: Set manifest version
+        run: |
           node -e "const f='carpincho-wallet/public/manifest.json';const m=require('./'+f);m.version=process.env.VERSION;require('fs').writeFileSync(f,JSON.stringify(m,null,2)+'\n')"
-          echo "manifest version set to $VERSION"
-        env:
-          VERSION: ${{ github.event.release.tag_name }}
 
       - name: Build extension
         run: npm --prefix carpincho-wallet run build:extension
@@ -50,9 +64,13 @@ jobs:
       - name: Zip extension
         run: |
           cd carpincho-wallet/dist-extension
-          zip -r "$GITHUB_WORKSPACE/carpincho-wallet-${TAG}.zip" .
+          if [ -z "$(ls -A)" ]; then
+            echo "::error::Build output carpincho-wallet/dist-extension is empty; aborting."
+            exit 1
+          fi
+          zip -r "$GITHUB_WORKSPACE/carpincho-wallet-${VERSION}.zip" .
 
       - name: Upload asset to release
-        run: gh release upload "$TAG" "carpincho-wallet-${TAG}.zip" --clobber
+        run: gh release upload "$TAG" "carpincho-wallet-${VERSION}.zip" --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
