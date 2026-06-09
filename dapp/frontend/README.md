@@ -1,91 +1,29 @@
 # dApp Frontend (starter)
 
-A minimal React dApp shell built on `canton-connect-kit`. `App.tsx` wires the
-`ConnectKitProvider` and a `ConnectionBar` (connect via the Carpincho extension
-or WalletConnect, account/lock handling) around a workspace that renders your
-feature components only when the wallet is connected and unlocked.
+A small demo app.
 
-It talks to Carpincho through the injected CIP-0103 provider by default, with
-WalletConnect available as an optional fallback:
-
-```text
-frontend -> injected CIP-0103 provider -> carpincho-wallet -> wallet-service -> Canton participant
-```
-
-Two demo features ship under `src/features/` (`loyalty`, `sign-message`) and are
-meant to be deleted once you start building your own app.
-
-## Run
-
-For the full local stack, follow the root [quick start](../../README.md#quick-start).
-This package can also run by itself against the configured wallet URL:
-
-```bash
-npm install
-npm run dev
-# http://localhost:3012
-```
-
-The Canton network and Carpincho URL are read from `localStorage`. Defaults:
-
-- Canton network: `canton:local`
-- Carpincho URL: `http://localhost:3011`
-
-The active Carpincho account must already have a Canton party on the participant.
+The main feature is a Stampbook: a digital loyalty stamp card living on the
+Canton ledger. A **merchant** issues the card and delegates stamping to their
+**staff**, who hand out stamps to customers. The **cardholder** collects those
+stamps and watches them add up toward a reward. Every stamp is a real Canton
+transaction, so the card is shared, tamper-proof state rather than a number in
+some private database.
 
 ## Connecting
 
-1. Keep `canton:local` in settings.
-2. Click `Connect with Carpincho`.
-3. Approve the request in Carpincho.
+- Click `Connect with Carpincho`.
+- Approve the request in Carpincho.
 
 ## WalletConnect fallback
 
-The Carpincho extension path uses the injected CIP-0103 provider and needs no
-Reown project id. The `Connect with WalletConnect` button is also available, but
-it requires a Reown project id; without one, connecting via WalletConnect throws.
+A `Connect with WalletConnect` button is available, but
+it requires a Reown project id;
 
 Get a project id from [cloud.reown.com](https://cloud.reown.com), then set
-`VITE_WC_PROJECT_ID` in both `.env.local` files (copy each from its
-`.env.local.example`):
+`VITE_WC_PROJECT_ID` in both `.env.local` files:
 
 ```bash
 # dapp/frontend/.env.local
 # carpincho-wallet/.env.local
 VITE_WC_PROJECT_ID=your_reown_project_id
 ```
-
-## Project shape
-
-```text
-src/
-  App.tsx                provider + <ConnectionBar> wrapping the feature slots
-  ConnectionBar.tsx      wallet connectivity: connect/lock UX + workspace gate
-  components/ui/         shared UI primitives (Button, Card, Sheet, TextInput, Tooltip, ToastProvider, icons)
-  theme/                 ThemeProvider + useTheme
-  index.css              shell + base styles
-  runtimeConfig.ts       network / wallet URL (localStorage)
-  utils/                 shared helpers (clipboard, cn, errorMessage, formatPartyId)
-  features/
-    loyalty/             demo feature (DAML-backed stamp card) — removable
-    sign-message/        demo feature (CIP-0103 signMessage)  — removable
-```
-
-A feature folder is self-contained: its component, styles, unit test, and DAML
-signature (loyalty only) live together, and it is wired into the app by a single
-import + render line in `App.tsx`.
-
-## Removing a feature
-
-Each `src/features/<name>/` folder is a removable demo. To drop one:
-
-1. Delete `src/features/<name>/`.
-2. Delete its `import` and its `<…/>` line in `src/App.tsx`.
-3. Delete its e2e specs at `../e2e/tests/features/<name>/`.
-
-To fully remove the **loyalty** specifically, also delete its DAML module
-directory `../daml/daml/Tally/`, then rebuild the DAR and regenerate codegen
-(the frontend's generated types go away with the deleted feature folder).
-
-Delete every feature and you are left with a clean connect-shell starter
-(`App.tsx` + `ConnectionBar`) ready for your own contracts and UI.

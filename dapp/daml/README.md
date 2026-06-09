@@ -1,13 +1,8 @@
 # Tally Daml
 
-The Daml package for the dApp's demo feature. `Tally` is an issuer-owned integer
-counter: the issuer can increment it and grant other parties write or view
-access. `TallyWriter` lets a granted party trigger an increment without being a
-signatory on the counter. It backs the loyalty stamp-card demo in
-[`dapp/frontend`](../frontend/README.md).
+The Daml package for the dApp's demo feature.
 
-This folder owns the app Daml code. The Canton barebones does not keep app DARs
-checked in.
+This folder owns the app Daml code. The Canton barebones does not keep app DARs checked in.
 
 ## Build
 

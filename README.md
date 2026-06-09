@@ -23,19 +23,17 @@ The dApp frontend knows the Tally DAML signature and talks to Carpincho through 
 Prerequisites:
 
 - Node.js 24
-- npm `>=7`
+- npm
 - Docker
 - `dpm` on `PATH` (DAML SDK 3.4.11), required for building DARs
 
-### Recommended: dappbooster installer
+### Recommended
 
 ```bash
 npx dappbooster --canton
 ```
 
 ### Manual
-
-npm workspaces monorepo; one install from the repo root links every package:
 
 ```bash
 npm install
@@ -60,7 +58,7 @@ cp dapp/frontend/.env.local.example dapp/frontend/.env.local
 
 ## Dev stack script
 
-[`scripts/dev-stack.sh`](scripts/dev-stack.sh) automates the manual Quick Start below. Run it with no arguments for an interactive menu (navigate with arrow keys or `j`/`k`, jump with number keys `1`-`9`, select with Enter, quit with `q`):
+[`scripts/dev-stack.sh`](scripts/dev-stack.sh) automates the manual Quick Start below. Run it with no arguments for an interactive menu.
 
 ```bash
 ./scripts/dev-stack.sh
@@ -75,27 +73,21 @@ Or call an action directly:
 | Menu item | Action | What it does |
 |-----------|--------|--------------|
 | Install | `install` | Install and link every workspace from the repo root (`npm install`). |
-| Docker up | `docker-up` | Launch Docker Desktop and wait for the daemon (macOS only). |
+| Docker up | `docker-up` | Launch Docker Desktop (macOS only). |
 | Docker down | `docker-down` | Quit Docker Desktop (macOS only). |
-| Stack up | `up` | Bring up containers, build + deploy the DAR, start the wallet (3011) and dApp (3012) dev servers, build the extension. |
+| Stack up | `up` | Bring up containers, build + deploy the DAR, start the wallet and dApp dev servers, build the extension. |
 | Stack down | `down` | Stop the dev servers and tear down the containers. |
-| Wallet up | `mock-up` | Start the mocked wallet-service (3010) + Carpincho web app (3011) with no Docker. |
-| Wallet down | `mock-down` | Stop the mocked wallet-service + Carpincho web app only. |
-| Build extension | `extension` | Build the Chrome extension and copy it to `~/Desktop/dist-extension`. |
+| Wallet up | `mock-up` | Start the mocked wallet-service + Carpincho web app with no Docker. |
+| Wallet down | `mock-down` | Stop the mocked wallet-service + Carpincho web app. |
+| Build extension | `extension` | Build the Chrome extension and copy it to your desktop. |
 | (CLI only) | `status` | Show running containers and listening ports. |
 
 Notes:
 
 - Docker lifecycle is managed separately from the stack: `up` and `down` assume Docker is already running and never start or quit it. Start/quit Docker with `docker-up` / `docker-down`, the Docker app, or your own CLI.
-- `up` requires Docker running and `dpm` on `PATH` (for the DAR build). It fails fast with a clear message if the daemon is not reachable.
-- Background dev-server PIDs and logs live under `${TMPDIR:-/tmp}/cn-dev-stack/`.
-- The two Docker actions are macOS only; on other platforms they warn and no-op, while every other action runs unchanged.
+- `up` requires Docker running and `dpm` on `PATH` (for the DAR build).
 
-For the manual, step-by-step flow (and the underlying `npm` scripts the helper wraps), follow the rest of this document.
-
-## Quick Start
-
-Run the packages in this order for the local dApp flow. Each package owns the detail of its step; the links point to it.
+## Quick Start (manual)
 
 1. **Start Canton + wallet-service** ([`canton-barebones`](canton-barebones/README.md)):
 
@@ -121,14 +113,11 @@ Run the packages in this order for the local dApp flow. Each package owns the de
 
    ```bash
    npm run app:dev
-   # http://localhost:3012
    ```
 
 For host-side iteration without Docker, see the wallet-service [mock mode](canton-barebones/wallet-service/README.md#mock-mode). For the WalletConnect fallback, see the dApp frontend [WalletConnect setup](dapp/frontend/README.md#walletconnect-fallback).
 
 ## Ports
-
-Local ports are intentionally assigned in the `3010+` range:
 
 | Component                   | URL / Port              |
 | --------------------------- | ----------------------- |
@@ -144,7 +133,7 @@ Local ports are intentionally assigned in the `3010+` range:
 
 ## Releasing
 
-Releases are cut from the monorepo root. The root `package.json` `version` is the single source of truth for the release, and publishing a GitHub Release is what builds and publishes the artifacts.
+The root `package.json` `version` is the single source of truth for the release. Publishing a GitHub Release builds and publishes the artifacts.
 
 1. Bump the version and tag it from the repo root:
 
@@ -160,10 +149,4 @@ Releases are cut from the monorepo root. The root `package.json` `version` is th
    git push --follow-tags
    ```
 
-3. Publish a GitHub Release for that tag (the GitHub UI, or `gh release create v<x.y.z>`). Pushing the tag alone does nothing; publishing the Release is what triggers the build.
-
-The `Release` workflow then builds the release artifacts and attaches them to the release. It fails if the release tag does not match the root `package.json` version, so steps 1 and 3 must reference the same version.
-
-Artifacts produced today:
-
-- `carpincho-wallet-<x.y.z>.zip` — the packaged Carpincho Wallet Chrome extension. Its manifest version is the release version, with any prerelease suffix stripped to stay Chrome-valid (e.g. `0.2.0-rc.1` ships a manifest version of `0.2.0`).
+3. Publish a GitHub Release for that tag (the GitHub UI, or `gh release create v<x.y.z>`).

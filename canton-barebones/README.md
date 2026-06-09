@@ -2,10 +2,6 @@
 
 Minimal local Canton barebones for wallet-first app experiments.
 
-For the full dApp stack, follow the root runbook:
-
-- [Quick Start](../README.md#quick-start)
-
 ## Start
 
 Run only the local Canton participant, Postgres, and wallet-service:
@@ -36,11 +32,6 @@ The participant accepts local/dev HS256 JWTs configured by:
 - `.env`: `CANTON_AUTH_AUDIENCE`, `CANTON_AUTH_SECRET`, `CANTON_ADMIN_USER_ID`
 - [`config/canton/app.conf`](config/canton/app.conf): Canton ledger API auth service
 
-## Ports
-
-Refer to the [ports table in the root README](../README.md#ports) to see the
-ports used by this stack.
-
 ## Deploy a DAR
 
 Compile a Daml project outside this base, then upload the DAR. From the repo
@@ -64,7 +55,4 @@ Or call the upload script directly:
 ./scripts/deploy-dar.sh /path/to/app.dar
 ```
 
-`npm run canton:health` must return OK before deploying; otherwise the DAR
-upload can fail.
-
-This barebones intentionally does not include Keycloak, SV, PQS, frontend, or backend.
+`npm run canton:health` must return OK before deploying; otherwise the DAR upload can fail.
