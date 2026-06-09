@@ -1,6 +1,7 @@
 # Wallet Service
 
-Express JSON-RPC bridge between Carpincho and the local Canton participant.
+Express JSON-RPC bridge between Carpincho and the Splice LocalNet `app-user`
+participant.
 
 It is intentionally app-agnostic: app-specific Daml commands come from the
 consumer, Carpincho owns signing and approval UI, and this service only handles
@@ -16,11 +17,20 @@ Use the root runbook for startup, health checks, and local mock-mode commands:
 
 ## Token
 
-Real Canton calls require a bearer token accepted by the local participant.
-For this local stack, wallet-service self-mints that HS256 JWT at boot from
-`CANTON_AUTH_AUDIENCE`, `CANTON_AUTH_SECRET`, and `CANTON_ADMIN_USER_ID`.
+Real Canton calls require a bearer token accepted by Splice LocalNet.
+wallet-service does not mint this token at boot. It requires
+`CANTON_BACKEND_TOKEN`.
 
-Use the root README for the command flow.
+Generate one from the repo root:
+
+```bash
+npm run canton:token -- ledger-api-user
+```
+
+Paste the printed `CANTON_BACKEND_TOKEN=...` line into
+`canton-barebones/.env`, then start the stack.
+
+Mock mode does not require a token.
 
 ## API Boundary
 
@@ -41,7 +51,7 @@ Service-specific methods:
 | -------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `prepareTransaction` | Carpincho                       | Calls Canton interactive submission prepare and returns the prepared transaction payload/hash for local signing. |
 | `executePrepared`    | Carpincho                       | Submits Carpincho's signature over a prepared transaction to Canton.                                             |
-| `ledgerApi`          | Carpincho on behalf of the dApp | Proxies participant JSON API reads/writes and injects the Canton bearer token.                                   |
+| `ledgerApi`          | Carpincho on behalf of the dApp | Proxies app-user JSON API reads/writes and injects `CANTON_BACKEND_TOKEN`.                                       |
 
 `prepareExecute`, `prepareExecuteAndWait`, and `signMessage` stay in
 Carpincho because they require the user's key and approval UI.
