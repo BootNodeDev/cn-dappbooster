@@ -23,9 +23,11 @@
 #   1. Canton + Postgres + wallet-service containers (npm run canton:up)
 #   2. Health checks (canton + wallet-service)
 #   3. Builds and deploys the Daml DAR (name derived from daml.yaml)
-#   4. Carpincho wallet dev server  -> http://localhost:3011  (background)
+#   4. Carpincho Wallet dev server  -> http://localhost:3011  (background)
 #   5. dApp frontend dev server     -> http://localhost:3012  (background)
 #   6. Builds the Chrome extension and copies it to ~/Desktop/dist-extension
+#
+# Steps 4 and 6 are skipped when the Carpincho Wallet workspace is absent.
 #
 # `down` reverses 4/5 (kills the dev servers) and tears down the containers.
 
@@ -55,6 +57,11 @@ log()  { printf '\033[1;36m==>\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m[!]\033[0m %s\n' "$*"; }
 die()  { printf '\033[1;31m[x]\033[0m %s\n' "$*" >&2; exit 1; }
 
+# Carpincho is an optional workspace; a custom scaffold can omit it. Guard the
+# wallet/extension steps on its presence so the rest of the stack still works.
+# Presence means installable (deps + npm scripts), not just that the dir exists.
+has_carpincho() { [ -d carpincho-wallet ]; }
+
 case "$DAR_NAME" in
   -.dar | -*.dar | *-.dar) die "Could not derive DAR name from $DAML_DIR/daml.yaml (got '$DAR_NAME')" ;;
 esac
@@ -72,6 +79,11 @@ wait_for() { # wait_for <seconds> <logfile> <grep-pattern> <label>
 }
 
 build_extension() {
+  if ! has_carpincho; then
+    log "Carpincho Wallet absent; skipping extension build."
+    return 0
+  fi
+
   # A fresh clone may have no deps yet; one root install links every workspace.
   if [ ! -d node_modules ]; then
     install_deps
@@ -158,7 +170,9 @@ up() {
   npm run deploy-dar -- "$DAR_PATH"
 
   # 4. Carpincho wallet dev server (3011)
-  if lsof -nP -iTCP:3011 -sTCP:LISTEN >/dev/null 2>&1; then
+  if ! has_carpincho; then
+    log "Carpincho Wallet absent; skipping wallet dev server."
+  elif lsof -nP -iTCP:3011 -sTCP:LISTEN >/dev/null 2>&1; then
     warn "Port 3011 already in use; skipping wallet dev server."
   else
     log "Starting Carpincho wallet dev server -> http://localhost:3011"
@@ -182,14 +196,16 @@ up() {
 
   echo
   log "Stack is up:"
-  cat <<EOF
-   wallet-service   http://localhost:3010
-   carpincho wallet http://localhost:3011   (log: $WALLET_LOG)
-   dApp frontend    http://localhost:3012   (log: $DAPP_LOG)
-   Canton JSON API  http://localhost:3013
-   extension folder $EXT_DEST
-EOF
-  echo "   Load the extension via chrome://extensions -> Developer mode -> Load unpacked"
+  echo "   wallet-service   http://localhost:3010"
+  if has_carpincho; then
+    echo "   carpincho wallet http://localhost:3011   (log: $WALLET_LOG)"
+  fi
+  echo "   dApp frontend    http://localhost:3012   (log: $DAPP_LOG)"
+  echo "   Canton JSON API  http://localhost:3013"
+  if has_carpincho; then
+    echo "   extension folder $EXT_DEST"
+    echo "   Load the extension via chrome://extensions -> Developer mode -> Load unpacked"
+  fi
 }
 
 stop_pidfile() { # stop_pidfile <pidfile> <label>
@@ -210,8 +226,11 @@ down() {
   # 1. Dev servers
   stop_pidfile "$WALLET_PID" "wallet dev server"
   stop_pidfile "$DAPP_PID" "dApp dev server"
-  # Belt-and-suspenders: kill any stray vite on our ports.
-  pkill -f "carpincho-wallet run dev" 2>/dev/null || true
+  # Belt-and-suspenders: kill any stray vite on our ports. The guard is cosmetic
+  # (the pkill is already no-op-safe); the stop_pidfile above runs unconditionally.
+  if has_carpincho; then
+    pkill -f "carpincho-wallet run dev" 2>/dev/null || true
+  fi
   pkill -f "vite --host localhost --port 3012" 2>/dev/null || true
 
   # 2. Containers (only if the daemon is reachable). Docker itself is left
@@ -263,7 +282,9 @@ mock_up() {
   fi
 
   # Carpincho web app -> http://localhost:3011
-  if lsof -nP -iTCP:3011 -sTCP:LISTEN >/dev/null 2>&1; then
+  if ! has_carpincho; then
+    log "Carpincho Wallet absent; skipping Carpincho web app."
+  elif lsof -nP -iTCP:3011 -sTCP:LISTEN >/dev/null 2>&1; then
     warn "Port 3011 already in use; skipping carpincho web app."
   else
     log "Starting Carpincho web app -> http://localhost:3011"
@@ -274,10 +295,10 @@ mock_up() {
 
   echo
   log "Mock stack is up:"
-  cat <<EOF
-   mocked wallet-service  http://localhost:3010   (log: $MOCK_WS_LOG)
-   carpincho web app      http://localhost:3011   (log: $WALLET_LOG)
-EOF
+  echo "   mocked wallet-service  http://localhost:3010   (log: $MOCK_WS_LOG)"
+  if has_carpincho; then
+    echo "   carpincho web app      http://localhost:3011   (log: $WALLET_LOG)"
+  fi
   echo "   No Docker / Canton / dApp frontend in this mode. Stop with: $0 mock-down"
 }
 
@@ -287,7 +308,10 @@ mock_down() {
   # Belt-and-suspenders for stray processes on our ports.
   pkill -f "WALLET_SERVICE_MOCK" 2>/dev/null || true
   pkill -f "tsx watch src/server.ts" 2>/dev/null || true
-  pkill -f "carpincho-wallet run dev" 2>/dev/null || true
+  # Guard is cosmetic; the pkill is already no-op-safe.
+  if has_carpincho; then
+    pkill -f "carpincho-wallet run dev" 2>/dev/null || true
+  fi
 
   echo
   log "Mock stack is down. Ports 3010/3011:"
