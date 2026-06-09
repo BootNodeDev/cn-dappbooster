@@ -100,8 +100,21 @@ describe('TokensPanel', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Show holdings' }))
 
+    const firstHoldingCard = screen.getByText('holding-cid-1').closest('dl')
+    assert.ok(firstHoldingCard, 'holding details should be grouped in one UTXO card')
+    assert.match(
+      firstHoldingCard.getAttribute('class') ?? '',
+      /rounded-md/,
+      'each holding UTXO should read as a distinct item',
+    )
+    assert.match(
+      firstHoldingCard.getAttribute('class') ?? '',
+      /bg-surface/,
+      'each holding UTXO should be visually separated from the detail container',
+    )
     assert.equal(screen.getByText('holding-cid-1').textContent, 'holding-cid-1')
     assert.equal(screen.getByText('holding-cid-2').textContent, 'holding-cid-2')
+    assert.equal(screen.queryByText('owner'), null)
     assert.equal(screen.getByText('2026-06-10 20:41 UTC').textContent, '2026-06-10 20:41 UTC')
   })
 

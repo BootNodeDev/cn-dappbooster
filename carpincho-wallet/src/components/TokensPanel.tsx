@@ -117,15 +117,11 @@ export const TokensPanel = ({ account, api, transfersApi }: TokensPanelProps): J
                       return (
                         <dl
                           key={holding.contractId}
-                          className="grid gap-3 border-b border-border pb-3 last:border-b-0 last:pb-0"
+                          className="grid gap-3 rounded-md border border-border bg-surface px-3 py-3"
                         >
                           <HoldingDetailRow
                             label="amount"
                             value={view?.amount ?? 'unknown'}
-                          />
-                          <HoldingDetailRow
-                            label="owner"
-                            value={view?.owner ?? 'unknown'}
                           />
                           <HoldingDetailRow
                             label="lock"
