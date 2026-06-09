@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   tokenDisplayLabel,
   transferDescription,
@@ -16,6 +16,7 @@ import { useVault } from '@/vault/useVault'
 export interface AssetsPanelProps {
   account?: AccountPublic
   api?: Cip56TransferApi
+  onPendingCountChange?: (count: number) => void
 }
 
 interface TransferDetailRowProps {
@@ -32,7 +33,11 @@ const TransferDetailRow = ({ label, value }: TransferDetailRowProps): JSX.Elemen
 )
 
 // Renders incoming CIP-56 transfer instructions that require receiver acceptance.
-export const AssetsPanel = ({ account, api }: AssetsPanelProps): JSX.Element => {
+export const AssetsPanel = ({
+  account,
+  api,
+  onPendingCountChange,
+}: AssetsPanelProps): JSX.Element => {
   const vault = useVault()
   const activeAccount = account ?? vault.primary ?? vault.accounts[0]
   const [acceptingCid, setAcceptingCid] = useState<string | undefined>(undefined)
@@ -42,6 +47,15 @@ export const AssetsPanel = ({ account, api }: AssetsPanelProps): JSX.Element => 
     signMessage: vault.signMessage,
     recordTransaction: vault.recordTransaction,
   })
+
+  // Exposes the hidden Assets polling result to the tab badge while the wallet is open.
+  useEffect(() => {
+    onPendingCountChange?.(transfers.length)
+  }, [onPendingCountChange, transfers.length])
+
+  useEffect(() => {
+    return () => onPendingCountChange?.(0)
+  }, [onPendingCountChange])
 
   // Tracks one open transfer details section at a time to keep the assets list compact.
   const toggleDetails = (transferInstructionCid: string): void => {
