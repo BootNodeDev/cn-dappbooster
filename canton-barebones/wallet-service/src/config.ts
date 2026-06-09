@@ -19,6 +19,11 @@ export interface WalletServiceConfig {
     backendToken?: string
     tokenSource: TokenSource
   }
+  splice: {
+    validatorUrl: string
+    scanApiUrl: string
+    registryApiUrl: string
+  }
 }
 
 const optional = (name: string): string | undefined => {
@@ -77,6 +82,12 @@ export const loadConfig = (): WalletServiceConfig => {
       adminApiUrl: optional('CANTON_ADMIN_API_URL') ?? 'grpc://localhost:3015',
       backendToken: resolved.token,
       tokenSource: resolved.source,
+    },
+    splice: {
+      validatorUrl: optional('SPLICE_VALIDATOR_URL') ?? 'http://localhost:2000/api/validator',
+      scanApiUrl: optional('SPLICE_SCAN_API_URL') ?? 'http://scan.localhost:4000/api/scan',
+      registryApiUrl:
+        optional('SPLICE_REGISTRY_API_URL') ?? 'http://localhost:2000/api/validator/v0/scan-proxy',
     },
   }
 }

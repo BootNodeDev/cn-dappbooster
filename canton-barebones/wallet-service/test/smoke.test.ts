@@ -6,6 +6,9 @@ const CANTON_VARS = [
   'CANTON_BACKEND_TOKEN',
   'CANTON_AUTH_AUDIENCE',
   'CANTON_AUTH_SECRET',
+  'SPLICE_VALIDATOR_URL',
+  'SPLICE_SCAN_API_URL',
+  'SPLICE_REGISTRY_API_URL',
   'WALLET_SERVICE_MOCK',
 ] as const
 
@@ -67,6 +70,39 @@ describe('config loader', () => {
     const config = loadConfig()
     assert.equal(config.canton.tokenSource, 'env')
     assert.equal(config.canton.backendToken, 'explicit.jwt.value')
+  })
+
+  it('defaults Splice service URLs for token and Amulet SDK helpers', () => {
+    // Scenario: wallet-service owns SDK helper configuration so Carpincho can
+    // keep a single wallet-service URL. LocalNet defaults should match the
+    // Splice services exposed by canton-barebones.
+    process.env.CANTON_BACKEND_TOKEN = 'explicit.jwt.value'
+
+    const config = loadConfig()
+
+    assert.deepEqual(config.splice, {
+      validatorUrl: 'http://localhost:2000/api/validator',
+      scanApiUrl: 'http://scan.localhost:4000/api/scan',
+      registryApiUrl: 'http://localhost:2000/api/validator/v0/scan-proxy',
+    })
+  })
+
+  it('allows Splice service URLs to be overridden by environment', () => {
+    // Scenario: non-default LocalNet layouts can move Splice endpoints without
+    // changing Carpincho runtime config. wallet-service reads these values once
+    // at startup and passes them to the SDK namespaces.
+    process.env.CANTON_BACKEND_TOKEN = 'explicit.jwt.value'
+    process.env.SPLICE_VALIDATOR_URL = 'http://validator.example/api/validator'
+    process.env.SPLICE_SCAN_API_URL = 'http://scan.example/api/scan'
+    process.env.SPLICE_REGISTRY_API_URL = 'http://registry.example/api/registry'
+
+    const config = loadConfig()
+
+    assert.deepEqual(config.splice, {
+      validatorUrl: 'http://validator.example/api/validator',
+      scanApiUrl: 'http://scan.example/api/scan',
+      registryApiUrl: 'http://registry.example/api/registry',
+    })
   })
 
   it('mock mode skips minting and leaves backendToken undefined', () => {
