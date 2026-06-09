@@ -107,4 +107,28 @@ describe('Splice LocalNet shell config', () => {
       /COMPOSE_IGNORE_ORPHANS=true docker compose --project-directory "\$ROOT" up -d --build wallet-service/,
     )
   })
+
+  it('passes Docker-reachable Splice URLs into wallet-service', () => {
+    // Scenario: wallet-service runs inside its own container, so URLs that are
+    // valid in a browser, such as localhost, would point back to wallet-service.
+    // The compose config must inject host.docker.internal URLs so SDK helpers
+    // can reach the LocalNet nginx routes from inside Docker.
+    const composeFile = execFileSync('cat', [path.join(projectRoot, 'docker-compose.yaml')], {
+      cwd: projectRoot,
+      encoding: 'utf8',
+    })
+
+    assert.match(
+      composeFile,
+      /SPLICE_VALIDATOR_URL: "\$\{SPLICE_VALIDATOR_URL:-http:\/\/host\.docker\.internal:2000\/api\/validator\}"/,
+    )
+    assert.match(
+      composeFile,
+      /SPLICE_SCAN_API_URL: "\$\{SPLICE_SCAN_API_URL:-http:\/\/host\.docker\.internal:4000\/api\/scan\}"/,
+    )
+    assert.match(
+      composeFile,
+      /SPLICE_REGISTRY_API_URL: "\$\{SPLICE_REGISTRY_API_URL:-http:\/\/host\.docker\.internal:2000\/api\/validator\/v0\/scan-proxy\}"/,
+    )
+  })
 })
