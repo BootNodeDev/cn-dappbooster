@@ -1,13 +1,15 @@
 import { strict as assert } from 'node:assert'
 import { afterEach, describe, it } from 'node:test'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { HomeTabs } from '@/components/HomeTabs'
 import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
+import type { Cip56HoldingsApi } from '@/hooks/useTokenHoldings'
 import type { AccountPublic } from '@/vault/types'
 import { VaultContext, type VaultContextValue } from '@/vault/VaultContext'
 
 const ACCOUNT: AccountPublic = {
-  // Account fixture represents the active wallet party whose Assets tab polls pending transfers.
+  // Account fixture represents the active wallet party whose hidden tabs poll service state.
   id: 'account-1',
   name: 'Alice',
   partyId: 'alice::party',
@@ -17,6 +19,7 @@ const ACCOUNT: AccountPublic = {
   createdAt: 1,
 }
 
+// Builds the minimum unlocked vault context required by HomeTabs child panels.
 const baseVault = (): VaultContextValue =>
   ({
     isLocked: false,
@@ -77,5 +80,38 @@ describe('HomeTabs asset indicators', () => {
 
     assert.equal(screen.getByRole('tab', { name: 'Activity' }).getAttribute('data-state'), 'active')
     await waitFor(() => assert.ok(screen.getByRole('tab', { name: 'Assets 1' })))
+  })
+
+  it('opens the Tokens tab with the current party holdings', async () => {
+    // Scenario: token balances live in their own tab, separate from incoming
+    // transfer requests. Opening Tokens should mount the holdings panel for the
+    // active account and show the grouped balance.
+    const holdingsApi: Cip56HoldingsApi = {
+      listTokenHoldings: async () => [
+        {
+          contractId: 'holding-cid-1',
+          interfaceViewValue: {
+            owner: 'alice::party',
+            amount: '7.0000000000',
+            instrumentId: { admin: 'dso::party', id: 'Amulet' },
+            lock: null,
+          },
+        },
+      ],
+    }
+
+    render(
+      <VaultContext.Provider value={baseVault()}>
+        <HomeTabs
+          transactions={[]}
+          tokensApi={holdingsApi}
+        />
+      </VaultContext.Provider>,
+    )
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Tokens' }))
+
+    await screen.findByText('Token holdings')
+    await screen.findByText('7 Amulet')
   })
 })

@@ -1,20 +1,23 @@
 import { useState } from 'react'
 import { ActivityList } from '@/components/ActivityList'
 import { AssetsPanel } from '@/components/AssetsPanel'
+import { TokensPanel } from '@/components/TokensPanel'
 import { TabContent, Tabs, TabsList, TabTrigger } from '@/components/ui/Tabs'
 import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
+import type { Cip56HoldingsApi } from '@/hooks/useTokenHoldings'
 import type { TransactionRecord } from '@/vault/types'
 
 interface HomeTabsProps {
   transactions: TransactionRecord[]
   assetsApi?: Cip56TransferApi
+  tokensApi?: Cip56HoldingsApi
 }
 
 // The only scrolling region between the account selector and the footer.
 const TAB_CONTENT_CLASS = 'min-h-0 flex-1 overflow-y-auto outline-none'
 
 // Tabbed home body; Assets remains mounted so pending-transfer polling can badge the tab.
-export const HomeTabs = ({ transactions, assetsApi }: HomeTabsProps): JSX.Element => {
+export const HomeTabs = ({ transactions, assetsApi, tokensApi }: HomeTabsProps): JSX.Element => {
   const [pendingTransferCount, setPendingTransferCount] = useState(0)
 
   return (
@@ -32,6 +35,7 @@ export const HomeTabs = ({ transactions, assetsApi }: HomeTabsProps): JSX.Elemen
             </span>
           ) : null}
         </TabTrigger>
+        <TabTrigger value="tokens">Tokens</TabTrigger>
       </TabsList>
       <TabContent
         value="activity"
@@ -48,6 +52,12 @@ export const HomeTabs = ({ transactions, assetsApi }: HomeTabsProps): JSX.Elemen
           api={assetsApi}
           onPendingCountChange={setPendingTransferCount}
         />
+      </TabContent>
+      <TabContent
+        value="tokens"
+        className={TAB_CONTENT_CLASS}
+      >
+        <TokensPanel api={tokensApi} />
       </TabContent>
     </Tabs>
   )
