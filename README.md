@@ -23,19 +23,17 @@ The dApp frontend knows the Tally DAML signature and talks to Carpincho through 
 Prerequisites:
 
 - Node.js 24
-- npm `>=7`
+- npm
 - Docker
 - `dpm` on `PATH` (DAML SDK 3.4.11), required for building DARs
 
-### Recommended: dappbooster installer
+### Recommended
 
 ```bash
 npx dappbooster --canton
 ```
 
 ### Manual
-
-npm workspaces monorepo; one install from the repo root links every package:
 
 ```bash
 npm install
@@ -51,7 +49,7 @@ cp canton-barebones/.env.example canton-barebones/.env
 
 #### Optional
 
-Only for the WalletConnect fallback. Copy each and set `VITE_WC_PROJECT_ID` (see [Optional: WalletConnect connect path](#optional-walletconnect-connect-path)):
+Only for the WalletConnect fallback. Copy each and set `VITE_WC_PROJECT_ID` (see the dApp frontend [WalletConnect setup](dapp/frontend/README.md#walletconnect-fallback)):
 
 ```bash
 cp carpincho-wallet/.env.local.example carpincho-wallet/.env.local
@@ -60,7 +58,7 @@ cp dapp/frontend/.env.local.example dapp/frontend/.env.local
 
 ## Dev stack script
 
-[`scripts/dev-stack.sh`](scripts/dev-stack.sh) automates the manual Quick Start below. Run it with no arguments for an interactive menu (navigate with arrow keys or `j`/`k`, jump with number keys `1`-`9`, select with Enter, quit with `q`):
+[`scripts/dev-stack.sh`](scripts/dev-stack.sh) automates the manual Quick Start below. Run it with no arguments for an interactive menu.
 
 ```bash
 ./scripts/dev-stack.sh
@@ -75,153 +73,51 @@ Or call an action directly:
 | Menu item | Action | What it does |
 |-----------|--------|--------------|
 | Install | `install` | Install and link every workspace from the repo root (`npm install`). |
-| Docker up | `docker-up` | Launch Docker Desktop and wait for the daemon (macOS only). |
+| Docker up | `docker-up` | Launch Docker Desktop (macOS only). |
 | Docker down | `docker-down` | Quit Docker Desktop (macOS only). |
-| Stack up | `up` | Bring up containers, build + deploy the DAR, start the wallet (3011) and dApp (3012) dev servers, build the extension. |
+| Stack up | `up` | Bring up containers, build + deploy the DAR, start the wallet and dApp dev servers, build the extension. |
 | Stack down | `down` | Stop the dev servers and tear down the containers. |
-| Wallet up | `mock-up` | Start the mocked wallet-service (3010) + Carpincho web app (3011) with no Docker. |
-| Wallet down | `mock-down` | Stop the mocked wallet-service + Carpincho web app only. |
-| Build extension | `extension` | Build the Chrome extension and copy it to `~/Desktop/dist-extension`. |
+| Wallet up | `mock-up` | Start the mocked wallet-service + Carpincho web app with no Docker. |
+| Wallet down | `mock-down` | Stop the mocked wallet-service + Carpincho web app. |
+| Build extension | `extension` | Build the Chrome extension and copy it to your desktop. |
 | (CLI only) | `status` | Show running containers and listening ports. |
 
 Notes:
 
 - Docker lifecycle is managed separately from the stack: `up` and `down` assume Docker is already running and never start or quit it. Start/quit Docker with `docker-up` / `docker-down`, the Docker app, or your own CLI.
-- `up` requires Docker running and `dpm` on `PATH` (for the DAR build). It fails fast with a clear message if the daemon is not reachable.
-- Background dev-server PIDs and logs live under `${TMPDIR:-/tmp}/cn-dev-stack/`.
-- The two Docker actions are macOS only; on other platforms they warn and no-op, while every other action runs unchanged.
+- `up` requires Docker running and `dpm` on `PATH` (for the DAR build).
 
-For the manual, step-by-step flow (and the underlying `npm` scripts the helper wraps), follow the rest of this document.
+## Quick Start (manual)
 
-## Quick Start
+1. **Start Canton + wallet-service** ([`canton-barebones`](canton-barebones/README.md)):
 
-Run the packages in this order for the local dApp flow.
+   ```bash
+   npm run canton:up
+   npm run canton:health
+   ```
 
-## canton-barebones
+2. **Build and deploy the Tally DAR** ([`dapp/daml`](dapp/daml/README.md) builds, [`canton-barebones`](canton-barebones/README.md#deploy-a-dar) deploys):
 
-Start Canton:
+   ```bash
+   npm run build-dar -- dapp/daml
+   npm run deploy-dar -- dapp/daml/.daml/dist/quickstart-tally-0.0.1.dar
+   ```
 
-```bash
-npm run canton:up
-npm run canton:health
-```
+3. **Build and load the Carpincho extension** ([`carpincho-wallet`](carpincho-wallet/README.md#browser-extension)):
 
-## deploy dars
+   ```bash
+   npm run carpincho:build:extension
+   ```
 
-Build:
+4. **Start the dApp frontend** ([`dapp/frontend`](dapp/frontend/README.md)):
 
-```bash
-npm run build-dar -- dapp/daml
-```
+   ```bash
+   npm run app:dev
+   ```
 
-Make sure Canton is running:
-
-```bash
-npm run canton:health
-```
-
-Deploy DAR:
-
-```bash
-npm run deploy-dar -- dapp/daml/.daml/dist/quickstart-tally-0.0.1.dar
-```
-
-Use the same format for any other DAML project and DAR:
-
-```bash
-npm run build-dar -- <path/to/daml/project>
-npm run deploy-dar -- <path/to/file.dar>
-```
-
-`canton:health` must return OK before deploying; otherwise the DAR upload can fail.
-
-## wallet service
-
-Already started by `npm run canton:up`. Verify with:
-
-```bash
-npm run wallet-service:health
-```
-
-The service self-mints its Canton JWT from `CANTON_AUTH_AUDIENCE` / `CANTON_AUTH_SECRET` / `CANTON_ADMIN_USER_ID` in `canton-barebones/.env`, so there is no token copy-paste step.
-
-For host-side iteration (mock mode, no Docker required):
-
-```bash
-WALLET_SERVICE_MOCK=1 npm run wallet-service:dev
-```
-
-## wallet
-
-### Install the extension from the Chrome Web Store
-
-WIP. The extension is not deployed there yet.
-
-### Use the extension from source
-
-Build the extension:
-
-```bash
-npm run carpincho:build:extension
-```
-
-The build output is:
-
-```text
-carpincho-wallet/dist-extension
-```
-
-Then load it in Chrome with the shared steps below.
-
-### Use the extension from GitHub release source
-
-Publishing a GitHub Release automatically builds the extension and attaches a `carpincho-wallet-<version>.zip` asset to that release.
-
-After downloading and unpacking a release artifact, load it in Chrome with the shared steps below.
-
-### Load an unpacked extension in Chrome
-
-1. Open `chrome://extensions/`.
-2. Enable `Developer mode`.
-3. Click `Load unpacked`.
-4. Select the unpacked extension folder (`carpincho-wallet/dist-extension` for a source build).
-
-## dapp
-
-```bash
-npm run app:dev
-```
-
-Open:
-
-```text
-http://localhost:3012
-```
-
-In the frontend:
-
-1. Keep `canton:local` in settings.
-2. Click `Connect with Carpincho`.
-3. Approve the request in Carpincho.
-
-### Optional: WalletConnect connect path
-
-The Carpincho extension path above works through the injected CIP-0103 provider and does not require a Reown project id. The `Connect with WalletConnect` button is also available, but it requires a Reown project id. Without it, connecting via WalletConnect throws.
-
-Get a project id from https://cloud.reown.com, then set `VITE_WC_PROJECT_ID` in both:
-
-```text
-dapp/frontend/.env.local
-carpincho-wallet/.env.local
-```
-
-```bash
-VITE_WC_PROJECT_ID=your_reown_project_id
-```
+For host-side iteration without Docker, see the wallet-service [mock mode](canton-barebones/wallet-service/README.md#mock-mode). For the WalletConnect fallback, see the dApp frontend [WalletConnect setup](dapp/frontend/README.md#walletconnect-fallback).
 
 ## Ports
-
-Local ports are intentionally assigned in the `3010+` range:
 
 | Component                   | URL / Port              |
 | --------------------------- | ----------------------- |
@@ -237,7 +133,7 @@ Local ports are intentionally assigned in the `3010+` range:
 
 ## Releasing
 
-Releases are cut from the monorepo root. The root `package.json` `version` is the single source of truth for the release, and publishing a GitHub Release is what builds and publishes the artifacts.
+The root `package.json` `version` is the single source of truth for the release. Publishing a GitHub Release builds and publishes the artifacts.
 
 1. Bump the version and tag it from the repo root:
 
@@ -253,10 +149,4 @@ Releases are cut from the monorepo root. The root `package.json` `version` is th
    git push --follow-tags
    ```
 
-3. Publish a GitHub Release for that tag (the GitHub UI, or `gh release create v<x.y.z>`). Pushing the tag alone does nothing; publishing the Release is what triggers the build.
-
-The `Release` workflow then builds the release artifacts and attaches them to the release. It fails if the release tag does not match the root `package.json` version, so steps 1 and 3 must reference the same version.
-
-Artifacts produced today:
-
-- `carpincho-wallet-<x.y.z>.zip` — the packaged Carpincho Wallet Chrome extension. Its manifest version is the release version, with any prerelease suffix stripped to stay Chrome-valid (e.g. `0.2.0-rc.1` ships a manifest version of `0.2.0`).
+3. Publish a GitHub Release for that tag (the GitHub UI, or `gh release create v<x.y.z>`).
