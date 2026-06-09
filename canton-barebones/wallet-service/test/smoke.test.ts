@@ -6,7 +6,6 @@ const CANTON_VARS = [
   'CANTON_BACKEND_TOKEN',
   'CANTON_AUTH_AUDIENCE',
   'CANTON_AUTH_SECRET',
-  'CANTON_AUTH_USER_ID',
   'WALLET_SERVICE_MOCK',
 ] as const
 
@@ -47,12 +46,11 @@ describe('config loader', () => {
     )
   })
 
-  it('does not use CANTON_AUTH_* to mint a wallet-service token', () => {
-    // Scenario: CANTON_AUTH_* is only a token-generation recipe for scripts.
+  it('does not use the local signing recipe to mint a wallet-service token', () => {
+    // Scenario: the local signing recipe is only for scripts.
     // The runtime service must still fail until CANTON_BACKEND_TOKEN is set.
     process.env.CANTON_AUTH_AUDIENCE = 'https://canton.network.global'
     process.env.CANTON_AUTH_SECRET = 'unsafe'
-    process.env.CANTON_AUTH_USER_ID = 'ledger-api-user'
 
     assert.throws(
       () => loadConfig(),
@@ -64,7 +62,7 @@ describe('config loader', () => {
     // Scenario: the explicit backend token is the only accepted real-mode
     // credential source, and it is passed through unchanged to SDK calls.
     process.env.CANTON_BACKEND_TOKEN = 'explicit.jwt.value'
-    process.env.CANTON_AUTH_AUDIENCE = 'https://canton-barebones.local'
+    process.env.CANTON_AUTH_AUDIENCE = 'https://canton.network.global'
     process.env.CANTON_AUTH_SECRET = 'unsafe'
     const config = loadConfig()
     assert.equal(config.canton.tokenSource, 'env')
@@ -75,7 +73,7 @@ describe('config loader', () => {
     // Scenario: mock mode is used for wallet-only UI iteration and must not
     // require any LocalNet token because all Canton calls are short-circuited.
     process.env.WALLET_SERVICE_MOCK = '1'
-    process.env.CANTON_AUTH_AUDIENCE = 'https://canton-barebones.local'
+    process.env.CANTON_AUTH_AUDIENCE = 'https://canton.network.global'
     process.env.CANTON_AUTH_SECRET = 'unsafe'
     const config = loadConfig()
     assert.equal(config.canton.tokenSource, 'none')

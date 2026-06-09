@@ -16,7 +16,6 @@ export interface WalletServiceConfig {
     jsonApiUrl: string
     ledgerApiUrl: string
     adminApiUrl: string
-    backendUserId: string
     backendToken?: string
     tokenSource: TokenSource
   }
@@ -54,8 +53,6 @@ const resolveToken = (): { token?: string; source: TokenSource } => {
 }
 
 export const loadConfig = (): WalletServiceConfig => {
-  const backendUserId =
-    optional('CANTON_AUTH_USER_ID') ?? optional('CANTON_ADMIN_USER_ID') ?? 'ledger-api-user'
   const resolved = resolveToken()
   return {
     port: optionalNumber('WALLET_SERVICE_PORT', 3010),
@@ -78,7 +75,6 @@ export const loadConfig = (): WalletServiceConfig => {
       jsonApiUrl: optional('CANTON_JSON_API_URL') ?? 'http://localhost:3013',
       ledgerApiUrl: optional('CANTON_LEDGER_API_URL') ?? 'grpc://localhost:3014',
       adminApiUrl: optional('CANTON_ADMIN_API_URL') ?? 'grpc://localhost:3015',
-      backendUserId,
       backendToken: resolved.token,
       tokenSource: resolved.source,
     },

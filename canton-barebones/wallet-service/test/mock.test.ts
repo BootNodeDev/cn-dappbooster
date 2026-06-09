@@ -17,7 +17,6 @@ const baseConfig = () => ({
     jsonApiUrl: 'http://localhost:3013',
     ledgerApiUrl: 'grpc://localhost:3014',
     adminApiUrl: 'grpc://localhost:3015',
-    backendUserId: 'wallet-service',
     backendToken: undefined as string | undefined,
     tokenSource: 'none' as const,
   },

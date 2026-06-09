@@ -428,7 +428,6 @@ export const createRpc = (config: WalletServiceConfig): Rpc => {
       jsonApiUrl: config.canton.jsonApiUrl,
       ledgerApiUrl: config.canton.ledgerApiUrl,
       adminApiUrl: config.canton.adminApiUrl,
-      backendUserId: config.canton.backendUserId,
       hasBackendToken: config.canton.backendToken !== undefined,
     },
   })
