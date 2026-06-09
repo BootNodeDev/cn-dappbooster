@@ -3,6 +3,7 @@ import { afterEach, describe, it } from 'node:test'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HomeTabs } from '@/components/HomeTabs'
+import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
 import type { Cip56HoldingsApi } from '@/hooks/useTokenHoldings'
 import type { AccountPublic } from '@/vault/types'
 import { VaultContext, type VaultContextValue } from '@/vault/VaultContext'
@@ -93,5 +94,43 @@ describe('HomeTabs token navigation', () => {
 
     await screen.findByText('Token holdings')
     await screen.findByText('7 Amulet')
+  })
+
+  it('badges the Tokens tab when hidden incoming transfers require action', async () => {
+    // Scenario: incoming transfer polling moved from the deleted Assets tab to
+    // Tokens. The Tokens panel must stay mounted while Activity is selected so
+    // pending receiver-acceptance work can still badge the tab.
+    const transfersApi: Cip56TransferApi = {
+      listPendingIncomingTransfers: async () => [
+        {
+          contractId: 'transfer-cid-1',
+          interfaceViewValue: {
+            transfer: {
+              sender: 'sender-party',
+              receiver: 'alice::party',
+              amount: '42',
+              instrumentId: { id: 'Amulet' },
+            },
+          },
+        },
+      ],
+      acceptTransfer: async () => ({ updateId: 'update-1' }),
+    }
+    const holdingsApi: Cip56HoldingsApi = {
+      listTokenHoldings: async () => [],
+    }
+
+    render(
+      <VaultContext.Provider value={baseVault()}>
+        <HomeTabs
+          transactions={[]}
+          tokensApi={holdingsApi}
+          transfersApi={transfersApi}
+        />
+      </VaultContext.Provider>,
+    )
+
+    assert.equal(screen.getByRole('tab', { name: 'Activity' }).getAttribute('data-state'), 'active')
+    await screen.findByRole('tab', { name: 'Tokens 1' })
   })
 })

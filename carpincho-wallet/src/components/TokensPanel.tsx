@@ -12,6 +12,7 @@ export interface TokensPanelProps {
   account?: AccountPublic
   api?: Cip56HoldingsApi
   transfersApi?: Cip56TransferApi
+  onPendingTransferCountChange?: (count: number) => void
 }
 
 interface HoldingDetailRowProps {
@@ -28,7 +29,12 @@ const HoldingDetailRow = ({ label, value }: HoldingDetailRowProps): JSX.Element 
 )
 
 // Renders active CIP-56 token holding UTXOs grouped as token balances.
-export const TokensPanel = ({ account, api, transfersApi }: TokensPanelProps): JSX.Element => {
+export const TokensPanel = ({
+  account,
+  api,
+  transfersApi,
+  onPendingTransferCountChange,
+}: TokensPanelProps): JSX.Element => {
   const vault = useVault()
   const activeAccount = account ?? vault.primary ?? vault.accounts[0]
   const [expandedTokenKey, setExpandedTokenKey] = useState<string | undefined>(undefined)
@@ -53,6 +59,7 @@ export const TokensPanel = ({ account, api, transfersApi }: TokensPanelProps): J
         account={activeAccount}
         api={transfersApi}
         hideWhenEmpty
+        onPendingCountChange={onPendingTransferCountChange}
       />
 
       <div className="flex items-center justify-between gap-3 px-1">
