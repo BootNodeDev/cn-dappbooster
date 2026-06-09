@@ -1,9 +1,8 @@
 import { strict as assert } from 'node:assert'
 import { afterEach, describe, it } from 'node:test'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HomeTabs } from '@/components/HomeTabs'
-import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
 import type { Cip56HoldingsApi } from '@/hooks/useTokenHoldings'
 import type { AccountPublic } from '@/vault/types'
 import { VaultContext, type VaultContextValue } from '@/vault/VaultContext'
@@ -43,51 +42,24 @@ const baseVault = (): VaultContextValue =>
     setAutoLockOption: () => undefined,
   }) as VaultContextValue
 
-describe('HomeTabs asset indicators', () => {
+describe('HomeTabs token navigation', () => {
   afterEach(() => {
-    // The force-mounted Assets tab owns a polling hook, so unmount it between scenarios.
+    // HomeTabs child panels can own polling hooks, so unmount them between scenarios.
     cleanup()
   })
 
-  it('shows a pending-transfer count on the Assets tab while Activity is selected', async () => {
-    // Scenario: incoming Amulet transfers require action even when the user is
-    // looking at Activity. The Assets panel should stay mounted while hidden so
-    // its polling result can drive a compact tab indicator.
-    const api: Cip56TransferApi = {
-      listPendingIncomingTransfers: async () => [
-        {
-          contractId: 'transfer-cid-1',
-          interfaceViewValue: {
-            transfer: {
-              sender: 'sender-party',
-              amount: '42',
-              instrumentId: { id: 'Amulet' },
-            },
-          },
-        },
-      ],
-      acceptTransfer: async () => ({ updateId: 'update-1' }),
-    }
-
+  it('renders Activity and Tokens tabs without the former Assets tab', () => {
+    // Scenario: token balances and incoming token actions now live under Tokens.
+    // The top-level wallet navigation should expose only Activity and Tokens.
     render(
       <VaultContext.Provider value={baseVault()}>
-        <HomeTabs
-          transactions={[]}
-          assetsApi={api}
-        />
+        <HomeTabs transactions={[]} />
       </VaultContext.Provider>,
     )
 
     assert.equal(screen.getByRole('tab', { name: 'Activity' }).getAttribute('data-state'), 'active')
-    await waitFor(() => assert.ok(screen.getByRole('tab', { name: 'Assets 1' })))
-    const incomingHeading = await screen.findByText('Incoming transfers')
-    const inactivePanel = incomingHeading.closest('[data-state="inactive"]')
-    assert.ok(inactivePanel, 'incoming transfer content should stay mounted in an inactive tab')
-    assert.match(
-      inactivePanel.getAttribute('class') ?? '',
-      /data-\[state=inactive\]:hidden/,
-      'inactive tab content must not be visible in Activity',
-    )
+    assert.ok(screen.getByRole('tab', { name: 'Tokens' }))
+    assert.equal(screen.queryByRole('tab', { name: /Assets/ }), null)
   })
 
   it('opens the Tokens tab with the current party holdings', async () => {
