@@ -1,6 +1,11 @@
 import { useState } from 'react'
-import { tokenDisplayLabel } from '@/cip56/transfers'
-import { PrimaryButton } from '@/components/ui/Button'
+import {
+  tokenDisplayLabel,
+  transferDescription,
+  transferStatusLabel,
+  transferTimeLabel,
+} from '@/cip56/transfers'
+import { PrimaryButton, SecondaryButton } from '@/components/ui/Button'
 import { toast } from '@/components/ui/toast'
 import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
 import { usePendingCip56Transfers } from '@/hooks/usePendingCip56Transfers'
@@ -13,17 +18,39 @@ export interface AssetsPanelProps {
   api?: Cip56TransferApi
 }
 
+interface TransferDetailRowProps {
+  label: string
+  value: string
+}
+
+// Keeps long Canton identifiers readable without hiding the full value in the details area.
+const TransferDetailRow = ({ label, value }: TransferDetailRowProps): JSX.Element => (
+  <div className="grid gap-1">
+    <dt className="text-[0.7rem] font-semibold uppercase text-muted-foreground">{label}</dt>
+    <dd className="m-0 break-all font-mono text-[0.74rem] leading-5 text-foreground">{value}</dd>
+  </div>
+)
+
 // Renders incoming CIP-56 transfer instructions that require receiver acceptance.
 export const AssetsPanel = ({ account, api }: AssetsPanelProps): JSX.Element => {
   const vault = useVault()
   const activeAccount = account ?? vault.primary ?? vault.accounts[0]
   const [acceptingCid, setAcceptingCid] = useState<string | undefined>(undefined)
+  const [expandedCid, setExpandedCid] = useState<string | undefined>(undefined)
   const { transfers, loading, error, accept } = usePendingCip56Transfers(activeAccount, {
     api,
     signMessage: vault.signMessage,
     recordTransaction: vault.recordTransaction,
   })
 
+  // Tracks one open transfer details section at a time to keep the assets list compact.
+  const toggleDetails = (transferInstructionCid: string): void => {
+    setExpandedCid((current) =>
+      current === transferInstructionCid ? undefined : transferInstructionCid,
+    )
+  }
+
+  // Runs the receiver-acceptance flow while keeping the button state scoped to one transfer.
   const onAccept = async (transferInstructionCid: string): Promise<void> => {
     setAcceptingCid(transferInstructionCid)
     try {
@@ -70,7 +97,10 @@ export const AssetsPanel = ({ account, api }: AssetsPanelProps): JSX.Element => 
             const label = `${transferView?.amount ?? 'unknown'} ${tokenDisplayLabel(
               transferView?.instrumentId,
             )}`
+            const description = transferDescription(transfer)
             const isAccepting = acceptingCid === transfer.contractId
+            const isExpanded = expandedCid === transfer.contractId
+            const detailsId = `transfer-details-${transfer.contractId}`
             return (
               <article
                 key={transfer.contractId}
@@ -79,6 +109,11 @@ export const AssetsPanel = ({ account, api }: AssetsPanelProps): JSX.Element => 
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="m-0 text-[0.95rem] font-semibold text-foreground">{label}</p>
+                    {description === undefined ? null : (
+                      <p className="m-0 mt-1 text-[0.83rem] leading-5 text-foreground">
+                        {description}
+                      </p>
+                    )}
                     <p className="m-0 mt-1 font-mono text-[0.76rem] text-muted-foreground">
                       from:{' '}
                       {transferView?.sender === undefined
@@ -86,16 +121,57 @@ export const AssetsPanel = ({ account, api }: AssetsPanelProps): JSX.Element => 
                         : shortMiddle(transferView.sender, 10, 6)}
                     </p>
                   </div>
-                  <PrimaryButton
-                    className="shrink-0 px-3 py-1.5 text-[0.82rem]"
-                    disabled={isAccepting}
-                    onClick={() => {
-                      void onAccept(transfer.contractId)
-                    }}
-                  >
-                    {isAccepting ? 'Accepting...' : 'Accept'}
-                  </PrimaryButton>
+                  <div className="flex shrink-0 flex-col gap-2">
+                    <PrimaryButton
+                      className="px-3 py-1.5 text-[0.82rem]"
+                      disabled={isAccepting}
+                      onClick={() => {
+                        void onAccept(transfer.contractId)
+                      }}
+                    >
+                      {isAccepting ? 'Accepting...' : 'Accept'}
+                    </PrimaryButton>
+                    <SecondaryButton
+                      aria-controls={detailsId}
+                      aria-expanded={isExpanded}
+                      className="px-3 py-1.5 text-[0.78rem]"
+                      onClick={() => toggleDetails(transfer.contractId)}
+                    >
+                      {isExpanded ? 'Hide details' : 'Show details'}
+                    </SecondaryButton>
+                  </div>
                 </div>
+                {isExpanded ? (
+                  <dl
+                    id={detailsId}
+                    className="mt-3 grid gap-3 rounded-md border border-border bg-background/60 p-3"
+                  >
+                    <TransferDetailRow
+                      label="status"
+                      value={transferStatusLabel(transfer)}
+                    />
+                    <TransferDetailRow
+                      label="requested"
+                      value={transferTimeLabel(transferView?.requestedAt)}
+                    />
+                    <TransferDetailRow
+                      label="expires"
+                      value={transferTimeLabel(transferView?.executeBefore)}
+                    />
+                    <TransferDetailRow
+                      label="sender"
+                      value={transferView?.sender ?? 'unknown'}
+                    />
+                    <TransferDetailRow
+                      label="receiver"
+                      value={transferView?.receiver ?? 'unknown'}
+                    />
+                    <TransferDetailRow
+                      label="contract id"
+                      value={transfer.contractId}
+                    />
+                  </dl>
+                ) : null}
               </article>
             )
           })}
