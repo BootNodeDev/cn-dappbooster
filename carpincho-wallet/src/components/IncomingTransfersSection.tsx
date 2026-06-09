@@ -13,9 +13,10 @@ import { shortMiddle } from '@/utils/account'
 import type { AccountPublic } from '@/vault/types'
 import { useVault } from '@/vault/useVault'
 
-export interface AssetsPanelProps {
+export interface IncomingTransfersSectionProps {
   account?: AccountPublic
   api?: Cip56TransferApi
+  hideWhenEmpty?: boolean
   onPendingCountChange?: (count: number) => void
 }
 
@@ -33,11 +34,12 @@ const TransferDetailRow = ({ label, value }: TransferDetailRowProps): JSX.Elemen
 )
 
 // Renders incoming CIP-56 transfer instructions that require receiver acceptance.
-export const AssetsPanel = ({
+export const IncomingTransfersSection = ({
   account,
   api,
+  hideWhenEmpty = false,
   onPendingCountChange,
-}: AssetsPanelProps): JSX.Element => {
+}: IncomingTransfersSectionProps): JSX.Element | null => {
   const vault = useVault()
   const activeAccount = account ?? vault.primary ?? vault.accounts[0]
   const [acceptingCid, setAcceptingCid] = useState<string | undefined>(undefined)
@@ -48,7 +50,7 @@ export const AssetsPanel = ({
     recordTransaction: vault.recordTransaction,
   })
 
-  // Exposes the hidden Assets polling result to the tab badge while the wallet is open.
+  // Exposes the pending count to any parent that wants to surface action badges.
   useEffect(() => {
     onPendingCountChange?.(transfers.length)
   }, [onPendingCountChange, transfers.length])
@@ -78,11 +80,18 @@ export const AssetsPanel = ({
   }
 
   if (activeAccount === undefined) {
+    if (hideWhenEmpty) {
+      return null
+    }
     return (
       <div className="flex h-full flex-col items-center justify-center px-4 py-10 text-center">
         <p className="m-0 text-[0.95rem] font-medium text-muted-foreground">No account selected</p>
       </div>
     )
+  }
+
+  if (hideWhenEmpty && transfers.length === 0) {
+    return null
   }
 
   return (

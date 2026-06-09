@@ -3,6 +3,7 @@ import { afterEach, describe, it } from 'node:test'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TokensPanel } from '@/components/TokensPanel'
+import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
 import type { Cip56HoldingsApi } from '@/hooks/useTokenHoldings'
 import type { AccountPublic } from '@/vault/types'
 import { VaultContext, type VaultContextValue } from '@/vault/VaultContext'
@@ -43,10 +44,13 @@ const baseVault = (): VaultContextValue =>
   }) as VaultContextValue
 
 // Mounts the panel under vault context so it can resolve the active account.
-const renderTokens = (api: Cip56HoldingsApi): void => {
+const renderTokens = (api: Cip56HoldingsApi, transfersApi?: Cip56TransferApi): void => {
   render(
     <VaultContext.Provider value={baseVault()}>
-      <TokensPanel api={api} />
+      <TokensPanel
+        api={api}
+        transfersApi={transfersApi}
+      />
     </VaultContext.Provider>,
   )
 }
@@ -99,5 +103,73 @@ describe('TokensPanel', () => {
     assert.equal(screen.getByText('holding-cid-1').textContent, 'holding-cid-1')
     assert.equal(screen.getByText('holding-cid-2').textContent, 'holding-cid-2')
     assert.equal(screen.getByText('2026-06-10 20:41 UTC').textContent, '2026-06-10 20:41 UTC')
+  })
+
+  it('shows incoming transfers only when the active party has pending receipts', async () => {
+    // Scenario: Tokens combines balances with token actions. Incoming transfers
+    // should appear above holdings when pending, and disappear when the API has none.
+    const holdingsApi: Cip56HoldingsApi = {
+      listTokenHoldings: async () => [
+        {
+          contractId: 'holding-cid-1',
+          interfaceViewValue: {
+            owner: 'alice::party',
+            amount: '7.0000000000',
+            instrumentId: { admin: 'dso::party', id: 'Amulet' },
+            lock: null,
+          },
+        },
+      ],
+    }
+    const transfersApi: Cip56TransferApi = {
+      listPendingIncomingTransfers: async () => [
+        {
+          contractId: 'transfer-cid-1',
+          interfaceViewValue: {
+            transfer: {
+              sender: 'sender-party-1234567890abcdef',
+              receiver: 'alice::party',
+              amount: '42',
+              instrumentId: { id: 'Amulet' },
+            },
+          },
+        },
+      ],
+      acceptTransfer: async () => ({ updateId: 'update-1' }),
+    }
+
+    renderTokens(holdingsApi, transfersApi)
+
+    await screen.findByText('Incoming transfers')
+    await screen.findByText('42 Amulet')
+    await screen.findByText('7 Amulet')
+  })
+
+  it('hides the incoming transfer section when there are no pending receipts', async () => {
+    // Scenario: an empty incoming-transfer list should not take vertical space
+    // in Tokens; holdings remain the only visible token section.
+    const holdingsApi: Cip56HoldingsApi = {
+      listTokenHoldings: async () => [
+        {
+          contractId: 'holding-cid-1',
+          interfaceViewValue: {
+            owner: 'alice::party',
+            amount: '7.0000000000',
+            instrumentId: { admin: 'dso::party', id: 'Amulet' },
+            lock: null,
+          },
+        },
+      ],
+    }
+    const transfersApi: Cip56TransferApi = {
+      listPendingIncomingTransfers: async () => [],
+      acceptTransfer: async () => ({ updateId: 'update-1' }),
+    }
+
+    renderTokens(holdingsApi, transfersApi)
+
+    await screen.findByText('7 Amulet')
+    assert.equal(screen.queryByText('Incoming transfers'), null)
+    assert.equal(screen.queryByText('No pending transfers'), null)
   })
 })

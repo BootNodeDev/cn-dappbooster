@@ -56,7 +56,7 @@ describe('usePendingCip56Transfers', () => {
   })
 
   it('loads pending transfers immediately and refreshes after accept', async () => {
-    // Scenario: opening the Assets tab should show the current pending transfer
+    // Scenario: opening the token actions view should show the current pending transfer
     // list, then accepting one should ask the API to accept and refresh the list.
     const calls: string[] = []
     const api: Cip56TransferApi = {

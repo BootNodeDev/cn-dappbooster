@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { transferTimeLabel } from '@/cip56/transfers'
+import { IncomingTransfersSection } from '@/components/IncomingTransfersSection'
 import { SecondaryButton } from '@/components/ui/Button'
+import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
 import type { Cip56HoldingsApi } from '@/hooks/useTokenHoldings'
 import { useTokenHoldings } from '@/hooks/useTokenHoldings'
 import type { AccountPublic } from '@/vault/types'
@@ -9,6 +11,7 @@ import { useVault } from '@/vault/useVault'
 export interface TokensPanelProps {
   account?: AccountPublic
   api?: Cip56HoldingsApi
+  transfersApi?: Cip56TransferApi
 }
 
 interface HoldingDetailRowProps {
@@ -25,7 +28,7 @@ const HoldingDetailRow = ({ label, value }: HoldingDetailRowProps): JSX.Element 
 )
 
 // Renders active CIP-56 token holding UTXOs grouped as token balances.
-export const TokensPanel = ({ account, api }: TokensPanelProps): JSX.Element => {
+export const TokensPanel = ({ account, api, transfersApi }: TokensPanelProps): JSX.Element => {
   const vault = useVault()
   const activeAccount = account ?? vault.primary ?? vault.accounts[0]
   const [expandedTokenKey, setExpandedTokenKey] = useState<string | undefined>(undefined)
@@ -46,6 +49,12 @@ export const TokensPanel = ({ account, api }: TokensPanelProps): JSX.Element => 
 
   return (
     <div className="flex min-h-full flex-col gap-3 px-1 py-2">
+      <IncomingTransfersSection
+        account={activeAccount}
+        api={transfersApi}
+        hideWhenEmpty
+      />
+
       <div className="flex items-center justify-between gap-3 px-1">
         <h2 className="m-0 text-[0.95rem] font-semibold text-foreground">Token holdings</h2>
         {loading ? <span className="text-[0.78rem] text-muted-foreground">Refreshing</span> : null}

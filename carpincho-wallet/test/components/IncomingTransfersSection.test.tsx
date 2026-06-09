@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert'
 import { afterEach, describe, it } from 'node:test'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { AssetsPanel } from '@/components/AssetsPanel'
+import { IncomingTransfersSection } from '@/components/IncomingTransfersSection'
 import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
 import type { AccountPublic } from '@/vault/types'
 import { VaultContext, type VaultContextValue } from '@/vault/VaultContext'
@@ -41,15 +41,16 @@ const baseVault = (): VaultContextValue =>
     setAutoLockOption: () => undefined,
   }) as VaultContextValue
 
-const renderAssets = (api: Cip56TransferApi): void => {
+// Mounts incoming transfers under vault context so accept can use wallet signing hooks.
+const renderIncomingTransfers = (api: Cip56TransferApi): void => {
   render(
     <VaultContext.Provider value={baseVault()}>
-      <AssetsPanel api={api} />
+      <IncomingTransfersSection api={api} />
     </VaultContext.Provider>,
   )
 }
 
-describe('AssetsPanel', () => {
+describe('IncomingTransfersSection', () => {
   afterEach(() => {
     // Each render owns a hook polling loop; cleanup unmounts it before the next scenario.
     cleanup()
@@ -85,7 +86,7 @@ describe('AssetsPanel', () => {
       },
     }
 
-    renderAssets(api)
+    renderIncomingTransfers(api)
 
     await screen.findByText('Incoming transfers')
     await screen.findByText('42 Amulet')
@@ -126,7 +127,7 @@ describe('AssetsPanel', () => {
       acceptTransfer: async () => ({ updateId: 'update-1' }),
     }
 
-    renderAssets(api)
+    renderIncomingTransfers(api)
 
     await screen.findByText('666.0000000000 Amulet')
     assert.equal(screen.getByText('invoice 42').textContent, 'invoice 42')
