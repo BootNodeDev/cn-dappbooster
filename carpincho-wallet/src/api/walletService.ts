@@ -34,6 +34,24 @@ export interface WalletServiceRequestOptions {
   rpcUrl?: string
 }
 
+export interface WalletServiceStatusResponse {
+  connection?: {
+    isConnected?: boolean
+    isNetworkConnected?: boolean
+    reason?: string
+    networkReason?: string
+  }
+  network?: {
+    networkId?: string
+    ledgerApi?: string
+    accessToken?: string
+  }
+  session?: {
+    accessToken?: string
+    userId?: string
+  }
+}
+
 const rpcUrl = (options?: WalletServiceRequestOptions): string =>
   options?.rpcUrl?.trim() === undefined || options.rpcUrl.trim() === ''
     ? loadRuntimeConfig().walletServiceRpcUrl
@@ -69,6 +87,26 @@ export const walletServiceRequest = async <T>(
   }
   return payload.result as T
 }
+
+// Reads the wallet-service dApp status so Carpincho uses the same network source as wallet-gateway.
+export const walletServiceStatus = async (
+  options?: WalletServiceRequestOptions,
+): Promise<WalletServiceStatusResponse> =>
+  await walletServiceRequest<WalletServiceStatusResponse>('status', undefined, options)
+
+// Extracts the active network id and fails when wallet-service cannot provide one.
+export const networkIdFromWalletServiceStatus = (status: WalletServiceStatusResponse): string => {
+  const networkId = status.network?.networkId?.trim()
+  if (networkId === undefined || networkId === '') {
+    throw new Error('wallet-service status did not include networkId')
+  }
+  return networkId
+}
+
+// Discovers the active Canton network from wallet-service status.
+export const getWalletServiceNetworkId = async (
+  options?: WalletServiceRequestOptions,
+): Promise<string> => networkIdFromWalletServiceStatus(await walletServiceStatus(options))
 
 type AdminRequestOptions = WalletServiceRequestOptions
 

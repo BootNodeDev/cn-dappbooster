@@ -1,60 +1,30 @@
-import { walletServiceRequest } from '@/api/walletService'
-import { loadRuntimeConfig } from '@/config/runtimeConfig'
+import { getWalletServiceNetworkId, walletServiceStatus } from '@/api/walletService'
 import { SIGNING_PROVIDER_ID } from '@/provider/accounts'
-import { CANTON_METHOD_STATUS } from '@/provider/methods'
-
-interface WalletServiceStatus {
-  connection?: {
-    isConnected?: boolean
-    isNetworkConnected?: boolean
-    reason?: string
-    networkReason?: string
-  }
-  network?: {
-    networkId?: string
-  }
-}
 
 export interface ProviderStatus {
   provider: { id: string; version: string; providerType: 'browser' }
   connection: { isConnected: true; isNetworkConnected: boolean; networkReason?: string }
-  network: { networkId: string }
+  network?: { networkId: string }
 }
 
-export const normalizeCantonNetwork = (value: string): string => {
-  const trimmed = value.trim()
-  if (trimmed === '') {
-    return 'canton:local'
-  }
-  return trimmed.startsWith('canton:') ? trimmed : `canton:${trimmed}`
-}
-
-export const getCantonNetwork = (): string =>
-  normalizeCantonNetwork(loadRuntimeConfig().cantonNetwork)
-
+// Builds the browser provider status from wallet-service without inventing a local network.
 export const buildStatus = async (): Promise<ProviderStatus> => {
-  try {
-    const remote = await walletServiceRequest<WalletServiceStatus>(CANTON_METHOD_STATUS)
-    return {
-      provider: { id: SIGNING_PROVIDER_ID, version: '0.1.0', providerType: 'browser' },
-      connection: {
-        isConnected: true,
-        isNetworkConnected: remote.connection?.isNetworkConnected ?? false,
-        ...(remote.connection?.networkReason === undefined
-          ? {}
-          : { networkReason: remote.connection.networkReason }),
-      },
-      network: { networkId: remote.network?.networkId ?? getCantonNetwork() },
-    }
-  } catch (error) {
-    return {
-      provider: { id: SIGNING_PROVIDER_ID, version: '0.1.0', providerType: 'browser' },
-      connection: {
-        isConnected: true,
-        isNetworkConnected: false,
-        networkReason: `wallet-service unavailable: ${(error as Error).message}`,
-      },
-      network: { networkId: getCantonNetwork() },
-    }
+  const remote = await walletServiceStatus()
+  const networkId = remote.network?.networkId?.trim()
+  return {
+    provider: { id: SIGNING_PROVIDER_ID, version: '0.1.0', providerType: 'browser' },
+    connection: {
+      isConnected: true,
+      isNetworkConnected: remote.connection?.isNetworkConnected ?? false,
+      ...(remote.connection?.networkReason === undefined
+        ? {}
+        : { networkReason: remote.connection.networkReason }),
+    },
+    ...(networkId === undefined || networkId === '' ? {} : { network: { networkId } }),
   }
 }
+
+// Resolves getActiveNetwork through wallet-service status, matching wallet-gateway's source.
+export const getActiveNetwork = async (): Promise<{ networkId: string }> => ({
+  networkId: await getWalletServiceNetworkId(),
+})
