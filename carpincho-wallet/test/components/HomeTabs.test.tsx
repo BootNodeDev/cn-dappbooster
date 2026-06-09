@@ -80,6 +80,14 @@ describe('HomeTabs asset indicators', () => {
 
     assert.equal(screen.getByRole('tab', { name: 'Activity' }).getAttribute('data-state'), 'active')
     await waitFor(() => assert.ok(screen.getByRole('tab', { name: 'Assets 1' })))
+    const incomingHeading = await screen.findByText('Incoming transfers')
+    const inactivePanel = incomingHeading.closest('[data-state="inactive"]')
+    assert.ok(inactivePanel, 'incoming transfer content should stay mounted in an inactive tab')
+    assert.match(
+      inactivePanel.getAttribute('class') ?? '',
+      /data-\[state=inactive\]:hidden/,
+      'inactive tab content must not be visible in Activity',
+    )
   })
 
   it('opens the Tokens tab with the current party holdings', async () => {
