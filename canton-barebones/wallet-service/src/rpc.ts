@@ -85,6 +85,24 @@ export const createPendingStore = <T>(opts: PendingStoreOptions): PendingStore<T
 
 export type WalletSdk = Awaited<ReturnType<typeof SDK.create>>
 
+type SdkFactory = (options: unknown) => Promise<unknown>
+
+type RpcDependencies = {
+  sdkFactory?: SdkFactory
+}
+
+type Cip56TokenSdk = {
+  token: {
+    transfer: {
+      pending: (partyId: string) => Promise<unknown>
+      accept: (params: {
+        transferInstructionCid: string
+        registryUrl: URL
+      }) => Promise<[unknown, unknown[]]>
+    }
+  }
+}
+
 type ExecutePreparedParams = {
   partyId?: string
   actAs?: string[]
@@ -186,28 +204,67 @@ const firstParty = (params: { partyId?: string; actAs?: string[] }): string => {
   throw new InvalidParams('partyId or actAs[0] is required')
 }
 
+const requiredStringParam = (params: Record<string, unknown>, name: string): string => {
+  const value = params[name]
+  if (typeof value !== 'string' || value.trim() === '') {
+    throw new InvalidParams(`${name} is required`)
+  }
+  return value
+}
+
 export type Rpc = {
   handle: (request: JsonRpcRequest) => Promise<JsonRpcResponse | undefined>
   serviceInfo: () => Record<string, unknown>
   getSdk: () => Promise<WalletSdk>
 }
 
-export const createRpc = (config: WalletServiceConfig): Rpc => {
+export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {}): Rpc => {
+  const sdkFactory: SdkFactory =
+    deps.sdkFactory ??
+    (async (options: unknown) => {
+      return await SDK.create(options as never)
+    })
   let sdkPromise: Promise<WalletSdk> | undefined
+  let tokenSdkPromise: Promise<Cip56TokenSdk> | undefined
 
   const getSdk = async (): Promise<WalletSdk> => {
     if (config.canton.backendToken === undefined) {
       throw new Error('CANTON_BACKEND_TOKEN is required for Canton JSON API calls')
     }
-    sdkPromise ??= SDK.create({
+    sdkPromise ??= sdkFactory({
       auth: { method: 'static', token: config.canton.backendToken },
       ledgerClientUrl: config.canton.jsonApiUrl,
       logAdapter: 'console',
-    }).catch((cause: unknown) => {
-      sdkPromise = undefined
-      throw new Error('Canton wallet SDK failed to initialize', { cause })
     })
+      .then((sdk) => sdk as WalletSdk)
+      .catch((cause: unknown) => {
+        sdkPromise = undefined
+        throw new Error('Canton wallet SDK failed to initialize', { cause })
+      })
     return await sdkPromise
+  }
+
+  const getTokenSdk = async (): Promise<Cip56TokenSdk> => {
+    if (config.canton.backendToken === undefined) {
+      throw new Error('CANTON_BACKEND_TOKEN is required for CIP-56 token helper calls')
+    }
+    const auth = { method: 'static', token: config.canton.backendToken }
+    tokenSdkPromise ??= sdkFactory({
+      auth,
+      ledgerClientUrl: config.canton.jsonApiUrl,
+      logAdapter: 'console',
+      token: {
+        validatorUrl: config.splice.validatorUrl,
+        auth,
+        registries: [config.splice.registryApiUrl],
+      },
+    })
+      .then((sdk) => sdk as Cip56TokenSdk)
+      .catch((cause: unknown) => {
+        tokenSdkPromise = undefined
+        throw new Error('CIP-56 wallet SDK failed to initialize', { cause })
+      })
+    return await tokenSdkPromise
   }
 
   const ledgerJsonApiVersion = async (): Promise<{ connected: boolean; reason?: string }> => {
@@ -346,6 +403,26 @@ export const createRpc = (config: WalletServiceConfig): Rpc => {
     return parsed
   }
 
+  const cip56ListPendingTransfers = async (params: unknown): Promise<unknown> => {
+    const p = objectParam<Record<string, unknown>>(params, 'cip56.listPendingTransfers')
+    const partyId = requiredStringParam(p, 'partyId')
+    const sdk = await getTokenSdk()
+    return await sdk.token.transfer.pending(partyId)
+  }
+
+  const cip56AcceptTransfer = async (
+    params: unknown,
+  ): Promise<{ commands: unknown; disclosedContracts: unknown[] }> => {
+    const p = objectParam<Record<string, unknown>>(params, 'cip56.acceptTransfer')
+    const transferInstructionCid = requiredStringParam(p, 'transferInstructionCid')
+    const sdk = await getTokenSdk()
+    const [commands, disclosedContracts] = await sdk.token.transfer.accept({
+      transferInstructionCid,
+      registryUrl: new URL(config.splice.registryApiUrl),
+    })
+    return { commands, disclosedContracts }
+  }
+
   const dispatch = async (id: JsonRpcId, request: JsonRpcRequest): Promise<JsonRpcResponse> => {
     if (request.jsonrpc !== undefined && request.jsonrpc !== '2.0') {
       return rpcError(id, -32600, 'Invalid request', { reason: 'jsonrpc must be "2.0"' })
@@ -376,6 +453,10 @@ export const createRpc = (config: WalletServiceConfig): Rpc => {
           return rpcResult(id, await executePrepared(request.params))
         case 'ledgerApi':
           return rpcResult(id, await ledgerApi(request.params))
+        case 'cip56.listPendingTransfers':
+          return rpcResult(id, await cip56ListPendingTransfers(request.params))
+        case 'cip56.acceptTransfer':
+          return rpcResult(id, await cip56AcceptTransfer(request.params))
         case 'prepareExecute':
         case 'prepareExecuteAndWait':
         case 'signMessage':
@@ -419,6 +500,8 @@ export const createRpc = (config: WalletServiceConfig): Rpc => {
       'ledgerApi',
       'prepareTransaction',
       'executePrepared',
+      'cip56.listPendingTransfers',
+      'cip56.acceptTransfer',
     ],
     reservedMethods: ['prepareExecute', 'prepareExecuteAndWait', 'signMessage'],
     adminEndpoints: ['POST /admin/party/prepare', 'POST /admin/party/complete'],

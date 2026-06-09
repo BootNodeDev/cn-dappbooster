@@ -20,6 +20,11 @@ const baseConfig = () => ({
     backendToken: undefined as string | undefined,
     tokenSource: 'none' as const,
   },
+  splice: {
+    validatorUrl: 'http://localhost:2000/api/validator',
+    scanApiUrl: 'http://scan.localhost:4000/api/scan',
+    registryApiUrl: 'http://localhost:2000/api/validator/v0/scan-proxy',
+  },
 })
 
 describe('isMockEnabled', () => {
@@ -115,6 +120,23 @@ describe('createMockRpc', () => {
     })) as JsonRpcResponse
     assert.ok('error' in res)
     assert.equal(res.error.code, -32004)
+  })
+
+  it('cip56.listPendingTransfers returns no mock transfers', async () => {
+    // Scenario: Carpincho polls pending token transfers in the Assets tab.
+    // Mock mode should keep that UI quiet instead of surfacing a method-not-found
+    // error when no Canton or Splice services are running.
+    const rpc = createMockRpc(baseConfig())
+
+    const res = (await rpc.handle({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'cip56.listPendingTransfers',
+      params: { partyId: 'alice::mock' },
+    })) as JsonRpcResponse
+
+    assert.ok('result' in res)
+    assert.deepEqual(res.result, [])
   })
 })
 

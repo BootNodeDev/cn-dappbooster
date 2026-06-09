@@ -20,6 +20,20 @@ const baseConfig = () => ({
     backendToken: undefined as string | undefined,
     tokenSource: 'none' as const,
   },
+  splice: {
+    validatorUrl: 'http://localhost:2000/api/validator',
+    scanApiUrl: 'http://scan.localhost:4000/api/scan',
+    registryApiUrl: 'http://localhost:2000/api/validator/v0/scan-proxy',
+  },
+})
+
+const withToken = () => ({
+  ...baseConfig(),
+  canton: {
+    ...baseConfig().canton,
+    backendToken: 'backend.jwt',
+    tokenSource: 'env' as const,
+  },
 })
 
 describe('rpc dispatcher', () => {
@@ -175,6 +189,115 @@ describe('ledgerApi pass-through', () => {
     assert.ok('error' in res)
     assert.notEqual(res.error.code, -32602)
     assert.ok(!String(res.error.message).includes('Only POST'))
+  })
+})
+
+describe('CIP-56 token helpers', () => {
+  it('lists pending transfers through the SDK token namespace without reshaping contracts', async () => {
+    // Scenario: wallet-service owns the Node-only wallet-sdk dependency, but
+    // Carpincho should still see the SDK contract payload directly so future
+    // browser-SDK migration does not need a second DTO translation.
+    const pendingContracts = [
+      {
+        contractId: 'transfer-cid-1',
+        interfaceViewValue: {
+          transfer: {
+            sender: 'sender::party',
+            receiver: 'receiver::party',
+            amount: '7.5',
+            instrumentId: { admin: 'admin::party', id: 'Amulet' },
+          },
+        },
+      },
+    ]
+    const seen: { partyId?: string; tokenConfig?: unknown } = {}
+    const rpc = createRpc(withToken(), {
+      sdkFactory: async (options) => {
+        seen.tokenConfig = (options as { token?: unknown }).token
+        return {
+          token: {
+            transfer: {
+              pending: async (partyId: string) => {
+                seen.partyId = partyId
+                return pendingContracts
+              },
+            },
+          },
+        }
+      },
+    })
+
+    const res = (await rpc.handle({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'cip56.listPendingTransfers',
+      params: { partyId: 'receiver::party' },
+    })) as JsonRpcResponse
+
+    assert.ok('result' in res)
+    assert.deepEqual(res.result, pendingContracts)
+    assert.equal(seen.partyId, 'receiver::party')
+    assert.deepEqual(seen.tokenConfig, {
+      validatorUrl: 'http://localhost:2000/api/validator',
+      auth: { method: 'static', token: 'backend.jwt' },
+      registries: ['http://localhost:2000/api/validator/v0/scan-proxy'],
+    })
+  })
+
+  it('prepares an accept-transfer command through the SDK token namespace', async () => {
+    // Scenario: accepting a pending CIP-56 transfer requires SDK registry
+    // context, but Carpincho must still sign the prepared transaction itself.
+    // wallet-service returns the SDK command and disclosed contracts only.
+    const disclosedContracts = [{ contractId: 'registry-context-cid', createdEventBlob: 'blob' }]
+    const seen: { transferInstructionCid?: string; registryUrl?: string } = {}
+    const rpc = createRpc(withToken(), {
+      sdkFactory: async () => ({
+        token: {
+          transfer: {
+            accept: async (params: { transferInstructionCid: string; registryUrl: URL }) => {
+              seen.transferInstructionCid = params.transferInstructionCid
+              seen.registryUrl = params.registryUrl.href
+              return [{ ExerciseCommand: { choice: 'Accept' } }, disclosedContracts]
+            },
+          },
+        },
+      }),
+    })
+
+    const res = (await rpc.handle({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'cip56.acceptTransfer',
+      params: { transferInstructionCid: 'transfer-cid-1' },
+    })) as JsonRpcResponse
+
+    assert.ok('result' in res)
+    assert.deepEqual(res.result, {
+      commands: { ExerciseCommand: { choice: 'Accept' } },
+      disclosedContracts,
+    })
+    assert.equal(seen.transferInstructionCid, 'transfer-cid-1')
+    assert.equal(seen.registryUrl, 'http://localhost:2000/api/validator/v0/scan-proxy')
+  })
+
+  it('rejects CIP-56 helper calls without required params', async () => {
+    // Scenario: malformed Carpincho calls should fail as JSON-RPC invalid
+    // params before the SDK is initialized or any Splice service is contacted.
+    const rpc = createRpc(withToken(), {
+      sdkFactory: async () => {
+        throw new Error('SDK should not be initialized')
+      },
+    })
+
+    const res = (await rpc.handle({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'cip56.listPendingTransfers',
+      params: {},
+    })) as JsonRpcResponse
+
+    assert.ok('error' in res)
+    assert.equal(res.error.code, -32602)
   })
 })
 
