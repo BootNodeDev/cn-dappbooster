@@ -151,6 +151,8 @@ export const createMockRpc = (
           return rpcResult(id, ledgerApi(request.params))
         case 'cip56.listPendingTransfers':
           return rpcResult(id, [])
+        case 'cip56.listHoldings':
+          return rpcResult(id, [])
         case 'prepareExecute':
         case 'prepareExecuteAndWait':
         case 'signMessage':
@@ -201,6 +203,7 @@ export const createMockRpc = (
       'prepareTransaction',
       'executePrepared',
       'cip56.listPendingTransfers',
+      'cip56.listHoldings',
     ],
     reservedMethods: ['prepareExecute', 'prepareExecuteAndWait', 'signMessage'],
     network: mockNetworkId(config),

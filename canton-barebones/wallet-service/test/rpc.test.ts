@@ -280,6 +280,59 @@ describe('CIP-56 token helpers', () => {
     assert.equal(seen.registryUrl, 'http://localhost:2000/api/validator/v0/scan-proxy')
   })
 
+  it('lists token holding UTXOs through the SDK token namespace without reshaping contracts', async () => {
+    // Scenario: Carpincho needs the active CIP-56 holdings for a party, but the
+    // Node-only wallet SDK must stay behind wallet-service. The RPC returns the
+    // SDK holding contracts unchanged so the browser boundary remains thin.
+    const holdingContracts = [
+      {
+        contractId: 'holding-cid-1',
+        interfaceViewValue: {
+          owner: 'receiver::party',
+          amount: '666.0000000000',
+          instrumentId: { admin: 'admin::party', id: 'Amulet' },
+        },
+      },
+    ]
+    const seen: { params?: unknown; tokenConfig?: unknown } = {}
+    const rpc = createRpc(withToken(), {
+      sdkFactory: async (options) => {
+        seen.tokenConfig = (options as { token?: unknown }).token
+        return {
+          token: {
+            utxos: {
+              list: async (params: unknown) => {
+                seen.params = params
+                return holdingContracts
+              },
+            },
+          },
+        }
+      },
+    })
+
+    const res = (await rpc.handle({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'cip56.listHoldings',
+      params: { partyId: 'receiver::party' },
+    })) as JsonRpcResponse
+
+    assert.ok('result' in res)
+    assert.deepEqual(res.result, holdingContracts)
+    assert.deepEqual(seen.params, {
+      partyId: 'receiver::party',
+      includeLocked: true,
+      limit: 100,
+      continueUntilCompletion: true,
+    })
+    assert.deepEqual(seen.tokenConfig, {
+      validatorUrl: 'http://localhost:2000/api/validator',
+      auth: { method: 'static', token: 'backend.jwt' },
+      registries: ['http://localhost:2000/api/validator/v0/scan-proxy'],
+    })
+  })
+
   it('rejects CIP-56 helper calls without required params', async () => {
     // Scenario: malformed Carpincho calls should fail as JSON-RPC invalid
     // params before the SDK is initialized or any Splice service is contacted.

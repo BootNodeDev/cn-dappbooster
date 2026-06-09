@@ -138,6 +138,23 @@ describe('createMockRpc', () => {
     assert.ok('result' in res)
     assert.deepEqual(res.result, [])
   })
+
+  it('cip56.listHoldings returns no mock holdings', async () => {
+    // Scenario: the Tokens tab polls holdings through wallet-service. Mock mode
+    // has no ledger state, so it should render an empty token list without
+    // raising a method-not-found error.
+    const rpc = createMockRpc(baseConfig())
+
+    const res = (await rpc.handle({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'cip56.listHoldings',
+      params: { partyId: 'alice::mock' },
+    })) as JsonRpcResponse
+
+    assert.ok('result' in res)
+    assert.deepEqual(res.result, [])
+  })
 })
 
 describe('createMockPartyApi', () => {

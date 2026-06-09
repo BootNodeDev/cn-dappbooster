@@ -100,6 +100,14 @@ type Cip56TokenSdk = {
         registryUrl: URL
       }) => Promise<[unknown, unknown[]]>
     }
+    utxos: {
+      list: (params: {
+        partyId: string
+        includeLocked: boolean
+        limit: number
+        continueUntilCompletion: boolean
+      }) => Promise<unknown>
+    }
   }
 }
 
@@ -410,6 +418,18 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
     return await sdk.token.transfer.pending(partyId)
   }
 
+  const cip56ListHoldings = async (params: unknown): Promise<unknown> => {
+    const p = objectParam<Record<string, unknown>>(params, 'cip56.listHoldings')
+    const partyId = requiredStringParam(p, 'partyId')
+    const sdk = await getTokenSdk()
+    return await sdk.token.utxos.list({
+      partyId,
+      includeLocked: true,
+      limit: 100,
+      continueUntilCompletion: true,
+    })
+  }
+
   const cip56AcceptTransfer = async (
     params: unknown,
   ): Promise<{ commands: unknown; disclosedContracts: unknown[] }> => {
@@ -455,6 +475,8 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
           return rpcResult(id, await ledgerApi(request.params))
         case 'cip56.listPendingTransfers':
           return rpcResult(id, await cip56ListPendingTransfers(request.params))
+        case 'cip56.listHoldings':
+          return rpcResult(id, await cip56ListHoldings(request.params))
         case 'cip56.acceptTransfer':
           return rpcResult(id, await cip56AcceptTransfer(request.params))
         case 'prepareExecute':
@@ -501,6 +523,7 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
       'prepareTransaction',
       'executePrepared',
       'cip56.listPendingTransfers',
+      'cip56.listHoldings',
       'cip56.acceptTransfer',
     ],
     reservedMethods: ['prepareExecute', 'prepareExecuteAndWait', 'signMessage'],
