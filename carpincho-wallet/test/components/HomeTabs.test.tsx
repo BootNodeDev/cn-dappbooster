@@ -97,15 +97,13 @@ describe('HomeTabs token navigation', () => {
     // transfer requests. Opening Tokens should mount the holdings panel for the
     // active account and show the grouped balance.
     const holdingsApi: Cip56HoldingsApi = {
-      listTokenHoldings: async () => [
+      listTokenHoldingSummaries: async () => [
         {
-          contractId: 'holding-cid-1',
-          interfaceViewValue: {
-            owner: 'alice::party',
-            amount: '7.0000000000',
-            instrumentId: { admin: 'dso::party', id: 'Amulet' },
-            lock: null,
-          },
+          key: 'dso::party:Amulet',
+          tokenLabel: 'Amulet',
+          instrumentId: { admin: 'dso::party', id: 'Amulet' },
+          totalAmount: '7',
+          source: 'scan',
         },
       ],
     }
@@ -148,7 +146,7 @@ describe('HomeTabs token navigation', () => {
       acceptTransfer: async () => ({ updateId: 'update-1' }),
     }
     const holdingsApi: Cip56HoldingsApi = {
-      listTokenHoldings: async () => [],
+      listTokenHoldingSummaries: async () => [],
     }
 
     render(

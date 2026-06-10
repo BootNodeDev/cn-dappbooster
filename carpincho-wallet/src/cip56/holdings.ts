@@ -26,10 +26,11 @@ export interface TokenHoldingSummary {
   tokenLabel: string
   instrumentId?: TokenInstrumentId
   totalAmount: string
-  utxoCount: number
-  lockedCount: number
-  unlockedCount: number
-  holdings: TokenHolding[]
+  utxoCount?: number
+  lockedCount?: number
+  unlockedCount?: number
+  source?: 'scan' | 'utxos'
+  holdings?: TokenHolding[]
 }
 
 interface ParsedDecimal {
@@ -46,6 +47,15 @@ export const holdingTokenLabel = (instrumentId?: TokenInstrumentId): string =>
 // Creates a stable grouping key for one token instrument.
 const holdingInstrumentKey = (instrumentId?: TokenInstrumentId): string =>
   `${instrumentId?.admin ?? 'unknown-admin'}:${instrumentId?.id ?? 'unknown-token'}`
+
+// Compares optional token ids while allowing callers to filter by id-only CC selectors.
+const isSameInstrument = (
+  actual: TokenInstrumentId | undefined,
+  expected: TokenInstrumentId | undefined,
+): boolean =>
+  expected === undefined ||
+  ((expected.id === undefined || actual?.id === expected.id) &&
+    (expected.admin === undefined || actual?.admin === expected.admin))
 
 // Parses positive decimal strings from SDK holding amounts without floating point rounding.
 const parseDecimalAmount = (value: string): ParsedDecimal | undefined => {
@@ -109,6 +119,19 @@ export const summarizeTokenHoldings = (holdings: TokenHolding[]): TokenHoldingSu
     })
     .sort((a, b) => a.tokenLabel.localeCompare(b.tokenLabel))
 }
+
+// Filters raw UTXOs for the token row the user expanded.
+export const filterTokenHoldingsByInstrument = (
+  holdings: TokenHolding[],
+  instrumentId?: TokenInstrumentId,
+): TokenHolding[] =>
+  holdings.filter((holding) =>
+    isSameInstrument(holding.interfaceViewValue?.instrumentId, instrumentId),
+  )
+
+// Reads fast token balance summaries through wallet-service.
+export const listTokenHoldingSummaries = async (partyId: string): Promise<TokenHoldingSummary[]> =>
+  await walletServiceRequest<TokenHoldingSummary[]>('cip56.listHoldingSummary', { partyId })
 
 // Reads active CIP-56 holding UTXOs through wallet-service.
 export const listTokenHoldings = async (partyId: string): Promise<TokenHolding[]> =>

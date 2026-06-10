@@ -67,8 +67,22 @@ describe('TokensPanel', () => {
   it('shows token holding totals and expands UTXO details', async () => {
     // Scenario: the active party owns two Amulet holding UTXOs, one unlocked and one locked.
     // The panel should show a grouped total first and expose raw holding ids on demand.
+    let detailsCalls = 0
     const api: Cip56HoldingsApi = {
+      listTokenHoldingSummaries: async (partyId) => {
+        assert.equal(partyId, 'alice::party')
+        return [
+          {
+            key: 'dso::party:Amulet',
+            tokenLabel: 'Amulet',
+            instrumentId: { admin: 'dso::party', id: 'Amulet' },
+            totalAmount: '15.75',
+            source: 'scan',
+          },
+        ]
+      },
       listTokenHoldings: async (partyId) => {
+        detailsCalls += 1
         assert.equal(partyId, 'alice::party')
         return [
           {
@@ -97,9 +111,9 @@ describe('TokensPanel', () => {
 
     await screen.findByText('Token holdings')
     await screen.findByText('15.75 Amulet')
-    assert.equal(screen.getByText('2 UTXOs').textContent, '2 UTXOs')
-    assert.equal(screen.getByText('1 locked').textContent, '1 locked')
+    assert.equal(screen.getByText('UTXOs load on demand').textContent, 'UTXOs load on demand')
     assert.equal(screen.queryByText('holding-cid-1'), null)
+    assert.equal(detailsCalls, 0)
 
     await userEvent.click(screen.getByRole('button', { name: 'Show holdings' }))
 
@@ -119,21 +133,20 @@ describe('TokensPanel', () => {
     assert.equal(screen.getByText('holding-cid-2').textContent, 'holding-cid-2')
     assert.equal(screen.queryByText('owner'), null)
     assert.equal(screen.getByText('2026-06-10 20:41 UTC').textContent, '2026-06-10 20:41 UTC')
+    assert.equal(detailsCalls, 1)
   })
 
   it('shows incoming transfers only when the active party has pending receipts', async () => {
     // Scenario: Tokens combines balances with token actions. Incoming transfers
     // should appear above holdings when pending, and disappear when the API has none.
     const holdingsApi: Cip56HoldingsApi = {
-      listTokenHoldings: async () => [
+      listTokenHoldingSummaries: async () => [
         {
-          contractId: 'holding-cid-1',
-          interfaceViewValue: {
-            owner: 'alice::party',
-            amount: '7.0000000000',
-            instrumentId: { admin: 'dso::party', id: 'Amulet' },
-            lock: null,
-          },
+          key: 'dso::party:Amulet',
+          tokenLabel: 'Amulet',
+          instrumentId: { admin: 'dso::party', id: 'Amulet' },
+          totalAmount: '7',
+          source: 'scan',
         },
       ],
     }
@@ -165,15 +178,13 @@ describe('TokensPanel', () => {
     // Scenario: an empty incoming-transfer list should not take vertical space
     // in Tokens; holdings remain the only visible token section.
     const holdingsApi: Cip56HoldingsApi = {
-      listTokenHoldings: async () => [
+      listTokenHoldingSummaries: async () => [
         {
-          contractId: 'holding-cid-1',
-          interfaceViewValue: {
-            owner: 'alice::party',
-            amount: '7.0000000000',
-            instrumentId: { admin: 'dso::party', id: 'Amulet' },
-            lock: null,
-          },
+          key: 'dso::party:Amulet',
+          tokenLabel: 'Amulet',
+          instrumentId: { admin: 'dso::party', id: 'Amulet' },
+          totalAmount: '7',
+          source: 'scan',
         },
       ],
     }

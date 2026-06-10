@@ -73,15 +73,13 @@ describe('SendTokensPanel', () => {
     // account, default the deadline to 1h, and pass the selected instrument id.
     const sent: Parameters<Cip56SendApi['createTokenTransfer']>[0][] = []
     const holdingsApi: Cip56HoldingsApi = {
-      listTokenHoldings: async () => [
+      listTokenHoldingSummaries: async () => [
         {
-          contractId: 'holding-cid-1',
-          interfaceViewValue: {
-            owner: 'alice::party',
-            amount: '12.5000000000',
-            instrumentId: { admin: 'dso::party', id: 'Amulet' },
-            lock: null,
-          },
+          key: 'dso::party:Amulet',
+          tokenLabel: 'Amulet',
+          instrumentId: { admin: 'dso::party', id: 'Amulet' },
+          totalAmount: '12.5000000000',
+          source: 'scan',
         },
       ],
     }

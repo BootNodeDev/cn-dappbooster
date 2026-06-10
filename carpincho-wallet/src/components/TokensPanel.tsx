@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import type { TokenHoldingSummary } from '@/cip56/holdings'
 import { transferTimeLabel } from '@/cip56/transfers'
 import { IncomingTransfersSection } from '@/components/IncomingTransfersSection'
 import { SecondaryButton } from '@/components/ui/Button'
 import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
+import { useTokenHoldingDetails } from '@/hooks/useTokenHoldingDetails'
 import type { Cip56HoldingsApi } from '@/hooks/useTokenHoldings'
 import { useTokenHoldings } from '@/hooks/useTokenHoldings'
 import type { AccountPublic } from '@/vault/types'
@@ -20,6 +22,12 @@ interface HoldingDetailRowProps {
   value: string
 }
 
+interface TokenHoldingDetailsProps {
+  account: AccountPublic
+  api?: Cip56HoldingsApi
+  summary: TokenHoldingSummary
+}
+
 // Keeps raw holding values readable in the expanded UTXO details area.
 const HoldingDetailRow = ({ label, value }: HoldingDetailRowProps): JSX.Element => (
   <div className="grid gap-1">
@@ -27,6 +35,66 @@ const HoldingDetailRow = ({ label, value }: HoldingDetailRowProps): JSX.Element 
     <dd className="m-0 break-all font-mono text-[0.74rem] leading-5 text-foreground">{value}</dd>
   </div>
 )
+
+// Fetches UTXO details lazily so Scan summaries can render balances quickly.
+const TokenHoldingDetails = ({ account, api, summary }: TokenHoldingDetailsProps): JSX.Element => {
+  const detailsApi =
+    api?.listTokenHoldings === undefined ? undefined : { listTokenHoldings: api.listTokenHoldings }
+  const { holdings, loading, error } = useTokenHoldingDetails(account, summary, {
+    api: detailsApi,
+    enabled: true,
+  })
+
+  if (loading && holdings.length === 0) {
+    return <p className="m-0 text-[0.82rem] text-muted-foreground">Loading UTXOs</p>
+  }
+
+  if (error !== undefined) {
+    return (
+      <div className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-[0.82rem] text-danger">
+        {error}
+      </div>
+    )
+  }
+
+  if (holdings.length === 0) {
+    return <p className="m-0 text-[0.82rem] text-muted-foreground">No UTXO details</p>
+  }
+
+  return (
+    <>
+      {holdings.map((holding) => {
+        const view = holding.interfaceViewValue
+        const lock = view?.lock
+        return (
+          <dl
+            key={holding.contractId}
+            className="grid gap-3 rounded-md border border-border bg-surface px-3 py-3"
+          >
+            <HoldingDetailRow
+              label="amount"
+              value={view?.amount ?? 'unknown'}
+            />
+            <HoldingDetailRow
+              label="lock"
+              value={lock == null ? 'unlocked' : 'locked'}
+            />
+            {lock?.expiresAt === undefined ? null : (
+              <HoldingDetailRow
+                label="expires"
+                value={transferTimeLabel(lock.expiresAt)}
+              />
+            )}
+            <HoldingDetailRow
+              label="contract id"
+              value={holding.contractId}
+            />
+          </dl>
+        )
+      })}
+    </>
+  )
+}
 
 // Renders active CIP-56 token holding UTXOs grouped as token balances.
 export const TokensPanel = ({
@@ -93,10 +161,14 @@ export const TokensPanel = ({
                       {summary.totalAmount} {summary.tokenLabel}
                     </p>
                     <p className="m-0 mt-1 flex flex-wrap gap-x-1 text-[0.78rem] text-muted-foreground">
-                      <span>
-                        {summary.utxoCount} {summary.utxoCount === 1 ? 'UTXO' : 'UTXOs'}
-                      </span>
-                      {summary.lockedCount > 0 ? (
+                      {summary.utxoCount === undefined ? (
+                        <span>UTXOs load on demand</span>
+                      ) : (
+                        <span>
+                          {summary.utxoCount} {summary.utxoCount === 1 ? 'UTXO' : 'UTXOs'}
+                        </span>
+                      )}
+                      {(summary.lockedCount ?? 0) > 0 ? (
                         <>
                           <span aria-hidden="true">·</span>
                           <span>{summary.lockedCount} locked</span>
@@ -118,35 +190,11 @@ export const TokensPanel = ({
                     id={detailsId}
                     className="mt-3 flex flex-col gap-3 rounded-md border border-border bg-background/60 p-3"
                   >
-                    {summary.holdings.map((holding) => {
-                      const view = holding.interfaceViewValue
-                      const lock = view?.lock
-                      return (
-                        <dl
-                          key={holding.contractId}
-                          className="grid gap-3 rounded-md border border-border bg-surface px-3 py-3"
-                        >
-                          <HoldingDetailRow
-                            label="amount"
-                            value={view?.amount ?? 'unknown'}
-                          />
-                          <HoldingDetailRow
-                            label="lock"
-                            value={lock == null ? 'unlocked' : 'locked'}
-                          />
-                          {lock?.expiresAt === undefined ? null : (
-                            <HoldingDetailRow
-                              label="expires"
-                              value={transferTimeLabel(lock.expiresAt)}
-                            />
-                          )}
-                          <HoldingDetailRow
-                            label="contract id"
-                            value={holding.contractId}
-                          />
-                        </dl>
-                      )
-                    })}
+                    <TokenHoldingDetails
+                      account={activeAccount}
+                      api={api}
+                      summary={summary}
+                    />
                   </div>
                 ) : null}
               </article>

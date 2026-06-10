@@ -1,6 +1,12 @@
 import { strict as assert } from 'node:assert'
 import { afterEach, describe, it } from 'node:test'
-import { listTokenHoldings, summarizeTokenHoldings, type TokenHolding } from '@/cip56/holdings'
+import {
+  listTokenHoldingSummaries,
+  listTokenHoldings,
+  summarizeTokenHoldings,
+  type TokenHolding,
+  type TokenHoldingSummary,
+} from '@/cip56/holdings'
 
 const originalFetch = globalThis.fetch
 
@@ -39,6 +45,32 @@ describe('CIP-56 holding helpers', () => {
     assert.deepEqual(result, holdings)
   })
 
+  it('lists token holding summaries through wallet-service', async () => {
+    // Scenario: wallet-service can return Scan-backed balance summaries without
+    // sending every UTXO to the browser.
+    const summaries: TokenHoldingSummary[] = [
+      {
+        key: 'dso::party:Amulet',
+        tokenLabel: 'Amulet',
+        instrumentId: { admin: 'dso::party', id: 'Amulet' },
+        totalAmount: '12.5000000000',
+        source: 'scan',
+      },
+    ]
+    const methods: string[] = []
+    globalThis.fetch = async (_input, init) => {
+      const body = JSON.parse(String(init?.body)) as { method: string; params: unknown }
+      methods.push(body.method)
+      assert.deepEqual(body.params, { partyId: 'alice::party' })
+      return new Response(JSON.stringify({ result: summaries }), { status: 200 })
+    }
+
+    const result = await listTokenHoldingSummaries('alice::party')
+
+    assert.deepEqual(methods, ['cip56.listHoldingSummary'])
+    assert.deepEqual(result, summaries)
+  })
+
   it('summarizes holdings by token with decimal totals and lock counts', () => {
     // Scenario: one party can own multiple holding UTXOs for the same token.
     // The Tokens tab should show a balance-like total while preserving UTXO details.
@@ -71,7 +103,7 @@ describe('CIP-56 holding helpers', () => {
     assert.equal(summary.unlockedCount, 1)
     assert.equal(summary.lockedCount, 1)
     assert.deepEqual(
-      summary.holdings.map((holding) => holding.contractId),
+      summary.holdings?.map((holding) => holding.contractId),
       ['holding-cid-1', 'holding-cid-2'],
     )
   })

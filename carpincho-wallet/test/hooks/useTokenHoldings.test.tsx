@@ -35,9 +35,9 @@ const Probe = ({
   account: AccountPublic
   api: Cip56HoldingsApi
 }): JSX.Element => {
-  // Probe renders raw contract ids so the test can observe hook state across account changes.
+  // Probe renders summary keys so the test can observe hook state across account changes.
   const state = useTokenHoldings(account, { api, pollMs: null })
-  return <output>{state.holdings.map((holding) => holding.contractId).join(',')}</output>
+  return <output>{state.summaries.map((summary) => summary.key).join(',')}</output>
 }
 
 describe('useTokenHoldings', () => {
@@ -47,20 +47,18 @@ describe('useTokenHoldings', () => {
   })
 
   it('clears previous party holdings while the newly selected party loads', async () => {
-    // Scenario: Alice holdings loaded, then the user selects Bob. Bob's wallet-service
-    // call can still be in flight, but Alice's holding must no longer appear under Bob.
+    // Scenario: Alice summaries loaded, then the user selects Bob. Bob's wallet-service
+    // call can still be in flight, but Alice's balance must no longer appear under Bob.
     const api: Cip56HoldingsApi = {
-      listTokenHoldings: async (partyId) => {
+      listTokenHoldingSummaries: async (partyId) => {
         if (partyId === ALICE.partyId) {
           return [
             {
-              contractId: 'alice-holding-cid',
-              interfaceViewValue: {
-                owner: ALICE.partyId,
-                amount: '7',
-                instrumentId: { id: 'Amulet' },
-                lock: null,
-              },
+              key: 'unknown-admin:Amulet',
+              tokenLabel: 'Amulet',
+              instrumentId: { id: 'Amulet' },
+              totalAmount: '7',
+              source: 'scan',
             },
           ]
         }
@@ -76,7 +74,7 @@ describe('useTokenHoldings', () => {
       { wrapper: TestQueryClientProvider },
     )
 
-    await screen.findByText('alice-holding-cid')
+    await screen.findByText('unknown-admin:Amulet')
 
     rerender(
       <Probe

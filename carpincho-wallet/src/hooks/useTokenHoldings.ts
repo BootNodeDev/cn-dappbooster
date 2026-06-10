@@ -1,19 +1,18 @@
 import { useQuery } from '@tanstack/react-query'
 import { useCallback, useMemo } from 'react'
 import {
-  listTokenHoldings,
-  summarizeTokenHoldings,
+  listTokenHoldingSummaries,
   type TokenHolding,
   type TokenHoldingSummary,
 } from '@/cip56/holdings'
 import type { AccountPublic } from '@/vault/types'
 
 export interface Cip56HoldingsApi {
-  listTokenHoldings: (partyId: string) => Promise<TokenHolding[]>
+  listTokenHoldingSummaries: (partyId: string) => Promise<TokenHoldingSummary[]>
+  listTokenHoldings?: (partyId: string) => Promise<TokenHolding[]>
 }
 
 export interface TokenHoldingsState {
-  holdings: TokenHolding[]
   summaries: TokenHoldingSummary[]
   loading: boolean
   error?: string
@@ -26,7 +25,7 @@ export interface TokenHoldingsOptions {
 }
 
 const defaultApi: Cip56HoldingsApi = {
-  listTokenHoldings,
+  listTokenHoldingSummaries,
 }
 
 export const TOKEN_HOLDINGS_POLL_MS = 5_000
@@ -40,11 +39,11 @@ export const useTokenHoldings = (
   const pollMs = options.pollMs === undefined ? TOKEN_HOLDINGS_POLL_MS : options.pollMs
   const query = useQuery({
     enabled: account !== undefined,
-    queryKey: ['cip56', 'holdings', account?.id, account?.partyId],
-    queryFn: () => api.listTokenHoldings(account?.partyId ?? ''),
+    queryKey: ['cip56', 'holdingSummaries', account?.id, account?.partyId],
+    queryFn: () => api.listTokenHoldingSummaries(account?.partyId ?? ''),
     refetchInterval: pollMs === null ? false : pollMs,
   })
-  const holdings = query.data ?? []
+  const summaries = query.data ?? []
   const error = query.error instanceof Error ? query.error.message : undefined
 
   // Imperative refresh lets send flows reload balances after creating a transfer.
@@ -55,16 +54,13 @@ export const useTokenHoldings = (
     await query.refetch()
   }, [account, query])
 
-  const summaries = useMemo(() => summarizeTokenHoldings(holdings), [holdings])
-
   return useMemo(
     () => ({
-      holdings,
       summaries,
       loading: query.isFetching,
       ...(error === undefined ? {} : { error }),
       refresh,
     }),
-    [holdings, summaries, query.isFetching, error, refresh],
+    [summaries, query.isFetching, error, refresh],
   )
 }
