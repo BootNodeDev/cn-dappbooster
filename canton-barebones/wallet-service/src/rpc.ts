@@ -89,6 +89,8 @@ type SdkFactory = (options: unknown) => Promise<unknown>
 
 type RpcDependencies = {
   sdkFactory?: SdkFactory
+  fetch?: typeof fetch
+  now?: () => Date
 }
 
 type Cip56TokenSdk = {
@@ -133,6 +135,40 @@ type ExecutePreparedParams = {
   costEstimation?: unknown
   signatureBase64?: string
   submissionId?: string
+}
+
+type TokenInstrumentId = {
+  admin?: string
+  id?: string
+}
+
+type TokenHolding = {
+  contractId: string
+  interfaceViewValue?: {
+    amount?: string
+    instrumentId?: TokenInstrumentId
+    lock?: unknown
+  }
+}
+
+type TokenHoldingSummary = {
+  key: string
+  tokenLabel: string
+  instrumentId?: TokenInstrumentId
+  totalAmount: string
+  utxoCount?: number
+  lockedCount?: number
+  unlockedCount?: number
+  source: 'scan' | 'utxos'
+  scan?: {
+    totalUnlockedCoin: string
+    totalLockedCoin: string
+    totalCoinHoldings: string
+    accumulatedHoldingFeesUnlocked: string
+    accumulatedHoldingFeesLocked: string
+    accumulatedHoldingFeesTotal: string
+    totalAvailableCoin: string
+  }
 }
 
 export const rpcResult = (id: JsonRpcId, result: unknown): JsonRpcSuccess => ({
@@ -245,6 +281,132 @@ const optionalDateParam = (params: Record<string, unknown>, name: string): Date 
   return date
 }
 
+// Reads the optional token instrument selector from JSON-RPC params.
+const optionalInstrumentParam = (p: Record<string, unknown>): TokenInstrumentId | undefined => {
+  const value = p.instrumentId
+  if (value === undefined) {
+    return undefined
+  }
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    throw new InvalidParams('instrumentId must be an object')
+  }
+  const record = value as Record<string, unknown>
+  const admin = record.admin
+  const id = record.id
+  if (admin !== undefined && typeof admin !== 'string') {
+    throw new InvalidParams('instrumentId.admin must be a string')
+  }
+  if (id !== undefined && typeof id !== 'string') {
+    throw new InvalidParams('instrumentId.id must be a string')
+  }
+  return {
+    ...(admin === undefined || admin.trim() === '' ? {} : { admin: admin.trim() }),
+    ...(id === undefined || id.trim() === '' ? {} : { id: id.trim() }),
+  }
+}
+
+// Identifies CC/Amulet requests, the only token family Scan can summarize.
+const isAmuletInstrument = (instrumentId?: TokenInstrumentId): boolean =>
+  instrumentId === undefined ||
+  instrumentId.id === undefined ||
+  ['amulet', 'amt', 'cantoncoin', 'canton coin', 'cc'].includes(
+    instrumentId.id.trim().toLowerCase(),
+  )
+
+// Creates the same grouping key Carpincho uses for token rows.
+const instrumentKey = (instrumentId?: TokenInstrumentId): string =>
+  `${instrumentId?.admin ?? 'unknown-admin'}:${instrumentId?.id ?? 'unknown-token'}`
+
+// Keeps token labels readable in summary rows.
+const instrumentLabel = (instrumentId?: TokenInstrumentId): string => {
+  const id = instrumentId?.id?.trim()
+  return id === undefined || id === '' ? 'unknown token' : id
+}
+
+// Parses positive decimal strings without floating point rounding.
+const parseDecimalAmount = (value: string): { scaled: bigint; scale: number } | undefined => {
+  const trimmed = value.trim()
+  if (!/^\d+(\.\d+)?$/.test(trimmed)) {
+    return undefined
+  }
+  const [whole, fraction = ''] = trimmed.split('.')
+  return {
+    scaled: BigInt(`${whole}${fraction}`),
+    scale: fraction.length,
+  }
+}
+
+// Adds SDK decimal amount strings exactly enough for token balance display.
+const sumDecimalAmounts = (values: string[]): string => {
+  const parsed = values
+    .map(parseDecimalAmount)
+    .filter((value): value is { scaled: bigint; scale: number } => value !== undefined)
+  if (parsed.length === 0) {
+    return '0'
+  }
+  const scale = Math.max(...parsed.map((value) => value.scale))
+  const total = parsed.reduce((acc, value) => {
+    const multiplier = 10n ** BigInt(scale - value.scale)
+    return acc + value.scaled * multiplier
+  }, 0n)
+  const raw = total.toString().padStart(scale + 1, '0')
+  const whole = raw.slice(0, raw.length - scale)
+  const fraction = scale === 0 ? '' : raw.slice(raw.length - scale).replace(/0+$/, '')
+  return fraction === '' ? whole : `${whole}.${fraction}`
+}
+
+// Narrows SDK contracts to the requested instrument when a token selector is present.
+const filterHoldingsByInstrument = (
+  holdings: TokenHolding[],
+  instrumentId?: TokenInstrumentId,
+): TokenHolding[] => {
+  if (instrumentId === undefined) {
+    return holdings
+  }
+  return holdings.filter((holding) => {
+    const actual = holding.interfaceViewValue?.instrumentId
+    return (
+      (instrumentId.id === undefined || actual?.id === instrumentId.id) &&
+      (instrumentId.admin === undefined || actual?.admin === instrumentId.admin)
+    )
+  })
+}
+
+// Builds balance summaries from UTXOs for generic CIP-56 tokens or Scan fallback.
+const summarizeHoldingUtxos = (
+  holdings: TokenHolding[],
+  requestedInstrument?: TokenInstrumentId,
+): TokenHoldingSummary[] => {
+  const groups = new Map<string, TokenHolding[]>()
+  for (const holding of filterHoldingsByInstrument(holdings, requestedInstrument)) {
+    const key = instrumentKey(holding.interfaceViewValue?.instrumentId ?? requestedInstrument)
+    groups.set(key, [...(groups.get(key) ?? []), holding])
+  }
+  return [...groups.entries()]
+    .map(([key, tokenHoldings]) => {
+      const firstInstrument =
+        tokenHoldings[0]?.interfaceViewValue?.instrumentId ?? requestedInstrument
+      const lockedCount = tokenHoldings.filter(
+        (holding) => holding.interfaceViewValue?.lock != null,
+      ).length
+      return {
+        key,
+        tokenLabel: instrumentLabel(firstInstrument),
+        instrumentId: firstInstrument,
+        totalAmount: sumDecimalAmounts(
+          tokenHoldings
+            .map((holding) => holding.interfaceViewValue?.amount)
+            .filter((amount): amount is string => amount !== undefined),
+        ),
+        utxoCount: tokenHoldings.length,
+        lockedCount,
+        unlockedCount: tokenHoldings.length - lockedCount,
+        source: 'utxos' as const,
+      }
+    })
+    .sort((a, b) => a.tokenLabel.localeCompare(b.tokenLabel))
+}
+
 export type Rpc = {
   handle: (request: JsonRpcRequest) => Promise<JsonRpcResponse | undefined>
   serviceInfo: () => Record<string, unknown>
@@ -257,6 +419,8 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
     (async (options: unknown) => {
       return await SDK.create(options as never)
     })
+  const fetchImpl = deps.fetch ?? fetch
+  const now = deps.now ?? (() => new Date())
   let sdkPromise: Promise<WalletSdk> | undefined
   let tokenSdkPromise: Promise<Cip56TokenSdk> | undefined
 
@@ -455,6 +619,96 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
     })
   }
 
+  // Keeps the generic SDK UTXO list behind one helper so Scan fallback cannot diverge.
+  const listHoldingUtxos = async (partyId: string): Promise<TokenHolding[]> => {
+    const sdk = await getTokenSdk()
+    return (await sdk.token.utxos.list({
+      partyId,
+      includeLocked: true,
+      limit: 100,
+      continueUntilCompletion: true,
+    })) as TokenHolding[]
+  }
+
+  // Uses Scan's Amulet aggregate endpoint for fast CC balances.
+  const scanAmuletHoldingSummary = async (
+    partyId: string,
+    instrumentId?: TokenInstrumentId,
+  ): Promise<TokenHoldingSummary[]> => {
+    const url = `${config.splice.scanApiUrl.replace(/\/$/, '')}/v0/holdings/summary`
+    const response = await fetchImpl(url, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        ...(config.canton.backendToken === undefined
+          ? {}
+          : { authorization: `Bearer ${config.canton.backendToken}` }),
+      },
+      body: JSON.stringify({
+        migration_id: 0,
+        record_time: now().toISOString(),
+        record_time_match: 'at_or_before',
+        owner_party_ids: [partyId],
+      }),
+    })
+    if (!response.ok) {
+      throw new Error(`Scan holdings summary failed with HTTP ${response.status}`)
+    }
+    const parsed = (await response.json()) as {
+      summaries?: Array<{
+        party_id: string
+        total_unlocked_coin: string
+        total_locked_coin: string
+        total_coin_holdings: string
+        accumulated_holding_fees_unlocked: string
+        accumulated_holding_fees_locked: string
+        accumulated_holding_fees_total: string
+        total_available_coin: string
+      }>
+    }
+    const summary = parsed.summaries?.find((item) => item.party_id === partyId)
+    if (summary === undefined) {
+      return []
+    }
+    const normalizedInstrument = {
+      ...(instrumentId?.admin === undefined ? {} : { admin: instrumentId.admin }),
+      id: instrumentId?.id ?? 'Amulet',
+    }
+    return [
+      {
+        key: instrumentKey(normalizedInstrument),
+        tokenLabel: instrumentLabel(normalizedInstrument),
+        instrumentId: normalizedInstrument,
+        totalAmount: summary.total_available_coin,
+        source: 'scan',
+        scan: {
+          totalUnlockedCoin: summary.total_unlocked_coin,
+          totalLockedCoin: summary.total_locked_coin,
+          totalCoinHoldings: summary.total_coin_holdings,
+          accumulatedHoldingFeesUnlocked: summary.accumulated_holding_fees_unlocked,
+          accumulatedHoldingFeesLocked: summary.accumulated_holding_fees_locked,
+          accumulatedHoldingFeesTotal: summary.accumulated_holding_fees_total,
+          totalAvailableCoin: summary.total_available_coin,
+        },
+      },
+    ]
+  }
+
+  // Routes Amulet summaries through Scan and falls back to UTXOs when Scan is unavailable.
+  const cip56ListHoldingSummary = async (params: unknown): Promise<TokenHoldingSummary[]> => {
+    const p = objectParam<Record<string, unknown>>(params, 'cip56.listHoldingSummary')
+    const partyId = requiredStringParam(p, 'partyId')
+    const instrumentId = optionalInstrumentParam(p)
+    if (isAmuletInstrument(instrumentId)) {
+      try {
+        return await scanAmuletHoldingSummary(partyId, instrumentId)
+      } catch (error) {
+        console.warn('[wallet-service] scan holding summary fallback', errorData(error))
+      }
+    }
+    return summarizeHoldingUtxos(await listHoldingUtxos(partyId), instrumentId)
+  }
+
   const cip56AcceptTransfer = async (
     params: unknown,
   ): Promise<{ commands: unknown; disclosedContracts: unknown[] }> => {
@@ -520,6 +774,8 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
           return rpcResult(id, await cip56ListPendingTransfers(request.params))
         case 'cip56.listHoldings':
           return rpcResult(id, await cip56ListHoldings(request.params))
+        case 'cip56.listHoldingSummary':
+          return rpcResult(id, await cip56ListHoldingSummary(request.params))
         case 'cip56.acceptTransfer':
           return rpcResult(id, await cip56AcceptTransfer(request.params))
         case 'cip56.createTransfer':
@@ -569,6 +825,7 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
       'executePrepared',
       'cip56.listPendingTransfers',
       'cip56.listHoldings',
+      'cip56.listHoldingSummary',
       'cip56.acceptTransfer',
       'cip56.createTransfer',
     ],

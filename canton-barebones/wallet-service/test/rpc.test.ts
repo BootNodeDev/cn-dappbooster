@@ -386,6 +386,203 @@ describe('CIP-56 token helpers', () => {
     })
   })
 
+  it('lists Amulet holding summaries through Scan without listing UTXOs', async () => {
+    // Scenario: CC/Amulet balances should use Scan's aggregate endpoint so the
+    // wallet can show a balance without walking every Holding UTXO.
+    const calls: { url: string; body?: unknown }[] = []
+    const rpc = createRpc(withToken(), {
+      now: () => new Date('2026-06-10T12:00:00.000Z'),
+      sdkFactory: async () => {
+        throw new Error('SDK should not list UTXOs for Amulet summary')
+      },
+      fetch: async (url, init) => {
+        calls.push({
+          url: String(url),
+          body: init?.body === undefined ? undefined : JSON.parse(String(init.body)),
+        })
+        return new Response(
+          JSON.stringify({
+            summaries: [
+              {
+                party_id: 'receiver::party',
+                total_unlocked_coin: '7.0000000000',
+                total_locked_coin: '2.0000000000',
+                total_coin_holdings: '9.0000000000',
+                accumulated_holding_fees_unlocked: '0.1000000000',
+                accumulated_holding_fees_locked: '0.2000000000',
+                accumulated_holding_fees_total: '0.3000000000',
+                total_available_coin: '8.7000000000',
+              },
+            ],
+            record_time: '2026-06-10T12:00:00.000Z',
+            migration_id: 0,
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        )
+      },
+    })
+
+    const res = (await rpc.handle({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'cip56.listHoldingSummary',
+      params: { partyId: 'receiver::party', instrumentId: { id: 'Amulet' } },
+    })) as JsonRpcResponse
+
+    assert.ok('result' in res)
+    assert.deepEqual(res.result, [
+      {
+        key: 'unknown-admin:Amulet',
+        tokenLabel: 'Amulet',
+        instrumentId: { id: 'Amulet' },
+        totalAmount: '8.7000000000',
+        source: 'scan',
+        scan: {
+          totalUnlockedCoin: '7.0000000000',
+          totalLockedCoin: '2.0000000000',
+          totalCoinHoldings: '9.0000000000',
+          accumulatedHoldingFeesUnlocked: '0.1000000000',
+          accumulatedHoldingFeesLocked: '0.2000000000',
+          accumulatedHoldingFeesTotal: '0.3000000000',
+          totalAvailableCoin: '8.7000000000',
+        },
+      },
+    ])
+    assert.equal(calls.length, 1)
+    assert.equal(calls[0]?.url, 'http://scan.localhost:4000/api/scan/v0/holdings/summary')
+    assert.deepEqual(calls[0]?.body, {
+      migration_id: 0,
+      record_time: '2026-06-10T12:00:00.000Z',
+      record_time_match: 'at_or_before',
+      owner_party_ids: ['receiver::party'],
+    })
+  })
+
+  it('falls back to UTXO summaries when Scan cannot summarize Amulet', async () => {
+    // Scenario: local Scan may be unavailable or lagging. The summary RPC must still
+    // return a correct balance by falling back to the existing SDK UTXO path.
+    const holdingContracts = [
+      {
+        contractId: 'holding-cid-1',
+        interfaceViewValue: {
+          owner: 'receiver::party',
+          amount: '4.0000000000',
+          instrumentId: { admin: 'admin::party', id: 'Amulet' },
+          lock: null,
+        },
+      },
+      {
+        contractId: 'holding-cid-2',
+        interfaceViewValue: {
+          owner: 'receiver::party',
+          amount: '3.0000000000',
+          instrumentId: { admin: 'admin::party', id: 'Amulet' },
+          lock: { holders: ['validator::party'] },
+        },
+      },
+    ]
+    const seen: { params?: unknown } = {}
+    const rpc = createRpc(withToken(), {
+      fetch: async () => new Response('scan unavailable', { status: 503 }),
+      sdkFactory: async () => ({
+        token: {
+          utxos: {
+            list: async (params: unknown) => {
+              seen.params = params
+              return holdingContracts
+            },
+          },
+        },
+      }),
+    })
+
+    const res = (await rpc.handle({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'cip56.listHoldingSummary',
+      params: { partyId: 'receiver::party', instrumentId: { id: 'Amulet' } },
+    })) as JsonRpcResponse
+
+    assert.ok('result' in res)
+    assert.deepEqual(res.result, [
+      {
+        key: 'admin::party:Amulet',
+        tokenLabel: 'Amulet',
+        instrumentId: { admin: 'admin::party', id: 'Amulet' },
+        totalAmount: '7',
+        utxoCount: 2,
+        lockedCount: 1,
+        unlockedCount: 1,
+        source: 'utxos',
+      },
+    ])
+    assert.deepEqual(seen.params, {
+      partyId: 'receiver::party',
+      includeLocked: true,
+      limit: 100,
+      continueUntilCompletion: true,
+    })
+  })
+
+  it('summarizes non-Amulet tokens from UTXOs without calling Scan', async () => {
+    // Scenario: Scan aggregates only CC/Amulet. Other CIP-56 tokens must use the
+    // generic UTXO list and filter by the requested instrument.
+    let scanCalled = false
+    const rpc = createRpc(withToken(), {
+      fetch: async () => {
+        scanCalled = true
+        return new Response('{}')
+      },
+      sdkFactory: async () => ({
+        token: {
+          utxos: {
+            list: async () => [
+              {
+                contractId: 'holding-cid-1',
+                interfaceViewValue: {
+                  amount: '5',
+                  instrumentId: { admin: 'issuer::party', id: 'MockToken' },
+                },
+              },
+              {
+                contractId: 'holding-cid-2',
+                interfaceViewValue: {
+                  amount: '99',
+                  instrumentId: { admin: 'admin::party', id: 'Amulet' },
+                },
+              },
+            ],
+          },
+        },
+      }),
+    })
+
+    const res = (await rpc.handle({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'cip56.listHoldingSummary',
+      params: {
+        partyId: 'receiver::party',
+        instrumentId: { admin: 'issuer::party', id: 'MockToken' },
+      },
+    })) as JsonRpcResponse
+
+    assert.ok('result' in res)
+    assert.equal(scanCalled, false)
+    assert.deepEqual(res.result, [
+      {
+        key: 'issuer::party:MockToken',
+        tokenLabel: 'MockToken',
+        instrumentId: { admin: 'issuer::party', id: 'MockToken' },
+        totalAmount: '5',
+        utxoCount: 1,
+        lockedCount: 0,
+        unlockedCount: 1,
+        source: 'utxos',
+      },
+    ])
+  })
+
   it('rejects CIP-56 helper calls without required params', async () => {
     // Scenario: malformed Carpincho calls should fail as JSON-RPC invalid
     // params before the SDK is initialized or any Splice service is contacted.
