@@ -38,9 +38,25 @@ interface AcceptTransferCommands {
   disclosedContracts?: unknown[]
 }
 
+interface CreateTransferCommands {
+  commands: unknown
+  disclosedContracts?: unknown[]
+}
+
 interface AcceptTransferParams {
   account: AccountPublic
   transferInstructionCid: string
+  signMessage: VaultContextValue['signMessage']
+  recordTransaction: VaultContextValue['recordTransaction']
+}
+
+export interface CreateTokenTransferParams {
+  account: AccountPublic
+  recipient: string
+  amount: string
+  instrumentId: TokenInstrumentId
+  memo?: string
+  expirationDate: string
   signMessage: VaultContextValue['signMessage']
   recordTransaction: VaultContextValue['recordTransaction']
 }
@@ -105,6 +121,39 @@ export const acceptPendingTransfer = async ({
     disclosedContracts,
     method: 'cip56.transfer.accept',
     summary: 'Accept transfer',
+    signMessage,
+    recordTransaction,
+  })
+}
+
+// Creates a transfer instruction while keeping the final transaction signature inside Carpincho.
+export const createTokenTransfer = async ({
+  account,
+  recipient,
+  amount,
+  instrumentId,
+  memo,
+  expirationDate,
+  signMessage,
+  recordTransaction,
+}: CreateTokenTransferParams): Promise<{ updateId?: string; completionOffset?: number }> => {
+  const { commands, disclosedContracts } = await walletServiceRequest<CreateTransferCommands>(
+    'cip56.createTransfer',
+    {
+      sender: account.partyId,
+      recipient,
+      amount,
+      instrumentId: instrumentId.id,
+      ...(memo === undefined || memo.trim() === '' ? {} : { memo: memo.trim() }),
+      expirationDate,
+    },
+  )
+  return await executePreparedCommands({
+    account,
+    commands,
+    disclosedContracts,
+    method: 'cip56.transfer.create',
+    summary: `Send ${amount} ${tokenDisplayLabel(instrumentId)}`,
     signMessage,
     recordTransaction,
   })

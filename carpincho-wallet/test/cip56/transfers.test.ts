@@ -1,6 +1,10 @@
 import { strict as assert } from 'node:assert'
 import { afterEach, describe, it } from 'node:test'
-import { acceptPendingTransfer, listPendingIncomingTransfers } from '@/cip56/transfers'
+import {
+  acceptPendingTransfer,
+  createTokenTransfer,
+  listPendingIncomingTransfers,
+} from '@/cip56/transfers'
 import type { AccountPublic } from '@/vault/types'
 
 const originalFetch = globalThis.fetch
@@ -129,5 +133,91 @@ describe('CIP-56 wallet-service transfer helpers', () => {
       signatureBase64: 'signature-base64',
     })
     assert.equal((recorded[0] as { method?: string } | undefined)?.method, 'cip56.transfer.accept')
+  })
+
+  it('creates a token transfer by preparing SDK commands and signing only the prepared hash', async () => {
+    // Scenario: sending a CIP-56 token should keep the wallet-service SDK boundary
+    // thin. Carpincho sends transfer intent data, receives commands, signs the
+    // prepared transaction hash locally, and submits that signature.
+    const calls: Array<{ method: string; params: Record<string, unknown> }> = []
+    globalThis.fetch = (async (_input, init) => {
+      const body = JSON.parse(String(init?.body)) as {
+        method: string
+        params: Record<string, unknown>
+      }
+      calls.push({ method: body.method, params: body.params })
+      if (body.method === 'cip56.createTransfer') {
+        return new Response(
+          JSON.stringify({
+            result: {
+              commands: { ExerciseCommand: { choice: 'TransferFactory_Transfer' } },
+              disclosedContracts: [
+                { contractId: 'transfer-context-cid', createdEventBlob: 'blob' },
+              ],
+            },
+          }),
+          { status: 200 },
+        )
+      }
+      if (body.method === 'prepareTransaction') {
+        return new Response(
+          JSON.stringify({
+            result: {
+              preparedTransaction: 'prepared-transfer-tx',
+              preparedTransactionHash: 'prepared-transfer-hash',
+              hashingSchemeVersion: 'HASHING_SCHEME_VERSION_V2',
+            },
+          }),
+          { status: 200 },
+        )
+      }
+      if (body.method === 'executePrepared') {
+        return new Response(JSON.stringify({ result: { updateId: 'update-transfer-1' } }), {
+          status: 200,
+        })
+      }
+      throw new Error(`unexpected method ${body.method}`)
+    }) as typeof globalThis.fetch
+    const expirationDate = '2026-06-10T15:00:00.000Z'
+    const recorded: unknown[] = []
+
+    const result = await createTokenTransfer({
+      account: ACCOUNT,
+      recipient: 'receiver::party',
+      amount: '7.5',
+      instrumentId: { admin: 'admin::party', id: 'Amulet' },
+      memo: 'lunch',
+      expirationDate,
+      signMessage: async (accountId, messageBase64) => {
+        assert.equal(accountId, 'account-1')
+        assert.equal(messageBase64, 'prepared-transfer-hash')
+        return 'signature-base64'
+      },
+      recordTransaction: async (tx) => {
+        recorded.push(tx)
+        return { ...tx, id: 'tx-transfer-1', createdAt: 3 }
+      },
+    })
+
+    assert.deepEqual(result, { updateId: 'update-transfer-1' })
+    assert.deepEqual(
+      calls.map((call) => call.method),
+      ['cip56.createTransfer', 'prepareTransaction', 'executePrepared'],
+    )
+    assert.deepEqual(calls[0]?.params, {
+      sender: 'alice::party',
+      recipient: 'receiver::party',
+      amount: '7.5',
+      instrumentId: 'Amulet',
+      memo: 'lunch',
+      expirationDate,
+    })
+    assert.deepEqual(calls[1]?.params, {
+      partyId: 'alice::party',
+      actAs: ['alice::party'],
+      commands: { ExerciseCommand: { choice: 'TransferFactory_Transfer' } },
+      disclosedContracts: [{ contractId: 'transfer-context-cid', createdEventBlob: 'blob' }],
+    })
+    assert.equal((recorded[0] as { method?: string } | undefined)?.method, 'cip56.transfer.create')
   })
 })
