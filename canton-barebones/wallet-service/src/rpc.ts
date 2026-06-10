@@ -902,7 +902,7 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
         parties: [provider],
         templateIds: [TRANSFER_PREAPPROVAL_PROPOSAL_TEMPLATE_ID],
         filterByParty: true,
-        continueUntilCompletion: true,
+        continueUntilCompletion: false,
       })
       const proposal = proposals.find((contract) => {
         const createArgument = contract.createArgument

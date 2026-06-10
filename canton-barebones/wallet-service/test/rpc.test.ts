@@ -522,7 +522,7 @@ describe('CIP-56 token helpers', () => {
       parties: ['provider::party'],
       templateIds: ['#splice-wallet:Splice.Wallet.TransferPreapproval:TransferPreapprovalProposal'],
       filterByParty: true,
-      continueUntilCompletion: true,
+      continueUntilCompletion: false,
     })
     assert.deepEqual(seen.submit, {
       commands: [
