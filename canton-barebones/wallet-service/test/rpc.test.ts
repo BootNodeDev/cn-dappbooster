@@ -416,15 +416,21 @@ describe('CIP-56 token helpers', () => {
   it('prepares an Amulet transfer preapproval proposal create command for the receiver party', async () => {
     // Scenario: the external receiver can only sign the proposal creation. The
     // validator provider accepts that proposal in a separate local-party submit.
-    const seen: { parties?: unknown } = {}
     const rpc = createRpc(withToken(), {
       sdkFactory: async () => ({
         amulet: {
           preapproval: {
-            command: {
-              create: async (args: unknown) => {
-                seen.parties = (args as { parties?: unknown }).parties
-                return { CreateCommand: { templateId: 'TransferPreapprovalProposal' } }
+            ctx: {
+              validatorParty: 'provider::party',
+              amuletService: {
+                scanProxyClient: {
+                  getAmuletRules: async () => ({
+                    template_id: '#splice-amulet:Splice.AmuletRules:AmuletRules',
+                    contract_id: 'amulet-rules-cid',
+                    created_event_blob: 'rules-blob',
+                    payload: { dso: 'DSO::party' },
+                  }),
+                },
               },
             },
           },
@@ -441,10 +447,21 @@ describe('CIP-56 token helpers', () => {
 
     assert.ok('result' in res)
     assert.deepEqual(res.result, {
-      commands: [{ CreateCommand: { templateId: 'TransferPreapprovalProposal' } }],
+      commands: [
+        {
+          CreateCommand: {
+            templateId:
+              '#splice-wallet:Splice.Wallet.TransferPreapproval:TransferPreapprovalProposal',
+            createArguments: {
+              provider: 'provider::party',
+              receiver: 'receiver::party',
+              expectedDso: 'DSO::party',
+            },
+          },
+        },
+      ],
       disclosedContracts: [],
     })
-    assert.deepEqual(seen.parties, { receiver: 'receiver::party' })
   })
 
   it('accepts an Amulet transfer preapproval proposal as the validator provider', async () => {
@@ -465,6 +482,7 @@ describe('CIP-56 token helpers', () => {
                     template_id: '#splice-amulet:Splice.AmuletRules:AmuletRules',
                     contract_id: 'amulet-rules-cid',
                     created_event_blob: 'rules-blob',
+                    payload: { dso: 'DSO::party' },
                   }),
                   getActiveOpenMiningRound: async () => ({
                     template_id: '#splice-amulet:Splice.Round:OpenMiningRound',
@@ -494,6 +512,7 @@ describe('CIP-56 token helpers', () => {
                   createArgument: {
                     receiver: 'receiver::party',
                     provider: 'provider::party',
+                    expectedDso: 'DSO::party',
                   },
                 },
               ]
@@ -590,6 +609,7 @@ describe('CIP-56 token helpers', () => {
                     template_id: '#splice-amulet:Splice.AmuletRules:AmuletRules',
                     contract_id: 'amulet-rules-cid',
                     created_event_blob: 'rules-blob',
+                    payload: { dso: 'DSO::party' },
                   }),
                   getActiveOpenMiningRound: async () => ({
                     template_id: '#splice-amulet:Splice.Round:OpenMiningRound',
@@ -619,6 +639,7 @@ describe('CIP-56 token helpers', () => {
                   createArgument: {
                     receiver: 'receiver::party',
                     provider: 'provider::party',
+                    expectedDso: 'DSO::party',
                   },
                 },
               ]

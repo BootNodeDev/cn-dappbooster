@@ -887,8 +887,31 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
     const p = objectParam<Record<string, unknown>>(params, 'amulet.preapproval.create')
     const receiver = requiredStringParam(p, 'receiver')
     const sdk = await getTokenSdk()
-    const commands = await sdk.amulet?.preapproval.command.create({ parties: { receiver } })
-    return { commands: commandList(commands), disclosedContracts: [] }
+    const ctx = sdk.amulet?.preapproval.ctx
+    const provider = ctx?.validatorParty
+    const scanProxyClient = ctx?.amuletService?.scanProxyClient
+    if (provider === undefined || provider.trim() === '') {
+      throw new Error('Amulet validator provider party is unavailable')
+    }
+    if (scanProxyClient === undefined) {
+      throw new Error('Amulet service context is unavailable')
+    }
+    const amuletRules = await scanProxyClient.getAmuletRules()
+    const expectedDso = amuletRules?.payload?.dso
+    if (expectedDso === undefined || expectedDso.trim() === '') {
+      throw new Error('Amulet DSO party is unavailable')
+    }
+    return {
+      commands: [
+        {
+          CreateCommand: {
+            templateId: TRANSFER_PREAPPROVAL_PROPOSAL_TEMPLATE_ID,
+            createArguments: { provider, receiver, expectedDso },
+          },
+        },
+      ],
+      disclosedContracts: [],
+    }
   }
 
   // Polls provider ACS until the receiver-signed proposal is assigned to this participant.
@@ -896,6 +919,7 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
     acsReader: ActiveJsContractReader,
     receiver: string,
     provider: string,
+    expectedDso: string,
   ): Promise<ActiveJsContract | undefined> => {
     for (let attempt = 0; attempt < TRANSFER_PREAPPROVAL_PROPOSAL_MAX_ATTEMPTS; attempt += 1) {
       const proposals = await acsReader.readJsContracts({
@@ -909,7 +933,8 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
         return (
           isPlainObject(createArgument) &&
           createArgument.receiver === receiver &&
-          createArgument.provider === provider
+          createArgument.provider === provider &&
+          createArgument.expectedDso === expectedDso
         )
       })
       if (proposal !== undefined) {
@@ -946,15 +971,19 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
     if (acsReader === undefined || internalLedger === undefined) {
       throw new Error('Canton ledger context is unavailable')
     }
-    const proposal = await findAmuletPreapprovalProposal(acsReader, receiver, provider)
-    if (proposal === undefined) {
-      throw new Error(`TransferPreapprovalProposal not found for receiver ${receiver}`)
-    }
     const amuletRules = await scanProxyClient.getAmuletRules()
-    const activeRound = await scanProxyClient.getActiveOpenMiningRound()
     if (amuletRules == null) {
       throw new Error('AmuletRules contract not found')
     }
+    const expectedDso = amuletRules.payload?.dso
+    if (expectedDso === undefined || expectedDso.trim() === '') {
+      throw new Error('Amulet DSO party is unavailable')
+    }
+    const proposal = await findAmuletPreapprovalProposal(acsReader, receiver, provider, expectedDso)
+    if (proposal === undefined) {
+      throw new Error(`TransferPreapprovalProposal not found for receiver ${receiver}`)
+    }
+    const activeRound = await scanProxyClient.getActiveOpenMiningRound()
     if (activeRound == null) {
       throw new Error('OpenMiningRound active at current moment not found')
     }
