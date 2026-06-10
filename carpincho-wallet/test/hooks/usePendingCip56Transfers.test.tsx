@@ -7,6 +7,7 @@ import {
   type Cip56TransferApi,
   usePendingCip56Transfers,
 } from '@/hooks/usePendingCip56Transfers'
+import { TestQueryClientProvider } from '@/test-utils/queryClient'
 import type { AccountPublic } from '@/vault/types'
 
 const ACCOUNT: AccountPublic = {
@@ -90,7 +91,7 @@ describe('usePendingCip56Transfers', () => {
       },
     }
 
-    render(<Probe api={api} />)
+    render(<Probe api={api} />, { wrapper: TestQueryClientProvider })
 
     await waitFor(() =>
       assert.equal(screen.getByText('transfer-cid-1').textContent, 'transfer-cid-1'),
@@ -119,6 +120,7 @@ describe('usePendingCip56Transfers', () => {
         account={ACCOUNT}
         api={api}
       />,
+      { wrapper: TestQueryClientProvider },
     )
 
     await screen.findByText('alice-transfer-cid')

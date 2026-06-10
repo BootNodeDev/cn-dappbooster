@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { useCallback, useMemo } from 'react'
 import {
   acceptPendingTransfer,
   listPendingIncomingTransfers,
@@ -32,16 +33,6 @@ export interface PendingCip56TransfersOptions {
   recordTransaction?: VaultContextValue['recordTransaction']
 }
 
-interface PendingCip56TransfersData {
-  accountKey?: string
-  transfers: PendingTokenTransfer[]
-}
-
-interface PendingCip56TransfersError {
-  accountKey?: string
-  message: string
-}
-
 const defaultApi: Cip56TransferApi = {
   listPendingIncomingTransfers,
   acceptTransfer: acceptPendingTransfer,
@@ -56,59 +47,21 @@ export const usePendingCip56Transfers = (
 ): PendingCip56TransfersState => {
   const api = options.api ?? defaultApi
   const pollMs = options.pollMs === undefined ? CIP56_TRANSFER_POLL_MS : options.pollMs
-  const [data, setData] = useState<PendingCip56TransfersData>({ transfers: [] })
-  const [loading, setLoading] = useState(false)
-  const [errorData, setErrorData] = useState<PendingCip56TransfersError | undefined>(undefined)
-  const accountKey = account === undefined ? undefined : `${account.id}:${account.partyId}`
-  const currentAccountKey = useRef(accountKey)
-  currentAccountKey.current = accountKey
-  const transfers = data.accountKey === accountKey ? data.transfers : []
-  const error =
-    errorData !== undefined && errorData.accountKey === accountKey ? errorData.message : undefined
+  const query = useQuery({
+    enabled: account !== undefined,
+    queryKey: ['cip56', 'incomingTransfers', account?.id, account?.partyId],
+    queryFn: () => api.listPendingIncomingTransfers(account?.partyId ?? ''),
+    refetchInterval: pollMs === null ? false : pollMs,
+  })
+  const transfers = query.data ?? []
+  const error = query.error instanceof Error ? query.error.message : undefined
 
   const refresh = useCallback(async (): Promise<void> => {
     if (account === undefined) {
-      setData({ transfers: [] })
-      setErrorData(undefined)
       return
     }
-    setLoading(true)
-    try {
-      const nextTransfers = await api.listPendingIncomingTransfers(account.partyId)
-      if (accountKey === currentAccountKey.current) {
-        setData({ accountKey, transfers: nextTransfers })
-        setErrorData(undefined)
-      }
-    } catch (err) {
-      if (accountKey === currentAccountKey.current) {
-        setErrorData({ accountKey, message: (err as Error).message })
-      }
-    } finally {
-      if (accountKey === currentAccountKey.current) {
-        setLoading(false)
-      }
-    }
-  }, [account, accountKey, api])
-
-  useEffect(() => {
-    let cancelled = false
-    let timer: ReturnType<typeof setTimeout> | undefined
-    const tick = async (): Promise<void> => {
-      await refresh()
-      if (!cancelled && pollMs !== null) {
-        timer = setTimeout(() => {
-          void tick()
-        }, pollMs)
-      }
-    }
-    void tick()
-    return () => {
-      cancelled = true
-      if (timer !== undefined) {
-        clearTimeout(timer)
-      }
-    }
-  }, [refresh, pollMs])
+    await query.refetch()
+  }, [account, query])
 
   const accept = useCallback(
     async (transferInstructionCid: string): Promise<void> => {
@@ -124,13 +77,19 @@ export const usePendingCip56Transfers = (
         signMessage: options.signMessage,
         recordTransaction: options.recordTransaction,
       })
-      await refresh()
+      await query.refetch()
     },
-    [account, api, options.signMessage, options.recordTransaction, refresh],
+    [account, api, options.signMessage, options.recordTransaction, query],
   )
 
   return useMemo(
-    () => ({ transfers, loading, ...(error === undefined ? {} : { error }), refresh, accept }),
-    [transfers, loading, error, refresh, accept],
+    () => ({
+      transfers,
+      loading: query.isFetching,
+      ...(error === undefined ? {} : { error }),
+      refresh,
+      accept,
+    }),
+    [transfers, query.isFetching, error, refresh, accept],
   )
 }

@@ -4,6 +4,7 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { IncomingTransfersSection } from '@/components/IncomingTransfersSection'
 import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
+import { TestQueryClientProvider } from '@/test-utils/queryClient'
 import type { AccountPublic } from '@/vault/types'
 import { VaultContext, type VaultContextValue } from '@/vault/VaultContext'
 
@@ -44,9 +45,11 @@ const baseVault = (): VaultContextValue =>
 // Mounts incoming transfers under vault context so accept can use wallet signing hooks.
 const renderIncomingTransfers = (api: Cip56TransferApi): void => {
   render(
-    <VaultContext.Provider value={baseVault()}>
-      <IncomingTransfersSection api={api} />
-    </VaultContext.Provider>,
+    <TestQueryClientProvider>
+      <VaultContext.Provider value={baseVault()}>
+        <IncomingTransfersSection api={api} />
+      </VaultContext.Provider>
+    </TestQueryClientProvider>,
   )
 }
 
