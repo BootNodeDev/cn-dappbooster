@@ -568,6 +568,82 @@ describe('CIP-56 token helpers', () => {
     assert.equal(seen.inputOwner, 'provider::party')
   })
 
+  it('waits for an Amulet transfer preapproval proposal to become visible before accepting it', async () => {
+    // Scenario: the receiver-signed proposal may not be visible in the provider ACS
+    // immediately after interactive submission execute returns, so acceptance retries briefly.
+    let readCount = 0
+    const slept: number[] = []
+    const rpc = createRpc(withToken(), {
+      now: () => new Date('2026-06-10T00:00:00.000Z'),
+      sleep: async (ms) => {
+        slept.push(ms)
+      },
+      sdkFactory: async () => ({
+        amulet: {
+          preapproval: {
+            ctx: {
+              validatorParty: 'provider::party',
+              commonCtx: { defaultSynchronizerId: 'sync-1' },
+              amuletService: {
+                scanProxyClient: {
+                  getAmuletRules: async () => ({
+                    template_id: '#splice-amulet:Splice.AmuletRules:AmuletRules',
+                    contract_id: 'amulet-rules-cid',
+                    created_event_blob: 'rules-blob',
+                  }),
+                  getActiveOpenMiningRound: async () => ({
+                    template_id: '#splice-amulet:Splice.Round:OpenMiningRound',
+                    contract_id: 'open-round-cid',
+                    created_event_blob: 'round-blob',
+                  }),
+                },
+                tokenStandard: {
+                  getInputHoldingsCids: async () => ['provider-holding-cid'],
+                },
+              },
+            },
+          },
+        },
+        ledger: {
+          acsReader: {
+            readJsContracts: async () => {
+              readCount += 1
+              if (readCount === 1) {
+                return []
+              }
+              return [
+                {
+                  contractId: 'proposal-cid',
+                  templateId:
+                    '#splice-wallet:Splice.Wallet.TransferPreapproval:TransferPreapprovalProposal',
+                  createArgument: {
+                    receiver: 'receiver::party',
+                    provider: 'provider::party',
+                  },
+                },
+              ]
+            },
+          },
+          internal: {
+            submit: async () => ({ updateId: 'accept-update-1' }),
+          },
+        },
+      }),
+    })
+
+    const res = (await rpc.handle({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'amulet.preapproval.acceptProposal',
+      params: { receiver: 'receiver::party' },
+    })) as JsonRpcResponse
+
+    assert.ok('result' in res)
+    assert.deepEqual(res.result, { updateId: 'accept-update-1' })
+    assert.equal(readCount, 2)
+    assert.deepEqual(slept, [1_000])
+  })
+
   it('prepares an Amulet transfer preapproval cancel command for the receiver party', async () => {
     // Scenario: disabling auto-accept must prepare the SDK cancel command and
     // return any disclosed contracts required by interactive submission.

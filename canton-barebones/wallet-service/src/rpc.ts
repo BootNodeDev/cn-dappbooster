@@ -91,6 +91,16 @@ type RpcDependencies = {
   sdkFactory?: SdkFactory
   fetch?: typeof fetch
   now?: () => Date
+  sleep?: (ms: number) => Promise<void>
+}
+
+type ActiveJsContractReader = {
+  readJsContracts: (options: {
+    parties: string[]
+    templateIds: string[]
+    filterByParty: boolean
+    continueUntilCompletion: boolean
+  }) => Promise<ActiveJsContract[]>
 }
 
 type Cip56TokenSdk = {
@@ -131,14 +141,7 @@ type Cip56TokenSdk = {
     }
   }
   ledger?: {
-    acsReader?: {
-      readJsContracts: (options: {
-        parties: string[]
-        templateIds: string[]
-        filterByParty: boolean
-        continueUntilCompletion: boolean
-      }) => Promise<ActiveJsContract[]>
-    }
+    acsReader?: ActiveJsContractReader
     internal?: {
       submit: (params: {
         commands: unknown[]
@@ -251,6 +254,8 @@ type AmuletPreapprovalStatus = {
 
 const TRANSFER_PREAPPROVAL_PROPOSAL_TEMPLATE_ID =
   '#splice-wallet:Splice.Wallet.TransferPreapproval:TransferPreapprovalProposal'
+const TRANSFER_PREAPPROVAL_PROPOSAL_MAX_ATTEMPTS = 31
+const TRANSFER_PREAPPROVAL_PROPOSAL_RETRY_MS = 1_000
 
 export const rpcResult = (id: JsonRpcId, result: unknown): JsonRpcSuccess => ({
   jsonrpc: '2.0',
@@ -523,6 +528,12 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
     })
   const fetchImpl = deps.fetch ?? fetch
   const now = deps.now ?? (() => new Date())
+  const sleep =
+    deps.sleep ??
+    ((ms) =>
+      new Promise<void>((resolve) => {
+        setTimeout(resolve, ms)
+      }))
   let sdkPromise: Promise<WalletSdk> | undefined
   let tokenSdkPromise: Promise<Cip56TokenSdk> | undefined
 
@@ -880,6 +891,37 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
     return { commands: commandList(commands), disclosedContracts: [] }
   }
 
+  // Polls provider ACS until the receiver-signed proposal is assigned to this participant.
+  const findAmuletPreapprovalProposal = async (
+    acsReader: ActiveJsContractReader,
+    receiver: string,
+    provider: string,
+  ): Promise<ActiveJsContract | undefined> => {
+    for (let attempt = 0; attempt < TRANSFER_PREAPPROVAL_PROPOSAL_MAX_ATTEMPTS; attempt += 1) {
+      const proposals = await acsReader.readJsContracts({
+        parties: [provider],
+        templateIds: [TRANSFER_PREAPPROVAL_PROPOSAL_TEMPLATE_ID],
+        filterByParty: true,
+        continueUntilCompletion: true,
+      })
+      const proposal = proposals.find((contract) => {
+        const createArgument = contract.createArgument
+        return (
+          isPlainObject(createArgument) &&
+          createArgument.receiver === receiver &&
+          createArgument.provider === provider
+        )
+      })
+      if (proposal !== undefined) {
+        return proposal
+      }
+      if (attempt < TRANSFER_PREAPPROVAL_PROPOSAL_MAX_ATTEMPTS - 1) {
+        await sleep(TRANSFER_PREAPPROVAL_PROPOSAL_RETRY_MS)
+      }
+    }
+    return undefined
+  }
+
   // Accepts the receiver-created proposal with the locally hosted validator provider party.
   const amuletPreapprovalAcceptProposal = async (params: unknown): Promise<unknown> => {
     const p = objectParam<Record<string, unknown>>(params, 'amulet.preapproval.acceptProposal')
@@ -904,20 +946,7 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
     if (acsReader === undefined || internalLedger === undefined) {
       throw new Error('Canton ledger context is unavailable')
     }
-    const proposals = await acsReader.readJsContracts({
-      parties: [provider],
-      templateIds: [TRANSFER_PREAPPROVAL_PROPOSAL_TEMPLATE_ID],
-      filterByParty: true,
-      continueUntilCompletion: true,
-    })
-    const proposal = proposals.find((contract) => {
-      const createArgument = contract.createArgument
-      return (
-        isPlainObject(createArgument) &&
-        createArgument.receiver === receiver &&
-        createArgument.provider === provider
-      )
-    })
+    const proposal = await findAmuletPreapprovalProposal(acsReader, receiver, provider)
     if (proposal === undefined) {
       throw new Error(`TransferPreapprovalProposal not found for receiver ${receiver}`)
     }
