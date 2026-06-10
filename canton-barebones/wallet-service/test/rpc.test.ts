@@ -210,10 +210,11 @@ describe('CIP-56 token helpers', () => {
         },
       },
     ]
-    const seen: { partyId?: string; tokenConfig?: unknown } = {}
+    const seen: { partyId?: string; tokenConfig?: unknown; amuletConfig?: unknown } = {}
     const rpc = createRpc(withToken(), {
       sdkFactory: async (options) => {
         seen.tokenConfig = (options as { token?: unknown }).token
+        seen.amuletConfig = (options as { amulet?: unknown }).amulet
         return {
           token: {
             transfer: {
@@ -241,6 +242,12 @@ describe('CIP-56 token helpers', () => {
       validatorUrl: 'http://localhost:2000/api/validator',
       auth: { method: 'static', token: 'backend.jwt' },
       registries: ['http://localhost:2000/api/validator/v0/scan-proxy'],
+    })
+    assert.deepEqual(seen.amuletConfig, {
+      validatorUrl: 'http://localhost:2000/api/validator',
+      scanApiUrl: 'http://scan.localhost:4000/api/scan',
+      registryUrl: 'http://localhost:2000/api/validator/v0/scan-proxy',
+      auth: { method: 'static', token: 'backend.jwt' },
     })
   })
 
@@ -336,19 +343,23 @@ describe('CIP-56 token helpers', () => {
   it('looks up an Amulet transfer preapproval through the SDK Amulet namespace', async () => {
     // Scenario: Carpincho needs to know whether the selected party already
     // allows automatic Amulet receipts before rendering the enable/disable UI.
-    const status = {
-      contractId: 'preapproval-cid-1',
-      templateId: 'Splice.AmuletRules:TransferPreapproval',
-      expiresAt: new Date('2026-06-11T12:00:00.000Z'),
+    const preapproval = {
+      contract: {
+        contract_id: 'preapproval-cid-1',
+        template_id: 'Splice.AmuletRules:TransferPreapproval',
+        payload: {
+          expiresAt: '2026-06-11T12:00:00.000Z',
+        },
+      },
     }
     const seen: { receiver?: string } = {}
     const rpc = createRpc(withToken(), {
       sdkFactory: async () => ({
         amulet: {
           preapproval: {
-            fetchStatus: async (receiver: string) => {
+            fetchQuick: async (receiver: string) => {
               seen.receiver = receiver
-              return status
+              return preapproval
             },
           },
         },
@@ -373,9 +384,38 @@ describe('CIP-56 token helpers', () => {
     assert.equal(seen.receiver, 'receiver::party')
   })
 
-  it('prepares an Amulet transfer preapproval create command for the receiver party', async () => {
-    // Scenario: enabling auto-accept must prepare a create command for the
-    // active Carpincho party while leaving signing and execution to Carpincho.
+  it('returns inactive Amulet preapproval status without waiting when none exists', async () => {
+    // Scenario: the Tokens tab polls this method every few seconds. Missing
+    // preapproval must resolve immediately instead of using the SDK wait helper.
+    const seen: { receiver?: string } = {}
+    const rpc = createRpc(withToken(), {
+      sdkFactory: async () => ({
+        amulet: {
+          preapproval: {
+            fetchQuick: async (receiver: string) => {
+              seen.receiver = receiver
+              return null
+            },
+          },
+        },
+      }),
+    })
+
+    const res = (await rpc.handle({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'amulet.preapproval.status',
+      params: { receiver: 'receiver::party' },
+    })) as JsonRpcResponse
+
+    assert.ok('result' in res)
+    assert.deepEqual(res.result, { active: false, expired: false })
+    assert.equal(seen.receiver, 'receiver::party')
+  })
+
+  it('prepares an Amulet transfer preapproval proposal create command for the receiver party', async () => {
+    // Scenario: the external receiver can only sign the proposal creation. The
+    // validator provider accepts that proposal in a separate local-party submit.
     const seen: { parties?: unknown } = {}
     const rpc = createRpc(withToken(), {
       sdkFactory: async () => ({
@@ -384,7 +424,7 @@ describe('CIP-56 token helpers', () => {
             command: {
               create: async (args: unknown) => {
                 seen.parties = (args as { parties?: unknown }).parties
-                return { CreateCommand: { templateId: 'TransferPreapproval' } }
+                return { CreateCommand: { templateId: 'TransferPreapprovalProposal' } }
               },
             },
           },
@@ -401,10 +441,131 @@ describe('CIP-56 token helpers', () => {
 
     assert.ok('result' in res)
     assert.deepEqual(res.result, {
-      commands: { CreateCommand: { templateId: 'TransferPreapproval' } },
+      commands: [{ CreateCommand: { templateId: 'TransferPreapprovalProposal' } }],
       disclosedContracts: [],
     })
     assert.deepEqual(seen.parties, { receiver: 'receiver::party' })
+  })
+
+  it('accepts an Amulet transfer preapproval proposal as the validator provider', async () => {
+    // Scenario: after Carpincho creates the receiver-signed proposal, the local
+    // validator provider must accept it with a normal participant submit.
+    const seen: { acs?: unknown; submit?: unknown; inputOwner?: string } = {}
+    const rpc = createRpc(withToken(), {
+      now: () => new Date('2026-06-10T00:00:00.000Z'),
+      sdkFactory: async () => ({
+        amulet: {
+          preapproval: {
+            ctx: {
+              validatorParty: 'provider::party',
+              commonCtx: { defaultSynchronizerId: 'sync-1' },
+              amuletService: {
+                scanProxyClient: {
+                  getAmuletRules: async () => ({
+                    template_id: '#splice-amulet:Splice.AmuletRules:AmuletRules',
+                    contract_id: 'amulet-rules-cid',
+                    created_event_blob: 'rules-blob',
+                  }),
+                  getActiveOpenMiningRound: async () => ({
+                    template_id: '#splice-amulet:Splice.Round:OpenMiningRound',
+                    contract_id: 'open-round-cid',
+                    created_event_blob: 'round-blob',
+                  }),
+                },
+                tokenStandard: {
+                  getInputHoldingsCids: async (owner: string) => {
+                    seen.inputOwner = owner
+                    return ['provider-holding-cid']
+                  },
+                },
+              },
+            },
+          },
+        },
+        ledger: {
+          acsReader: {
+            readJsContracts: async (options: unknown) => {
+              seen.acs = options
+              return [
+                {
+                  contractId: 'proposal-cid',
+                  templateId:
+                    '#splice-wallet:Splice.Wallet.TransferPreapproval:TransferPreapprovalProposal',
+                  createArgument: {
+                    receiver: 'receiver::party',
+                    provider: 'provider::party',
+                  },
+                },
+              ]
+            },
+          },
+          internal: {
+            submit: async (params: unknown) => {
+              seen.submit = params
+              return { updateId: 'accept-update-1', completionOffset: 42 }
+            },
+          },
+        },
+      }),
+    })
+
+    const res = (await rpc.handle({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'amulet.preapproval.acceptProposal',
+      params: { receiver: 'receiver::party' },
+    })) as JsonRpcResponse
+
+    assert.ok('result' in res)
+    assert.deepEqual(res.result, { updateId: 'accept-update-1', completionOffset: 42 })
+    assert.deepEqual(seen.acs, {
+      parties: ['provider::party'],
+      templateIds: ['#splice-wallet:Splice.Wallet.TransferPreapproval:TransferPreapprovalProposal'],
+      filterByParty: true,
+      continueUntilCompletion: true,
+    })
+    assert.deepEqual(seen.submit, {
+      commands: [
+        {
+          ExerciseCommand: {
+            templateId:
+              '#splice-wallet:Splice.Wallet.TransferPreapproval:TransferPreapprovalProposal',
+            contractId: 'proposal-cid',
+            choice: 'TransferPreapprovalProposal_Accept',
+            choiceArgument: {
+              context: {
+                context: {
+                  openMiningRound: 'open-round-cid',
+                  issuingMiningRounds: [],
+                  validatorRights: [],
+                  featuredAppRight: null,
+                },
+                amuletRules: 'amulet-rules-cid',
+              },
+              inputs: [{ tag: 'InputAmulet', value: 'provider-holding-cid' }],
+              expiresAt: '2026-09-08T00:00:00.000Z',
+            },
+          },
+        },
+      ],
+      disclosedContracts: [
+        {
+          templateId: '#splice-amulet:Splice.AmuletRules:AmuletRules',
+          contractId: 'amulet-rules-cid',
+          createdEventBlob: 'rules-blob',
+          synchronizerId: 'sync-1',
+        },
+        {
+          templateId: '#splice-amulet:Splice.Round:OpenMiningRound',
+          contractId: 'open-round-cid',
+          createdEventBlob: 'round-blob',
+          synchronizerId: 'sync-1',
+        },
+      ],
+      synchronizerId: 'sync-1',
+      actAs: ['provider::party'],
+    })
+    assert.equal(seen.inputOwner, 'provider::party')
   })
 
   it('prepares an Amulet transfer preapproval cancel command for the receiver party', async () => {
@@ -439,7 +600,7 @@ describe('CIP-56 token helpers', () => {
 
     assert.ok('result' in res)
     assert.deepEqual(res.result, {
-      commands: { ExerciseCommand: { choice: 'TransferPreapproval_Cancel' } },
+      commands: [{ ExerciseCommand: { choice: 'TransferPreapproval_Cancel' } }],
       disclosedContracts,
     })
     assert.deepEqual(seen.parties, { receiver: 'receiver::party' })

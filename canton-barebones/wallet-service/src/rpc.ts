@@ -96,15 +96,56 @@ type RpcDependencies = {
 type Cip56TokenSdk = {
   amulet?: {
     preapproval: {
+      ctx?: {
+        validatorParty?: string
+        commonCtx?: {
+          defaultSynchronizerId?: string
+        }
+        amuletService?: {
+          scanProxyClient?: {
+            getAmuletRules: () => Promise<AmuletContextContract | null | undefined>
+            getActiveOpenMiningRound: () => Promise<AmuletContextContract | null | undefined>
+          }
+          tokenStandard?: {
+            getInputHoldingsCids: (
+              sender: string,
+              inputUtxos?: string[],
+              amount?: unknown,
+            ) => Promise<string[]>
+          }
+        }
+      }
       command: {
         create: (args: { parties: { receiver: string } }) => Promise<unknown>
         cancel: (args: { parties: { receiver: string } }) => Promise<[unknown, unknown[]]>
       }
-      fetchStatus: (receiver: string) => Promise<{
-        contractId: string
-        templateId: string
-        expiresAt: Date | string
+      fetchQuick: (receiver: string) => Promise<{
+        contract: {
+          contract_id: string
+          template_id: string
+          payload: {
+            expiresAt: Date | string
+          }
+        }
       } | null>
+    }
+  }
+  ledger?: {
+    acsReader?: {
+      readJsContracts: (options: {
+        parties: string[]
+        templateIds: string[]
+        filterByParty: boolean
+        continueUntilCompletion: boolean
+      }) => Promise<ActiveJsContract[]>
+    }
+    internal?: {
+      submit: (params: {
+        commands: unknown[]
+        disclosedContracts?: unknown[]
+        synchronizerId?: string
+        actAs: string[]
+      }) => Promise<unknown>
     }
   }
   token: {
@@ -133,6 +174,21 @@ type Cip56TokenSdk = {
       }) => Promise<unknown>
     }
   }
+}
+
+type AmuletContextContract = {
+  template_id: string
+  contract_id: string
+  created_event_blob: string
+  payload?: {
+    dso?: string
+  }
+}
+
+type ActiveJsContract = {
+  contractId: string
+  templateId: string
+  createArgument?: unknown
 }
 
 type ExecutePreparedParams = {
@@ -192,6 +248,9 @@ type AmuletPreapprovalStatus = {
   templateId?: string
   expiresAt?: string
 }
+
+const TRANSFER_PREAPPROVAL_PROPOSAL_TEMPLATE_ID =
+  '#splice-wallet:Splice.Wallet.TransferPreapproval:TransferPreapprovalProposal'
 
 export const rpcResult = (id: JsonRpcId, result: unknown): JsonRpcSuccess => ({
   jsonrpc: '2.0',
@@ -345,6 +404,26 @@ const instrumentLabel = (instrumentId?: TokenInstrumentId): string => {
   return id === undefined || id === '' ? 'unknown token' : id
 }
 
+// Interactive submission expects a command list, while some SDK helpers return one command object.
+const commandList = (commands: unknown): unknown[] =>
+  Array.isArray(commands) ? commands : commands == null ? [] : [commands]
+
+// Carries Scan context contracts into interactive submission's disclosed-contract format.
+const amuletDisclosedContract = (
+  contract: AmuletContextContract,
+  synchronizerId: string,
+): {
+  templateId: string
+  contractId: string
+  createdEventBlob: string
+  synchronizerId: string
+} => ({
+  templateId: contract.template_id,
+  contractId: contract.contract_id,
+  createdEventBlob: contract.created_event_blob,
+  synchronizerId,
+})
+
 // Parses positive decimal strings without floating point rounding.
 const parseDecimalAmount = (value: string): { scaled: bigint; scale: number } | undefined => {
   const trimmed = value.trim()
@@ -477,6 +556,12 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
         validatorUrl: config.splice.validatorUrl,
         auth,
         registries: [config.splice.registryApiUrl],
+      },
+      amulet: {
+        validatorUrl: config.splice.validatorUrl,
+        scanApiUrl: config.splice.scanApiUrl,
+        registryUrl: config.splice.registryApiUrl,
+        auth,
       },
     })
       .then((sdk) => sdk as Cip56TokenSdk)
@@ -768,23 +853,23 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
     const p = objectParam<Record<string, unknown>>(params, 'amulet.preapproval.status')
     const receiver = requiredStringParam(p, 'receiver')
     const sdk = await getTokenSdk()
-    const status = await sdk.amulet?.preapproval.fetchStatus(receiver)
-    if (status == null) {
+    const status = await sdk.amulet?.preapproval.fetchQuick(receiver)
+    if (status?.contract == null) {
       return { active: false, expired: false }
     }
-    const expiresAt = new Date(status.expiresAt)
+    const expiresAt = new Date(status.contract.payload.expiresAt)
     const expiresAtIso = expiresAt.toISOString()
     const expired = expiresAt.getTime() <= now().getTime()
     return {
-      contractId: status.contractId,
-      templateId: status.templateId,
+      contractId: status.contract.contract_id,
+      templateId: status.contract.template_id,
       expiresAt: expiresAtIso,
       active: !expired,
       expired,
     }
   }
 
-  // Prepares the receiver-signed command that enables automatic Amulet receipts.
+  // Prepares the receiver-signed proposal that asks the validator provider to enable auto-accept.
   const amuletPreapprovalCreate = async (
     params: unknown,
   ): Promise<{ commands: unknown; disclosedContracts: unknown[] }> => {
@@ -792,7 +877,92 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
     const receiver = requiredStringParam(p, 'receiver')
     const sdk = await getTokenSdk()
     const commands = await sdk.amulet?.preapproval.command.create({ parties: { receiver } })
-    return { commands, disclosedContracts: [] }
+    return { commands: commandList(commands), disclosedContracts: [] }
+  }
+
+  // Accepts the receiver-created proposal with the locally hosted validator provider party.
+  const amuletPreapprovalAcceptProposal = async (params: unknown): Promise<unknown> => {
+    const p = objectParam<Record<string, unknown>>(params, 'amulet.preapproval.acceptProposal')
+    const receiver = requiredStringParam(p, 'receiver')
+    const sdk = await getTokenSdk()
+    const ctx = sdk.amulet?.preapproval.ctx
+    const provider = ctx?.validatorParty
+    const synchronizerId = ctx?.commonCtx?.defaultSynchronizerId
+    const scanProxyClient = ctx?.amuletService?.scanProxyClient
+    const tokenStandard = ctx?.amuletService?.tokenStandard
+    const acsReader = sdk.ledger?.acsReader
+    const internalLedger = sdk.ledger?.internal
+    if (provider === undefined || provider.trim() === '') {
+      throw new Error('Amulet validator provider party is unavailable')
+    }
+    if (synchronizerId === undefined || synchronizerId.trim() === '') {
+      throw new Error('Amulet synchronizer id is unavailable')
+    }
+    if (scanProxyClient === undefined || tokenStandard === undefined) {
+      throw new Error('Amulet service context is unavailable')
+    }
+    if (acsReader === undefined || internalLedger === undefined) {
+      throw new Error('Canton ledger context is unavailable')
+    }
+    const proposals = await acsReader.readJsContracts({
+      parties: [provider],
+      templateIds: [TRANSFER_PREAPPROVAL_PROPOSAL_TEMPLATE_ID],
+      filterByParty: true,
+      continueUntilCompletion: true,
+    })
+    const proposal = proposals.find((contract) => {
+      const createArgument = contract.createArgument
+      return (
+        isPlainObject(createArgument) &&
+        createArgument.receiver === receiver &&
+        createArgument.provider === provider
+      )
+    })
+    if (proposal === undefined) {
+      throw new Error(`TransferPreapprovalProposal not found for receiver ${receiver}`)
+    }
+    const amuletRules = await scanProxyClient.getAmuletRules()
+    const activeRound = await scanProxyClient.getActiveOpenMiningRound()
+    if (amuletRules == null) {
+      throw new Error('AmuletRules contract not found')
+    }
+    if (activeRound == null) {
+      throw new Error('OpenMiningRound active at current moment not found')
+    }
+    const inputHoldings = await tokenStandard.getInputHoldingsCids(provider)
+    const expiresAt =
+      optionalDateParam(p, 'expiresAt') ?? new Date(now().getTime() + 90 * 24 * 60 * 60 * 1000)
+    const commands = [
+      {
+        ExerciseCommand: {
+          templateId: proposal.templateId,
+          contractId: proposal.contractId,
+          choice: 'TransferPreapprovalProposal_Accept',
+          choiceArgument: {
+            context: {
+              context: {
+                openMiningRound: activeRound.contract_id,
+                issuingMiningRounds: [],
+                validatorRights: [],
+                featuredAppRight: null,
+              },
+              amuletRules: amuletRules.contract_id,
+            },
+            inputs: inputHoldings.map((cid) => ({ tag: 'InputAmulet', value: cid })),
+            expiresAt: expiresAt.toISOString(),
+          },
+        },
+      },
+    ]
+    return await internalLedger.submit({
+      commands,
+      disclosedContracts: [
+        amuletDisclosedContract(amuletRules, synchronizerId),
+        amuletDisclosedContract(activeRound, synchronizerId),
+      ],
+      synchronizerId,
+      actAs: [provider],
+    })
   }
 
   // Prepares the receiver-signed command that disables automatic Amulet receipts.
@@ -805,7 +975,7 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
     const [commands, disclosedContracts] = (await sdk.amulet?.preapproval.command.cancel({
       parties: { receiver },
     })) ?? [null, []]
-    return { commands, disclosedContracts }
+    return { commands: commandList(commands), disclosedContracts }
   }
 
   const dispatch = async (id: JsonRpcId, request: JsonRpcRequest): Promise<JsonRpcResponse> => {
@@ -852,6 +1022,8 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
           return rpcResult(id, await amuletPreapprovalStatus(request.params))
         case 'amulet.preapproval.create':
           return rpcResult(id, await amuletPreapprovalCreate(request.params))
+        case 'amulet.preapproval.acceptProposal':
+          return rpcResult(id, await amuletPreapprovalAcceptProposal(request.params))
         case 'amulet.preapproval.cancel':
           return rpcResult(id, await amuletPreapprovalCancel(request.params))
         case 'prepareExecute':
@@ -904,6 +1076,7 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
       'cip56.createTransfer',
       'amulet.preapproval.status',
       'amulet.preapproval.create',
+      'amulet.preapproval.acceptProposal',
       'amulet.preapproval.cancel',
     ],
     reservedMethods: ['prepareExecute', 'prepareExecuteAndWait', 'signMessage'],
