@@ -513,6 +513,7 @@ describe('CIP-56 token helpers', () => {
         utxoCount: 2,
         lockedCount: 1,
         unlockedCount: 1,
+        holdings: holdingContracts,
         source: 'utxos',
       },
     ])
@@ -569,6 +570,13 @@ describe('CIP-56 token helpers', () => {
 
     assert.ok('result' in res)
     assert.equal(scanCalled, false)
+    const expectedHolding = {
+      contractId: 'holding-cid-1',
+      interfaceViewValue: {
+        amount: '5',
+        instrumentId: { admin: 'issuer::party', id: 'MockToken' },
+      },
+    }
     assert.deepEqual(res.result, [
       {
         key: 'issuer::party:MockToken',
@@ -578,6 +586,7 @@ describe('CIP-56 token helpers', () => {
         utxoCount: 1,
         lockedCount: 0,
         unlockedCount: 1,
+        holdings: [expectedHolding],
         source: 'utxos',
       },
     ])

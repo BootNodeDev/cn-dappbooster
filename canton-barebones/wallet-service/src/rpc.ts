@@ -159,6 +159,7 @@ type TokenHoldingSummary = {
   utxoCount?: number
   lockedCount?: number
   unlockedCount?: number
+  holdings?: TokenHolding[]
   source: 'scan' | 'utxos'
   scan?: {
     totalUnlockedCoin: string
@@ -401,6 +402,7 @@ const summarizeHoldingUtxos = (
         utxoCount: tokenHoldings.length,
         lockedCount,
         unlockedCount: tokenHoldings.length - lockedCount,
+        holdings: tokenHoldings,
         source: 'utxos' as const,
       }
     })

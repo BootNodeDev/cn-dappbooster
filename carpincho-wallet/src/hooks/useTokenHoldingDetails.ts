@@ -29,7 +29,12 @@ export const useTokenHoldingDetails = (
   options: { api?: Cip56HoldingDetailsApi; enabled?: boolean } = {},
 ): TokenHoldingDetailsState => {
   const api = options.api ?? defaultApi
-  const enabled = options.enabled === true && account !== undefined && summary !== undefined
+  const cachedHoldings = summary?.holdings
+  const enabled =
+    options.enabled === true &&
+    account !== undefined &&
+    summary !== undefined &&
+    cachedHoldings === undefined
   const query = useQuery({
     enabled,
     queryKey: ['cip56', 'holdingDetails', account?.id, account?.partyId, summary?.key],
@@ -42,10 +47,10 @@ export const useTokenHoldingDetails = (
 
   return useMemo(
     () => ({
-      holdings: query.data ?? summary?.holdings ?? [],
-      loading: query.isFetching,
+      holdings: query.data ?? cachedHoldings ?? [],
+      loading: cachedHoldings === undefined && query.isFetching,
       ...(error === undefined ? {} : { error }),
     }),
-    [query.data, query.isFetching, summary?.holdings, error],
+    [query.data, query.isFetching, cachedHoldings, error],
   )
 }

@@ -136,6 +136,50 @@ describe('TokensPanel', () => {
     assert.equal(detailsCalls, 1)
   })
 
+  it('reuses fallback UTXO details from the summary response', async () => {
+    // Scenario: when wallet-service falls back from Scan to UTXOs, the summary
+    // already contains raw holdings. Expanding the row must not make another
+    // UTXO request for the same token.
+    let detailsCalls = 0
+    const api: Cip56HoldingsApi = {
+      listTokenHoldingSummaries: async () => [
+        {
+          key: 'dso::party:Amulet',
+          tokenLabel: 'Amulet',
+          instrumentId: { admin: 'dso::party', id: 'Amulet' },
+          totalAmount: '15.75',
+          utxoCount: 1,
+          lockedCount: 0,
+          unlockedCount: 1,
+          source: 'utxos',
+          holdings: [
+            {
+              contractId: 'cached-holding-cid',
+              interfaceViewValue: {
+                owner: 'alice::party',
+                amount: '15.7500000000',
+                instrumentId: { admin: 'dso::party', id: 'Amulet' },
+                lock: null,
+              },
+            },
+          ],
+        },
+      ],
+      listTokenHoldings: async () => {
+        detailsCalls += 1
+        return []
+      },
+    }
+
+    renderTokens(api)
+
+    await screen.findByText('15.75 Amulet')
+    await userEvent.click(screen.getByRole('button', { name: 'Show holdings' }))
+
+    assert.equal(screen.getByText('cached-holding-cid').textContent, 'cached-holding-cid')
+    assert.equal(detailsCalls, 0)
+  })
+
   it('shows incoming transfers only when the active party has pending receipts', async () => {
     // Scenario: Tokens combines balances with token actions. Incoming transfers
     // should appear above holdings when pending, and disappear when the API has none.
