@@ -22,6 +22,16 @@ export interface AmuletPreapprovalActionParams {
   recordTransaction?: VaultContextValue['recordTransaction']
 }
 
+// Detects whether wallet-service returned a real command that needs signing.
+const hasCommands = (commands: unknown): boolean =>
+  Array.isArray(commands) ? commands.length > 0 : commands !== undefined && commands !== null
+
+// Matches stale cancel attempts where the preapproval disappeared before prepare.
+const isMissingPreapprovalError = (error: unknown): boolean => {
+  const message = error instanceof Error ? error.message : String(error)
+  return message.includes('CONTRACT_NOT_FOUND') || message.includes('Contract could not be found')
+}
+
 // Reads the current Amulet auto-accept state for a receiver party.
 export const getAmuletPreapprovalStatus = async (
   receiver: string,
@@ -59,13 +69,26 @@ export const cancelAmuletPreapproval = async ({
     'amulet.preapproval.cancel',
     { receiver: account.partyId },
   )
-  return await executePreparedCommands({
-    account,
-    commands,
-    disclosedContracts,
-    method: 'amulet.preapproval.cancel',
-    summary: 'Disable Amulet auto-accept',
-    signMessage,
-    recordTransaction,
-  })
+  if (!hasCommands(commands)) {
+    return {}
+  }
+  try {
+    return await executePreparedCommands({
+      account,
+      commands,
+      disclosedContracts,
+      method: 'amulet.preapproval.cancel',
+      summary: 'Disable Amulet auto-accept',
+      signMessage,
+      recordTransaction,
+    })
+  } catch (error) {
+    if (isMissingPreapprovalError(error)) {
+      const status = await getAmuletPreapprovalStatus(account.partyId)
+      if (!status.active && !status.expired) {
+        return {}
+      }
+    }
+    throw error
+  }
 }

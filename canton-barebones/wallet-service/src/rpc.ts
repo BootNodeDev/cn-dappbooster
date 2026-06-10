@@ -1030,6 +1030,10 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
     const p = objectParam<Record<string, unknown>>(params, 'amulet.preapproval.cancel')
     const receiver = requiredStringParam(p, 'receiver')
     const sdk = await getTokenSdk()
+    const status = await sdk.amulet?.preapproval.fetchQuick(receiver)
+    if (status?.contract == null) {
+      return { commands: [], disclosedContracts: [] }
+    }
     const [commands, disclosedContracts] = (await sdk.amulet?.preapproval.command.cancel({
       parties: { receiver },
     })) ?? [null, []]

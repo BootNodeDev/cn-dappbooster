@@ -674,6 +674,7 @@ describe('CIP-56 token helpers', () => {
       sdkFactory: async () => ({
         amulet: {
           preapproval: {
+            fetchQuick: async () => ({ contract: { contract_id: 'preapproval-cid-1' } }),
             command: {
               cancel: async (args: unknown) => {
                 seen.parties = (args as { parties?: unknown }).parties
@@ -701,6 +702,38 @@ describe('CIP-56 token helpers', () => {
       disclosedContracts,
     })
     assert.deepEqual(seen.parties, { receiver: 'receiver::party' })
+  })
+
+  it('returns no Amulet preapproval cancel command when the receiver is already disabled', async () => {
+    // Scenario: Scan and the ledger can disagree briefly after cancel archives
+    // a TransferPreapproval. A repeated disable must finish as an idempotent no-op.
+    let cancelCalled = false
+    const rpc = createRpc(withToken(), {
+      sdkFactory: async () => ({
+        amulet: {
+          preapproval: {
+            fetchQuick: async () => null,
+            command: {
+              cancel: async () => {
+                cancelCalled = true
+                throw new Error('cancel should not wait for a missing preapproval')
+              },
+            },
+          },
+        },
+      }),
+    })
+
+    const res = (await rpc.handle({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'amulet.preapproval.cancel',
+      params: { receiver: 'receiver::party' },
+    })) as JsonRpcResponse
+
+    assert.ok('result' in res)
+    assert.deepEqual(res.result, { commands: [], disclosedContracts: [] })
+    assert.equal(cancelCalled, false)
   })
 
   it('lists token holding UTXOs through the SDK token namespace without reshaping contracts', async () => {

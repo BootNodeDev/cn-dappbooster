@@ -183,4 +183,100 @@ describe('Amulet preapproval helpers', () => {
       { contractId: 'preapproval-context-cid' },
     ])
   })
+
+  it('finishes cancel when the preapproval was already archived before prepare', async () => {
+    // Scenario: Scan can expose a TransferPreapproval contract that is archived
+    // before interactive submission prepares the cancel command. Once status is
+    // inactive, Carpincho should treat the disable action as complete.
+    const calls: Array<{ method: string; params: Record<string, unknown> }> = []
+    globalThis.fetch = (async (_input, init) => {
+      const body = JSON.parse(String(init?.body)) as {
+        method: string
+        params: Record<string, unknown>
+      }
+      calls.push({ method: body.method, params: body.params })
+      if (body.method === 'amulet.preapproval.cancel') {
+        return new Response(
+          JSON.stringify({
+            result: {
+              commands: { ExerciseCommand: { choice: 'TransferPreapproval_Cancel' } },
+              disclosedContracts: [],
+            },
+          }),
+          { status: 200 },
+        )
+      }
+      if (body.method === 'prepareTransaction') {
+        return new Response(
+          JSON.stringify({
+            error: {
+              code: -32000,
+              message: 'CONTRACT_NOT_FOUND: Contract could not be found',
+            },
+          }),
+          { status: 200 },
+        )
+      }
+      if (body.method === 'amulet.preapproval.status') {
+        return new Response(
+          JSON.stringify({
+            result: { active: false, expired: false },
+          }),
+          { status: 200 },
+        )
+      }
+      throw new Error(`unexpected method ${body.method}`)
+    }) as typeof globalThis.fetch
+
+    const result = await cancelAmuletPreapproval({
+      account: ACCOUNT,
+      signMessage: async () => {
+        throw new Error('cancel no-op should not request a signature')
+      },
+    })
+
+    assert.deepEqual(result, {})
+    assert.deepEqual(
+      calls.map((call) => call.method),
+      ['amulet.preapproval.cancel', 'prepareTransaction', 'amulet.preapproval.status'],
+    )
+  })
+
+  it('finishes cancel when wallet-service returns no cancel command', async () => {
+    // Scenario: wallet-service can discover that the receiver is already
+    // disabled before command creation. Carpincho should not prepare or sign.
+    const calls: Array<{ method: string; params: Record<string, unknown> }> = []
+    globalThis.fetch = (async (_input, init) => {
+      const body = JSON.parse(String(init?.body)) as {
+        method: string
+        params: Record<string, unknown>
+      }
+      calls.push({ method: body.method, params: body.params })
+      if (body.method === 'amulet.preapproval.cancel') {
+        return new Response(
+          JSON.stringify({
+            result: {
+              commands: [],
+              disclosedContracts: [],
+            },
+          }),
+          { status: 200 },
+        )
+      }
+      throw new Error(`unexpected method ${body.method}`)
+    }) as typeof globalThis.fetch
+
+    const result = await cancelAmuletPreapproval({
+      account: ACCOUNT,
+      signMessage: async () => {
+        throw new Error('empty cancel should not request a signature')
+      },
+    })
+
+    assert.deepEqual(result, {})
+    assert.deepEqual(
+      calls.map((call) => call.method),
+      ['amulet.preapproval.cancel'],
+    )
+  })
 })
