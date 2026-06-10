@@ -49,9 +49,9 @@ describe('HomeTabs token navigation', () => {
     cleanup()
   })
 
-  it('renders Activity and Tokens tabs without the former Assets tab', () => {
+  it('renders Activity, Tokens, and Send tabs without the former Assets tab', () => {
     // Scenario: token balances and incoming token actions now live under Tokens.
-    // The top-level wallet navigation should expose only Activity and Tokens.
+    // The top-level wallet navigation should expose token viewing and token sending separately.
     render(
       <VaultContext.Provider value={baseVault()}>
         <HomeTabs transactions={[]} />
@@ -60,6 +60,7 @@ describe('HomeTabs token navigation', () => {
 
     assert.equal(screen.getByRole('tab', { name: 'Activity' }).getAttribute('data-state'), 'active')
     assert.ok(screen.getByRole('tab', { name: 'Tokens' }))
+    assert.ok(screen.getByRole('tab', { name: 'Send' }))
     assert.equal(screen.queryByRole('tab', { name: /Assets/ }), null)
   })
 

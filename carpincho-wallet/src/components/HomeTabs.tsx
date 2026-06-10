@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ActivityList } from '@/components/ActivityList'
+import { type Cip56SendApi, SendTokensPanel } from '@/components/SendTokensPanel'
 import { TokensPanel } from '@/components/TokensPanel'
 import { TabContent, Tabs, TabsList, TabTrigger } from '@/components/ui/Tabs'
 import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
@@ -10,13 +11,19 @@ interface HomeTabsProps {
   transactions: TransactionRecord[]
   tokensApi?: Cip56HoldingsApi
   transfersApi?: Cip56TransferApi
+  sendApi?: Cip56SendApi
 }
 
 // The only scrolling region between the account selector and the footer.
 const TAB_CONTENT_CLASS = 'min-h-0 flex-1 overflow-y-auto outline-none'
 
 // Tabbed home body; token-related balances and actions share the Tokens view.
-export const HomeTabs = ({ transactions, tokensApi, transfersApi }: HomeTabsProps): JSX.Element => {
+export const HomeTabs = ({
+  transactions,
+  tokensApi,
+  transfersApi,
+  sendApi,
+}: HomeTabsProps): JSX.Element => {
   const [pendingTransferCount, setPendingTransferCount] = useState(0)
 
   return (
@@ -34,6 +41,7 @@ export const HomeTabs = ({ transactions, tokensApi, transfersApi }: HomeTabsProp
             </span>
           ) : null}
         </TabTrigger>
+        <TabTrigger value="send">Send</TabTrigger>
       </TabsList>
       <TabContent
         value="activity"
@@ -50,6 +58,15 @@ export const HomeTabs = ({ transactions, tokensApi, transfersApi }: HomeTabsProp
           api={tokensApi}
           transfersApi={transfersApi}
           onPendingTransferCountChange={setPendingTransferCount}
+        />
+      </TabContent>
+      <TabContent
+        value="send"
+        className={TAB_CONTENT_CLASS}
+      >
+        <SendTokensPanel
+          holdingsApi={tokensApi}
+          sendApi={sendApi}
         />
       </TabContent>
     </Tabs>
