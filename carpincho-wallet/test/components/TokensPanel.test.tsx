@@ -3,6 +3,7 @@ import { afterEach, describe, it } from 'node:test'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TokensPanel } from '@/components/TokensPanel'
+import type { AmuletPreapprovalApi } from '@/hooks/useAmuletPreapproval'
 import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
 import type { Cip56HoldingsApi } from '@/hooks/useTokenHoldings'
 import { TestQueryClientProvider } from '@/test-utils/queryClient'
@@ -45,13 +46,18 @@ const baseVault = (): VaultContextValue =>
   }) as VaultContextValue
 
 // Mounts the panel under vault context so it can resolve the active account.
-const renderTokens = (api: Cip56HoldingsApi, transfersApi?: Cip56TransferApi): void => {
+const renderTokens = (
+  api: Cip56HoldingsApi,
+  transfersApi?: Cip56TransferApi,
+  preapprovalApi?: AmuletPreapprovalApi,
+): void => {
   render(
     <TestQueryClientProvider>
       <VaultContext.Provider value={baseVault()}>
         <TokensPanel
           api={api}
           transfersApi={transfersApi}
+          preapprovalApi={preapprovalApi}
         />
       </VaultContext.Provider>
     </TestQueryClientProvider>,
@@ -242,5 +248,134 @@ describe('TokensPanel', () => {
     await screen.findByText('7 Amulet')
     assert.equal(screen.queryByText('Incoming transfers'), null)
     assert.equal(screen.queryByText('No pending transfers'), null)
+  })
+
+  it('enables Amulet auto-accept for the selected party', async () => {
+    // Scenario: the selected party has no active Amulet receiver preapproval.
+    // Enabling auto-accept must sign the prepared command for that same party.
+    let createCalls = 0
+    const holdingsApi: Cip56HoldingsApi = {
+      listTokenHoldingSummaries: async () => [],
+    }
+    const preapprovalApi: AmuletPreapprovalApi = {
+      getAmuletPreapprovalStatus: async (receiver) => {
+        assert.equal(receiver, 'alice::party')
+        return { active: false, expired: false }
+      },
+      createAmuletPreapproval: async ({ account, signMessage, recordTransaction }) => {
+        createCalls += 1
+        assert.equal(account.partyId, 'alice::party')
+        assert.equal(await signMessage(ACCOUNT.id, new Uint8Array()), 'signature')
+        assert.ok(
+          recordTransaction,
+          'preapproval execution should be recorded like token transfers',
+        )
+        return { updateId: 'create-update-1' }
+      },
+      cancelAmuletPreapproval: async () => {
+        throw new Error('cancel should not run while enabling')
+      },
+    }
+
+    renderTokens(holdingsApi, undefined, preapprovalApi)
+
+    await screen.findByText('Amulet auto-accept')
+    await screen.findByText('Disabled')
+    await userEvent.click(screen.getByRole('button', { name: 'Enable auto-accept' }))
+
+    assert.equal(createCalls, 1)
+  })
+
+  it('keeps the polling context visible while Amulet auto-accept is being confirmed', async () => {
+    // Scenario: enabling auto-accept can be committed before Scan reflects the
+    // new TransferPreapproval. The panel should tell the user to wait.
+    let resolveCreate: (() => void) | undefined
+    const holdingsApi: Cip56HoldingsApi = {
+      listTokenHoldingSummaries: async () => [],
+    }
+    const preapprovalApi: AmuletPreapprovalApi = {
+      getAmuletPreapprovalStatus: async () => ({ active: false, expired: false }),
+      createAmuletPreapproval: async () => {
+        await new Promise<void>((resolve) => {
+          resolveCreate = resolve
+        })
+        return { updateId: 'create-update-1' }
+      },
+      cancelAmuletPreapproval: async () => {
+        throw new Error('cancel should not run while enabling')
+      },
+    }
+
+    renderTokens(holdingsApi, undefined, preapprovalApi)
+
+    await screen.findByText('Disabled')
+    await userEvent.click(screen.getByRole('button', { name: 'Enable auto-accept' }))
+
+    await screen.findByText('Puede tardar unos instantes.')
+    resolveCreate?.()
+  })
+
+  it('shows active Amulet auto-accept details and disables it for the selected party', async () => {
+    // Scenario: the selected party already has an active receiver preapproval.
+    // The panel should show its expiry and cancel the same receiver preapproval.
+    let cancelCalls = 0
+    const holdingsApi: Cip56HoldingsApi = {
+      listTokenHoldingSummaries: async () => [],
+    }
+    const preapprovalApi: AmuletPreapprovalApi = {
+      getAmuletPreapprovalStatus: async (receiver) => {
+        assert.equal(receiver, 'alice::party')
+        return {
+          active: true,
+          expired: false,
+          expiresAt: '2026-06-11T12:00:00.000Z',
+          contractId: 'preapproval-cid-1',
+        }
+      },
+      createAmuletPreapproval: async () => {
+        throw new Error('create should not run while disabling')
+      },
+      cancelAmuletPreapproval: async ({ account }) => {
+        cancelCalls += 1
+        assert.equal(account.partyId, 'alice::party')
+        return { updateId: 'cancel-update-1' }
+      },
+    }
+
+    renderTokens(holdingsApi, undefined, preapprovalApi)
+
+    await screen.findByText('Enabled')
+    await screen.findByText('Expires 2026-06-11 12:00 UTC')
+    await screen.findByText('preapproval-cid-1')
+    await userEvent.click(screen.getByRole('button', { name: 'Disable auto-accept' }))
+
+    assert.equal(cancelCalls, 1)
+  })
+
+  it('marks expired Amulet auto-accept as not active', async () => {
+    // Scenario: a preapproval contract can still exist after its expiry.
+    // The UI should label it expired so the user can clear it before creating a fresh one.
+    const holdingsApi: Cip56HoldingsApi = {
+      listTokenHoldingSummaries: async () => [],
+    }
+    const preapprovalApi: AmuletPreapprovalApi = {
+      getAmuletPreapprovalStatus: async () => ({
+        active: false,
+        expired: true,
+        expiresAt: '2026-06-01T12:00:00.000Z',
+        contractId: 'expired-preapproval-cid',
+      }),
+      createAmuletPreapproval: async () => {
+        throw new Error('create should not run for expired status action')
+      },
+      cancelAmuletPreapproval: async () => ({ updateId: 'cancel-expired-1' }),
+    }
+
+    renderTokens(holdingsApi, undefined, preapprovalApi)
+
+    await screen.findByText('Expired')
+    await screen.findByText('Expires 2026-06-01 12:00 UTC')
+    await screen.findByText('expired-preapproval-cid')
+    assert.ok(screen.getByRole('button', { name: 'Disable auto-accept' }))
   })
 })

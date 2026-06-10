@@ -1,8 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { TokenHoldingSummary } from '@/cip56/holdings'
 import { transferTimeLabel } from '@/cip56/transfers'
 import { IncomingTransfersSection } from '@/components/IncomingTransfersSection'
-import { SecondaryButton } from '@/components/ui/Button'
+import { PrimaryButton, SecondaryButton } from '@/components/ui/Button'
+import { toast } from '@/components/ui/toast'
+import type { AmuletPreapprovalApi } from '@/hooks/useAmuletPreapproval'
+import { useAmuletPreapproval } from '@/hooks/useAmuletPreapproval'
 import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
 import { useTokenHoldingDetails } from '@/hooks/useTokenHoldingDetails'
 import type { Cip56HoldingsApi } from '@/hooks/useTokenHoldings'
@@ -14,6 +17,7 @@ export interface TokensPanelProps {
   account?: AccountPublic
   api?: Cip56HoldingsApi
   transfersApi?: Cip56TransferApi
+  preapprovalApi?: AmuletPreapprovalApi
   onPendingTransferCountChange?: (count: number) => void
 }
 
@@ -26,6 +30,11 @@ interface TokenHoldingDetailsProps {
   account: AccountPublic
   api?: Cip56HoldingsApi
   summary: TokenHoldingSummary
+}
+
+interface AmuletPreapprovalSectionProps {
+  account: AccountPublic
+  api?: AmuletPreapprovalApi
 }
 
 // Keeps raw holding values readable in the expanded UTXO details area.
@@ -96,11 +105,95 @@ const TokenHoldingDetails = ({ account, api, summary }: TokenHoldingDetailsProps
   )
 }
 
+// Lets the receiver opt into Amulet auto-accept without routing signing through wallet-service.
+const AmuletPreapprovalSection = ({ account, api }: AmuletPreapprovalSectionProps): JSX.Element => {
+  const vault = useVault()
+  const [pendingAction, setPendingAction] = useState<'enable' | 'disable' | undefined>(undefined)
+  const preapproval = useAmuletPreapproval(account, {
+    api,
+    signMessage: vault.signMessage,
+    recordTransaction: vault.recordTransaction,
+  })
+  const status = preapproval.status
+  const isExpired = status?.expired === true
+  const isActive = status?.active === true && !isExpired
+  const canDisable = isActive || isExpired
+  const statusLabel = isExpired ? 'Expired' : isActive ? 'Enabled' : 'Disabled'
+  const ActionButton = canDisable ? SecondaryButton : PrimaryButton
+
+  useEffect(() => {
+    if (pendingAction === 'enable' && isActive) {
+      setPendingAction(undefined)
+    }
+    if (pendingAction === 'disable' && status !== undefined && !isActive && !isExpired) {
+      setPendingAction(undefined)
+    }
+  }, [pendingAction, isActive, isExpired, status])
+
+  const handleToggle = async (): Promise<void> => {
+    const action = canDisable ? 'disable' : 'enable'
+    setPendingAction(action)
+    try {
+      if (canDisable) {
+        await preapproval.disable()
+        toast.success('Amulet auto-accept disabled')
+      } else {
+        await preapproval.enable()
+        toast.success('Amulet auto-accept enabled')
+      }
+    } catch (error) {
+      setPendingAction(undefined)
+      toast.error(error instanceof Error ? error.message : 'Amulet auto-accept failed')
+    }
+  }
+
+  return (
+    <section className="rounded-md border border-border bg-surface px-3 py-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="m-0 text-[0.95rem] font-semibold text-foreground">Amulet auto-accept</h2>
+          <p className="m-0 mt-1 text-[0.82rem] text-muted-foreground">
+            {preapproval.loading && status === undefined ? 'Checking' : statusLabel}
+          </p>
+        </div>
+        <ActionButton
+          className="shrink-0 px-3 py-1.5 text-[0.78rem]"
+          disabled={preapproval.busy || (preapproval.loading && status === undefined)}
+          onClick={handleToggle}
+        >
+          {canDisable ? 'Disable auto-accept' : 'Enable auto-accept'}
+        </ActionButton>
+      </div>
+      {status?.expiresAt === undefined ? null : (
+        <p className="m-0 mt-3 text-[0.78rem] text-muted-foreground">
+          Expires {transferTimeLabel(status.expiresAt)}
+        </p>
+      )}
+      {pendingAction === undefined ? null : (
+        <p className="m-0 mt-3 text-[0.78rem] text-muted-foreground">
+          Puede tardar unos instantes.
+        </p>
+      )}
+      {status?.contractId === undefined ? null : (
+        <p className="m-0 mt-2 break-all font-mono text-[0.74rem] leading-5 text-muted-foreground">
+          {status.contractId}
+        </p>
+      )}
+      {preapproval.error === undefined ? null : (
+        <div className="mt-3 rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-[0.82rem] text-danger">
+          {preapproval.error}
+        </div>
+      )}
+    </section>
+  )
+}
+
 // Renders active CIP-56 token holding UTXOs grouped as token balances.
 export const TokensPanel = ({
   account,
   api,
   transfersApi,
+  preapprovalApi,
   onPendingTransferCountChange,
 }: TokensPanelProps): JSX.Element => {
   const vault = useVault()
@@ -128,6 +221,11 @@ export const TokensPanel = ({
         api={transfersApi}
         hideWhenEmpty
         onPendingCountChange={onPendingTransferCountChange}
+      />
+
+      <AmuletPreapprovalSection
+        account={activeAccount}
+        api={preapprovalApi}
       />
 
       <div className="flex items-center justify-between gap-3 px-1">
