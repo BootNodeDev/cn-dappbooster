@@ -155,6 +155,22 @@ describe('createMockRpc', () => {
     assert.ok('result' in res)
     assert.deepEqual(res.result, [])
   })
+
+  it('amulet.preapproval.status returns an empty mock status', async () => {
+    // Scenario: mock mode has no Scan or ledger contracts, but Carpincho should
+    // still render the preapproval controls without a method-not-found error.
+    const rpc = createMockRpc(baseConfig())
+
+    const res = (await rpc.handle({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'amulet.preapproval.status',
+      params: { receiver: 'alice::mock' },
+    })) as JsonRpcResponse
+
+    assert.ok('result' in res)
+    assert.deepEqual(res.result, { active: false, expired: false })
+  })
 })
 
 describe('createMockPartyApi', () => {

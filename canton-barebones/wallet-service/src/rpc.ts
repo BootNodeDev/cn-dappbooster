@@ -94,6 +94,19 @@ type RpcDependencies = {
 }
 
 type Cip56TokenSdk = {
+  amulet?: {
+    preapproval: {
+      command: {
+        create: (args: { parties: { receiver: string } }) => Promise<unknown>
+        cancel: (args: { parties: { receiver: string } }) => Promise<[unknown, unknown[]]>
+      }
+      fetchStatus: (receiver: string) => Promise<{
+        contractId: string
+        templateId: string
+        expiresAt: Date | string
+      } | null>
+    }
+  }
   token: {
     transfer: {
       pending: (partyId: string) => Promise<unknown>
@@ -170,6 +183,14 @@ type TokenHoldingSummary = {
     accumulatedHoldingFeesTotal: string
     totalAvailableCoin: string
   }
+}
+
+type AmuletPreapprovalStatus = {
+  active: boolean
+  expired: boolean
+  contractId?: string
+  templateId?: string
+  expiresAt?: string
 }
 
 export const rpcResult = (id: JsonRpcId, result: unknown): JsonRpcSuccess => ({
@@ -742,6 +763,51 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
     return { commands, disclosedContracts }
   }
 
+  // Normalizes SDK preapproval status into a stable JSON-RPC shape for Carpincho.
+  const amuletPreapprovalStatus = async (params: unknown): Promise<AmuletPreapprovalStatus> => {
+    const p = objectParam<Record<string, unknown>>(params, 'amulet.preapproval.status')
+    const receiver = requiredStringParam(p, 'receiver')
+    const sdk = await getTokenSdk()
+    const status = await sdk.amulet?.preapproval.fetchStatus(receiver)
+    if (status == null) {
+      return { active: false, expired: false }
+    }
+    const expiresAt = new Date(status.expiresAt)
+    const expiresAtIso = expiresAt.toISOString()
+    const expired = expiresAt.getTime() <= now().getTime()
+    return {
+      contractId: status.contractId,
+      templateId: status.templateId,
+      expiresAt: expiresAtIso,
+      active: !expired,
+      expired,
+    }
+  }
+
+  // Prepares the receiver-signed command that enables automatic Amulet receipts.
+  const amuletPreapprovalCreate = async (
+    params: unknown,
+  ): Promise<{ commands: unknown; disclosedContracts: unknown[] }> => {
+    const p = objectParam<Record<string, unknown>>(params, 'amulet.preapproval.create')
+    const receiver = requiredStringParam(p, 'receiver')
+    const sdk = await getTokenSdk()
+    const commands = await sdk.amulet?.preapproval.command.create({ parties: { receiver } })
+    return { commands, disclosedContracts: [] }
+  }
+
+  // Prepares the receiver-signed command that disables automatic Amulet receipts.
+  const amuletPreapprovalCancel = async (
+    params: unknown,
+  ): Promise<{ commands: unknown; disclosedContracts: unknown[] }> => {
+    const p = objectParam<Record<string, unknown>>(params, 'amulet.preapproval.cancel')
+    const receiver = requiredStringParam(p, 'receiver')
+    const sdk = await getTokenSdk()
+    const [commands, disclosedContracts] = (await sdk.amulet?.preapproval.command.cancel({
+      parties: { receiver },
+    })) ?? [null, []]
+    return { commands, disclosedContracts }
+  }
+
   const dispatch = async (id: JsonRpcId, request: JsonRpcRequest): Promise<JsonRpcResponse> => {
     if (request.jsonrpc !== undefined && request.jsonrpc !== '2.0') {
       return rpcError(id, -32600, 'Invalid request', { reason: 'jsonrpc must be "2.0"' })
@@ -782,6 +848,12 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
           return rpcResult(id, await cip56AcceptTransfer(request.params))
         case 'cip56.createTransfer':
           return rpcResult(id, await cip56CreateTransfer(request.params))
+        case 'amulet.preapproval.status':
+          return rpcResult(id, await amuletPreapprovalStatus(request.params))
+        case 'amulet.preapproval.create':
+          return rpcResult(id, await amuletPreapprovalCreate(request.params))
+        case 'amulet.preapproval.cancel':
+          return rpcResult(id, await amuletPreapprovalCancel(request.params))
         case 'prepareExecute':
         case 'prepareExecuteAndWait':
         case 'signMessage':
@@ -830,6 +902,9 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
       'cip56.listHoldingSummary',
       'cip56.acceptTransfer',
       'cip56.createTransfer',
+      'amulet.preapproval.status',
+      'amulet.preapproval.create',
+      'amulet.preapproval.cancel',
     ],
     reservedMethods: ['prepareExecute', 'prepareExecuteAndWait', 'signMessage'],
     adminEndpoints: ['POST /admin/party/prepare', 'POST /admin/party/complete'],

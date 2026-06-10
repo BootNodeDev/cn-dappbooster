@@ -157,6 +157,11 @@ export const createMockRpc = (
           return rpcResult(id, [])
         case 'cip56.createTransfer':
           return rpcResult(id, { commands: [], disclosedContracts: [] })
+        case 'amulet.preapproval.status':
+          return rpcResult(id, { active: false, expired: false })
+        case 'amulet.preapproval.create':
+        case 'amulet.preapproval.cancel':
+          return rpcResult(id, { commands: [], disclosedContracts: [] })
         case 'prepareExecute':
         case 'prepareExecuteAndWait':
         case 'signMessage':
@@ -210,6 +215,9 @@ export const createMockRpc = (
       'cip56.listHoldingSummary',
       'cip56.listHoldings',
       'cip56.createTransfer',
+      'amulet.preapproval.status',
+      'amulet.preapproval.create',
+      'amulet.preapproval.cancel',
     ],
     reservedMethods: ['prepareExecute', 'prepareExecuteAndWait', 'signMessage'],
     network: mockNetworkId(config),

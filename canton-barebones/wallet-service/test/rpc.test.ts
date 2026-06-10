@@ -333,6 +333,118 @@ describe('CIP-56 token helpers', () => {
     })
   })
 
+  it('looks up an Amulet transfer preapproval through the SDK Amulet namespace', async () => {
+    // Scenario: Carpincho needs to know whether the selected party already
+    // allows automatic Amulet receipts before rendering the enable/disable UI.
+    const status = {
+      contractId: 'preapproval-cid-1',
+      templateId: 'Splice.AmuletRules:TransferPreapproval',
+      expiresAt: new Date('2026-06-11T12:00:00.000Z'),
+    }
+    const seen: { receiver?: string } = {}
+    const rpc = createRpc(withToken(), {
+      sdkFactory: async () => ({
+        amulet: {
+          preapproval: {
+            fetchStatus: async (receiver: string) => {
+              seen.receiver = receiver
+              return status
+            },
+          },
+        },
+      }),
+    })
+
+    const res = (await rpc.handle({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'amulet.preapproval.status',
+      params: { receiver: 'receiver::party' },
+    })) as JsonRpcResponse
+
+    assert.ok('result' in res)
+    assert.deepEqual(res.result, {
+      contractId: 'preapproval-cid-1',
+      templateId: 'Splice.AmuletRules:TransferPreapproval',
+      expiresAt: '2026-06-11T12:00:00.000Z',
+      active: true,
+      expired: false,
+    })
+    assert.equal(seen.receiver, 'receiver::party')
+  })
+
+  it('prepares an Amulet transfer preapproval create command for the receiver party', async () => {
+    // Scenario: enabling auto-accept must prepare a create command for the
+    // active Carpincho party while leaving signing and execution to Carpincho.
+    const seen: { parties?: unknown } = {}
+    const rpc = createRpc(withToken(), {
+      sdkFactory: async () => ({
+        amulet: {
+          preapproval: {
+            command: {
+              create: async (args: unknown) => {
+                seen.parties = (args as { parties?: unknown }).parties
+                return { CreateCommand: { templateId: 'TransferPreapproval' } }
+              },
+            },
+          },
+        },
+      }),
+    })
+
+    const res = (await rpc.handle({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'amulet.preapproval.create',
+      params: { receiver: 'receiver::party' },
+    })) as JsonRpcResponse
+
+    assert.ok('result' in res)
+    assert.deepEqual(res.result, {
+      commands: { CreateCommand: { templateId: 'TransferPreapproval' } },
+      disclosedContracts: [],
+    })
+    assert.deepEqual(seen.parties, { receiver: 'receiver::party' })
+  })
+
+  it('prepares an Amulet transfer preapproval cancel command for the receiver party', async () => {
+    // Scenario: disabling auto-accept must prepare the SDK cancel command and
+    // return any disclosed contracts required by interactive submission.
+    const disclosedContracts = [{ contractId: 'preapproval-context-cid', createdEventBlob: 'blob' }]
+    const seen: { parties?: unknown } = {}
+    const rpc = createRpc(withToken(), {
+      sdkFactory: async () => ({
+        amulet: {
+          preapproval: {
+            command: {
+              cancel: async (args: unknown) => {
+                seen.parties = (args as { parties?: unknown }).parties
+                return [
+                  { ExerciseCommand: { choice: 'TransferPreapproval_Cancel' } },
+                  disclosedContracts,
+                ]
+              },
+            },
+          },
+        },
+      }),
+    })
+
+    const res = (await rpc.handle({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'amulet.preapproval.cancel',
+      params: { receiver: 'receiver::party' },
+    })) as JsonRpcResponse
+
+    assert.ok('result' in res)
+    assert.deepEqual(res.result, {
+      commands: { ExerciseCommand: { choice: 'TransferPreapproval_Cancel' } },
+      disclosedContracts,
+    })
+    assert.deepEqual(seen.parties, { receiver: 'receiver::party' })
+  })
+
   it('lists token holding UTXOs through the SDK token namespace without reshaping contracts', async () => {
     // Scenario: Carpincho needs the active CIP-56 holdings for a party, but the
     // Node-only wallet SDK must stay behind wallet-service. The RPC returns the
