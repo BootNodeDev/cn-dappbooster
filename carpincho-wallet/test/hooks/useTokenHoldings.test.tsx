@@ -3,6 +3,7 @@ import { afterEach, describe, it } from 'node:test'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import type { Cip56HoldingsApi } from '@/hooks/useTokenHoldings'
 import { useTokenHoldings } from '@/hooks/useTokenHoldings'
+import { TestQueryClientProvider } from '@/test-utils/queryClient'
 import type { AccountPublic } from '@/vault/types'
 
 const ALICE: AccountPublic = {
@@ -72,6 +73,7 @@ describe('useTokenHoldings', () => {
         account={ALICE}
         api={api}
       />,
+      { wrapper: TestQueryClientProvider },
     )
 
     await screen.findByText('alice-holding-cid')

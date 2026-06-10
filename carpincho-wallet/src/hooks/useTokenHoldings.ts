@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { useCallback, useMemo } from 'react'
 import {
   listTokenHoldings,
   summarizeTokenHoldings,
@@ -19,16 +20,6 @@ export interface TokenHoldingsState {
   refresh: () => Promise<void>
 }
 
-interface TokenHoldingsData {
-  accountKey?: string
-  holdings: TokenHolding[]
-}
-
-interface TokenHoldingsError {
-  accountKey?: string
-  message: string
-}
-
 export interface TokenHoldingsOptions {
   pollMs?: number | null
   api?: Cip56HoldingsApi
@@ -47,66 +38,33 @@ export const useTokenHoldings = (
 ): TokenHoldingsState => {
   const api = options.api ?? defaultApi
   const pollMs = options.pollMs === undefined ? TOKEN_HOLDINGS_POLL_MS : options.pollMs
-  const [data, setData] = useState<TokenHoldingsData>({ holdings: [] })
-  const [loading, setLoading] = useState(false)
-  const [errorData, setErrorData] = useState<TokenHoldingsError | undefined>(undefined)
-  const accountKey = account === undefined ? undefined : `${account.id}:${account.partyId}`
-  const currentAccountKey = useRef(accountKey)
-  currentAccountKey.current = accountKey
-  const holdings = data.accountKey === accountKey ? data.holdings : []
-  const error =
-    errorData !== undefined && errorData.accountKey === accountKey ? errorData.message : undefined
+  const query = useQuery({
+    enabled: account !== undefined,
+    queryKey: ['cip56', 'holdings', account?.id, account?.partyId],
+    queryFn: () => api.listTokenHoldings(account?.partyId ?? ''),
+    refetchInterval: pollMs === null ? false : pollMs,
+  })
+  const holdings = query.data ?? []
+  const error = query.error instanceof Error ? query.error.message : undefined
 
-  // Refreshes holdings for the active party and keeps the previous list on transient errors.
+  // Imperative refresh lets send flows reload balances after creating a transfer.
   const refresh = useCallback(async (): Promise<void> => {
     if (account === undefined) {
-      setData({ holdings: [] })
-      setErrorData(undefined)
       return
     }
-    setLoading(true)
-    try {
-      const nextHoldings = await api.listTokenHoldings(account.partyId)
-      if (accountKey === currentAccountKey.current) {
-        setData({ accountKey, holdings: nextHoldings })
-        setErrorData(undefined)
-      }
-    } catch (err) {
-      if (accountKey === currentAccountKey.current) {
-        setErrorData({ accountKey, message: (err as Error).message })
-      }
-    } finally {
-      if (accountKey === currentAccountKey.current) {
-        setLoading(false)
-      }
-    }
-  }, [account, accountKey, api])
-
-  useEffect(() => {
-    let cancelled = false
-    let timer: ReturnType<typeof setTimeout> | undefined
-    // Polls serially so slow wallet-service calls cannot overlap.
-    const tick = async (): Promise<void> => {
-      await refresh()
-      if (!cancelled && pollMs !== null) {
-        timer = setTimeout(() => {
-          void tick()
-        }, pollMs)
-      }
-    }
-    void tick()
-    return () => {
-      cancelled = true
-      if (timer !== undefined) {
-        clearTimeout(timer)
-      }
-    }
-  }, [refresh, pollMs])
+    await query.refetch()
+  }, [account, query])
 
   const summaries = useMemo(() => summarizeTokenHoldings(holdings), [holdings])
 
   return useMemo(
-    () => ({ holdings, summaries, loading, ...(error === undefined ? {} : { error }), refresh }),
-    [holdings, summaries, loading, error, refresh],
+    () => ({
+      holdings,
+      summaries,
+      loading: query.isFetching,
+      ...(error === undefined ? {} : { error }),
+      refresh,
+    }),
+    [holdings, summaries, query.isFetching, error, refresh],
   )
 }

@@ -8,6 +8,7 @@ import {
   transferDeadlineExpiration,
 } from '@/components/SendTokensPanel'
 import type { Cip56HoldingsApi } from '@/hooks/useTokenHoldings'
+import { TestQueryClientProvider } from '@/test-utils/queryClient'
 import type { AccountPublic } from '@/vault/types'
 import { VaultContext, type VaultContextValue } from '@/vault/VaultContext'
 
@@ -49,12 +50,14 @@ const baseVault = (): VaultContextValue =>
 // Mounts the send panel with injectable APIs so the test observes only UI intent.
 const renderSendTokens = (holdingsApi: Cip56HoldingsApi, sendApi: Cip56SendApi): void => {
   render(
-    <VaultContext.Provider value={baseVault()}>
-      <SendTokensPanel
-        holdingsApi={holdingsApi}
-        sendApi={sendApi}
-      />
-    </VaultContext.Provider>,
+    <TestQueryClientProvider>
+      <VaultContext.Provider value={baseVault()}>
+        <SendTokensPanel
+          holdingsApi={holdingsApi}
+          sendApi={sendApi}
+        />
+      </VaultContext.Provider>
+    </TestQueryClientProvider>,
   )
 }
 

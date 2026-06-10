@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event'
 import { HomeTabs } from '@/components/HomeTabs'
 import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
 import type { Cip56HoldingsApi } from '@/hooks/useTokenHoldings'
+import { TestQueryClientProvider } from '@/test-utils/queryClient'
 import type { AccountPublic, TransactionRecord } from '@/vault/types'
 import { VaultContext, type VaultContextValue } from '@/vault/VaultContext'
 
@@ -78,9 +79,11 @@ describe('HomeTabs token navigation', () => {
     // Scenario: token balances and incoming token actions now live under Tokens.
     // The top-level wallet navigation should expose token viewing and token sending separately.
     render(
-      <VaultContext.Provider value={baseVault()}>
-        <HomeTabs transactions={[]} />
-      </VaultContext.Provider>,
+      <TestQueryClientProvider>
+        <VaultContext.Provider value={baseVault()}>
+          <HomeTabs transactions={[]} />
+        </VaultContext.Provider>
+      </TestQueryClientProvider>,
     )
 
     assert.equal(screen.getByRole('tab', { name: 'Activity' }).getAttribute('data-state'), 'active')
@@ -108,12 +111,14 @@ describe('HomeTabs token navigation', () => {
     }
 
     render(
-      <VaultContext.Provider value={baseVault()}>
-        <HomeTabs
-          transactions={[]}
-          tokensApi={holdingsApi}
-        />
-      </VaultContext.Provider>,
+      <TestQueryClientProvider>
+        <VaultContext.Provider value={baseVault()}>
+          <HomeTabs
+            transactions={[]}
+            tokensApi={holdingsApi}
+          />
+        </VaultContext.Provider>
+      </TestQueryClientProvider>,
     )
 
     await userEvent.click(screen.getByRole('tab', { name: 'Tokens' }))
@@ -147,13 +152,15 @@ describe('HomeTabs token navigation', () => {
     }
 
     render(
-      <VaultContext.Provider value={baseVault()}>
-        <HomeTabs
-          transactions={[]}
-          tokensApi={holdingsApi}
-          transfersApi={transfersApi}
-        />
-      </VaultContext.Provider>,
+      <TestQueryClientProvider>
+        <VaultContext.Provider value={baseVault()}>
+          <HomeTabs
+            transactions={[]}
+            tokensApi={holdingsApi}
+            transfersApi={transfersApi}
+          />
+        </VaultContext.Provider>
+      </TestQueryClientProvider>,
     )
 
     assert.equal(screen.getByRole('tab', { name: 'Activity' }).getAttribute('data-state'), 'active')
@@ -164,17 +171,19 @@ describe('HomeTabs token navigation', () => {
     // Scenario: Alice and Bob share one local vault, but Activity belongs to the
     // selected party. Switching to Bob must hide Alice's transaction history.
     render(
-      <VaultContext.Provider
-        value={{ ...baseVault(), accounts: [ACCOUNT, SECOND_ACCOUNT], primary: SECOND_ACCOUNT }}
-      >
-        <HomeTabs
-          account={SECOND_ACCOUNT}
-          transactions={[
-            txFor(ACCOUNT, 'tx-alice', 'Alice transfer'),
-            txFor(SECOND_ACCOUNT, 'tx-bob', 'Bob transfer'),
-          ]}
-        />
-      </VaultContext.Provider>,
+      <TestQueryClientProvider>
+        <VaultContext.Provider
+          value={{ ...baseVault(), accounts: [ACCOUNT, SECOND_ACCOUNT], primary: SECOND_ACCOUNT }}
+        >
+          <HomeTabs
+            account={SECOND_ACCOUNT}
+            transactions={[
+              txFor(ACCOUNT, 'tx-alice', 'Alice transfer'),
+              txFor(SECOND_ACCOUNT, 'tx-bob', 'Bob transfer'),
+            ]}
+          />
+        </VaultContext.Provider>
+      </TestQueryClientProvider>,
     )
 
     assert.equal(screen.queryByText('Alice transfer'), null)

@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event'
 import { TokensPanel } from '@/components/TokensPanel'
 import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
 import type { Cip56HoldingsApi } from '@/hooks/useTokenHoldings'
+import { TestQueryClientProvider } from '@/test-utils/queryClient'
 import type { AccountPublic } from '@/vault/types'
 import { VaultContext, type VaultContextValue } from '@/vault/VaultContext'
 
@@ -46,12 +47,14 @@ const baseVault = (): VaultContextValue =>
 // Mounts the panel under vault context so it can resolve the active account.
 const renderTokens = (api: Cip56HoldingsApi, transfersApi?: Cip56TransferApi): void => {
   render(
-    <VaultContext.Provider value={baseVault()}>
-      <TokensPanel
-        api={api}
-        transfersApi={transfersApi}
-      />
-    </VaultContext.Provider>,
+    <TestQueryClientProvider>
+      <VaultContext.Provider value={baseVault()}>
+        <TokensPanel
+          api={api}
+          transfersApi={transfersApi}
+        />
+      </VaultContext.Provider>
+    </TestQueryClientProvider>,
   )
 }
 
