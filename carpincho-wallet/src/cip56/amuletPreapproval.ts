@@ -38,7 +38,7 @@ export const createAmuletPreapproval = async ({
     'amulet.preapproval.create',
     { receiver: account.partyId },
   )
-  await executePreparedCommands({
+  return await executePreparedCommands({
     account,
     commands,
     disclosedContracts,
@@ -47,10 +47,6 @@ export const createAmuletPreapproval = async ({
     signMessage,
     recordTransaction,
   })
-  return await walletServiceRequest<{ updateId?: string; completionOffset?: number }>(
-    'amulet.preapproval.acceptProposal',
-    { receiver: account.partyId },
-  )
 }
 
 // Disables Amulet auto-accept while keeping the receiver signature inside Carpincho.

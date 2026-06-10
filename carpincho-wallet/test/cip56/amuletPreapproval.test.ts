@@ -61,7 +61,7 @@ describe('Amulet preapproval helpers', () => {
 
   it('creates an Amulet preapproval using Carpincho local signing', async () => {
     // Scenario: enabling auto-accept prepares the SDK command in wallet-service,
-    // then Carpincho prepares, signs, executes, and records the transaction.
+    // then Carpincho signs the proposal while Splice accepts it asynchronously.
     const calls: Array<{ method: string; params: Record<string, unknown> }> = []
     globalThis.fetch = (async (_input, init) => {
       const body = JSON.parse(String(init?.body)) as {
@@ -97,11 +97,6 @@ describe('Amulet preapproval helpers', () => {
           status: 200,
         })
       }
-      if (body.method === 'amulet.preapproval.acceptProposal') {
-        return new Response(JSON.stringify({ result: { updateId: 'update-accept-1' } }), {
-          status: 200,
-        })
-      }
       throw new Error(`unexpected method ${body.method}`)
     }) as typeof globalThis.fetch
     const recorded: unknown[] = []
@@ -119,19 +114,13 @@ describe('Amulet preapproval helpers', () => {
       },
     })
 
-    assert.deepEqual(result, { updateId: 'update-accept-1' })
+    assert.deepEqual(result, { updateId: 'update-create-1' })
     assert.deepEqual(
       calls.map((call) => call.method),
-      [
-        'amulet.preapproval.create',
-        'prepareTransaction',
-        'executePrepared',
-        'amulet.preapproval.acceptProposal',
-      ],
+      ['amulet.preapproval.create', 'prepareTransaction', 'executePrepared'],
     )
     assert.deepEqual(calls[0]?.params, { receiver: 'alice::party' })
     assert.deepEqual(calls[1]?.params.actAs, ['alice::party'])
-    assert.deepEqual(calls[3]?.params, { receiver: 'alice::party' })
     assert.equal(
       (recorded[0] as { method?: string } | undefined)?.method,
       'amulet.preapproval.create',
