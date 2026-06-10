@@ -20,8 +20,26 @@ const ACCOUNT: AccountPublic = {
   createdAt: 1,
 }
 
-const Probe = ({ api }: { api: Cip56TransferApi }): JSX.Element => {
-  const state = usePendingCip56Transfers(ACCOUNT, {
+const SECOND_ACCOUNT: AccountPublic = {
+  // Second account fixture catches stale incoming transfers after switching parties.
+  id: 'account-2',
+  name: 'Bob',
+  partyId: 'bob::party',
+  publicKeyBase64: 'public-key-2',
+  network: 'canton:local',
+  isPrimary: true,
+  createdAt: 2,
+}
+
+const Probe = ({
+  account = ACCOUNT,
+  api,
+}: {
+  account?: AccountPublic
+  api: Cip56TransferApi
+}): JSX.Element => {
+  // Probe renders raw transfer ids so the test can observe hook state across account changes.
+  const state = usePendingCip56Transfers(account, {
     api,
     pollMs: null,
     signMessage: async () => 'signature',
@@ -81,5 +99,37 @@ describe('usePendingCip56Transfers', () => {
     await waitFor(() => assert.equal(screen.getByRole('status').textContent, ''))
 
     assert.deepEqual(calls, ['list', 'accept', 'list'])
+  })
+
+  it('clears previous party transfers while the newly selected party loads', async () => {
+    // Scenario: Alice has an incoming transfer, then the user selects Bob. Bob's
+    // wallet-service call can still be in flight, but Alice's request must not remain visible.
+    const api: Cip56TransferApi = {
+      listPendingIncomingTransfers: async (partyId) => {
+        if (partyId === ACCOUNT.partyId) {
+          return [{ contractId: 'alice-transfer-cid' }]
+        }
+        return new Promise(() => undefined)
+      },
+      acceptTransfer: async () => ({ updateId: 'update-1' }),
+    }
+
+    const { rerender } = render(
+      <Probe
+        account={ACCOUNT}
+        api={api}
+      />,
+    )
+
+    await screen.findByText('alice-transfer-cid')
+
+    rerender(
+      <Probe
+        account={SECOND_ACCOUNT}
+        api={api}
+      />,
+    )
+
+    await waitFor(() => assert.equal(screen.getByRole('status').textContent, ''))
   })
 })

@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event'
 import { HomeTabs } from '@/components/HomeTabs'
 import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
 import type { Cip56HoldingsApi } from '@/hooks/useTokenHoldings'
-import type { AccountPublic } from '@/vault/types'
+import type { AccountPublic, TransactionRecord } from '@/vault/types'
 import { VaultContext, type VaultContextValue } from '@/vault/VaultContext'
 
 const ACCOUNT: AccountPublic = {
@@ -18,6 +18,31 @@ const ACCOUNT: AccountPublic = {
   isPrimary: true,
   createdAt: 1,
 }
+
+const SECOND_ACCOUNT: AccountPublic = {
+  // Second account fixture catches stale tab state when the selected party changes.
+  id: 'account-2',
+  name: 'Bob',
+  partyId: 'bob::party',
+  publicKeyBase64: 'public-key-2',
+  network: 'canton:local',
+  isPrimary: true,
+  createdAt: 2,
+}
+
+// Creates an executed transaction tied to one wallet account for Activity filtering.
+const txFor = (account: AccountPublic, id: string, summary: string): TransactionRecord => ({
+  id,
+  accountId: account.id,
+  accountName: account.name,
+  partyId: account.partyId,
+  network: account.network,
+  method: 'canton_prepareExecuteAndWait',
+  status: 'executed',
+  createdAt: Date.parse('2026-06-10T12:00:00.000Z'),
+  preparedTransactionHash: `${id}-hash`,
+  summary,
+})
 
 // Builds the minimum unlocked vault context required by HomeTabs child panels.
 const baseVault = (): VaultContextValue =>
@@ -133,5 +158,26 @@ describe('HomeTabs token navigation', () => {
 
     assert.equal(screen.getByRole('tab', { name: 'Activity' }).getAttribute('data-state'), 'active')
     await screen.findByRole('tab', { name: 'Tokens 1' })
+  })
+
+  it('shows Activity only for the selected account', () => {
+    // Scenario: Alice and Bob share one local vault, but Activity belongs to the
+    // selected party. Switching to Bob must hide Alice's transaction history.
+    render(
+      <VaultContext.Provider
+        value={{ ...baseVault(), accounts: [ACCOUNT, SECOND_ACCOUNT], primary: SECOND_ACCOUNT }}
+      >
+        <HomeTabs
+          account={SECOND_ACCOUNT}
+          transactions={[
+            txFor(ACCOUNT, 'tx-alice', 'Alice transfer'),
+            txFor(SECOND_ACCOUNT, 'tx-bob', 'Bob transfer'),
+          ]}
+        />
+      </VaultContext.Provider>,
+    )
+
+    assert.equal(screen.queryByText('Alice transfer'), null)
+    assert.equal(screen.getByText('Bob transfer').textContent, 'Bob transfer')
   })
 })

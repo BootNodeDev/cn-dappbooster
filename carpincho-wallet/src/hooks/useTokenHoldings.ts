@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   listTokenHoldings,
   summarizeTokenHoldings,
@@ -19,6 +19,16 @@ export interface TokenHoldingsState {
   refresh: () => Promise<void>
 }
 
+interface TokenHoldingsData {
+  accountKey?: string
+  holdings: TokenHolding[]
+}
+
+interface TokenHoldingsError {
+  accountKey?: string
+  message: string
+}
+
 export interface TokenHoldingsOptions {
   pollMs?: number | null
   api?: Cip56HoldingsApi
@@ -37,27 +47,40 @@ export const useTokenHoldings = (
 ): TokenHoldingsState => {
   const api = options.api ?? defaultApi
   const pollMs = options.pollMs === undefined ? TOKEN_HOLDINGS_POLL_MS : options.pollMs
-  const [holdings, setHoldings] = useState<TokenHolding[]>([])
+  const [data, setData] = useState<TokenHoldingsData>({ holdings: [] })
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | undefined>(undefined)
+  const [errorData, setErrorData] = useState<TokenHoldingsError | undefined>(undefined)
+  const accountKey = account === undefined ? undefined : `${account.id}:${account.partyId}`
+  const currentAccountKey = useRef(accountKey)
+  currentAccountKey.current = accountKey
+  const holdings = data.accountKey === accountKey ? data.holdings : []
+  const error =
+    errorData !== undefined && errorData.accountKey === accountKey ? errorData.message : undefined
 
   // Refreshes holdings for the active party and keeps the previous list on transient errors.
   const refresh = useCallback(async (): Promise<void> => {
     if (account === undefined) {
-      setHoldings([])
-      setError(undefined)
+      setData({ holdings: [] })
+      setErrorData(undefined)
       return
     }
     setLoading(true)
     try {
-      setHoldings(await api.listTokenHoldings(account.partyId))
-      setError(undefined)
+      const nextHoldings = await api.listTokenHoldings(account.partyId)
+      if (accountKey === currentAccountKey.current) {
+        setData({ accountKey, holdings: nextHoldings })
+        setErrorData(undefined)
+      }
     } catch (err) {
-      setError((err as Error).message)
+      if (accountKey === currentAccountKey.current) {
+        setErrorData({ accountKey, message: (err as Error).message })
+      }
     } finally {
-      setLoading(false)
+      if (accountKey === currentAccountKey.current) {
+        setLoading(false)
+      }
     }
-  }, [account, api])
+  }, [account, accountKey, api])
 
   useEffect(() => {
     let cancelled = false

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   acceptPendingTransfer,
   listPendingIncomingTransfers,
@@ -32,6 +32,16 @@ export interface PendingCip56TransfersOptions {
   recordTransaction?: VaultContextValue['recordTransaction']
 }
 
+interface PendingCip56TransfersData {
+  accountKey?: string
+  transfers: PendingTokenTransfer[]
+}
+
+interface PendingCip56TransfersError {
+  accountKey?: string
+  message: string
+}
+
 const defaultApi: Cip56TransferApi = {
   listPendingIncomingTransfers,
   acceptTransfer: acceptPendingTransfer,
@@ -46,26 +56,39 @@ export const usePendingCip56Transfers = (
 ): PendingCip56TransfersState => {
   const api = options.api ?? defaultApi
   const pollMs = options.pollMs === undefined ? CIP56_TRANSFER_POLL_MS : options.pollMs
-  const [transfers, setTransfers] = useState<PendingTokenTransfer[]>([])
+  const [data, setData] = useState<PendingCip56TransfersData>({ transfers: [] })
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | undefined>(undefined)
+  const [errorData, setErrorData] = useState<PendingCip56TransfersError | undefined>(undefined)
+  const accountKey = account === undefined ? undefined : `${account.id}:${account.partyId}`
+  const currentAccountKey = useRef(accountKey)
+  currentAccountKey.current = accountKey
+  const transfers = data.accountKey === accountKey ? data.transfers : []
+  const error =
+    errorData !== undefined && errorData.accountKey === accountKey ? errorData.message : undefined
 
   const refresh = useCallback(async (): Promise<void> => {
     if (account === undefined) {
-      setTransfers([])
-      setError(undefined)
+      setData({ transfers: [] })
+      setErrorData(undefined)
       return
     }
     setLoading(true)
     try {
-      setTransfers(await api.listPendingIncomingTransfers(account.partyId))
-      setError(undefined)
+      const nextTransfers = await api.listPendingIncomingTransfers(account.partyId)
+      if (accountKey === currentAccountKey.current) {
+        setData({ accountKey, transfers: nextTransfers })
+        setErrorData(undefined)
+      }
     } catch (err) {
-      setError((err as Error).message)
+      if (accountKey === currentAccountKey.current) {
+        setErrorData({ accountKey, message: (err as Error).message })
+      }
     } finally {
-      setLoading(false)
+      if (accountKey === currentAccountKey.current) {
+        setLoading(false)
+      }
     }
-  }, [account, api])
+  }, [account, accountKey, api])
 
   useEffect(() => {
     let cancelled = false
