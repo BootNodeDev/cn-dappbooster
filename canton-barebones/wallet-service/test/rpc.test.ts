@@ -280,6 +280,59 @@ describe('CIP-56 token helpers', () => {
     assert.equal(seen.registryUrl, 'http://localhost:2000/api/validator/v0/scan-proxy')
   })
 
+  it('prepares a token transfer command through the SDK token namespace', async () => {
+    // Scenario: sending CIP-56 tokens requires wallet-service to ask the
+    // Node-only SDK for transfer commands, while Carpincho remains responsible
+    // for signing the prepared transaction hash with the sender's local key.
+    const disclosedContracts = [{ contractId: 'transfer-context-cid', createdEventBlob: 'blob' }]
+    const expirationDate = '2026-06-10T15:00:00.000Z'
+    const seen: { params?: Record<string, unknown> } = {}
+    const rpc = createRpc(withToken(), {
+      sdkFactory: async () => ({
+        token: {
+          transfer: {
+            create: async (params: Record<string, unknown>) => {
+              seen.params = params
+              return [
+                { ExerciseCommand: { choice: 'TransferFactory_Transfer' } },
+                disclosedContracts,
+              ]
+            },
+          },
+        },
+      }),
+    })
+
+    const res = (await rpc.handle({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'cip56.createTransfer',
+      params: {
+        sender: 'sender::party',
+        recipient: 'receiver::party',
+        amount: '7.5',
+        instrumentId: 'Amulet',
+        memo: 'lunch',
+        expirationDate,
+      },
+    })) as JsonRpcResponse
+
+    assert.ok('result' in res)
+    assert.deepEqual(res.result, {
+      commands: { ExerciseCommand: { choice: 'TransferFactory_Transfer' } },
+      disclosedContracts,
+    })
+    assert.deepEqual(seen.params, {
+      sender: 'sender::party',
+      recipient: 'receiver::party',
+      amount: '7.5',
+      instrumentId: 'Amulet',
+      registryUrl: new URL('http://localhost:2000/api/validator/v0/scan-proxy'),
+      memo: 'lunch',
+      expirationDate: new Date(expirationDate),
+    })
+  })
+
   it('lists token holding UTXOs through the SDK token namespace without reshaping contracts', async () => {
     // Scenario: Carpincho needs the active CIP-56 holdings for a party, but the
     // Node-only wallet SDK must stay behind wallet-service. The RPC returns the

@@ -153,6 +153,8 @@ export const createMockRpc = (
           return rpcResult(id, [])
         case 'cip56.listHoldings':
           return rpcResult(id, [])
+        case 'cip56.createTransfer':
+          return rpcResult(id, { commands: [], disclosedContracts: [] })
         case 'prepareExecute':
         case 'prepareExecuteAndWait':
         case 'signMessage':
@@ -204,6 +206,7 @@ export const createMockRpc = (
       'executePrepared',
       'cip56.listPendingTransfers',
       'cip56.listHoldings',
+      'cip56.createTransfer',
     ],
     reservedMethods: ['prepareExecute', 'prepareExecuteAndWait', 'signMessage'],
     network: mockNetworkId(config),

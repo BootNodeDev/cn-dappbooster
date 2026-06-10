@@ -99,6 +99,15 @@ type Cip56TokenSdk = {
         transferInstructionCid: string
         registryUrl: URL
       }) => Promise<[unknown, unknown[]]>
+      create: (params: {
+        sender: string
+        recipient: string
+        amount: string
+        instrumentId: string
+        registryUrl: URL
+        memo?: string
+        expirationDate?: Date
+      }) => Promise<[unknown, unknown[]]>
     }
     utxos: {
       list: (params: {
@@ -218,6 +227,22 @@ const requiredStringParam = (params: Record<string, unknown>, name: string): str
     throw new InvalidParams(`${name} is required`)
   }
   return value
+}
+
+// Converts an optional ISO timestamp into the Date shape expected by wallet-sdk transfer helpers.
+const optionalDateParam = (params: Record<string, unknown>, name: string): Date | undefined => {
+  const value = params[name]
+  if (value === undefined) {
+    return undefined
+  }
+  if (typeof value !== 'string' || value.trim() === '') {
+    throw new InvalidParams(`${name} must be an ISO timestamp`)
+  }
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    throw new InvalidParams(`${name} must be an ISO timestamp`)
+  }
+  return date
 }
 
 export type Rpc = {
@@ -443,6 +468,24 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
     return { commands, disclosedContracts }
   }
 
+  const cip56CreateTransfer = async (
+    params: unknown,
+  ): Promise<{ commands: unknown; disclosedContracts: unknown[] }> => {
+    const p = objectParam<Record<string, unknown>>(params, 'cip56.createTransfer')
+    const expirationDate = optionalDateParam(p, 'expirationDate')
+    const sdk = await getTokenSdk()
+    const [commands, disclosedContracts] = await sdk.token.transfer.create({
+      sender: requiredStringParam(p, 'sender'),
+      recipient: requiredStringParam(p, 'recipient'),
+      amount: requiredStringParam(p, 'amount'),
+      instrumentId: requiredStringParam(p, 'instrumentId'),
+      registryUrl: new URL(config.splice.registryApiUrl),
+      ...(typeof p.memo === 'string' && p.memo.trim() !== '' ? { memo: p.memo.trim() } : {}),
+      ...(expirationDate === undefined ? {} : { expirationDate }),
+    })
+    return { commands, disclosedContracts }
+  }
+
   const dispatch = async (id: JsonRpcId, request: JsonRpcRequest): Promise<JsonRpcResponse> => {
     if (request.jsonrpc !== undefined && request.jsonrpc !== '2.0') {
       return rpcError(id, -32600, 'Invalid request', { reason: 'jsonrpc must be "2.0"' })
@@ -479,6 +522,8 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
           return rpcResult(id, await cip56ListHoldings(request.params))
         case 'cip56.acceptTransfer':
           return rpcResult(id, await cip56AcceptTransfer(request.params))
+        case 'cip56.createTransfer':
+          return rpcResult(id, await cip56CreateTransfer(request.params))
         case 'prepareExecute':
         case 'prepareExecuteAndWait':
         case 'signMessage':
@@ -525,6 +570,7 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
       'cip56.listPendingTransfers',
       'cip56.listHoldings',
       'cip56.acceptTransfer',
+      'cip56.createTransfer',
     ],
     reservedMethods: ['prepareExecute', 'prepareExecuteAndWait', 'signMessage'],
     adminEndpoints: ['POST /admin/party/prepare', 'POST /admin/party/complete'],
