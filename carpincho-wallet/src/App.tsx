@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { Header } from '@/components/Header'
 import { MenuSheet } from '@/components/menu/MenuSheet'
@@ -11,6 +12,15 @@ import { VaultProvider } from '@/vault/VaultContext'
 import { HomeView } from '@/views/HomeView'
 import { OnboardingFlow } from '@/views/onboarding/OnboardingFlow'
 import { UnlockView } from '@/views/UnlockView'
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: false,
+    },
+  },
+})
 
 export type ShellView = 'loading' | 'unlock' | 'onboarding' | 'home'
 
@@ -65,13 +75,15 @@ const Shell = (): JSX.Element => {
 }
 
 const App = (): JSX.Element => (
-  <VaultProvider>
-    <TooltipProvider>
-      <ToastProvider>
-        <Shell />
-      </ToastProvider>
-    </TooltipProvider>
-  </VaultProvider>
+  <QueryClientProvider client={queryClient}>
+    <VaultProvider>
+      <TooltipProvider>
+        <ToastProvider>
+          <Shell />
+        </ToastProvider>
+      </TooltipProvider>
+    </VaultProvider>
+  </QueryClientProvider>
 )
 
 export default App
