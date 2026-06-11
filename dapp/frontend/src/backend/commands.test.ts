@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { VestingSchedule } from '@/lib/schedule'
 import {
-  buildAcceptCommand,
-  buildCancelCommand,
-  buildClaimCommand,
-  buildClaimResidualCommand,
-  buildCreateVestingCommand,
   buildDisclosedContract,
   decodeSchedule,
   encodeSchedule,
@@ -111,86 +106,6 @@ describe('buildDisclosedContract', () => {
       templateId: 'TID',
       contractId: 'c',
       createdEventBlob: 'b',
-    })
-  })
-})
-
-describe('command builders', () => {
-  it('buildCreateVestingCommand shapes Factory_CreateVesting args with the encoded schedule', () => {
-    const cmd = buildCreateVestingCommand('TID', 'fcid', {
-      proposer: 'P',
-      beneficiary: 'B',
-      total: 1000,
-      schedule: linear,
-      note: 'Title\nbody',
-    })
-    expect(cmd).toEqual({
-      ExerciseCommand: {
-        templateId: 'TID',
-        contractId: 'fcid',
-        choice: 'Factory_CreateVesting',
-        choiceArgument: {
-          proposer: 'P',
-          beneficiary: 'B',
-          total: '1000',
-          schedule: encodeSchedule(linear),
-          note: 'Title\nbody',
-        },
-      },
-    })
-  })
-
-  it('buildCreateVestingCommand sends null note when omitted', () => {
-    const cmd = buildCreateVestingCommand('TID', 'fcid', {
-      proposer: 'P',
-      beneficiary: 'B',
-      total: 1,
-      schedule: linear,
-    })
-    expect((cmd.ExerciseCommand.choiceArgument as { note: unknown }).note).toBeNull()
-  })
-
-  it('buildClaimCommand stringifies amount and carries no nowMicros (getTime)', () => {
-    expect(buildClaimCommand('TID', 'cid', 100)).toEqual({
-      ExerciseCommand: {
-        templateId: 'TID',
-        contractId: 'cid',
-        choice: 'Contract_Claim',
-        choiceArgument: { amount: '100' },
-      },
-    })
-  })
-
-  it('buildAcceptCommand targets Proposal_Accept', () => {
-    expect(buildAcceptCommand('TID', 'pcid')).toEqual({
-      ExerciseCommand: {
-        templateId: 'TID',
-        contractId: 'pcid',
-        choice: 'Proposal_Accept',
-        choiceArgument: {},
-      },
-    })
-  })
-
-  it('buildCancelCommand targets Contract_Cancel with no args', () => {
-    expect(buildCancelCommand('TID', 'ccid')).toEqual({
-      ExerciseCommand: {
-        templateId: 'TID',
-        contractId: 'ccid',
-        choice: 'Contract_Cancel',
-        choiceArgument: {},
-      },
-    })
-  })
-
-  it('buildClaimResidualCommand targets Claim_Withdraw and stringifies withdrawAmount', () => {
-    expect(buildClaimResidualCommand('TID', 'rcid', 50)).toEqual({
-      ExerciseCommand: {
-        templateId: 'TID',
-        contractId: 'rcid',
-        choice: 'Claim_Withdraw',
-        choiceArgument: { withdrawAmount: '50' },
-      },
     })
   })
 })

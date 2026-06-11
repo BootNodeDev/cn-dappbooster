@@ -1,6 +1,6 @@
 // The backend seam. The UI depends only on this interface + the domain types
-// (@/store/types) — never on DAML/transport details. LiteBackend implements it
-// against the vesting-lite DAML via the wallet-service ledgerApi proxy. The pure
+// (@/store/types) — never on DAML/transport details. AmuletBackend implements it
+// against the amulet-vesting DAML via the wallet-service ledgerApi proxy. The pure
 // mappers here turn JSON-Ledger-API active-contract rows into Grant/Proposal/VestedClaim.
 
 import type { VestingSchedule } from '@/lib/schedule'
@@ -8,8 +8,8 @@ import type { Grant, PartyId, Proposal, VestedClaim } from '@/store/types'
 import { decodeSchedule } from './commands'
 
 export type PartyRef = { name: string; partyId: string }
-export type Deployment = { pkg: string; operator: string }
-export type Mode = 'lite'
+export type Deployment = { pkg: string; operator: string; splicePkg?: string }
+export type Mode = 'amulet'
 
 export interface VestingView {
   grants: Grant[]
@@ -102,8 +102,8 @@ export const rowToProposal = (row: AcsRow): Proposal | undefined => {
     title,
     provider: String(arg.provider ?? '') as PartyId,
     proposer: String(arg.proposer ?? '') as PartyId,
-    receiver: String(arg.beneficiary ?? '') as PartyId,
-    totalAmount: num(arg.total),
+    receiver: String(arg.receiver ?? '') as PartyId,
+    totalAmount: num(arg.totalAmount),
     schedule: decodeSchedule(arg.schedule),
     note,
   }
@@ -120,11 +120,11 @@ export const rowToGrant = (row: AcsRow): Grant | undefined => {
     id: contractId,
     title,
     provider: String(arg.provider ?? '') as PartyId,
-    creator: String(arg.proposer ?? '') as PartyId,
-    receiver: String(arg.beneficiary ?? '') as PartyId,
-    totalAmount: num(arg.total),
+    creator: String(arg.creator ?? '') as PartyId,
+    receiver: String(arg.receiver ?? '') as PartyId,
+    totalAmount: num(arg.totalAmount),
     schedule: decodeSchedule(arg.schedule),
-    alreadyWithdrawn: num(arg.claimed),
+    alreadyWithdrawn: num(arg.alreadyWithdrawn),
     note,
   }
 }
@@ -140,8 +140,8 @@ export const rowToClaim = (row: AcsRow): VestedClaim | undefined => {
     id: contractId,
     title,
     provider: String(arg.provider ?? '') as PartyId,
-    creator: String(arg.proposer ?? '') as PartyId,
-    receiver: String(arg.beneficiary ?? '') as PartyId,
+    creator: String(arg.creator ?? '') as PartyId,
+    receiver: String(arg.receiver ?? '') as PartyId,
     amount: num(arg.amount),
     withdrawn: num(arg.withdrawn),
     note,

@@ -88,7 +88,10 @@ export const WalletProvider = ({ children }: { children: ReactNode }): React.JSX
       if (epoch !== loadEpoch.current) {
         return
       }
-      const nextPool = accounts.filter((account) => account.partyId !== config.deployment.operator)
+      // The operator (app-provider) is the proposer/funder in the amulet app, so it must be
+      // connectable — it creates the vesting grants. (In the lite app the operator was only
+      // the deployer and was excluded from the actor pool.)
+      const nextPool = accounts
       setPool(nextPool)
       const available = await nextBackend.isAvailable()
       if (epoch !== loadEpoch.current) {
