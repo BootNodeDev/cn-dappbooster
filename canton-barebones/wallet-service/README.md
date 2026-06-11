@@ -10,10 +10,18 @@ wallet-internal party onboarding.
 
 ## Run
 
-Use the root runbook for startup, health checks, and local mock-mode commands:
+`npm run canton:up` (the root [quick start](../../README.md#quick-start)) brings
+this service up alongside Postgres and Canton. Verify it from the repo root:
 
-- [Root quick start](../../README.md#quick-start)
-- [Root wallet-service step](../../README.md#wallet-service)
+```bash
+npm run wallet-service:health
+```
+
+For host-side iteration with no Docker, run it standalone in [mock mode](#mock-mode):
+
+```bash
+WALLET_SERVICE_MOCK=1 npm run wallet-service:dev
+```
 
 ## Token
 
@@ -93,9 +101,3 @@ used by the dApp frontend for ACS reads:
 ```text
 POST /v2/state/active-contracts
 ```
-
-## References
-
-- [CIP-0103](https://github.com/canton-foundation/cips/blob/main/cip-0103/cip-0103.md)
-- [OpenRPC dApp API](https://github.com/canton-network/wallet-gateway/blob/main/api-specs/openrpc-dapp-api.json)
-- [Vendored API specs](api-specs/README.md)

@@ -19,7 +19,6 @@ describe('extension packaging', () => {
 
     assert.equal(manifest.manifest_version, 3)
     assert.equal(manifest.name, 'Carpincho Wallet')
-    assert.equal(manifest.version, '0.1.0')
     assert.equal(manifest.action?.default_popup, 'index.html')
     assert.equal(manifest.action?.default_icon?.['32'], 'icons/carpincho-32.png')
     assert.equal(manifest.icons?.['128'], 'icons/carpincho-128.png')
@@ -27,6 +26,15 @@ describe('extension packaging', () => {
     assert.ok(manifest.permissions?.includes('activeTab'))
     assert.ok(manifest.host_permissions?.includes('http://localhost/*'))
     assert.ok(manifest.host_permissions?.includes('http://127.0.0.1/*'))
+  })
+
+  it('sources the built manifest version from the monorepo root package.json', () => {
+    const rootVersion = readJson<{ version: string }>('../package.json').version
+    // Chrome rejects semver prerelease/build metadata; the build strips it.
+    const expected = rootVersion.split(/[-+]/)[0]
+    const built = readJson<{ version?: string }>('dist-extension/manifest.json')
+
+    assert.equal(built.version, expected)
   })
 
   it('has a dedicated extension build that emits relative assets', () => {

@@ -34,6 +34,7 @@ This file applies only to `carpincho-wallet/`. For monorepo-wide rules (commit s
 - Use the `@/*` alias for every import that resolves inside `src/`. Relative `./` / `../` paths are linter errors
 - Build outputs: `dist/` for the web build and `dist-extension/` for the Chrome extension (`npm run build:extension` locally, or `npm run carpincho:build:extension` from the repo root)
 - Dev server: `http://localhost:3011`
+- The extension/manifest version comes from the monorepo root `package.json` (single source of truth), injected at build time via the `__APP_VERSION__` Vite define and a manifest-rewrite plugin; never hardcode versions in `manifest.json` or source
 
 ## Architecture
 

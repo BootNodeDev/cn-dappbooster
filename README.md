@@ -161,3 +161,23 @@ If `wallet.localhost`, `scan.localhost`, or `sv.localhost` do not resolve, add:
 ```text
 127.0.0.1 wallet.localhost scan.localhost sv.localhost
 ```
+
+## Releasing
+
+The root `package.json` `version` is the single source of truth for the release. Publishing a GitHub Release builds and publishes the artifacts.
+
+1. Bump the version and tag it from the repo root:
+
+   ```bash
+   npm version <x.y.z>
+   ```
+
+   This updates the root `package.json`, commits, and creates the `v<x.y.z>` tag.
+
+2. Push the commit and tag:
+
+   ```bash
+   git push --follow-tags
+   ```
+
+3. Publish a GitHub Release for that tag (the GitHub UI, or `gh release create v<x.y.z>`).

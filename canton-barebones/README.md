@@ -105,7 +105,24 @@ If hostnames do not resolve, add:
 127.0.0.1 wallet.localhost scan.localhost sv.localhost
 ```
 
-## Deploy A DAR
+## Deploy a DAR
+
+Compile a Daml project outside this base, then upload the DAR. From the repo
+root, build and deploy any project and DAR with the same two commands:
+
+```bash
+npm run build-dar -- <path/to/daml/project>
+npm run deploy-dar -- <path/to/file.dar>
+```
+
+For the in-repo Tally package that means:
+
+```bash
+npm run build-dar -- dapp/daml
+npm run deploy-dar -- dapp/daml/.daml/dist/quickstart-tally-0.0.1.dar
+```
+
+Or call the upload script directly:
 
 ```bash
 ./scripts/deploy-dar.sh /path/to/app.dar
@@ -116,3 +133,5 @@ The script uploads to app-user:
 ```text
 http://localhost:2975/v2/packages
 ```
+
+`npm run canton:health` must return OK before deploying; otherwise the DAR upload can fail.

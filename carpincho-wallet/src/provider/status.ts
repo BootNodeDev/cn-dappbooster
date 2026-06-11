@@ -12,7 +12,7 @@ export const buildStatus = async (): Promise<ProviderStatus> => {
   const remote = await walletServiceStatus()
   const networkId = remote.network?.networkId?.trim()
   return {
-    provider: { id: SIGNING_PROVIDER_ID, version: '0.1.0', providerType: 'browser' },
+    provider: { id: SIGNING_PROVIDER_ID, version: __APP_VERSION__, providerType: 'browser' },
     connection: {
       isConnected: true,
       isNetworkConnected: remote.connection?.isNetworkConnected ?? false,
