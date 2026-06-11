@@ -69,8 +69,11 @@ class WalletConnectKitProvider implements Provider<DappRpcTypes> {
   private signClientPromise: Promise<WalletConnectSignClient> | undefined
   private session: WalletConnectSession | undefined
   private sessionEventsAttached = false
+  private readonly config: InternalOptions
 
-  constructor(private readonly config: InternalOptions) {}
+  constructor(config: InternalOptions) {
+    this.config = config
+  }
 
   async request<M extends keyof DappRpcTypes>(
     args: RequestArgs<DappRpcTypes, M>,
