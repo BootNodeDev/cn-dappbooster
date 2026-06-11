@@ -5,12 +5,12 @@ import { partyHint, shortenParty } from '@/lib/format'
 import { useConnect, useParties, useParty } from '@/wallet/hooks'
 
 // Party switcher. Pill shows the acting party hint + chevron. The menu lets you
-// copy the acting id, switch to another party in the pool, see the operator as the
-// (non-selectable) factory owner, and sign out back to the picker.
+// copy the acting id, switch to another party in the pool, and sign out back to
+// the picker.
 export const WalletControl = (): React.JSX.Element | null => {
   const { connect, disconnect } = useConnect()
   const { party } = useParty()
-  const { pool, operator } = useParties()
+  const { pool } = useParties()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -111,17 +111,6 @@ export const WalletControl = (): React.JSX.Element | null => {
                   </li>
                 ))}
               </ul>
-            </div>
-          )}
-
-          {operator !== '' && (
-            <div className="mt-3 rounded-lg border border-border bg-bg/40 p-2.5">
-              <span className="text-[0.6rem] font-bold uppercase tracking-[0.08em] text-fg-muted">
-                factory owner
-              </span>
-              <div className="truncate font-mono text-[0.7rem] text-fg-soft">
-                {shortenParty(operator)}
-              </div>
             </div>
           )}
 

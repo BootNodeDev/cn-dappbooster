@@ -2,8 +2,9 @@ import type { ComponentType, SVGProps } from 'react'
 import { NavLink } from 'react-router-dom'
 import { DashboardIcon, InboxIcon, PlusCircleIcon } from '@/components/icons'
 import { cn } from '@/lib/cn'
+import { shortenParty } from '@/lib/format'
 import { useVestingStore } from '@/store/useVestingStore'
-import { useParty } from '@/wallet/hooks'
+import { useParties, useParty } from '@/wallet/hooks'
 
 interface NavItem {
   to: string
@@ -19,6 +20,7 @@ const items: NavItem[] = [
 
 export const Sidebar = (): React.JSX.Element => {
   const { party } = useParty()
+  const { operator } = useParties()
   const proposals = useVestingStore((s) => s.proposals)
   const incoming =
     party === undefined ? 0 : proposals.filter((p) => p.receiver === party.partyId).length
@@ -60,9 +62,21 @@ export const Sidebar = (): React.JSX.Element => {
         ))}
       </nav>
 
-      <div className="mt-auto flex items-center gap-2 border-t border-border px-2 pt-4 text-xs text-fg-muted">
-        <span className="size-1.5 rounded-full bg-success" />
-        Canton · direct ledger
+      <div className="mt-auto flex flex-col gap-3">
+        {operator !== '' && (
+          <div className="px-2">
+            <span className="text-[0.6rem] font-bold uppercase tracking-[0.08em] text-fg-muted">
+              factory owner
+            </span>
+            <div className="truncate font-mono text-[0.7rem] text-fg-soft">
+              {shortenParty(operator)}
+            </div>
+          </div>
+        )}
+        <div className="flex items-center gap-2 border-t border-border px-2 pt-4 text-xs text-fg-muted">
+          <span className="size-1.5 rounded-full bg-success" />
+          Canton · direct ledger
+        </div>
       </div>
     </aside>
   )
