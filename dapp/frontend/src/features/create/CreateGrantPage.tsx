@@ -320,8 +320,8 @@ export const CreateGrantPage = (): React.JSX.Element => {
           </div>
           {demo !== null && (
             <p className="mt-2 text-xs text-primary">
-              Demo schedule — the window starts when you submit, so you have time to switch parties
-              and accept before it fully vests.
+              Demo schedule — the window starts when you submit, so the receiver has time to accept
+              before it fully vests.
             </p>
           )}
 

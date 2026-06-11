@@ -35,7 +35,7 @@ const SPLICE_PKG_FALLBACK = '90987abecbcb1d004b063ddfe3b4b5d46cf3814ce89114a86c8
 const AMULET_VESTING_PKG_NAME = 'amulet-vesting'
 const SPLICE_AMULET_PKG_NAME = 'splice-amulet'
 
-import type { DisclosedContract, LedgerCommand, Wallet } from '@/wallet/Wallet'
+import type { DisclosedContract, LedgerCommand, SubmitFn } from '@/wallet/Wallet'
 import {
   type AppTransferContextArg,
   buildAmuletAcceptCommand,
@@ -116,7 +116,7 @@ type ScanMiningRoundsResponse = {
 export class AmuletBackend implements VestingBackend {
   readonly mode = 'amulet' as const
   private readonly rpcUrl: string
-  private readonly wallet: Wallet
+  private readonly submitFn: SubmitFn
   private readonly operator: string
   private readonly factoryTid: string
   private readonly proposalTid: string
@@ -127,9 +127,17 @@ export class AmuletBackend implements VestingBackend {
   private readonly openMiningRoundTid: string
   private readonly filterNameByPkg: Record<string, string>
 
-  constructor(rpcUrl: string, deployment: Deployment, wallet: Wallet) {
+  // Two transports by design:
+  //   - submit (SubmitFn): wallet-signed command submission as the connected
+  //     external party (canton-connect-kit → Carpincho).
+  //   - rpcUrl (wallet-service /rpc): SCAN context + cross-party ACS reads.
+  // The cross-party reads below (factory from the OPERATOR's ACS in
+  // createVesting; the proposer's input Amulets in discloseAcceptInputs) MUST
+  // stay on the wallet-service channel — the connected party cannot readAs the
+  // operator, and SCAN is not exposed through connect-kit.
+  constructor(rpcUrl: string, deployment: Deployment, submit: SubmitFn) {
     this.rpcUrl = rpcUrl
-    this.wallet = wallet
+    this.submitFn = submit
     this.operator = deployment.operator
     const pkg = deployment.pkg
     const sp = deployment.splicePkg ?? SPLICE_PKG_FALLBACK
@@ -214,7 +222,7 @@ export class AmuletBackend implements VestingBackend {
     command: LedgerCommand,
     disclosed?: DisclosedContract[],
   ): Promise<unknown> {
-    return this.wallet.execute(actAs, command, disclosed)
+    return this.submitFn(actAs, command, disclosed)
   }
 
   async viewAs(partyId: string): Promise<VestingView> {

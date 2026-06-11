@@ -1,6 +1,5 @@
-import { RoleToggle } from './RoleToggle'
+import { AccountMenu } from './AccountMenu'
 import { ThemeToggle } from './ThemeToggle'
-import { WalletControl } from './WalletControl'
 
 interface TopBarProps {
   title: string
@@ -19,9 +18,8 @@ export const TopBar = ({ title, crumb }: TopBarProps): React.JSX.Element => (
         <h1 className="text-xl font-extrabold tracking-tight text-fg">{title}</h1>
       </div>
       <div className="flex items-center gap-3">
-        <RoleToggle />
         <ThemeToggle />
-        <WalletControl />
+        <AccountMenu />
       </div>
     </div>
   </header>

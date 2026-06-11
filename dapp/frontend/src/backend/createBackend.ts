@@ -1,7 +1,7 @@
 // createBackend: loads /amulet-parties.json and builds the sole AmuletBackend.
 // The config file is written by the amulet-vesting bootstrap; do NOT commit it.
 
-import type { Wallet } from '@/wallet/Wallet'
+import type { SubmitFn } from '@/wallet/Wallet'
 import { AmuletBackend } from './AmuletBackend'
 import type { Deployment, VestingBackend } from './VestingBackend'
 
@@ -37,5 +37,5 @@ export const loadBackendConfig = async (): Promise<BackendConfig> => {
   }
 }
 
-export const createBackend = (config: BackendConfig, wallet: Wallet): VestingBackend =>
-  new AmuletBackend(config.rpcUrl, config.deployment, wallet)
+export const createBackend = (config: BackendConfig, submit: SubmitFn): VestingBackend =>
+  new AmuletBackend(config.rpcUrl, config.deployment, submit)

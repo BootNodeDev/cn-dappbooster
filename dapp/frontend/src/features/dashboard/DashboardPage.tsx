@@ -12,7 +12,7 @@ import { PrivacyNote } from '@/components/PrivacyNote'
 import { toast } from '@/components/toast'
 import { now, useNow } from '@/lib/clock'
 import { cn } from '@/lib/cn'
-import type { Grant, VestedClaim } from '@/store/types'
+import type { Grant, Role, VestedClaim } from '@/store/types'
 import { useUiStore } from '@/store/useUiStore'
 import { deriveGrant, useVesting, useVestingStore } from '@/store/useVestingStore'
 
@@ -22,6 +22,13 @@ const filters: { value: Filter; label: string }[] = [
   { value: 'claimable', label: 'Claimable' },
   { value: 'cliff', label: 'In cliff' },
   { value: 'milestone', label: 'Milestone' },
+]
+
+// Lens over the single connected party's grants: those vesting TO it (receiver)
+// vs those it FUNDED for others (funder). Replaces the old global role switch.
+const lenses: { value: Role; label: string }[] = [
+  { value: 'receiver', label: 'Incoming' },
+  { value: 'funder', label: 'Outgoing' },
 ]
 
 interface ClaimTarget {
@@ -34,6 +41,7 @@ export const DashboardPage = (): React.JSX.Element => {
   const nowMs = useNow()
   const { backend, partyId } = useVesting()
   const role = useUiStore((s) => s.role)
+  const setRole = useUiStore((s) => s.setRole)
   const view = useUiStore((s) => s.dashboardView)
   const setView = useUiStore((s) => s.setDashboardView)
 
@@ -165,6 +173,23 @@ export const DashboardPage = (): React.JSX.Element => {
             <KpiCard label="Active grants" amount={rows.length} unit="" />
           </>
         )}
+      </div>
+
+      {/* lens — incoming (vesting to me) vs outgoing (funded by me) */}
+      <div className="inline-flex self-start rounded-lg border border-border bg-surface p-1">
+        {lenses.map((lens) => (
+          <button
+            key={lens.value}
+            type="button"
+            onClick={() => setRole(lens.value)}
+            className={cn(
+              'rounded-md px-3 py-1 text-xs font-bold transition-colors',
+              role === lens.value ? 'bg-primary-soft text-fg' : 'text-fg-muted hover:text-fg',
+            )}
+          >
+            {lens.label}
+          </button>
+        ))}
       </div>
 
       {/* toolbar */}
