@@ -1,71 +1,42 @@
-# dApp Frontend (starter)
+# vesting-ui
 
-A minimal React dApp shell built on `canton-connect-kit`. `App.tsx` wires the
-`ConnectKitProvider` and a `ConnectionBar` (connect via the Carpincho extension
-or WalletConnect, account/lock handling) around a workspace that renders your
-feature components only when the wallet is connected and unlocked.
+Direct-access dApp for **Canton Coin vesting**: propose a grant, the beneficiary accepts, claim as it vests, or cancel into a residual claim. It talks to a local Canton ledger straight from the browser (no external wallet) through the wallet-service `ledgerApi` proxy, using **explicit disclosure** of an observer-less factory.
 
-It talks to Carpincho through the injected CIP-0103 provider by default, with
-WalletConnect available as an optional fallback:
+Adapted from the static [`cc-vesting-contracts-ui`](https://github.com/BootNodeDev/cc-vesting-contracts-ui) — same pages and look, but its mock wallet and mock store are replaced by a live data layer.
 
-```text
-frontend -> injected CIP-0103 provider -> carpincho-wallet -> wallet-service -> Canton participant
-```
+## Parts
 
-Two demo features ship under `src/features/` (`loyalty`, `sign-message`) and are
-meant to be deleted once you start building your own app.
+| Path | Role |
+|------|------|
+| `dapp/daml/vesting-lite/` | DAML package `vesting-lite`: observer-less `VestingFactory` → `VestingProposal` → `VestingContract` → residual `VestedClaim`. Linear + milestone curves, real `getTime`. Mirrors the real `cc-vesting-contracts`, minus the LockedAmulet escrow. |
+| `src/backend/` | `VestingBackend` interface + `LiteBackend` (ACS reads, command submits, explicit disclosure over the proxy) + `AmuletBackend` (Splice — C2 stub) + `createBackend(mode)`. |
+| `src/wallet/` | `DirectWalletProvider`: the party pool, the "acting as" party, and the Lite/Amulet mode. Exposes `useParty` / `useConnect` / `useParties`. |
+| `src/store/useVestingStore.ts` | Ledger-backed store; actions submit then refresh. Pure `deriveGrant` + `lib/schedule.ts` mirror the on-ledger math. |
+| `src/app/` | Shell: landing party-picker, top-right party-switcher dropdown, mode chip, receiver/funder lens. |
+| `src/features/` | Pages: dashboard, proposals, create, grant-detail. |
+| `scripts/bootstrap-vesting-lite.mjs` | Creates the operator + party pool + factory; writes `public/vesting-lite-parties.json` (gitignored, deploy-specific). |
 
 ## Run
 
-For the full local stack, follow the root [quick start](../../README.md#quick-start).
-This package can also run by itself against the configured wallet URL:
+With the local Canton stack running (`./scripts/dev-stack.sh`):
 
 ```bash
-npm install
-npm run dev
+./scripts/dev-stack.sh vesting-up   # build+deploy the DAR, bootstrap parties, start the dev server
+# → http://localhost:3019
 ```
 
-For the optional WalletConnect fallback, copy `.env.local.example` to `.env.local`
-and set `VITE_WC_PROJECT_ID` to a WalletConnect/Reown project id.
+Manual (DAR already deployed):
 
-The Canton network and Carpincho URL are read from `localStorage`. Defaults:
-
-- Canton network: `canton:local`
-- Carpincho URL: `http://localhost:3011`
-
-The active Carpincho account must already have a Canton party on the participant.
-
-## Project shape
-
-```text
-src/
-  App.tsx                provider + <ConnectionBar> wrapping the feature slots
-  ConnectionBar.tsx      wallet connectivity: connect/lock UX + workspace gate
-  components/ui/         shared UI primitives (Button, Card, Sheet, TextInput, Tooltip, ToastProvider, icons)
-  theme/                 ThemeProvider + useTheme
-  index.css              shell + base styles
-  runtimeConfig.ts       network / wallet URL (localStorage)
-  utils/                 shared helpers (clipboard, cn, errorMessage, formatPartyId)
-  features/
-    loyalty/             demo feature (DAML-backed stamp card) — removable
-    sign-message/        demo feature (CIP-0103 signMessage)  — removable
+```bash
+node scripts/bootstrap-vesting-lite.mjs   # writes public/vesting-lite-parties.json
+npm run vesting-ui:dev                    # → http://localhost:3019
 ```
 
-A feature folder is self-contained: its component, styles, unit test, and DAML
-signature (loyalty only) live together, and it is wired into the app by a single
-import + render line in `App.tsx`.
+Use the **Create** page's "Quick demo" presets for short (1–2 min) schedules so vesting accrues live during a demo.
 
-## Removing a feature
+## Lite vs Amulet
 
-Each `src/features/<name>/` folder is a removable demo. To drop one:
+The mode toggle picks the backend behind the same `VestingBackend` interface:
 
-1. Delete `src/features/<name>/`.
-2. Delete its `import` and its `<…/>` line in `src/App.tsx`.
-3. Delete its e2e specs at `../e2e/tests/features/<name>/`.
-
-To fully remove the **loyalty** specifically, also delete its DAML module
-directory `../daml/daml/Tally/`, then rebuild the DAR and regenerate codegen
-(the frontend's generated types go away with the deleted feature folder).
-
-Delete every feature and you are left with a clean connect-shell starter
-(`App.tsx` + `ConnectionBar`) ready for your own contracts and UI.
+- **Lite** (now): numeric balances, unfunded grants, on the bare Canton stack. Fully working.
+- **Amulet** (C2): real `LockedAmulet` escrow funded from Canton Coin holdings on Splice LocalNet. Same UI — currently offline.
