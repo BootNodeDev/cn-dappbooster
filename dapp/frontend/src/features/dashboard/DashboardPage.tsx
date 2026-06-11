@@ -20,9 +20,15 @@ import { Modal } from '@/components/Modal'
 import { toast } from '@/components/toast'
 import { now, useNow } from '@/lib/clock'
 import { cn } from '@/lib/cn'
-import type { Grant, VestedClaim } from '@/store/types'
+import type { Grant, Role, VestedClaim } from '@/store/types'
 import { useUiStore } from '@/store/useUiStore'
 import { deriveGrant, useVesting, useVestingStore } from '@/store/useVestingStore'
+
+// Tabs replace the old global role toggle: role is a per-escrow fact, so the user
+// picks which side of their own escrows to look at — the ones vesting to them
+// (Received) vs the ones they created for others (Created). Identity is the
+// connected party (wallet menu); these tabs never change it.
+type Tab = 'received' | 'created'
 
 type Filter = 'all' | 'claimable' | 'cliff' | 'milestone'
 const filters: { value: Filter; label: string }[] = [
@@ -38,10 +44,35 @@ interface ClaimTarget {
   available: number
 }
 
+const filterRows = (rows: GrantRow[], filter: Filter): GrantRow[] =>
+  rows.filter(({ grant, derived }) => {
+    if (filter === 'claimable') {
+      return derived.claimable > 0
+    }
+    if (filter === 'cliff') {
+      return derived.status === 'in_cliff'
+    }
+    if (filter === 'milestone') {
+      return grant.schedule.curve.kind === 'milestone'
+    }
+    return true
+  })
+
+const sumTotals = (rows: GrantRow[]) => {
+  const acc = { total: 0, vested: 0, claimable: 0, claimed: 0, unvested: 0 }
+  for (const { grant, derived } of rows) {
+    acc.total += grant.totalAmount
+    acc.vested += derived.vested
+    acc.claimable += derived.claimable
+    acc.claimed += derived.claimed
+    acc.unvested += derived.unvested
+  }
+  return acc
+}
+
 export const DashboardPage = (): React.JSX.Element => {
   const nowMs = useNow()
   const { backend, partyId } = useVesting()
-  const role = useUiStore((s) => s.role)
   const view = useUiStore((s) => s.dashboardView)
   const setView = useUiStore((s) => s.setDashboardView)
 
@@ -51,6 +82,7 @@ export const DashboardPage = (): React.JSX.Element => {
   const claimResidual = useVestingStore((s) => s.claimResidual)
   const cancel = useVestingStore((s) => s.cancel)
 
+  const [tab, setTab] = useState<Tab>('received')
   const [filter, setFilter] = useState<Filter>('all')
   const [filterOpen, setFilterOpen] = useState(false)
   const filterRef = useRef<HTMLDivElement>(null)
@@ -73,47 +105,28 @@ export const DashboardPage = (): React.JSX.Element => {
 
   const activeFilterLabel = filters.find((f) => f.value === filter)?.label ?? 'All'
 
-  const rows = useMemo<GrantRow[]>(() => {
-    const mine = grants.filter((g) =>
-      role === 'beneficiary' ? g.receiver === partyId : g.creator === partyId,
-    )
-    return mine.map((grant) => ({ grant, derived: deriveGrant(grant, nowMs) }))
-  }, [grants, role, partyId, nowMs])
-
-  const filtered = useMemo(
+  const receivedRows = useMemo<GrantRow[]>(
     () =>
-      rows.filter(({ grant, derived }) => {
-        if (filter === 'claimable') {
-          return derived.claimable > 0
-        }
-        if (filter === 'cliff') {
-          return derived.status === 'in_cliff'
-        }
-        if (filter === 'milestone') {
-          return grant.schedule.curve.kind === 'milestone'
-        }
-        return true
-      }),
-    [rows, filter],
+      grants
+        .filter((g) => g.receiver === partyId)
+        .map((grant) => ({ grant, derived: deriveGrant(grant, nowMs) })),
+    [grants, partyId, nowMs],
+  )
+  const createdRows = useMemo<GrantRow[]>(
+    () =>
+      grants
+        .filter((g) => g.creator === partyId)
+        .map((grant) => ({ grant, derived: deriveGrant(grant, nowMs) })),
+    [grants, partyId, nowMs],
   )
 
-  const myClaims = useMemo(
-    () => (role === 'beneficiary' ? claims.filter((c) => c.receiver === partyId) : []),
-    [claims, role, partyId],
-  )
+  const isReceived = tab === 'received'
+  const activeRows = isReceived ? receivedRows : createdRows
+  const activeRole: Role = isReceived ? 'beneficiary' : 'manager'
+  const filtered = useMemo(() => filterRows(activeRows, filter), [activeRows, filter])
+  const totals = useMemo(() => sumTotals(activeRows), [activeRows])
 
-  const totals = useMemo(() => {
-    const acc = { total: 0, vested: 0, claimable: 0, claimed: 0, unvested: 0 }
-    for (const { grant, derived } of rows) {
-      acc.total += grant.totalAmount
-      acc.vested += derived.vested
-      acc.claimable += derived.claimable
-      acc.claimed += derived.claimed
-      acc.unvested += derived.unvested
-    }
-    return acc
-  }, [rows])
-
+  const myClaims = useMemo(() => claims.filter((c) => c.receiver === partyId), [claims, partyId])
   const residualClaimable = myClaims.reduce((sum, c) => sum + (c.amount - c.withdrawn), 0)
 
   const onConfirmClaim = async (amount: number): Promise<void> => {
@@ -145,83 +158,47 @@ export const DashboardPage = (): React.JSX.Element => {
 
   const openClaim = (grant: Grant): void => {
     const derived = deriveGrant(grant, now())
-    setClaimTarget({
-      kind: 'grant',
-      id: grant.id,
-      available: derived.claimable,
-    })
+    setClaimTarget({ kind: 'grant', id: grant.id, available: derived.claimable })
   }
   const openResidual = (claim: VestedClaim): void => {
-    setClaimTarget({
-      kind: 'claim',
-      id: claim.id,
-      available: claim.amount - claim.withdrawn,
-    })
+    setClaimTarget({ kind: 'claim', id: claim.id, available: claim.amount - claim.withdrawn })
   }
+
+  const tabs: { value: Tab; label: string; count: number }[] = [
+    { value: 'received', label: 'Received', count: receivedRows.length },
+    { value: 'created', label: 'Created', count: createdRows.length },
+  ]
 
   return (
     <div className="flex flex-col gap-7">
-      {/* KPIs */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {role === 'beneficiary' ? (
-          <>
-            <KpiCard
-              hero
-              label="Claimable now"
-              amount={totals.claimable}
-              sub={`Across ${rows.length} escrows`}
-              subTone="success"
-              hint="Tokens that have unlocked and are yours to withdraw right now, across all the escrows vesting to you."
-            />
-            <KpiCard
-              label="Total escrowed"
-              amount={totals.total}
-              sub={`${rows.length} active`}
-              hint="The full amount set aside for you, whether it has vested yet or not."
-            />
-            <KpiCard
-              label="Vested to date"
-              amount={totals.vested}
-              hint="How much has unlocked so far on each schedule — including what you've already claimed."
-            />
-            <KpiCard
-              label="Already claimed"
-              amount={totals.claimed}
-              hint="Tokens you've already withdrawn from your escrows into your wallet."
-            />
-          </>
-        ) : (
-          <>
-            <KpiCard
-              hero
-              label="Total committed"
-              amount={totals.total}
-              sub={`${rows.length} escrows funded`}
-              hint="The full amount you've locked into escrows for others. It leaves your balance once a proposal is accepted."
-            />
-            <KpiCard
-              label="Vested to date"
-              amount={totals.vested}
-              hint="How much of what you committed has unlocked for the beneficiaries so far."
-            />
-            <KpiCard
-              label="Unvested (clawbackable)"
-              amount={totals.unvested}
-              hint="The part that hasn't unlocked yet. If you cancel an escrow, this is what returns to you."
-            />
-            <KpiCard
-              label="Active escrows"
-              amount={rows.length}
-              unit=""
-              hint="How many of the escrows you created are currently live."
-            />
-          </>
-        )}
-      </div>
-
-      {/* toolbar */}
+      {/* tabs + toolbar */}
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-2">
+        <div className="inline-flex rounded-lg border border-border bg-surface p-1">
+          {tabs.map((t) => (
+            <button
+              key={t.value}
+              type="button"
+              onClick={() => setTab(t.value)}
+              aria-pressed={tab === t.value}
+              className={cn(
+                'inline-flex h-7 items-center gap-1.5 rounded-md px-3 text-xs font-bold transition-colors',
+                tab === t.value ? 'bg-primary-soft text-fg' : 'text-fg-muted hover:text-fg',
+              )}
+            >
+              {t.label}
+              <span
+                className={cn(
+                  'rounded-full px-1.5 font-mono text-[0.65rem]',
+                  tab === t.value ? 'bg-surface text-fg-muted' : 'text-fg-soft',
+                )}
+              >
+                {t.count}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <div className="ml-auto flex items-center gap-2">
           <div className="relative" ref={filterRef}>
             <button
               type="button"
@@ -281,27 +258,83 @@ export const DashboardPage = (): React.JSX.Element => {
               </button>
             ))}
           </div>
-        </div>
-        {role === 'manager' && (
           <Link
             to="/create"
             aria-label="Create escrow"
             title="Create escrow"
-            className="ml-auto grid size-9 place-items-center rounded-full border border-primary bg-primary text-primary-fg transition-colors hover:shadow-[var(--glow)]"
+            className="grid size-9 place-items-center rounded-full border border-primary bg-primary text-primary-fg transition-colors hover:shadow-[var(--glow)]"
           >
             <PlusIcon width={18} height={18} />
           </Link>
+        </div>
+      </div>
+
+      {/* KPIs for the active tab — always shown so the figures never vanish */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {isReceived ? (
+          <>
+            <KpiCard
+              hero
+              label="Claimable now"
+              amount={totals.claimable}
+              sub={`Across ${receivedRows.length} escrows`}
+              subTone="success"
+              hint="Tokens that have unlocked and are yours to withdraw right now, across all the escrows vesting to you."
+            />
+            <KpiCard
+              label="Total escrowed"
+              amount={totals.total}
+              sub={`${receivedRows.length} active`}
+              hint="The full amount set aside for you, whether it has vested yet or not."
+            />
+            <KpiCard
+              label="Vested to date"
+              amount={totals.vested}
+              hint="How much has unlocked so far on each schedule — including what you've already claimed."
+            />
+            <KpiCard
+              label="Already claimed"
+              amount={totals.claimed}
+              hint="Tokens you've already withdrawn from your escrows into your wallet."
+            />
+          </>
+        ) : (
+          <>
+            <KpiCard
+              hero
+              label="Total committed"
+              amount={totals.total}
+              sub={`${createdRows.length} escrows funded`}
+              hint="The full amount you've locked into escrows for others. It leaves your balance once a proposal is accepted."
+            />
+            <KpiCard
+              label="Vested to date"
+              amount={totals.vested}
+              hint="How much of what you committed has unlocked for the beneficiaries so far."
+            />
+            <KpiCard
+              label="Unvested (clawbackable)"
+              amount={totals.unvested}
+              hint="The part that hasn't unlocked yet. If you cancel an escrow, this is what returns to you."
+            />
+            <KpiCard
+              label="Active escrows"
+              amount={createdRows.length}
+              unit=""
+              hint="How many of the escrows you created are currently live."
+            />
+          </>
         )}
       </div>
 
-      {/* grants */}
+      {/* list for the active tab */}
       {filtered.length === 0 ? (
         <EmptyState
-          title="No escrows here"
+          title={isReceived ? 'Nothing vesting to you yet' : 'You have not created any escrows'}
           description={
-            role === 'beneficiary'
-              ? 'No escrows match this filter. Accepted proposals appear here.'
-              : 'You have not funded any escrows matching this filter yet.'
+            isReceived
+              ? 'Escrows other parties set up for you appear here once you accept their proposal.'
+              : 'Use the + button to lock up Canton Coin that vests to someone over time.'
           }
         />
       ) : view === 'cards' ? (
@@ -311,7 +344,7 @@ export const DashboardPage = (): React.JSX.Element => {
               key={grant.id}
               grant={grant}
               derived={derived}
-              role={role}
+              role={activeRole}
               nowMs={nowMs}
               onClaim={openClaim}
               onCancel={setCancelTarget}
@@ -319,11 +352,16 @@ export const DashboardPage = (): React.JSX.Element => {
           ))}
         </div>
       ) : (
-        <GrantTable rows={filtered} role={role} onClaim={openClaim} onCancel={setCancelTarget} />
+        <GrantTable
+          rows={filtered}
+          role={activeRole}
+          onClaim={openClaim}
+          onCancel={setCancelTarget}
+        />
       )}
 
-      {/* residual claims (beneficiary) */}
-      {role === 'beneficiary' && myClaims.length > 0 && (
+      {/* residual claims live on the Received side */}
+      {isReceived && myClaims.length > 0 && (
         <section className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-extrabold text-fg">Residual claims</h2>

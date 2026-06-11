@@ -5,23 +5,22 @@ import { ProposalCard } from '@/components/ProposalCard'
 import { toast } from '@/components/toast'
 import { useNow } from '@/lib/clock'
 import type { Proposal } from '@/store/types'
-import { useUiStore } from '@/store/useUiStore'
 import { useVesting, useVestingStore } from '@/store/useVestingStore'
 
 export const ProposalsPage = (): React.JSX.Element => {
   const nowMs = useNow()
   const { backend, partyId } = useVesting()
-  const role = useUiStore((s) => s.role)
   const proposals = useVestingStore((s) => s.proposals)
   const accept = useVestingStore((s) => s.accept)
 
-  const direction = role === 'beneficiary' ? 'incoming' : 'outgoing'
-  const visible = useMemo<Proposal[]>(
-    () =>
-      proposals.filter((p) =>
-        direction === 'incoming' ? p.receiver === partyId : p.proposer === partyId,
-      ),
-    [proposals, direction, partyId],
+  // Incoming: addressed to me, awaiting my acceptance. Outgoing: I proposed them.
+  const incoming = useMemo<Proposal[]>(
+    () => proposals.filter((p) => p.receiver === partyId),
+    [proposals, partyId],
+  )
+  const outgoing = useMemo<Proposal[]>(
+    () => proposals.filter((p) => p.proposer === partyId),
+    [proposals, partyId],
   )
 
   const onAccept = async (proposal: Proposal): Promise<void> => {
@@ -33,37 +32,55 @@ export const ProposalsPage = (): React.JSX.Element => {
     }
   }
 
-  if (visible.length === 0) {
+  if (incoming.length === 0 && outgoing.length === 0) {
     return (
       <EmptyState
-        title={direction === 'incoming' ? 'No pending proposals' : 'No outstanding offers'}
-        description={
-          direction === 'incoming'
-            ? 'Escrow proposals sent to you will appear here to accept.'
-            : 'Escrows you propose to others appear here until they are accepted.'
-        }
+        title="No proposals"
+        description="Escrow proposals you send or receive appear here, waiting to be accepted."
         action={
-          role === 'manager' ? (
-            <Button asLink to="/create" size="sm">
-              Create an escrow
-            </Button>
-          ) : undefined
+          <Button asLink to="/create" size="sm">
+            Create an escrow
+          </Button>
         }
       />
     )
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      {visible.map((proposal) => (
-        <ProposalCard
-          key={proposal.id}
-          proposal={proposal}
-          direction={direction}
-          nowMs={nowMs}
-          onAccept={(p) => void onAccept(p)}
-        />
-      ))}
+    <div className="flex flex-col gap-8">
+      {incoming.length > 0 && (
+        <section className="flex flex-col gap-4">
+          <h2 className="text-base font-extrabold tracking-tight text-fg">Incoming</h2>
+          <div className="grid gap-4 md:grid-cols-2">
+            {incoming.map((proposal) => (
+              <ProposalCard
+                key={proposal.id}
+                proposal={proposal}
+                direction="incoming"
+                nowMs={nowMs}
+                onAccept={(p) => void onAccept(p)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {outgoing.length > 0 && (
+        <section className="flex flex-col gap-4">
+          <h2 className="text-base font-extrabold tracking-tight text-fg">Outgoing</h2>
+          <div className="grid gap-4 md:grid-cols-2">
+            {outgoing.map((proposal) => (
+              <ProposalCard
+                key={proposal.id}
+                proposal={proposal}
+                direction="outgoing"
+                nowMs={nowMs}
+                onAccept={(p) => void onAccept(p)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   )
 }

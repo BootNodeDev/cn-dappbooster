@@ -1,39 +1,35 @@
 import { Outlet, useLocation } from 'react-router-dom'
-import { useUiStore } from '@/store/useUiStore'
 import { useParty } from '@/wallet/hooks'
 import { ConnectScreen } from './ConnectScreen'
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
 
-const titleFor = (pathname: string, role: string): { title: string; crumb: string } => {
+const titleFor = (pathname: string): string => {
   if (pathname.startsWith('/proposals')) {
-    return { title: 'Proposals', crumb: role }
+    return 'Proposals'
   }
   if (pathname.startsWith('/create')) {
-    return { title: 'Create escrow', crumb: 'Manager' }
+    return 'Create escrow'
   }
   if (pathname.startsWith('/grants/')) {
-    return { title: 'Escrow detail', crumb: role }
+    return 'Escrow detail'
   }
-  return { title: role === 'manager' ? 'Escrowed by me' : 'Dashboard', crumb: role }
+  return 'Dashboard'
 }
 
 export const AppShell = (): React.JSX.Element => {
   const { isConnected } = useParty()
-  const role = useUiStore((s) => s.role)
   const location = useLocation()
 
   if (!isConnected) {
     return <ConnectScreen />
   }
 
-  const { title, crumb } = titleFor(location.pathname, role)
-
   return (
     <div className="flex min-h-screen">
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar title={title} crumb={crumb} />
+        <TopBar title={titleFor(location.pathname)} />
         <main className="mx-auto w-full max-w-6xl flex-1 px-5 py-8 sm:px-8">
           <Outlet />
         </main>
