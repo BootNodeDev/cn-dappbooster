@@ -370,14 +370,19 @@ export class AmuletBackend implements VestingBackend {
     const { arg, disclosures } = await this.loadTransferContext()
     const inputDisclosures = await this.discloseAcceptInputs(args.proposalCid)
     const allDisclosed = [...disclosures, ...inputDisclosures]
-    if (import.meta.env.DEV) {
-      console.debug(
-        '[accept] disclosed contracts:',
-        allDisclosed.map((d) => ({ templateId: d.templateId, contractId: d.contractId })),
-      )
-    }
+    // TEMP diagnostic (remove once Accept is confirmed): print the exact disclosures so a
+    // template-id Mismatch can be matched to the offending contract.
+    console.warn(
+      '[accept] disclosed contracts:',
+      allDisclosed.map((d) => ({ templateId: d.templateId, contractId: d.contractId })),
+    )
     const command = buildAmuletAcceptCommand(this.proposalTid, args.proposalCid, arg)
-    await this.submit(args.receiver, command, allDisclosed)
+    try {
+      await this.submit(args.receiver, command, allDisclosed)
+    } catch (e) {
+      console.error('[accept] submit failed:', e)
+      throw e
+    }
   }
 
   // ── discloseAcceptInputs ─────────────────────────────────────────────────────
