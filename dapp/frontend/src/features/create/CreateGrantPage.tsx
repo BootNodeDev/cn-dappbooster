@@ -452,6 +452,22 @@ export const CreateGrantPage = (): React.JSX.Element => {
             className={cn(inputClass, 'h-auto resize-y py-2.5')}
           />
         </Card>
+
+        {disclosedBytes !== null ? (
+          <div className="rounded-xl border border-success/40 bg-success-soft p-4 text-center">
+            <p className="text-sm font-bold text-fg">Proposal created</p>
+            <p className="mt-1 font-mono text-xs text-success">
+              delivered via explicit disclosure · {disclosedBytes} bytes
+            </p>
+            <Button size="sm" className="mt-3" onClick={() => navigate('/proposals')}>
+              View proposals
+            </Button>
+          </div>
+        ) : (
+          <Button className="w-full" disabled={!valid || submitting} onClick={() => void submit()}>
+            {submitting ? 'Submitting…' : 'Create grant'}
+          </Button>
+        )}
       </div>
 
       {/* preview */}
@@ -478,31 +494,6 @@ export const CreateGrantPage = (): React.JSX.Element => {
               </div>
             )}
           </div>
-
-          {disclosedBytes !== null ? (
-            <div className="mt-6 rounded-xl border border-success/40 bg-success-soft p-4 text-center">
-              <p className="text-sm font-bold text-fg">Proposal created</p>
-              <p className="mt-1 font-mono text-xs text-success">
-                delivered via explicit disclosure · {disclosedBytes} bytes
-              </p>
-              <Button size="sm" className="mt-3" onClick={() => navigate('/proposals')}>
-                View proposals
-              </Button>
-            </div>
-          ) : (
-            <>
-              <Button
-                className="mt-6 w-full"
-                disabled={!valid || submitting}
-                onClick={() => void submit()}
-              >
-                {submitting ? 'Submitting…' : 'Create grant'}
-              </Button>
-              <p className="mt-2 text-center text-xs text-fg-muted">
-                Creates a proposal via explicit disclosure; the beneficiary accepts to activate it.
-              </p>
-            </>
-          )}
         </Card>
       </div>
     </div>
