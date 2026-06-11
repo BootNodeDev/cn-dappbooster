@@ -45,6 +45,20 @@
   border-color: var(--border);
 }
 
+/* Clickable controls get a hand cursor; disabled ones signal they aren't. */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+label[for],
+summary,
+select {
+  cursor: pointer;
+}
+
+button:disabled,
+[role="button"][aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
 html,
 body,
 #root {

@@ -5,6 +5,9 @@ node_modules/
 dist/
 dist-extension/
 
+# DAML build cache (per-package + multi-package root)
+**/.daml/
+
 # env
 .env
 .env.local
