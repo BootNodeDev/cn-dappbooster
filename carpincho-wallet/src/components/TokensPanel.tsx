@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import type { TokenHoldingSummary } from '@/cip56/holdings'
 import { transferTimeLabel } from '@/cip56/transfers'
 import { IncomingTransfersSection } from '@/components/IncomingTransfersSection'
-import { PrimaryButton, SecondaryButton } from '@/components/ui/Button'
+import { PLAIN_ICON_BUTTON_CLASS, PrimaryButton, SecondaryButton } from '@/components/ui/Button'
+import { COPY_ICON } from '@/components/ui/icons'
 import { toast } from '@/components/ui/toast'
 import type { AmuletPreapprovalApi } from '@/hooks/useAmuletPreapproval'
 import { useAmuletPreapproval } from '@/hooks/useAmuletPreapproval'
@@ -10,6 +11,7 @@ import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
 import { useTokenHoldingDetails } from '@/hooks/useTokenHoldingDetails'
 import type { Cip56HoldingsApi } from '@/hooks/useTokenHoldings'
 import { useTokenHoldings } from '@/hooks/useTokenHoldings'
+import { copyText } from '@/utils/clipboard'
 import type { AccountPublic } from '@/vault/types'
 import { useVault } from '@/vault/useVault'
 
@@ -35,6 +37,18 @@ interface TokenHoldingDetailsProps {
 interface AmuletPreapprovalSectionProps {
   account: AccountPublic
   api?: AmuletPreapprovalApi
+}
+
+interface ContractIdRowProps {
+  contractId: string
+}
+
+// Keeps the auto-accept contract id scannable while preserving copy access to the full value.
+const compactContractId = (contractId: string): string => {
+  if (contractId.length <= 10) {
+    return contractId
+  }
+  return `${contractId.slice(0, 4)}..${contractId.slice(-4)}`
 }
 
 // Keeps raw holding values readable in the expanded UTXO details area.
@@ -105,6 +119,22 @@ const TokenHoldingDetails = ({ account, api, summary }: TokenHoldingDetailsProps
   )
 }
 
+// Shows the ledger contract id as debug metadata instead of a full-width raw value.
+const ContractIdRow = ({ contractId }: ContractIdRowProps): JSX.Element => (
+  <div className="mt-3 flex min-w-0 items-center gap-1.5 rounded-md border border-border bg-muted px-2 py-1.5 text-[0.74rem] text-muted-foreground">
+    <span className="shrink-0 font-medium">contractId:</span>
+    <span className="min-w-0 font-mono text-foreground">{compactContractId(contractId)}</span>
+    <button
+      type="button"
+      aria-label="Copy contract ID"
+      className={`${PLAIN_ICON_BUTTON_CLASS} ml-auto size-6 shrink-0`}
+      onClick={() => copyText(contractId, 'Contract ID copied')}
+    >
+      {COPY_ICON}
+    </button>
+  </div>
+)
+
 // Lets the receiver opt into Amulet auto-accept without routing signing through wallet-service.
 const AmuletPreapprovalSection = ({ account, api }: AmuletPreapprovalSectionProps): JSX.Element => {
   const vault = useVault()
@@ -170,15 +200,11 @@ const AmuletPreapprovalSection = ({ account, api }: AmuletPreapprovalSectionProp
         </p>
       )}
       {pendingAction === undefined ? null : (
-        <p className="m-0 mt-3 text-[0.78rem] text-muted-foreground">
-          Puede tardar unos instantes.
-        </p>
+        <div className="mt-3 rounded-md border border-border bg-muted px-3 py-2 text-[0.78rem] text-muted-foreground">
+          This can take a few moments.
+        </div>
       )}
-      {status?.contractId === undefined ? null : (
-        <p className="m-0 mt-2 break-all font-mono text-[0.74rem] leading-5 text-muted-foreground">
-          {status.contractId}
-        </p>
-      )}
+      {status?.contractId === undefined ? null : <ContractIdRow contractId={status.contractId} />}
       {preapproval.error === undefined ? null : (
         <div className="mt-3 rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-[0.82rem] text-danger">
           {preapproval.error}

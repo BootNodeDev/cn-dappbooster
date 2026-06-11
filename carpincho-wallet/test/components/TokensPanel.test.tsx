@@ -3,6 +3,7 @@ import { afterEach, describe, it } from 'node:test'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TokensPanel } from '@/components/TokensPanel'
+import { getToastEntries, toast } from '@/components/ui/toast'
 import type { AmuletPreapprovalApi } from '@/hooks/useAmuletPreapproval'
 import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
 import type { Cip56HoldingsApi } from '@/hooks/useTokenHoldings'
@@ -65,9 +66,16 @@ const renderTokens = (
 }
 
 describe('TokensPanel', () => {
+  const originalClipboard = globalThis.navigator?.clipboard
+
   afterEach(() => {
     // The panel owns a polling hook; cleanup unmounts it before the next scenario.
     cleanup()
+    toast.clear()
+    Object.defineProperty(globalThis.navigator, 'clipboard', {
+      value: originalClipboard,
+      configurable: true,
+    })
   })
 
   it('shows token holding totals and expands UTXO details', async () => {
@@ -311,7 +319,12 @@ describe('TokensPanel', () => {
     await screen.findByText('Disabled')
     await userEvent.click(screen.getByRole('button', { name: 'Enable auto-accept' }))
 
-    await screen.findByText('Puede tardar unos instantes.')
+    const pendingMessage = await screen.findByText('This can take a few moments.')
+    assert.match(
+      pendingMessage.getAttribute('class') ?? '',
+      /bg-muted/,
+      'pending confirmation should look like an informational state, not a field value',
+    )
     resolveCreate?.()
   })
 
@@ -346,10 +359,49 @@ describe('TokensPanel', () => {
 
     await screen.findByText('Enabled')
     await screen.findByText('Expires 2026-06-11 12:00 UTC')
-    await screen.findByText('preapproval-cid-1')
+    await screen.findByText('prea..id-1')
     await userEvent.click(screen.getByRole('button', { name: 'Disable auto-accept' }))
 
     assert.equal(cancelCalls, 1)
+  })
+
+  it('shows a compact copyable Amulet auto-accept contract id', async () => {
+    // Scenario: the active preapproval contract id is useful for debugging, but
+    // it is too long to render as a raw value in the wallet card.
+    const copied: string[] = []
+    const contractId =
+      '000399a68ea61b6f7864584d0c783db8bb6d6ea2ff9f1a3ec923949c787fd0ac27ca1212209fcebb9611ddbf454ed02c9c29d6a4f0f2081be58e636ee00819e750bc9d449c'
+    Object.defineProperty(globalThis.navigator, 'clipboard', {
+      value: { writeText: async (value: string) => void copied.push(value) },
+      configurable: true,
+    })
+    const holdingsApi: Cip56HoldingsApi = {
+      listTokenHoldingSummaries: async () => [],
+    }
+    const preapprovalApi: AmuletPreapprovalApi = {
+      getAmuletPreapprovalStatus: async () => ({
+        active: true,
+        expired: false,
+        contractId,
+      }),
+      createAmuletPreapproval: async () => {
+        throw new Error('create should not run for an active preapproval')
+      },
+      cancelAmuletPreapproval: async () => ({ updateId: 'cancel-update-1' }),
+    }
+
+    renderTokens(holdingsApi, undefined, preapprovalApi)
+
+    await screen.findByText('contractId:')
+    await screen.findByText('0003..449c')
+    assert.equal(screen.queryByText(contractId), null)
+    await userEvent.click(screen.getByRole('button', { name: 'Copy contract ID' }))
+
+    assert.deepEqual(copied, [contractId])
+    assert.deepEqual(
+      getToastEntries().map((entry) => entry.message),
+      ['Contract ID copied'],
+    )
   })
 
   it('marks expired Amulet auto-accept as not active', async () => {
@@ -375,7 +427,7 @@ describe('TokensPanel', () => {
 
     await screen.findByText('Expired')
     await screen.findByText('Expires 2026-06-01 12:00 UTC')
-    await screen.findByText('expired-preapproval-cid')
+    await screen.findByText('expi..-cid')
     assert.ok(screen.getByRole('button', { name: 'Disable auto-accept' }))
   })
 })
