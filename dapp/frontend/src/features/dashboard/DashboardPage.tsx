@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { AmountDisplay } from '@/components/AmountDisplay'
 import { Button } from '@/components/Button'
 import { Card } from '@/components/Card'
@@ -6,6 +6,7 @@ import { ClaimDialog } from '@/components/ClaimDialog'
 import { EmptyState } from '@/components/EmptyState'
 import { GrantCard } from '@/components/GrantCard'
 import { type GrantRow, GrantTable } from '@/components/GrantTable'
+import { CardsIcon, CheckIcon, ChevronDownIcon, FilterIcon, TableIcon } from '@/components/icons'
 import { KpiCard } from '@/components/KpiCard'
 import { Modal } from '@/components/Modal'
 import { PrivacyNote } from '@/components/PrivacyNote'
@@ -44,9 +45,26 @@ export const DashboardPage = (): React.JSX.Element => {
   const cancel = useVestingStore((s) => s.cancel)
 
   const [filter, setFilter] = useState<Filter>('all')
+  const [filterOpen, setFilterOpen] = useState(false)
+  const filterRef = useRef<HTMLDivElement>(null)
   const [claimTarget, setClaimTarget] = useState<ClaimTarget | null>(null)
   const [cancelTarget, setCancelTarget] = useState<Grant | null>(null)
   const [cancelling, setCancelling] = useState(false)
+
+  useEffect(() => {
+    if (!filterOpen) {
+      return
+    }
+    const onDown = (e: PointerEvent): void => {
+      if (filterRef.current !== null && !filterRef.current.contains(e.target as Node)) {
+        setFilterOpen(false)
+      }
+    }
+    document.addEventListener('pointerdown', onDown)
+    return () => document.removeEventListener('pointerdown', onDown)
+  }, [filterOpen])
+
+  const activeFilterLabel = filters.find((f) => f.value === filter)?.label ?? 'All'
 
   const rows = useMemo<GrantRow[]>(() => {
     const mine = grants.filter((g) =>
@@ -168,38 +186,72 @@ export const DashboardPage = (): React.JSX.Element => {
       </div>
 
       {/* toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-2">
-          {filters.map((f) => (
+      <div className="flex flex-wrap items-center gap-3">
+        {role === 'manager' && (
+          <Button asLink to="/create" size="sm">
+            Create grant
+          </Button>
+        )}
+        <div className="ml-auto flex items-center gap-2">
+          <div className="relative" ref={filterRef}>
             <button
-              key={f.value}
               type="button"
-              onClick={() => setFilter(f.value)}
-              className={cn(
-                'rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors',
-                filter === f.value
-                  ? 'border-accent bg-accent/12 text-accent'
-                  : 'border-border bg-surface text-fg-muted hover:text-fg',
-              )}
+              onClick={() => setFilterOpen((o) => !o)}
+              aria-haspopup="true"
+              aria-expanded={filterOpen}
+              className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-surface px-3 text-xs font-semibold text-fg transition-colors hover:border-primary"
             >
-              {f.label}
+              <FilterIcon width={15} height={15} className="text-fg-muted" />
+              {activeFilterLabel}
+              <ChevronDownIcon width={14} height={14} className="text-fg-muted" />
             </button>
-          ))}
-        </div>
-        <div className="inline-flex rounded-lg border border-border bg-surface p-1">
-          {(['cards', 'table'] as const).map((v) => (
-            <button
-              key={v}
-              type="button"
-              onClick={() => setView(v)}
-              className={cn(
-                'rounded-md px-3 py-1 text-xs font-bold capitalize transition-colors',
-                view === v ? 'bg-primary-soft text-fg' : 'text-fg-muted hover:text-fg',
-              )}
-            >
-              {v}
-            </button>
-          ))}
+            {filterOpen && (
+              <div className="absolute right-0 z-40 mt-2 w-40 rounded-lg border border-border bg-surface p-1 shadow-[var(--shadow-popover)]">
+                {filters.map((f) => (
+                  <button
+                    key={f.value}
+                    type="button"
+                    onClick={() => {
+                      setFilter(f.value)
+                      setFilterOpen(false)
+                    }}
+                    className={cn(
+                      'flex w-full items-center justify-between rounded-md px-3 py-1.5 text-xs font-semibold transition-colors',
+                      filter === f.value
+                        ? 'bg-accent/12 text-accent'
+                        : 'text-fg-muted hover:bg-muted hover:text-fg',
+                    )}
+                  >
+                    {f.label}
+                    {filter === f.value && <CheckIcon width={13} height={13} />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="inline-flex rounded-lg border border-border bg-surface p-1">
+            {(
+              [
+                ['cards', CardsIcon, 'Card view'],
+                ['table', TableIcon, 'Table view'],
+              ] as const
+            ).map(([v, Icon, label]) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setView(v)}
+                aria-label={label}
+                title={label}
+                aria-pressed={view === v}
+                className={cn(
+                  'grid size-7 place-items-center rounded-md transition-colors',
+                  view === v ? 'bg-primary-soft text-fg' : 'text-fg-muted hover:text-fg',
+                )}
+              >
+                <Icon width={16} height={16} />
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -212,13 +264,6 @@ export const DashboardPage = (): React.JSX.Element => {
               role === 'beneficiary'
                 ? 'No grants match this filter. Accepted proposals appear here.'
                 : 'You have not funded any grants matching this filter yet.'
-            }
-            action={
-              role === 'manager' ? (
-                <Button asLink to="/create" size="sm">
-                  Create a grant
-                </Button>
-              ) : undefined
             }
           />
           {isEmpty && <PrivacyNote />}

@@ -112,3 +112,25 @@ export const CheckIcon = (p: IconProps) => (
     <path d="M20 6L9 17l-5-5" />
   </Svg>
 )
+
+export const CardsIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="3" y="3" width="7" height="7" rx="1.5" />
+    <rect x="14" y="3" width="7" height="7" rx="1.5" />
+    <rect x="3" y="14" width="7" height="7" rx="1.5" />
+    <rect x="14" y="14" width="7" height="7" rx="1.5" />
+  </Svg>
+)
+
+export const TableIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="3" y="5" width="18" height="14" rx="2" />
+    <path d="M3 10h18M3 14.5h18M9 10v9" />
+  </Svg>
+)
+
+export const FilterIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M3 5h18l-7 8v6l-4-2v-4z" />
+  </Svg>
+)
