@@ -7,6 +7,8 @@ export interface WalletServiceConfig {
   port: number
   corsOrigins: string[]
   network: string
+  // When set, listAccounts returns only parties whose hint starts with this prefix.
+  accountsHintPrefix?: string
   provider: {
     id: string
     version: string
@@ -73,6 +75,7 @@ export const loadConfig = (): WalletServiceConfig => {
       .map((origin) => origin.trim())
       .filter((origin) => origin.length > 0),
     network: optional('NETWORK') ?? 'canton:local',
+    accountsHintPrefix: optional('WALLET_SERVICE_ACCOUNTS_PREFIX'),
     provider: {
       id: optional('WALLET_PROVIDER_ID') ?? 'wallet-service',
       version: optional('WALLET_PROVIDER_VERSION') ?? '0.1.0',

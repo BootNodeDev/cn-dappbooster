@@ -138,6 +138,7 @@ export const createMockRpc = (
         case 'getActiveNetwork':
           return rpcResult(id, mockNetwork(config))
         case 'listAccounts':
+          // Intentional: mock has no ledger to query; callers should handle an empty list.
           return rpcResult(id, [])
         case 'getPrimaryAccount':
           return rpcError(id, -32001, 'Resource not found', {

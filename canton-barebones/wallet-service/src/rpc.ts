@@ -12,6 +12,7 @@ import type {
   Network,
   Provider,
   StatusEvent,
+  Wallet,
 } from './types.ts'
 
 export class InvalidParams extends Error {
@@ -346,6 +347,46 @@ export const createRpc = (config: WalletServiceConfig): Rpc => {
     return parsed
   }
 
+  // Reads the backend user's CanActAs rights (what the bootstrap grants), optionally
+  // narrowed to a hint prefix so a long-lived dev ledger's stale grants don't leak in.
+  const listAccounts = async (): Promise<Wallet[]> => {
+    if (config.canton.backendToken === undefined) {
+      throw new Error('CANTON_BACKEND_TOKEN is required for Canton JSON API calls')
+    }
+    const base = config.canton.jsonApiUrl.replace(/\/$/, '')
+    const url = `${base}/v2/users/${encodeURIComponent(config.canton.backendUserId)}/rights`
+    const response = await fetch(url, {
+      headers: { authorization: `Bearer ${config.canton.backendToken}` },
+      signal: AbortSignal.timeout(15_000),
+    })
+    if (!response.ok) {
+      throw new Error(
+        `Canton JSON API GET /v2/users/${config.canton.backendUserId}/rights → HTTP ${response.status}`,
+      )
+    }
+    const text = await response.text()
+    const isJson =
+      text.length > 0 && response.headers.get('content-type')?.includes('json') === true
+    const body = (isJson ? safeJsonParse(text) : {}) as {
+      rights?: Array<{ kind?: { CanActAs?: { value?: { party?: string } } } }>
+    }
+    const prefix = config.accountsHintPrefix
+    const parties = (body.rights ?? [])
+      .map((right) => right.kind?.CanActAs?.value?.party)
+      .filter((party): party is string => typeof party === 'string' && party.length > 0)
+      .filter((party) => prefix === undefined || party.split('::')[0].startsWith(prefix))
+    return parties.map((partyId) => ({
+      primary: false,
+      partyId,
+      status: 'allocated' as const,
+      hint: partyId.split('::')[0],
+      publicKey: '',
+      namespace: partyId.split('::')[1] ?? '',
+      networkId: config.network,
+      signingProviderId: config.provider.id,
+    }))
+  }
+
   const dispatch = async (id: JsonRpcId, request: JsonRpcRequest): Promise<JsonRpcResponse> => {
     if (request.jsonrpc !== undefined && request.jsonrpc !== '2.0') {
       return rpcError(id, -32600, 'Invalid request', { reason: 'jsonrpc must be "2.0"' })
@@ -365,7 +406,7 @@ export const createRpc = (config: WalletServiceConfig): Rpc => {
         case 'getActiveNetwork':
           return rpcResult(id, network())
         case 'listAccounts':
-          return rpcResult(id, [])
+          return rpcResult(id, await listAccounts())
         case 'getPrimaryAccount':
           return rpcError(id, -32001, 'Resource not found', {
             reason: 'No primary account configured yet.',

@@ -7,6 +7,7 @@ const baseConfig = () => ({
   port: 3010,
   corsOrigins: ['http://localhost:3011'],
   network: 'canton:local',
+  accountsHintPrefix: undefined as string | undefined,
   provider: {
     id: 'wallet-service',
     version: '0.1.0',
@@ -68,15 +69,139 @@ describe('rpc dispatcher', () => {
     assert.equal(res.error.code, -32004)
   })
 
-  it('listAccounts returns []', async () => {
-    const rpc = createRpc(baseConfig())
-    const res = (await rpc.handle({
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'listAccounts',
-    })) as JsonRpcResponse
-    assert.ok('result' in res)
-    assert.deepEqual(res.result, [])
+  describe('listAccounts (CanActAs rights)', () => {
+    it('errors when no backend token is configured', async () => {
+      const rpc = createRpc(baseConfig())
+      const res = (await rpc.handle({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'listAccounts',
+      })) as JsonRpcResponse
+      assert.ok('error' in res)
+      assert.equal(res.error.code, -32000)
+    })
+
+    it('maps the user CanActAs rights to accounts', async () => {
+      const config = baseConfig()
+      config.canton.backendToken = 'test-token'
+      const originalFetch = globalThis.fetch
+      globalThis.fetch = (async () => ({
+        ok: true,
+        text: async () =>
+          JSON.stringify({
+            rights: [
+              { kind: { CanActAs: { value: { party: 'vesting-pablo-123::1220abc' } } } },
+              { kind: { ParticipantAdmin: {} } },
+              { kind: { CanActAs: { value: { party: 'vesting-operator-123::1220def' } } } },
+            ],
+          }),
+        headers: { get: (_: string) => 'application/json' },
+      })) as unknown as typeof fetch
+      try {
+        const rpc = createRpc(config)
+        const res = (await rpc.handle({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'listAccounts',
+        })) as JsonRpcResponse
+        assert.ok('result' in res)
+        const accounts = res.result as Array<{ partyId: string; hint: string }>
+        assert.equal(accounts.length, 2)
+        assert.deepEqual(
+          accounts.map((a) => a.partyId),
+          ['vesting-pablo-123::1220abc', 'vesting-operator-123::1220def'],
+        )
+        assert.equal(accounts[0]?.hint, 'vesting-pablo-123')
+      } finally {
+        globalThis.fetch = originalFetch
+      }
+    })
+
+    it('hits the correct URL and sends Authorization: Bearer <token>', async () => {
+      const config = baseConfig()
+      config.canton.backendToken = 'my-secret-token'
+      config.canton.backendUserId = 'vesting-service'
+      const originalFetch = globalThis.fetch
+      let capturedUrl: string | undefined
+      let capturedAuth: string | undefined
+      globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+        capturedUrl = String(input)
+        capturedAuth = (init?.headers as Record<string, string>)?.authorization
+        return {
+          ok: true,
+          text: async () => JSON.stringify({ rights: [] }),
+          headers: { get: (_: string) => 'application/json' },
+        }
+      }) as unknown as typeof fetch
+      try {
+        const rpc = createRpc(config)
+        await rpc.handle({ jsonrpc: '2.0', id: 1, method: 'listAccounts' })
+        assert.ok(
+          capturedUrl?.endsWith('/v2/users/vesting-service/rights'),
+          `expected URL ending with /v2/users/vesting-service/rights, got: ${capturedUrl}`,
+        )
+        assert.equal(capturedAuth, 'Bearer my-secret-token')
+      } finally {
+        globalThis.fetch = originalFetch
+      }
+    })
+
+    it('returns empty accounts and does not throw when the 200 body is non-JSON', async () => {
+      const config = baseConfig()
+      config.canton.backendToken = 'test-token'
+      const originalFetch = globalThis.fetch
+      globalThis.fetch = (async () => ({
+        ok: true,
+        text: async () => 'unexpected plain text from server',
+        headers: { get: (_: string) => 'text/html' },
+      })) as unknown as typeof fetch
+      try {
+        const rpc = createRpc(config)
+        const res = (await rpc.handle({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'listAccounts',
+        })) as JsonRpcResponse
+        assert.ok('result' in res, 'expected result, got error')
+        assert.deepEqual(res.result, [])
+      } finally {
+        globalThis.fetch = originalFetch
+      }
+    })
+
+    it('filters accounts by accountsHintPrefix when configured', async () => {
+      const config = baseConfig()
+      config.canton.backendToken = 'test-token'
+      config.accountsHintPrefix = 'vesting-'
+      const originalFetch = globalThis.fetch
+      globalThis.fetch = (async () => ({
+        ok: true,
+        text: async () =>
+          JSON.stringify({
+            rights: [
+              { kind: { CanActAs: { value: { party: 'vesting-pablo-1::1220a' } } } },
+              { kind: { CanActAs: { value: { party: 'spike-owner-9::1220z' } } } },
+            ],
+          }),
+        headers: { get: (_: string) => 'application/json' },
+      })) as unknown as typeof fetch
+      try {
+        const rpc = createRpc(config)
+        const res = (await rpc.handle({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'listAccounts',
+        })) as JsonRpcResponse
+        assert.ok('result' in res)
+        const accounts = res.result as Array<{ partyId: string }>
+        assert.deepEqual(
+          accounts.map((account) => account.partyId),
+          ['vesting-pablo-1::1220a'],
+        )
+      } finally {
+        globalThis.fetch = originalFetch
+      }
+    })
   })
 
   it('getActiveNetwork returns the configured network', async () => {
