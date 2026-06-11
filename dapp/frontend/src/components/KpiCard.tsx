@@ -7,7 +7,7 @@ interface KpiCardProps {
   unit?: string
   sub?: string
   subTone?: 'muted' | 'success'
-  // Aurora hero treatment for the headline metric (Claimable now).
+  // Soft highlight for the headline metric (Claimable now).
   hero?: boolean
 }
 
@@ -23,7 +23,7 @@ export const KpiCard = ({
     className={cn(
       'relative overflow-hidden rounded-2xl border p-5',
       hero
-        ? 'border-accent/35 bg-[image:linear-gradient(135deg,color-mix(in_oklab,var(--primary)_30%,transparent),color-mix(in_oklab,var(--pink)_16%,transparent))] shadow-[var(--shadow-card)]'
+        ? 'border-accent/35 bg-primary-soft shadow-[var(--shadow-card)]'
         : 'border-border bg-surface shadow-[var(--shadow-card)]',
     )}
   >
