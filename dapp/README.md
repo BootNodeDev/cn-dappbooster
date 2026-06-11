@@ -2,8 +2,8 @@
 
 Minimal dApp split into:
 
-- `daml`: Tally Daml package.
-- `frontend`: React dApp that knows the Tally signature and talks to Carpincho through the injected CIP-0103 provider.
+- `daml/vesting-lite`: vesting-lite Daml package.
+- `frontend`: React dApp (vesting UI, port 3012) that implements the vesting-lite signature. Direct-access: talks to the wallet-service over JSON-RPC (no injected CIP-0103 provider).
 - `e2e`: Playwright tests for the dApp integration flow.
 
 The Canton barebones lives in `../canton-barebones`.
