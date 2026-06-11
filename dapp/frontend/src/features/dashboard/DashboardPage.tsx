@@ -9,7 +9,6 @@ import { type GrantRow, GrantTable } from '@/components/GrantTable'
 import { CardsIcon, CheckIcon, ChevronDownIcon, FilterIcon, TableIcon } from '@/components/icons'
 import { KpiCard } from '@/components/KpiCard'
 import { Modal } from '@/components/Modal'
-import { PrivacyNote } from '@/components/PrivacyNote'
 import { toast } from '@/components/toast'
 import { now, useNow } from '@/lib/clock'
 import { cn } from '@/lib/cn'
@@ -108,7 +107,6 @@ export const DashboardPage = (): React.JSX.Element => {
   }, [rows])
 
   const residualClaimable = myClaims.reduce((sum, c) => sum + (c.amount - c.withdrawn), 0)
-  const isEmpty = rows.length === 0 && myClaims.length === 0
 
   const onConfirmClaim = async (amount: number): Promise<void> => {
     if (claimTarget === null) {
@@ -257,17 +255,14 @@ export const DashboardPage = (): React.JSX.Element => {
 
       {/* grants */}
       {filtered.length === 0 ? (
-        <>
-          <EmptyState
-            title="No grants here"
-            description={
-              role === 'beneficiary'
-                ? 'No grants match this filter. Accepted proposals appear here.'
-                : 'You have not funded any grants matching this filter yet.'
-            }
-          />
-          {isEmpty && <PrivacyNote />}
-        </>
+        <EmptyState
+          title="No grants here"
+          description={
+            role === 'beneficiary'
+              ? 'No grants match this filter. Accepted proposals appear here.'
+              : 'You have not funded any grants matching this filter yet.'
+          }
+        />
       ) : view === 'cards' ? (
         <div className="flex flex-col gap-4">
           {filtered.map(({ grant, derived }) => (

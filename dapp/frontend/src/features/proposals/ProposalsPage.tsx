@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import { Button } from '@/components/Button'
 import { EmptyState } from '@/components/EmptyState'
-import { PrivacyNote } from '@/components/PrivacyNote'
 import { ProposalCard } from '@/components/ProposalCard'
 import { toast } from '@/components/toast'
 import { useNow } from '@/lib/clock'
@@ -36,24 +35,21 @@ export const ProposalsPage = (): React.JSX.Element => {
 
   if (visible.length === 0) {
     return (
-      <>
-        <EmptyState
-          title={direction === 'incoming' ? 'No pending proposals' : 'No outstanding offers'}
-          description={
-            direction === 'incoming'
-              ? 'Grant proposals sent to you will appear here to accept.'
-              : 'Grants you propose to others appear here until they are accepted.'
-          }
-          action={
-            role === 'manager' ? (
-              <Button asLink to="/create" size="sm">
-                Create a grant
-              </Button>
-            ) : undefined
-          }
-        />
-        <PrivacyNote />
-      </>
+      <EmptyState
+        title={direction === 'incoming' ? 'No pending proposals' : 'No outstanding offers'}
+        description={
+          direction === 'incoming'
+            ? 'Grant proposals sent to you will appear here to accept.'
+            : 'Grants you propose to others appear here until they are accepted.'
+        }
+        action={
+          role === 'manager' ? (
+            <Button asLink to="/create" size="sm">
+              Create a grant
+            </Button>
+          ) : undefined
+        }
+      />
     )
   }
 
