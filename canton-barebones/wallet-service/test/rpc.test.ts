@@ -354,6 +354,7 @@ describe('CIP-56 token helpers', () => {
     }
     const seen: { receiver?: string } = {}
     const rpc = createRpc(withToken(), {
+      now: () => new Date('2026-06-11T00:00:00.000Z'),
       sdkFactory: async () => ({
         amulet: {
           preapproval: {
