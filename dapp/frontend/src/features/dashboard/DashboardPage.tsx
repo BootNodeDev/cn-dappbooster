@@ -171,10 +171,24 @@ export const DashboardPage = (): React.JSX.Element => {
               amount={totals.claimable}
               sub={`Across ${rows.length} escrows`}
               subTone="success"
+              hint="Tokens that have unlocked and are yours to withdraw right now, across all the escrows vesting to you."
             />
-            <KpiCard label="Total escrowed" amount={totals.total} sub={`${rows.length} active`} />
-            <KpiCard label="Vested to date" amount={totals.vested} />
-            <KpiCard label="Already claimed" amount={totals.claimed} />
+            <KpiCard
+              label="Total escrowed"
+              amount={totals.total}
+              sub={`${rows.length} active`}
+              hint="The full amount set aside for you, whether it has vested yet or not."
+            />
+            <KpiCard
+              label="Vested to date"
+              amount={totals.vested}
+              hint="How much has unlocked so far on each schedule — including what you've already claimed."
+            />
+            <KpiCard
+              label="Already claimed"
+              amount={totals.claimed}
+              hint="Tokens you've already withdrawn from your escrows into your wallet."
+            />
           </>
         ) : (
           <>
@@ -183,27 +197,31 @@ export const DashboardPage = (): React.JSX.Element => {
               label="Total committed"
               amount={totals.total}
               sub={`${rows.length} escrows funded`}
+              hint="The full amount you've locked into escrows for others. It leaves your balance once a proposal is accepted."
             />
-            <KpiCard label="Vested to date" amount={totals.vested} />
-            <KpiCard label="Unvested (clawbackable)" amount={totals.unvested} />
-            <KpiCard label="Active escrows" amount={rows.length} unit="" />
+            <KpiCard
+              label="Vested to date"
+              amount={totals.vested}
+              hint="How much of what you committed has unlocked for the beneficiaries so far."
+            />
+            <KpiCard
+              label="Unvested (clawbackable)"
+              amount={totals.unvested}
+              hint="The part that hasn't unlocked yet. If you cancel an escrow, this is what returns to you."
+            />
+            <KpiCard
+              label="Active escrows"
+              amount={rows.length}
+              unit=""
+              hint="How many of the escrows you created are currently live."
+            />
           </>
         )}
       </div>
 
       {/* toolbar */}
       <div className="flex flex-wrap items-center gap-3">
-        {role === 'manager' && (
-          <Link
-            to="/create"
-            aria-label="Create escrow"
-            title="Create escrow"
-            className="grid size-9 place-items-center rounded-full border border-primary bg-primary text-primary-fg transition-colors hover:shadow-[var(--glow)]"
-          >
-            <PlusIcon width={18} height={18} />
-          </Link>
-        )}
-        <div className="ml-auto flex items-center gap-2">
+        <div className="flex items-center gap-2">
           <div className="relative" ref={filterRef}>
             <button
               type="button"
@@ -264,6 +282,16 @@ export const DashboardPage = (): React.JSX.Element => {
             ))}
           </div>
         </div>
+        {role === 'manager' && (
+          <Link
+            to="/create"
+            aria-label="Create escrow"
+            title="Create escrow"
+            className="ml-auto grid size-9 place-items-center rounded-full border border-primary bg-primary text-primary-fg transition-colors hover:shadow-[var(--glow)]"
+          >
+            <PlusIcon width={18} height={18} />
+          </Link>
+        )}
       </div>
 
       {/* grants */}

@@ -1,5 +1,6 @@
 import { cn } from '@/lib/cn'
 import { AmountDisplay } from './AmountDisplay'
+import { InfoTooltip } from './InfoTooltip'
 
 interface KpiCardProps {
   label: string
@@ -7,6 +8,8 @@ interface KpiCardProps {
   unit?: string
   sub?: string
   subTone?: 'muted' | 'success'
+  // Plain-language explanation shown in a tooltip next to the label.
+  hint?: string
   // Soft highlight for the headline metric (Claimable now).
   hero?: boolean
 }
@@ -17,6 +20,7 @@ export const KpiCard = ({
   unit = 'CC',
   sub,
   subTone = 'muted',
+  hint,
   hero = false,
 }: KpiCardProps): React.JSX.Element => (
   <div
@@ -27,7 +31,10 @@ export const KpiCard = ({
         : 'border-border bg-surface shadow-[var(--shadow-card)]',
     )}
   >
-    <div className="mb-3 text-xs font-semibold text-fg-muted">{label}</div>
+    <div className="mb-3 flex items-center gap-1.5 text-xs font-semibold text-fg-muted">
+      {label}
+      {hint !== undefined && <InfoTooltip label={`About ${label}`}>{hint}</InfoTooltip>}
+    </div>
     <AmountDisplay
       value={amount}
       unit={unit}
