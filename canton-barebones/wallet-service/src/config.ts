@@ -19,6 +19,8 @@ export interface WalletServiceConfig {
     jsonApiUrl: string
     ledgerApiUrl: string
     adminApiUrl: string
+    scanUrl: string
+    scanHost: string
     backendUserId: string
     backendToken?: string
     tokenSource: TokenSource
@@ -86,6 +88,8 @@ export const loadConfig = (): WalletServiceConfig => {
       jsonApiUrl: optional('CANTON_JSON_API_URL') ?? 'http://localhost:3013',
       ledgerApiUrl: optional('CANTON_LEDGER_API_URL') ?? 'grpc://localhost:3014',
       adminApiUrl: optional('CANTON_ADMIN_API_URL') ?? 'grpc://localhost:3015',
+      scanUrl: optional('CANTON_SCAN_URL') ?? 'http://localhost:4000',
+      scanHost: optional('CANTON_SCAN_HOST') ?? 'scan.localhost',
       backendUserId,
       backendToken: resolved.token,
       tokenSource: resolved.source,

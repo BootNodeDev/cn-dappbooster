@@ -1,3 +1,4 @@
+import * as http from 'node:http'
 import { SDK } from '@canton-network/wallet-sdk'
 import type { WalletServiceConfig } from './config.ts'
 import type {
@@ -11,6 +12,7 @@ import type {
   LedgerApiRequest,
   Network,
   Provider,
+  ScanApiRequest,
   StatusEvent,
   Wallet,
 } from './types.ts'
@@ -347,6 +349,62 @@ export const createRpc = (config: WalletServiceConfig): Rpc => {
     return parsed
   }
 
+  // Transparent proxy to the Splice scan service. Returns raw parsed JSON from
+  // the scan service with no Authorization header — the scan service is public.
+  // Uses node:http directly so the Host header is actually sent; undici/fetch
+  // silently drops Host (it's a forbidden header), which breaks nginx vhost routing.
+  const scanApi = async (params: unknown): Promise<unknown> => {
+    const p = objectParam<ScanApiRequest>(params, 'scanApi')
+    if (typeof p.resource !== 'string' || p.resource.length === 0) {
+      throw new InvalidParams('resource is required')
+    }
+    const method = (p.requestMethod ?? 'post').toUpperCase()
+    const payload =
+      method !== 'GET' && method !== 'HEAD' && p.body !== undefined
+        ? JSON.stringify(p.body)
+        : undefined
+    const target = new URL(config.canton.scanUrl.replace(/\/$/, '') + p.resource)
+    return new Promise<unknown>((resolve, reject) => {
+      const req = http.request(
+        {
+          hostname: target.hostname,
+          port: target.port || 80,
+          path: target.pathname + target.search,
+          method,
+          headers: {
+            'content-type': 'application/json',
+            host: config.canton.scanHost,
+            ...(payload !== undefined ? { 'content-length': Buffer.byteLength(payload) } : {}),
+          },
+        },
+        (res) => {
+          const chunks: Buffer[] = []
+          res.on('data', (chunk: Buffer) => chunks.push(chunk))
+          res.on('end', () => {
+            const text = Buffer.concat(chunks).toString('utf8')
+            const contentType = res.headers['content-type'] ?? ''
+            const isJson = text.length > 0 && contentType.includes('json')
+            const parsed: unknown = isJson ? safeJsonParse(text) : text
+            const status = res.statusCode ?? 0
+            if (status < 200 || status >= 300) {
+              const detail = typeof parsed === 'string' ? parsed : JSON.stringify(parsed)
+              reject(new Error(`Scan API ${method} ${p.resource} → HTTP ${status}: ${detail}`))
+            } else {
+              resolve(parsed)
+            }
+          })
+          res.on('error', reject)
+        },
+      )
+      req.setTimeout(15_000, () => req.destroy(new Error('Scan API timed out')))
+      req.on('error', reject)
+      if (payload !== undefined) {
+        req.write(payload)
+      }
+      req.end()
+    })
+  }
+
   // Reads the backend user's CanActAs rights (what the bootstrap grants), optionally
   // narrowed to a hint prefix so a long-lived dev ledger's stale grants don't leak in.
   const listAccounts = async (): Promise<Wallet[]> => {
@@ -417,6 +475,8 @@ export const createRpc = (config: WalletServiceConfig): Rpc => {
           return rpcResult(id, await executePrepared(request.params))
         case 'ledgerApi':
           return rpcResult(id, await ledgerApi(request.params))
+        case 'scanApi':
+          return rpcResult(id, await scanApi(request.params))
         case 'prepareExecute':
         case 'prepareExecuteAndWait':
         case 'signMessage':
@@ -458,6 +518,7 @@ export const createRpc = (config: WalletServiceConfig): Rpc => {
       'listAccounts',
       'getPrimaryAccount',
       'ledgerApi',
+      'scanApi',
       'prepareTransaction',
       'executePrepared',
     ],
@@ -469,6 +530,8 @@ export const createRpc = (config: WalletServiceConfig): Rpc => {
       jsonApiUrl: config.canton.jsonApiUrl,
       ledgerApiUrl: config.canton.ledgerApiUrl,
       adminApiUrl: config.canton.adminApiUrl,
+      scanUrl: config.canton.scanUrl,
+      scanHost: config.canton.scanHost,
       backendUserId: config.canton.backendUserId,
       hasBackendToken: config.canton.backendToken !== undefined,
     },
