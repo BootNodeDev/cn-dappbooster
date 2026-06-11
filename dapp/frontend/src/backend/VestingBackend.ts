@@ -30,6 +30,8 @@ export interface VestingBackend {
   readonly mode: Mode
   isAvailable(): Promise<boolean>
   viewAs(partyId: string): Promise<VestingView>
+  // Total Canton Coin the party can lock into a new grant (sum of its Amulet holdings).
+  availableFunds(partyId: string): Promise<number>
   createVesting(args: CreateVestInput): Promise<{ disclosedBytes: number }>
   accept(args: { receiver: string; proposalCid: string }): Promise<void>
   withdraw(args: { receiver: string; contractCid: string; amount: number }): Promise<void>

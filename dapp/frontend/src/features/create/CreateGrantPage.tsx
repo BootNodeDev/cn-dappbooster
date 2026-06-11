@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AmountDisplay } from '@/components/AmountDisplay'
 import { Button } from '@/components/Button'
@@ -85,6 +85,28 @@ export const CreateGrantPage = (): React.JSX.Element => {
   const [disclosedBytes, setDisclosedBytes] = useState<number | null>(null)
   // When set, the schedule is a quick-demo preset and gets re-anchored to submit time.
   const [demo, setDemo] = useState<DemoPreset | null>(null)
+  // The funder's available Canton Coin (sum of their Amulet holdings), loaded live.
+  // undefined while loading / unavailable → the over-funding guard is skipped.
+  const [holdings, setHoldings] = useState<number | undefined>(undefined)
+
+  useEffect(() => {
+    let cancelled = false
+    backend
+      .availableFunds(partyId)
+      .then((funds) => {
+        if (!cancelled) {
+          setHoldings(funds)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setHoldings(undefined)
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [backend, partyId])
 
   const schedule = useMemo<VestingSchedule>(() => {
     if (curveKind === 'linear') {
@@ -102,12 +124,15 @@ export const CreateGrantPage = (): React.JSX.Element => {
   const amountNum = Number(amount)
   const scheduleValid = validVestingSchedule(schedule)
   const amountValid = Number.isFinite(amountNum) && amountNum >= MIN_GRANT_AMOUNT
+  // The grant locks real CC from the funder's holdings; block over-funding once the
+  // balance is known (skipped while it is still loading / unavailable).
+  const fundsOk = holdings === undefined || amountNum <= holdings
   // Party ids are `hint::fingerprint`; both halves must be present, and a grant
   // to yourself is rejected (the ledger would refuse a self-vesting).
   const receiverWellFormed = /.+::.+/.test(receiver.trim())
   const isSelf = party !== undefined && receiver.trim() === party.partyId
   const receiverValid = receiverWellFormed && !isSelf
-  const valid = scheduleValid && amountValid && receiverValid
+  const valid = scheduleValid && amountValid && fundsOk && receiverValid
 
   // Any manual schedule edit drops the demo flag so the entered dates are used verbatim.
   const setMilestone = (i: number, patch: Partial<MilestoneInput>): void => {
@@ -219,12 +244,20 @@ export const CreateGrantPage = (): React.JSX.Element => {
               {!amountValid && amount !== '' && (
                 <p className="mt-1 text-xs text-danger">Minimum {MIN_GRANT_AMOUNT} CC.</p>
               )}
+              {amountValid && !fundsOk && (
+                <p className="mt-1 text-xs text-danger">Exceeds available holdings.</p>
+              )}
             </div>
-            <div className="sm:col-span-2">
-              <span className={labelClass}>Funding</span>
-              <p className="mt-1 text-xs text-fg-muted">
-                Grants are unfunded — the amount is a plain on-ledger figure with no balance check.
-              </p>
+            <div>
+              <span className={labelClass}>Fund from</span>
+              <div className="mt-1.5 flex h-11 items-center justify-between rounded-xl border border-border bg-bg px-3 text-sm">
+                <span className="text-fg-muted">Your holdings</span>
+                <span className="font-mono font-semibold text-fg">
+                  {holdings === undefined
+                    ? '…'
+                    : `${holdings.toLocaleString(undefined, { maximumFractionDigits: 4 })} CC`}
+                </span>
+              </div>
             </div>
           </div>
         </Card>

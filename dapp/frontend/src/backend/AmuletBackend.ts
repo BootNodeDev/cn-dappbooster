@@ -410,37 +410,28 @@ export class AmuletBackend implements VestingBackend {
     await this.submit(args.receiver, command, disclosures)
   }
 
-  // ── selectAmuletCids ─────────────────────────────────────────────────────────
-  // Greedily selects Amulet holdings whose sum >= requiredAmount.
+  // The party's total available Canton Coin = sum of its Amulet holdings. Backs the
+  // create form's "Fund from" balance + over-funding guard.
+  async availableFunds(party: string): Promise<number> {
+    const holdings = await this.amuletHoldings(party)
+    return holdings.reduce((sum, holding) => sum + holding.amount, 0)
+  }
+
+  // ── amuletHoldings ───────────────────────────────────────────────────────────
+  // Reads a party's Amulet holdings as { contractId, amount }.
   //
   // ASSUMPTION [A5]: Amulet `amount` is a nested record `{ initialAmount: Decimal, ... }`
   // (ExpiringAmount in DAML). If the JSON-LF field is a flat Decimal, the extraction
   // falls back gracefully.
-  private async selectAmuletCids(party: string, requiredAmount: number): Promise<string[]> {
+  private async amuletHoldings(party: string): Promise<{ contractId: string; amount: number }[]> {
     const rows = await this.readAcs(party, this.amuletTid)
-
-    type AmuletAcsRow = AcsRow & {
-      contractEntry?: {
-        JsActiveContract?: {
-          createdEvent?: {
-            contractId?: string
-            createdEventBlob?: string
-            createArgument?: {
-              amount?: unknown
-            }
-          }
-          synchronizerId?: string
-        }
-      }
-    }
-
-    const holdings = rows
+    return rows
       .map((row) => {
-        const event = (row as AmuletAcsRow).contractEntry?.JsActiveContract?.createdEvent
+        const event = row.contractEntry?.JsActiveContract?.createdEvent
         if (event?.contractId === undefined) {
           return undefined
         }
-        const amountField = event.createArgument?.amount
+        const amountField = (event.createArgument as { amount?: unknown } | undefined)?.amount
         // ASSUMPTION [A5]: nested record. Fallback to flat if `initialAmount` absent.
         const initialAmount =
           amountField !== null &&
@@ -451,7 +442,11 @@ export class AmuletBackend implements VestingBackend {
         return { contractId: event.contractId, amount: initialAmount }
       })
       .filter((h): h is { contractId: string; amount: number } => h !== undefined)
-      .sort((a, b) => b.amount - a.amount) // descending: pick largest first
+  }
+
+  // Greedily selects Amulet holdings (largest first) whose sum >= requiredAmount.
+  private async selectAmuletCids(party: string, requiredAmount: number): Promise<string[]> {
+    const holdings = (await this.amuletHoldings(party)).sort((a, b) => b.amount - a.amount)
 
     const selected: string[] = []
     let accumulated = 0
