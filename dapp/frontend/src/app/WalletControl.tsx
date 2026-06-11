@@ -68,7 +68,7 @@ export const WalletControl = (): React.JSX.Element | null => {
               type="button"
               aria-label="Copy party id"
               onClick={() => void copyId(party.partyId)}
-              className="grid size-9 shrink-0 place-items-center rounded-lg border border-border bg-surface text-fg-muted transition-colors hover:border-primary hover:text-primary"
+              className="shrink-0 self-center text-fg-muted transition-colors hover:text-primary"
             >
               <CopyIcon width={15} height={15} />
             </button>
@@ -104,7 +104,7 @@ export const WalletControl = (): React.JSX.Element | null => {
                       aria-label={`Copy ${candidate.name} party id`}
                       title={`Copy ${candidate.name} party id`}
                       onClick={() => void copyId(candidate.partyId)}
-                      className="grid w-8 shrink-0 place-items-center rounded-lg border border-border bg-surface text-fg-muted transition-colors hover:border-primary hover:text-primary"
+                      className="shrink-0 self-center text-fg-muted transition-colors hover:text-primary"
                     >
                       <CopyIcon width={13} height={13} />
                     </button>
