@@ -15,7 +15,7 @@ interface NavItem {
 const items: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', Icon: DashboardIcon },
   { to: '/proposals', label: 'Proposals', Icon: InboxIcon },
-  { to: '/create', label: 'Create grant', Icon: PlusCircleIcon },
+  { to: '/create', label: 'Create escrow', Icon: PlusCircleIcon },
 ]
 
 export const Sidebar = (): React.JSX.Element => {

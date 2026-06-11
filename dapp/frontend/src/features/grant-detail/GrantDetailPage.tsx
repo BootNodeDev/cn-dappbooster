@@ -47,7 +47,7 @@ export const GrantDetailPage = (): React.JSX.Element => {
   if (grant === undefined) {
     return (
       <Card className="p-10 text-center">
-        <h2 className="text-lg font-bold text-fg">Grant not found</h2>
+        <h2 className="text-lg font-bold text-fg">Escrow not found</h2>
         <p className="mt-1 text-sm text-fg-muted">It may have been fully claimed or cancelled.</p>
         <Button asLink to="/dashboard" size="sm" className="mt-4">
           Back to dashboard
@@ -67,7 +67,7 @@ export const GrantDetailPage = (): React.JSX.Element => {
     setCancelling(true)
     try {
       await cancel(backend, partyId, grant.id)
-      toast.success('Grant cancelled')
+      toast.success('Escrow cancelled')
       setCancelOpen(false)
     } catch (err) {
       toast.error((err as Error).message)
@@ -114,7 +114,7 @@ export const GrantDetailPage = (): React.JSX.Element => {
             ))}
           {isCreator && (
             <Button variant="danger" onClick={() => setCancelOpen(true)}>
-              Cancel grant
+              Cancel escrow
             </Button>
           )}
         </div>
@@ -223,7 +223,7 @@ export const GrantDetailPage = (): React.JSX.Element => {
       <Modal
         open={cancelOpen}
         onClose={() => setCancelOpen(false)}
-        title="Cancel grant"
+        title="Cancel escrow"
         description="Vested-but-unclaimed CC becomes a residual claim for the beneficiary; the contract is archived."
       >
         <div className="flex flex-col gap-4">
@@ -244,7 +244,7 @@ export const GrantDetailPage = (): React.JSX.Element => {
               onClick={() => setCancelOpen(false)}
               disabled={cancelling}
             >
-              Keep grant
+              Keep escrow
             </Button>
             <Button
               variant="danger"
@@ -252,7 +252,7 @@ export const GrantDetailPage = (): React.JSX.Element => {
               onClick={() => void onCancel()}
               disabled={cancelling}
             >
-              {cancelling ? 'Submitting…' : 'Cancel grant'}
+              {cancelling ? 'Submitting…' : 'Cancel escrow'}
             </Button>
           </div>
         </div>

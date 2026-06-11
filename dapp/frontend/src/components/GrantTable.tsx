@@ -34,7 +34,7 @@ export const GrantTable = ({
       <table className="w-full border-collapse text-sm">
         <thead>
           <tr className="border-b border-border text-left font-mono text-[0.65rem] uppercase tracking-[0.08em] text-fg-muted">
-            <th className="px-4 py-3 font-bold">Grant</th>
+            <th className="px-4 py-3 font-bold">Escrow</th>
             <th className="px-4 py-3 font-bold">Status</th>
             <th className="px-4 py-3 font-bold">Progress</th>
             <th className="px-4 py-3 text-right font-bold">Total</th>

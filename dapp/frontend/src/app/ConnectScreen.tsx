@@ -47,8 +47,8 @@ export const ConnectScreen = (): React.JSX.Element => {
           Canton Coin Vesting
         </h1>
         <p className="mt-4 max-w-lg text-base leading-relaxed text-fg-muted">
-          Watch the grants vesting to you unlock over time, claim whatever is ready whenever you
-          like, and set up new grants for the people you want to reward. Every claim settles as a
+          Watch the escrows vesting to you unlock over time, claim whatever is ready whenever you
+          like, and set up new escrows for the people you want to reward. Every claim settles as a
           real transaction on the Canton ledger.
         </p>
 

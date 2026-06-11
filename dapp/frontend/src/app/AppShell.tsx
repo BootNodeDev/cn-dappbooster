@@ -10,12 +10,12 @@ const titleFor = (pathname: string, role: string): { title: string; crumb: strin
     return { title: 'Proposals', crumb: role }
   }
   if (pathname.startsWith('/create')) {
-    return { title: 'Create grant', crumb: 'Manager' }
+    return { title: 'Create escrow', crumb: 'Manager' }
   }
   if (pathname.startsWith('/grants/')) {
-    return { title: 'Grant detail', crumb: role }
+    return { title: 'Escrow detail', crumb: role }
   }
-  return { title: role === 'manager' ? 'Granted by me' : 'Dashboard', crumb: role }
+  return { title: role === 'manager' ? 'Escrowed by me' : 'Dashboard', crumb: role }
 }
 
 export const AppShell = (): React.JSX.Element => {

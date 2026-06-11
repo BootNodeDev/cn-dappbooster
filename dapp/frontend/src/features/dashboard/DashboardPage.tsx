@@ -126,7 +126,7 @@ export const DashboardPage = (): React.JSX.Element => {
     setCancelling(true)
     try {
       await cancel(backend, partyId, cancelTarget.id)
-      toast.success('Grant cancelled; earned residual set aside for the beneficiary')
+      toast.success('Escrow cancelled; earned residual set aside for the beneficiary')
       setCancelTarget(null)
     } catch (err) {
       toast.error((err as Error).message)
@@ -161,10 +161,10 @@ export const DashboardPage = (): React.JSX.Element => {
               hero
               label="Claimable now"
               amount={totals.claimable}
-              sub={`Across ${rows.length} grants`}
+              sub={`Across ${rows.length} escrows`}
               subTone="success"
             />
-            <KpiCard label="Total granted" amount={totals.total} sub={`${rows.length} active`} />
+            <KpiCard label="Total escrowed" amount={totals.total} sub={`${rows.length} active`} />
             <KpiCard label="Vested to date" amount={totals.vested} />
             <KpiCard label="Already claimed" amount={totals.claimed} />
           </>
@@ -174,11 +174,11 @@ export const DashboardPage = (): React.JSX.Element => {
               hero
               label="Total committed"
               amount={totals.total}
-              sub={`${rows.length} grants funded`}
+              sub={`${rows.length} escrows funded`}
             />
             <KpiCard label="Vested to date" amount={totals.vested} />
             <KpiCard label="Unvested (clawbackable)" amount={totals.unvested} />
-            <KpiCard label="Active grants" amount={rows.length} unit="" />
+            <KpiCard label="Active escrows" amount={rows.length} unit="" />
           </>
         )}
       </div>
@@ -187,7 +187,7 @@ export const DashboardPage = (): React.JSX.Element => {
       <div className="flex flex-wrap items-center gap-3">
         {role === 'manager' && (
           <Button asLink to="/create" size="sm">
-            Create grant
+            Create escrow
           </Button>
         )}
         <div className="ml-auto flex items-center gap-2">
@@ -256,11 +256,11 @@ export const DashboardPage = (): React.JSX.Element => {
       {/* grants */}
       {filtered.length === 0 ? (
         <EmptyState
-          title="No grants here"
+          title="No escrows here"
           description={
             role === 'beneficiary'
-              ? 'No grants match this filter. Accepted proposals appear here.'
-              : 'You have not funded any grants matching this filter yet.'
+              ? 'No escrows match this filter. Accepted proposals appear here.'
+              : 'You have not funded any escrows matching this filter yet.'
           }
         />
       ) : view === 'cards' ? (
@@ -328,7 +328,7 @@ export const DashboardPage = (): React.JSX.Element => {
       <Modal
         open={cancelTarget !== null}
         onClose={() => setCancelTarget(null)}
-        title="Cancel grant"
+        title="Cancel escrow"
         description={
           cancelTarget === null
             ? ''
@@ -360,7 +360,7 @@ export const DashboardPage = (): React.JSX.Element => {
                 onClick={() => setCancelTarget(null)}
                 disabled={cancelling}
               >
-                Keep grant
+                Keep escrow
               </Button>
               <Button
                 variant="danger"
@@ -368,7 +368,7 @@ export const DashboardPage = (): React.JSX.Element => {
                 onClick={() => void onConfirmCancel()}
                 disabled={cancelling}
               >
-                {cancelling ? 'Submitting…' : 'Cancel grant'}
+                {cancelling ? 'Submitting…' : 'Cancel escrow'}
               </Button>
             </div>
           </div>

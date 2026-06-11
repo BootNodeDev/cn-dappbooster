@@ -183,7 +183,7 @@ export const CreateGrantPage = (): React.JSX.Element => {
     const title =
       trimmedNote !== ''
         ? trimmedNote.split(/[.\n]/)[0].slice(0, 60)
-        : `Grant to ${receiver.split('::')[0]}`
+        : `Escrow to ${receiver.split('::')[0]}`
     setSubmitting(true)
     try {
       const result = await createVesting(backend, partyId, {
@@ -226,7 +226,7 @@ export const CreateGrantPage = (): React.JSX.Element => {
                 <p className="mt-1 text-xs text-danger">Use a full party id (hint::fingerprint).</p>
               )}
               {receiver !== '' && receiverWellFormed && isSelf && (
-                <p className="mt-1 text-xs text-danger">Cannot grant to your own party.</p>
+                <p className="mt-1 text-xs text-danger">Cannot escrow to your own party.</p>
               )}
             </div>
             <div>
@@ -448,7 +448,7 @@ export const CreateGrantPage = (): React.JSX.Element => {
             value={note}
             onChange={(e) => setNote(e.target.value)}
             rows={2}
-            placeholder="What is this grant for?"
+            placeholder="What is this escrow for?"
             className={cn(inputClass, 'h-auto resize-y py-2.5')}
           />
         </Card>
@@ -465,7 +465,7 @@ export const CreateGrantPage = (): React.JSX.Element => {
           </div>
         ) : (
           <Button className="w-full" disabled={!valid || submitting} onClick={() => void submit()}>
-            {submitting ? 'Submitting…' : 'Create grant'}
+            {submitting ? 'Submitting…' : 'Create escrow'}
           </Button>
         )}
       </div>

@@ -27,7 +27,7 @@ export const ProposalsPage = (): React.JSX.Element => {
   const onAccept = async (proposal: Proposal): Promise<void> => {
     try {
       await accept(backend, partyId, proposal.id)
-      toast.success('Proposal accepted, grant active')
+      toast.success('Proposal accepted, escrow active')
     } catch (err) {
       toast.error((err as Error).message)
     }
@@ -39,13 +39,13 @@ export const ProposalsPage = (): React.JSX.Element => {
         title={direction === 'incoming' ? 'No pending proposals' : 'No outstanding offers'}
         description={
           direction === 'incoming'
-            ? 'Grant proposals sent to you will appear here to accept.'
-            : 'Grants you propose to others appear here until they are accepted.'
+            ? 'Escrow proposals sent to you will appear here to accept.'
+            : 'Escrows you propose to others appear here until they are accepted.'
         }
         action={
           role === 'manager' ? (
             <Button asLink to="/create" size="sm">
-              Create a grant
+              Create an escrow
             </Button>
           ) : undefined
         }
