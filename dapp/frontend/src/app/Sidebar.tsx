@@ -30,7 +30,9 @@ export const Sidebar = (): React.JSX.Element => {
       <div className="flex items-center gap-2.5 px-2 pb-7">
         <img src="/favicon.svg" alt="" className="size-8 rounded-xl shadow-[var(--glow)]" />
         <div className="leading-tight">
-          <div className="text-[0.95rem] font-extrabold tracking-tight text-fg">Canton Vesting</div>
+          <div className="text-[0.95rem] font-extrabold tracking-tight text-fg">
+            Canton Coin Vesting
+          </div>
           <div className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-fg-muted">
             cc-vesting
           </div>
