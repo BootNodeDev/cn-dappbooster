@@ -8,7 +8,7 @@
     "carpincho-wallet",
     "canton-barebones",
     "canton-barebones/wallet-service",
-    "dapp/daml",
+    "dapp/daml/vesting-lite",
     "dapp/e2e",
     "dapp/frontend"
   ],
@@ -22,6 +22,7 @@
     "wallet:dev": "npm --prefix carpincho-wallet run dev",
     "wallet-service:dev": "npm --prefix canton-barebones/wallet-service run dev",
     "wallet-service:health": "curl -fsS http://localhost:3010/health",
+    "bootstrap:vesting-lite": "node scripts/bootstrap-vesting-lite.mjs",
     "carpincho:build:extension": "npm --prefix carpincho-wallet run build:extension",
     "app:dev": "npm --prefix dapp/frontend run dev -- --host localhost --port 3012 --strictPort",
     "lint": "biome check",

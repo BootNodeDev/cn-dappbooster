@@ -23,6 +23,7 @@
 #   1. Canton + Postgres + wallet-service containers (npm run canton:up)
 #   2. Health checks (canton + wallet-service)
 #   3. Builds and deploys the Daml DAR (name derived from daml.yaml)
+#      then bootstraps the vesting demo parties (skipped if already done)
 #   4. Carpincho wallet dev server  -> http://localhost:3011  (background)
 #   5. dApp frontend dev server     -> http://localhost:3012  (background)
 #   6. Builds the Chrome extension and copies it to ~/Desktop/dist-extension
@@ -45,7 +46,7 @@ MOCK_WS_LOG="$RUN_DIR/mock-wallet-service.log"
 MOCK_WS_PID="$RUN_DIR/mock-wallet-service.pid"
 
 # Derive the DAR name from daml.yaml so renames/bumps need no edits here.
-DAML_DIR="dapp/daml"
+DAML_DIR="dapp/daml/vesting-lite"
 DAR_NAME="$(awk '/^name:/{n=$2} /^version:/{v=$2} END{print n"-"v".dar"}' "$DAML_DIR/daml.yaml")"
 DAR_PATH="$DAML_DIR/.daml/dist/$DAR_NAME"
 EXT_SRC="carpincho-wallet/dist-extension"
@@ -156,6 +157,19 @@ up() {
   npm run build-dar -- "$DAML_DIR"
   log "Deploying the DAR to Canton..."
   npm run deploy-dar -- "$DAR_PATH"
+
+  # Seed the demo: operator factory + party pool, granting wallet-service CanActAs.
+  # Guarded so a re-run of `up` on an existing stack does not duplicate the pool
+  # (re-seed explicitly with `npm run bootstrap:vesting-lite` after deleting the file).
+  if [ -f dapp/frontend/public/vesting-lite-parties.json ]; then
+    log "Vesting demo already bootstrapped (dapp/frontend/public/vesting-lite-parties.json exists); skipping."
+  else
+    local pkg
+    pkg="$(dpm damlc inspect-dar "$DAR_PATH" --json \
+      | node -e 'const d=JSON.parse(require("fs").readFileSync(0,"utf8"));process.stdout.write(String(d.main_package_id))')"
+    log "Bootstrapping vesting parties (pkg ${pkg:0:12}…)..."
+    PKG="$pkg" node scripts/bootstrap-vesting-lite.mjs
+  fi
 
   # 4. Carpincho wallet dev server (3011)
   if lsof -nP -iTCP:3011 -sTCP:LISTEN >/dev/null 2>&1; then
