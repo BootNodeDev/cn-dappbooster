@@ -52,9 +52,7 @@ export const ConnectScreen = (): React.JSX.Element => {
           real transaction on the Canton ledger.
         </p>
 
-        <p className="mt-9 text-lg font-bold text-fg">Choose party</p>
-
-        <div className="mt-4 w-full max-w-md">
+        <div className="mt-9 w-full max-w-md">
           {pool.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border p-6 text-sm text-fg-muted">
               No parties available. Run the vest-lite bootstrap to populate the pool.
