@@ -14,8 +14,10 @@ flowchart TD
 
   fe <-->|"Injected CIP-0103 provider<br/>optional WalletConnect"| wallet
   wallet -->|"external-party onboarding"| ws
+  wallet -->|"Scan API / token metadata"| scan
   ws -->|"Bearer CANTON_BACKEND_TOKEN"| au
   au <--> sv
+  sv -->|"indexed Splice read model"| scan
   dar -->|"deploy package"| au
 ```
 
