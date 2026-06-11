@@ -3,12 +3,12 @@ import type { Role } from '@/store/types'
 import { useUiStore } from '@/store/useUiStore'
 
 const roles: { value: Role; label: string }[] = [
-  { value: 'receiver', label: 'Receiver' },
-  { value: 'funder', label: 'Funder' },
+  { value: 'beneficiary', label: 'Beneficiary' },
+  { value: 'manager', label: 'Manager' },
 ]
 
 // The connected party is fixed; this lens chooses whether to view grants where
-// the party is receiver or creator.
+// the party is beneficiary or creator.
 export const RoleToggle = (): React.JSX.Element => {
   const role = useUiStore((s) => s.role)
   const setRole = useUiStore((s) => s.setRole)

@@ -16,7 +16,7 @@ export const ProposalsPage = (): React.JSX.Element => {
   const proposals = useVestingStore((s) => s.proposals)
   const accept = useVestingStore((s) => s.accept)
 
-  const direction = role === 'receiver' ? 'incoming' : 'outgoing'
+  const direction = role === 'beneficiary' ? 'incoming' : 'outgoing'
   const visible = useMemo<Proposal[]>(
     () =>
       proposals.filter((p) =>
@@ -45,7 +45,7 @@ export const ProposalsPage = (): React.JSX.Element => {
               : 'Grants you propose to others appear here until they are accepted.'
           }
           action={
-            role === 'funder' ? (
+            role === 'manager' ? (
               <Button asLink to="/create" size="sm">
                 Create a grant
               </Button>

@@ -40,7 +40,7 @@ export const GrantTable = ({
             <th className="px-4 py-3 text-right font-bold">Total</th>
             <th className="px-4 py-3 text-right font-bold">Vested</th>
             <th className="px-4 py-3 text-right font-bold">
-              {role === 'receiver' ? 'Claimable' : 'Unvested'}
+              {role === 'beneficiary' ? 'Claimable' : 'Unvested'}
             </th>
             <th className="px-4 py-3" />
           </tr>
@@ -64,7 +64,7 @@ export const GrantTable = ({
                     {grant.title}
                   </Link>
                   <div className="mt-0.5 font-mono text-[0.7rem] text-fg-soft">
-                    {role === 'receiver'
+                    {role === 'beneficiary'
                       ? shortenParty(grant.creator)
                       : shortenParty(grant.receiver)}
                   </div>
@@ -95,7 +95,7 @@ export const GrantTable = ({
                   {formatCC(derived.vested)}
                 </td>
                 <td className="px-4 py-3.5 text-right font-mono">
-                  {role === 'receiver' ? (
+                  {role === 'beneficiary' ? (
                     <span className="font-semibold text-success">
                       {formatCC(derived.claimable)}
                     </span>
@@ -104,7 +104,7 @@ export const GrantTable = ({
                   )}
                 </td>
                 <td className="px-4 py-3.5 text-right">
-                  {role === 'receiver' ? (
+                  {role === 'beneficiary' ? (
                     <Button size="sm" disabled={!canClaim} onClick={() => onClaim?.(grant)}>
                       Claim
                     </Button>

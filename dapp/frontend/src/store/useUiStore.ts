@@ -4,7 +4,7 @@ import type { Role } from './types'
 export type DashboardView = 'cards' | 'table'
 
 interface UiState {
-  // The lens over the connected party's grants: as receiver vs as funder.
+  // The lens over the connected party's grants: as beneficiary vs as manager.
   role: Role
   dashboardView: DashboardView
   setRole: (role: Role) => void
@@ -12,7 +12,7 @@ interface UiState {
 }
 
 export const useUiStore = create<UiState>((set) => ({
-  role: 'receiver',
+  role: 'beneficiary',
   dashboardView: 'cards',
   setRole: (role) => set({ role }),
   setDashboardView: (dashboardView) => set({ dashboardView }),

@@ -47,8 +47,8 @@ export const GrantCard = ({
   const milestones = curve.kind === 'milestone' ? curve.points.map((p) => p.fraction) : undefined
   const claimedFraction = grant.totalAmount === 0 ? 0 : derived.claimed / grant.totalAmount
   const canClaim = derived.claimable >= MIN_GRANT_AMOUNT
-  const counterparty = role === 'receiver' ? grant.creator : grant.receiver
-  const counterpartyLabel = role === 'receiver' ? 'from' : 'to'
+  const counterparty = role === 'beneficiary' ? grant.creator : grant.receiver
+  const counterpartyLabel = role === 'beneficiary' ? 'from' : 'to'
 
   return (
     <Card className="grid gap-5 p-5 md:grid-cols-[1.5fr_2.2fr_auto] md:items-center md:gap-7">
@@ -97,7 +97,7 @@ export const GrantCard = ({
       </div>
 
       <div className="flex flex-col items-stretch gap-2.5 md:items-end">
-        {role === 'receiver' ? (
+        {role === 'beneficiary' ? (
           <>
             <div className="md:text-right">
               <div className="text-[0.7rem] font-semibold uppercase tracking-[0.07em] text-fg-muted">

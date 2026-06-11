@@ -85,7 +85,7 @@ export const CreateGrantPage = (): React.JSX.Element => {
   const [disclosedBytes, setDisclosedBytes] = useState<number | null>(null)
   // When set, the schedule is a quick-demo preset and gets re-anchored to submit time.
   const [demo, setDemo] = useState<DemoPreset | null>(null)
-  // The funder's available Canton Coin (sum of their Amulet holdings), loaded live.
+  // The manager's available Canton Coin (sum of their Amulet holdings), loaded live.
   // undefined while loading / unavailable → the over-funding guard is skipped.
   const [holdings, setHoldings] = useState<number | undefined>(undefined)
 
@@ -124,7 +124,7 @@ export const CreateGrantPage = (): React.JSX.Element => {
   const amountNum = Number(amount)
   const scheduleValid = validVestingSchedule(schedule)
   const amountValid = Number.isFinite(amountNum) && amountNum >= MIN_GRANT_AMOUNT
-  // The grant locks real CC from the funder's holdings; block over-funding once the
+  // The grant locks real CC from the manager's holdings; block over-funding once the
   // balance is known (skipped while it is still loading / unavailable).
   const fundsOk = holdings === undefined || amountNum <= holdings
   // Party ids are `hint::fingerprint`; both halves must be present, and a grant
@@ -177,7 +177,7 @@ export const CreateGrantPage = (): React.JSX.Element => {
       return
     }
     // Re-anchor a demo preset to NOW so its short window starts at submit, not when
-    // the preset was clicked (otherwise it is mostly vested before the receiver accepts).
+    // the preset was clicked (otherwise it is mostly vested before the beneficiary accepts).
     const finalSchedule = demo === null ? schedule : buildDemoSchedule(demo, now())
     const trimmedNote = note.trim()
     const title =
@@ -209,11 +209,11 @@ export const CreateGrantPage = (): React.JSX.Element => {
     <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
       <div className="flex flex-col gap-5">
         <Card className="p-6">
-          <h2 className="text-sm font-extrabold text-fg">Receiver &amp; amount</h2>
+          <h2 className="text-sm font-extrabold text-fg">Beneficiary &amp; amount</h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <label htmlFor="receiver" className={labelClass}>
-                Receiver party id
+                Beneficiary party id
               </label>
               <input
                 id="receiver"
@@ -463,7 +463,7 @@ export const CreateGrantPage = (): React.JSX.Element => {
             <AmountDisplay value={amountValid ? amountNum : 0} className="text-xl font-semibold" />
           </div>
           <div className="mt-1 flex items-baseline justify-between">
-            <span className="text-xs text-fg-muted">Receiver</span>
+            <span className="text-xs text-fg-muted">Beneficiary</span>
             <span className="font-mono text-xs text-fg">
               {receiver === '' ? '—' : receiver.split('::')[0]}
             </span>
@@ -499,7 +499,7 @@ export const CreateGrantPage = (): React.JSX.Element => {
                 {submitting ? 'Submitting…' : 'Create grant'}
               </Button>
               <p className="mt-2 text-center text-xs text-fg-muted">
-                Creates a proposal via explicit disclosure; the receiver accepts to activate it.
+                Creates a proposal via explicit disclosure; the beneficiary accepts to activate it.
               </p>
             </>
           )}

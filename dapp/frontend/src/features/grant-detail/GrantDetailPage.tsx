@@ -178,8 +178,8 @@ export const GrantDetailPage = (): React.JSX.Element => {
             {(
               [
                 ['Provider', grant.provider],
-                ['Funder', grant.creator],
-                ['Receiver', grant.receiver],
+                ['Manager', grant.creator],
+                ['Beneficiary', grant.receiver],
               ] as const
             ).map(([label, value]) => (
               <div key={label} className="flex justify-between gap-3">
@@ -224,7 +224,7 @@ export const GrantDetailPage = (): React.JSX.Element => {
         open={cancelOpen}
         onClose={() => setCancelOpen(false)}
         title="Cancel grant"
-        description="Vested-but-unclaimed CC becomes a residual claim for the receiver; the contract is archived."
+        description="Vested-but-unclaimed CC becomes a residual claim for the beneficiary; the contract is archived."
       >
         <div className="flex flex-col gap-4">
           <div className="rounded-xl border border-border bg-bg/40 p-4 text-sm">
@@ -233,7 +233,7 @@ export const GrantDetailPage = (): React.JSX.Element => {
               <AmountDisplay value={derived.unvested} className="font-semibold" />
             </div>
             <div className="mt-1.5 flex justify-between">
-              <span className="text-fg-muted">Residual to receiver</span>
+              <span className="text-fg-muted">Residual to beneficiary</span>
               <AmountDisplay value={derived.claimable} className="font-semibold" />
             </div>
           </div>

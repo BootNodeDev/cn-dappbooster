@@ -50,7 +50,7 @@ export const DashboardPage = (): React.JSX.Element => {
 
   const rows = useMemo<GrantRow[]>(() => {
     const mine = grants.filter((g) =>
-      role === 'receiver' ? g.receiver === partyId : g.creator === partyId,
+      role === 'beneficiary' ? g.receiver === partyId : g.creator === partyId,
     )
     return mine.map((grant) => ({ grant, derived: deriveGrant(grant, nowMs) }))
   }, [grants, role, partyId, nowMs])
@@ -73,7 +73,7 @@ export const DashboardPage = (): React.JSX.Element => {
   )
 
   const myClaims = useMemo(
-    () => (role === 'receiver' ? claims.filter((c) => c.receiver === partyId) : []),
+    () => (role === 'beneficiary' ? claims.filter((c) => c.receiver === partyId) : []),
     [claims, role, partyId],
   )
 
@@ -110,7 +110,7 @@ export const DashboardPage = (): React.JSX.Element => {
     setCancelling(true)
     try {
       await cancel(backend, partyId, cancelTarget.id)
-      toast.success('Grant cancelled; earned residual set aside for the receiver')
+      toast.success('Grant cancelled; earned residual set aside for the beneficiary')
       setCancelTarget(null)
     } catch (err) {
       toast.error((err as Error).message)
@@ -139,7 +139,7 @@ export const DashboardPage = (): React.JSX.Element => {
     <div className="flex flex-col gap-7">
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {role === 'receiver' ? (
+        {role === 'beneficiary' ? (
           <>
             <KpiCard
               hero
@@ -209,12 +209,12 @@ export const DashboardPage = (): React.JSX.Element => {
           <EmptyState
             title="No grants here"
             description={
-              role === 'receiver'
+              role === 'beneficiary'
                 ? 'No grants match this filter. Accepted proposals appear here.'
                 : 'You have not funded any grants matching this filter yet.'
             }
             action={
-              role === 'funder' ? (
+              role === 'manager' ? (
                 <Button asLink to="/create" size="sm">
                   Create a grant
                 </Button>
@@ -241,8 +241,8 @@ export const DashboardPage = (): React.JSX.Element => {
         <GrantTable rows={filtered} role={role} onClaim={openClaim} onCancel={setCancelTarget} />
       )}
 
-      {/* residual claims (receiver) */}
-      {role === 'receiver' && myClaims.length > 0 && (
+      {/* residual claims (beneficiary) */}
+      {role === 'beneficiary' && myClaims.length > 0 && (
         <section className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-extrabold text-fg">Residual claims</h2>
@@ -306,7 +306,7 @@ export const DashboardPage = (): React.JSX.Element => {
                 />
               </div>
               <div className="mt-1.5 flex justify-between">
-                <span className="text-fg-muted">Residual to receiver</span>
+                <span className="text-fg-muted">Residual to beneficiary</span>
                 <AmountDisplay
                   value={deriveGrant(cancelTarget, nowMs).claimable}
                   className="font-semibold"
