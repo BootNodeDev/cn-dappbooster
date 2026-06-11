@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { AmountDisplay } from '@/components/AmountDisplay'
 import { Button } from '@/components/Button'
 import { Card } from '@/components/Card'
@@ -6,7 +7,14 @@ import { ClaimDialog } from '@/components/ClaimDialog'
 import { EmptyState } from '@/components/EmptyState'
 import { GrantCard } from '@/components/GrantCard'
 import { type GrantRow, GrantTable } from '@/components/GrantTable'
-import { CardsIcon, CheckIcon, ChevronDownIcon, FilterIcon, TableIcon } from '@/components/icons'
+import {
+  CardsIcon,
+  CheckIcon,
+  ChevronDownIcon,
+  FilterIcon,
+  PlusIcon,
+  TableIcon,
+} from '@/components/icons'
 import { KpiCard } from '@/components/KpiCard'
 import { Modal } from '@/components/Modal'
 import { toast } from '@/components/toast'
@@ -186,9 +194,14 @@ export const DashboardPage = (): React.JSX.Element => {
       {/* toolbar */}
       <div className="flex flex-wrap items-center gap-3">
         {role === 'manager' && (
-          <Button asLink to="/create" size="sm">
-            Create escrow
-          </Button>
+          <Link
+            to="/create"
+            aria-label="Create escrow"
+            title="Create escrow"
+            className="grid size-9 place-items-center rounded-full border border-primary bg-primary text-primary-fg transition-colors hover:shadow-[var(--glow)]"
+          >
+            <PlusIcon width={18} height={18} />
+          </Link>
         )}
         <div className="ml-auto flex items-center gap-2">
           <div className="relative" ref={filterRef}>

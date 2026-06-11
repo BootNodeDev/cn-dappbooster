@@ -134,3 +134,16 @@ export const FilterIcon = (p: IconProps) => (
     <path d="M3 5h18l-7 8v6l-4-2v-4z" />
   </Svg>
 )
+
+export const PlusIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M12 5v14M5 12h14" />
+  </Svg>
+)
+
+export const InfoIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 11v5M12 8h.01" />
+  </Svg>
+)

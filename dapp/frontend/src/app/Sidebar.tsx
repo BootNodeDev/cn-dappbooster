@@ -1,6 +1,6 @@
 import type { ComponentType, SVGProps } from 'react'
 import { NavLink } from 'react-router-dom'
-import { DashboardIcon, InboxIcon, PlusCircleIcon } from '@/components/icons'
+import { DashboardIcon, InboxIcon } from '@/components/icons'
 import { cn } from '@/lib/cn'
 import { shortenParty } from '@/lib/format'
 import { useVestingStore } from '@/store/useVestingStore'
@@ -15,7 +15,6 @@ interface NavItem {
 const items: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', Icon: DashboardIcon },
   { to: '/proposals', label: 'Proposals', Icon: InboxIcon },
-  { to: '/create', label: 'Create escrow', Icon: PlusCircleIcon },
 ]
 
 export const Sidebar = (): React.JSX.Element => {
