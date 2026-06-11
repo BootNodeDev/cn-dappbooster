@@ -44,8 +44,5 @@ export const KpiCard = ({
         {sub}
       </div>
     )}
-    {hero && (
-      <span className="pointer-events-none absolute -bottom-10 -right-8 size-36 rounded-full bg-[radial-gradient(circle,color-mix(in_oklab,var(--pink)_40%,transparent),transparent_70%)] blur-md" />
-    )}
   </div>
 )
