@@ -61,6 +61,24 @@ Service-specific methods:
 | `executePrepared`    | Carpincho                       | Submits Carpincho's signature over a prepared transaction to Canton.                                             |
 | `ledgerApi`          | Carpincho on behalf of the dApp | Proxies app-user JSON API reads/writes and injects `CANTON_BACKEND_TOKEN`.                                       |
 
+### CIP-56 token methods
+
+These add Canton token-standard reads and transfers plus Amulet (Canton Coin) preapproval. They are token-standard / Amulet logic, not consumer-dApp logic.
+
+| Method | Purpose |
+| --- | --- |
+| `cip56.listHoldingSummary` | Per-instrument token balance summaries for a party (Amulet summaries via scan proxy; other tokens via holding UTXOs). |
+| `cip56.listHoldings` | Raw token holding UTXOs for a party. |
+| `cip56.listPendingTransfers` | Pending incoming CIP-56 transfer instructions for a party. |
+| `cip56.createTransfer` | Prepares a token transfer for the caller to sign and execute. |
+| `cip56.acceptTransfer` | Prepares acceptance of a pending incoming transfer. |
+| `amulet.preapproval.status` | Reads the Amulet transfer-preapproval (auto-accept) status for a receiver. |
+| `amulet.preapproval.create` | Prepares enabling Amulet auto-accept. |
+| `amulet.preapproval.cancel` | Prepares disabling Amulet auto-accept. |
+| `amulet.preapproval.acceptProposal` | Accepts a `TransferPreapprovalProposal` for the receiver. |
+
+The write methods (`create*`, `acceptTransfer`, `amulet.preapproval.create/cancel/acceptProposal`) return prepared transactions; Carpincho signs locally and submits via `executePrepared`.
+
 `prepareExecute`, `prepareExecuteAndWait`, and `signMessage` stay in
 Carpincho because they require the user's key and approval UI.
 
