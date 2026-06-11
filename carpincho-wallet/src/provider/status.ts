@@ -8,19 +8,37 @@ export interface ProviderStatus {
 }
 
 // Builds the browser provider status from wallet-service without inventing a local network.
+// Local connection state must not depend on network discovery, so an unreachable
+// wallet-service degrades to "not network connected" rather than failing connect.
 export const buildStatus = async (): Promise<ProviderStatus> => {
-  const remote = await walletServiceStatus()
-  const networkId = remote.network?.networkId?.trim()
-  return {
-    provider: { id: SIGNING_PROVIDER_ID, version: __APP_VERSION__, providerType: 'browser' },
-    connection: {
-      isConnected: true,
-      isNetworkConnected: remote.connection?.isNetworkConnected ?? false,
-      ...(remote.connection?.networkReason === undefined
-        ? {}
-        : { networkReason: remote.connection.networkReason }),
-    },
-    ...(networkId === undefined || networkId === '' ? {} : { network: { networkId } }),
+  const provider = {
+    id: SIGNING_PROVIDER_ID,
+    version: __APP_VERSION__,
+    providerType: 'browser' as const,
+  }
+  try {
+    const remote = await walletServiceStatus()
+    const networkId = remote.network?.networkId?.trim()
+    return {
+      provider,
+      connection: {
+        isConnected: true,
+        isNetworkConnected: remote.connection?.isNetworkConnected ?? false,
+        ...(remote.connection?.networkReason === undefined
+          ? {}
+          : { networkReason: remote.connection.networkReason }),
+      },
+      ...(networkId === undefined || networkId === '' ? {} : { network: { networkId } }),
+    }
+  } catch (error) {
+    return {
+      provider,
+      connection: {
+        isConnected: true,
+        isNetworkConnected: false,
+        networkReason: `wallet-service unavailable: ${(error as Error).message}`,
+      },
+    }
   }
 }
 
