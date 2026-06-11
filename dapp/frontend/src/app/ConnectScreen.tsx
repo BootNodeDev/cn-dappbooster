@@ -13,7 +13,7 @@ export const ConnectScreen = (): React.JSX.Element => {
     <div className="flex min-h-screen flex-col">
       <header className="flex items-center justify-between px-6 py-5">
         <div className="flex items-center gap-2.5">
-          <span className="size-8 rounded-xl bg-[image:var(--gradient-brand)] shadow-[var(--glow)]" />
+          <img src="/favicon.svg" alt="" className="size-8 rounded-xl shadow-[var(--glow)]" />
           <span className="text-base font-extrabold tracking-tight text-fg">Canton Vesting</span>
         </div>
         <ThemeToggle />
