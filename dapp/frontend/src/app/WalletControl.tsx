@@ -1,16 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
-import { ChevronDownIcon, CopyIcon, LogoutIcon } from '@/components/icons'
+import { CheckIcon, ChevronDownIcon, CopyIcon, LogoutIcon } from '@/components/icons'
 import { toast } from '@/components/toast'
-import { partyHint, shortenParty } from '@/lib/format'
+import { cn } from '@/lib/cn'
+import { partyHint } from '@/lib/format'
 import { useConnect, useParties, useParty } from '@/wallet/hooks'
 
-// Party switcher. Pill shows the acting party hint + chevron. The menu lets you
-// copy the acting id, switch to another party in the pool, and sign out back to
-// the picker.
+// Party switcher. Pill shows the acting party hint + chevron. The menu lists every
+// party in the pool (the acting one highlighted), copies any id, and signs out.
 export const WalletControl = (): React.JSX.Element | null => {
   const { connect, disconnect } = useConnect()
   const { party } = useParty()
-  const { pool } = useParties()
+  const { pool, operator } = useParties()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -40,8 +40,6 @@ export const WalletControl = (): React.JSX.Element | null => {
     }
   }
 
-  const others = pool.filter((candidate) => candidate.partyId !== party.partyId)
-
   return (
     <div className="relative" ref={ref}>
       <button
@@ -56,63 +54,52 @@ export const WalletControl = (): React.JSX.Element | null => {
         <ChevronDownIcon width={15} height={15} className="text-fg-muted" />
       </button>
       {open && (
-        <div className="absolute right-0 z-50 mt-2 w-72 rounded-xl border border-border bg-surface p-3 shadow-[var(--shadow-popover)]">
-          <span className="text-[0.65rem] font-bold uppercase tracking-[0.08em] text-fg-muted">
-            Acting as
-          </span>
-          <div className="mt-1 flex items-stretch gap-2">
-            <code className="min-w-0 flex-1 truncate rounded-lg bg-muted p-2 font-mono text-xs text-fg">
-              {shortenParty(party.partyId)}
-            </code>
-            <button
-              type="button"
-              aria-label="Copy party id"
-              onClick={() => void copyId(party.partyId)}
-              className="shrink-0 self-center text-fg-muted transition-colors hover:text-primary"
-            >
-              <CopyIcon width={15} height={15} />
-            </button>
-          </div>
-
-          {others.length > 0 && (
-            <div className="mt-3">
-              <span className="text-[0.65rem] font-bold uppercase tracking-[0.08em] text-fg-muted">
-                Switch party
-              </span>
-              <ul className="mt-1.5 flex max-h-56 flex-col gap-1 overflow-y-auto">
-                {others.map((candidate) => (
-                  <li key={candidate.partyId} className="flex items-stretch gap-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        connect(candidate)
-                        setOpen(false)
-                        toast.success(`Acting as ${candidate.name}`)
-                      }}
-                      className="flex min-w-0 flex-1 items-center justify-between gap-2 rounded-lg p-2 text-sm font-semibold text-fg transition-colors hover:bg-muted"
-                    >
-                      <span className="flex items-center gap-2">
-                        <span className="size-5 shrink-0 rounded-full bg-[image:var(--gradient-brand)]" />
+        <div className="absolute right-0 z-50 mt-2 w-72 rounded-xl border border-border bg-surface p-2 shadow-[var(--shadow-popover)]">
+          <ul className="flex max-h-72 flex-col gap-1 overflow-y-auto">
+            {pool.map((candidate) => {
+              const selected = candidate.partyId === party.partyId
+              return (
+                <li key={candidate.partyId} className="flex items-stretch gap-1">
+                  <button
+                    type="button"
+                    disabled={selected}
+                    aria-current={selected}
+                    onClick={() => {
+                      connect(candidate)
+                      setOpen(false)
+                      toast.success(`Acting as ${candidate.name}`)
+                    }}
+                    className={cn(
+                      'flex min-w-0 flex-1 items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors',
+                      selected ? 'bg-primary-soft' : 'hover:bg-muted',
+                    )}
+                  >
+                    <span className="size-7 shrink-0 rounded-full bg-[image:var(--gradient-brand)]" />
+                    <span className="flex min-w-0 flex-col">
+                      <span className="truncate text-sm font-semibold text-fg">
                         {candidate.name}
                       </span>
-                      <span className="truncate font-mono text-[0.7rem] text-fg-muted">
-                        {shortenParty(candidate.partyId)}
+                      <span className="font-mono text-xs text-fg-muted">
+                        {candidate.partyId === operator ? 'Manager' : 'Beneficiary'}
                       </span>
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={`Copy ${candidate.name} party id`}
-                      title={`Copy ${candidate.name} party id`}
-                      onClick={() => void copyId(candidate.partyId)}
-                      className="shrink-0 self-center text-fg-muted transition-colors hover:text-primary"
-                    >
-                      <CopyIcon width={13} height={13} />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+                    </span>
+                    {selected && (
+                      <CheckIcon width={16} height={16} className="ml-auto shrink-0 text-primary" />
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`Copy ${candidate.name} party id`}
+                    title={`Copy ${candidate.name} party id`}
+                    onClick={() => void copyId(candidate.partyId)}
+                    className="shrink-0 self-center text-fg-muted transition-colors hover:text-primary"
+                  >
+                    <CopyIcon width={14} height={14} />
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
 
           <button
             type="button"
@@ -121,7 +108,7 @@ export const WalletControl = (): React.JSX.Element | null => {
               disconnect()
               toast.success('Signed out')
             }}
-            className="mt-3 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-danger/40 bg-surface text-sm font-semibold text-danger transition-colors hover:bg-danger-soft"
+            className="mt-2 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-danger/40 bg-surface text-sm font-semibold text-danger transition-colors hover:bg-danger-soft"
           >
             <LogoutIcon width={15} height={15} />
             Sign out
