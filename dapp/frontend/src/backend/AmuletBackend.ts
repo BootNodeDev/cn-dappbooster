@@ -72,11 +72,9 @@ type AcsRow = {
 }
 
 // TransferContext loaded from the SCAN service, ready to pass in a command.
-// `splicePkg` is the package id the live contracts actually use (see packageIdOf).
 type TransferContext = {
   arg: AppTransferContextArg
   disclosures: DisclosedContract[]
-  splicePkg: string
 }
 
 // The package id portion of a `packageId:Module:Entity` template id.
@@ -102,6 +100,7 @@ type ScanAmuletRulesResponse = {
 type ScanMiningRoundContract = {
   contract_id?: string
   created_event_blob?: string
+  template_id?: string
   payload?: {
     round?: {
       number?: unknown
@@ -287,24 +286,20 @@ export class AmuletBackend implements VestingBackend {
       )
       throw new Error('AmuletRules contract_id or created_event_blob absent in SCAN response')
     }
+    // The configured/fallback splice-amulet package id (assumption [A1]) can be a
+    // different version than what this LocalNet actually deployed. A disclosed contract
+    // must declare the package its created_event_blob decodes to, or the submission is
+    // rejected with a template-id Mismatch. So each disclosure carries the live
+    // template_id the source reports (SCAN here, the verbose ACS read for inputs); the
+    // configured id is only a fallback.
     const rulesRef: DisclosedRef = {
       contractId: rulesCid,
       createdEventBlob: rulesBlob,
       synchronizerId,
+      templateId: rulesContract.template_id,
     }
-
-    // The configured/fallback splice-amulet package id (assumption [A1]) can be a
-    // different version than what this LocalNet actually deployed. Disclosed contracts
-    // must declare the package the created_event_blob decodes to, or the submission is
-    // rejected with a template-id Mismatch. AmuletRules, OpenMiningRound and Amulet all
-    // live in the same splice-amulet package, so derive it from the live AmuletRules
-    // template id and qualify every splice disclosure with it.
-    const liveSplicePkg =
-      rulesContract.template_id !== undefined && rulesContract.template_id !== ''
-        ? packageIdOf(rulesContract.template_id)
-        : this.splicePkg
-    const amuletRulesTid = `${liveSplicePkg}:Splice.AmuletRules:AmuletRules`
-    const openMiningRoundTid = `${liveSplicePkg}:Splice.Round:OpenMiningRound`
+    const amuletRulesTid = `${this.splicePkg}:Splice.AmuletRules:AmuletRules`
+    const openMiningRoundTid = `${this.splicePkg}:Splice.Round:OpenMiningRound`
 
     // ── OpenMiningRound — pick highest round number ──────────────────────────
     const openRoundsMap = roundsResponse.open_mining_rounds
@@ -338,7 +333,7 @@ export class AmuletBackend implements VestingBackend {
       buildDisclosedContract(openMiningRoundTid, roundRef),
     ]
 
-    return { arg, disclosures, splicePkg: liveSplicePkg }
+    return { arg, disclosures }
   }
 
   // ── createVesting ────────────────────────────────────────────────────────────
@@ -372,10 +367,17 @@ export class AmuletBackend implements VestingBackend {
   }
 
   async accept(args: { receiver: string; proposalCid: string }): Promise<void> {
-    const { arg, disclosures, splicePkg } = await this.loadTransferContext()
-    const inputDisclosures = await this.discloseAcceptInputs(args.proposalCid, splicePkg)
+    const { arg, disclosures } = await this.loadTransferContext()
+    const inputDisclosures = await this.discloseAcceptInputs(args.proposalCid)
+    const allDisclosed = [...disclosures, ...inputDisclosures]
+    if (import.meta.env.DEV) {
+      console.debug(
+        '[accept] disclosed contracts:',
+        allDisclosed.map((d) => ({ templateId: d.templateId, contractId: d.contractId })),
+      )
+    }
     const command = buildAmuletAcceptCommand(this.proposalTid, args.proposalCid, arg)
-    await this.submit(args.receiver, command, [...disclosures, ...inputDisclosures])
+    await this.submit(args.receiver, command, allDisclosed)
   }
 
   // ── discloseAcceptInputs ─────────────────────────────────────────────────────
@@ -385,10 +387,7 @@ export class AmuletBackend implements VestingBackend {
   // Read the proposal (visible to the operator, always a signatory as provider) for its
   // amuletCids + proposer, then pull each input Amulet's createdEventBlob from the proposer's
   // ACS (operator-owned Amulets carry a non-empty blob, unlike DSO-signed AmuletRules).
-  private async discloseAcceptInputs(
-    proposalCid: string,
-    splicePkg: string,
-  ): Promise<DisclosedContract[]> {
+  private async discloseAcceptInputs(proposalCid: string): Promise<DisclosedContract[]> {
     const proposalRows = await this.readAcs(this.operator, this.proposalTid)
     const proposal = proposalRows
       .map((row) => createdArg(row))
@@ -403,15 +402,15 @@ export class AmuletBackend implements VestingBackend {
     if (amuletCids.length === 0 || proposer === '') {
       return []
     }
-    // Qualify the disclosed Amulets with the live splice package (the ACS read filters
-    // by package name, so it is version-agnostic; the disclosure template id is not).
-    const amuletTid = `${splicePkg}:Splice.Amulet:Amulet`
+    // The ACS read filters by package name (version-agnostic); each row's verbose
+    // createdEvent carries the live templateId, which buildDisclosedContract uses over
+    // the configured fallback.
     const wanted = new Set(amuletCids)
     const amuletRows = await this.readAcs(proposer, this.amuletTid)
     return amuletRows
       .map((row) => extractCreatedEventBlob(row as Parameters<typeof extractCreatedEventBlob>[0]))
       .filter((ref): ref is DisclosedRef => ref !== undefined && wanted.has(ref.contractId))
-      .map((ref) => buildDisclosedContract(amuletTid, ref))
+      .map((ref) => buildDisclosedContract(this.amuletTid, ref))
   }
 
   async withdraw(args: { receiver: string; contractCid: string; amount: number }): Promise<void> {
@@ -527,7 +526,12 @@ const pickLatestScanRound = (
       }
       const roundNum = Number(contract.payload?.round?.number ?? 0)
       return {
-        ref: { contractId: cid, createdEventBlob: blob, synchronizerId } satisfies DisclosedRef,
+        ref: {
+          contractId: cid,
+          createdEventBlob: blob,
+          synchronizerId,
+          templateId: contract.template_id,
+        } satisfies DisclosedRef,
         roundNum,
       }
     })

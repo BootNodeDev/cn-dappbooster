@@ -7,19 +7,24 @@ export type DisclosedRef = {
   contractId: string
   createdEventBlob: string
   synchronizerId?: string
+  // The live package-qualified template id the blob actually decodes to. When set,
+  // it overrides the caller's fallback so the disclosure matches the on-ledger
+  // package even if it differs from a configured/assumed splice-amulet version.
+  templateId?: string
 }
 
 type AcsRow = {
   contractEntry?: {
     JsActiveContract?: {
-      createdEvent?: { contractId?: string; createdEventBlob?: string }
+      createdEvent?: { contractId?: string; createdEventBlob?: string; templateId?: string }
       synchronizerId?: string
     }
   }
 }
 
 // Pull the disclosure payload out of a JSON-Ledger-API v2 active-contracts row
-// (requires the read to set includeCreatedEventBlob: true).
+// (requires the read to set includeCreatedEventBlob: true). The verbose read also
+// carries the resolved templateId, which is the authoritative live package id.
 export const extractCreatedEventBlob = (row: AcsRow): DisclosedRef | undefined => {
   const active = row.contractEntry?.JsActiveContract
   const event = active?.createdEvent
@@ -30,11 +35,12 @@ export const extractCreatedEventBlob = (row: AcsRow): DisclosedRef | undefined =
     contractId: event.contractId,
     createdEventBlob: event.createdEventBlob,
     synchronizerId: active?.synchronizerId,
+    templateId: event.templateId,
   }
 }
 
 export const buildDisclosedContract = (templateId: string, ref: DisclosedRef) => ({
-  templateId,
+  templateId: ref.templateId ?? templateId,
   contractId: ref.contractId,
   createdEventBlob: ref.createdEventBlob,
   ...(ref.synchronizerId === undefined ? {} : { synchronizerId: ref.synchronizerId }),
