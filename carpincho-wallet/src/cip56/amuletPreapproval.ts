@@ -1,4 +1,8 @@
-import { executePreparedCommands } from '@/api/interactiveSubmission'
+import {
+  type ExecutePreparedResponse,
+  executePreparedCommands,
+  type WalletServiceCommands,
+} from '@/api/interactiveSubmission'
 import { walletServiceRequest } from '@/api/walletService'
 import type { AccountPublic } from '@/vault/types'
 import type { VaultContextValue } from '@/vault/VaultContext'
@@ -9,11 +13,6 @@ export interface AmuletPreapprovalStatus {
   contractId?: string
   templateId?: string
   expiresAt?: string
-}
-
-interface AmuletPreapprovalCommands {
-  commands: unknown
-  disclosedContracts?: unknown[]
 }
 
 export interface AmuletPreapprovalActionParams {
@@ -43,8 +42,8 @@ export const createAmuletPreapproval = async ({
   account,
   signMessage,
   recordTransaction,
-}: AmuletPreapprovalActionParams): Promise<{ updateId?: string; completionOffset?: number }> => {
-  const { commands, disclosedContracts } = await walletServiceRequest<AmuletPreapprovalCommands>(
+}: AmuletPreapprovalActionParams): Promise<ExecutePreparedResponse> => {
+  const { commands, disclosedContracts } = await walletServiceRequest<WalletServiceCommands>(
     'amulet.preapproval.create',
     { receiver: account.partyId },
   )
@@ -64,8 +63,8 @@ export const cancelAmuletPreapproval = async ({
   account,
   signMessage,
   recordTransaction,
-}: AmuletPreapprovalActionParams): Promise<{ updateId?: string; completionOffset?: number }> => {
-  const { commands, disclosedContracts } = await walletServiceRequest<AmuletPreapprovalCommands>(
+}: AmuletPreapprovalActionParams): Promise<ExecutePreparedResponse> => {
+  const { commands, disclosedContracts } = await walletServiceRequest<WalletServiceCommands>(
     'amulet.preapproval.cancel',
     { receiver: account.partyId },
   )

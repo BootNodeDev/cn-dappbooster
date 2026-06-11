@@ -13,9 +13,15 @@ interface PreparedTransactionResponse {
   costEstimation?: unknown
 }
 
-interface ExecutePreparedResponse {
+export interface ExecutePreparedResponse {
   updateId?: string
   completionOffset?: number
+}
+
+// Unsigned commands wallet-service returns for Carpincho to sign and execute.
+export interface WalletServiceCommands {
+  commands: unknown
+  disclosedContracts?: unknown[]
 }
 
 export interface ExecutePreparedCommandsParams {

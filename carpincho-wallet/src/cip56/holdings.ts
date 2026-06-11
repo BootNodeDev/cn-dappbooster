@@ -1,5 +1,5 @@
 import { walletServiceRequest } from '@/api/walletService'
-import type { TokenInstrumentId } from '@/cip56/transfers'
+import { type TokenInstrumentId, tokenDisplayLabel } from '@/cip56/transfers'
 
 export interface TokenHoldingLock {
   holders?: string[]
@@ -37,12 +37,6 @@ interface ParsedDecimal {
   scaled: bigint
   scale: number
 }
-
-// Keeps token labels readable while preserving admin/id identity in summary keys.
-export const holdingTokenLabel = (instrumentId?: TokenInstrumentId): string =>
-  instrumentId?.id?.trim() === undefined || instrumentId.id.trim() === ''
-    ? 'unknown token'
-    : instrumentId.id.trim()
 
 // Creates a stable grouping key for one token instrument.
 const holdingInstrumentKey = (instrumentId?: TokenInstrumentId): string =>
@@ -104,7 +98,7 @@ export const summarizeTokenHoldings = (holdings: TokenHolding[]): TokenHoldingSu
       ).length
       return {
         key,
-        tokenLabel: holdingTokenLabel(firstView?.instrumentId),
+        tokenLabel: tokenDisplayLabel(firstView?.instrumentId),
         instrumentId: firstView?.instrumentId,
         totalAmount: sumDecimalAmounts(
           tokenHoldings

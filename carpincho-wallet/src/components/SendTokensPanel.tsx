@@ -1,4 +1,5 @@
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
+import type { ExecutePreparedResponse } from '@/api/interactiveSubmission'
 import { type CreateTokenTransferParams, createTokenTransfer } from '@/cip56/transfers'
 import { PrimaryButton } from '@/components/ui/Button'
 import { TextInput } from '@/components/ui/TextInput'
@@ -11,9 +12,7 @@ import { useVault } from '@/vault/useVault'
 export type TransferDeadline = '1h' | '1d' | '1w' | '1m' | '1y'
 
 export interface Cip56SendApi {
-  createTokenTransfer: (
-    params: CreateTokenTransferParams,
-  ) => Promise<{ updateId?: string; completionOffset?: number }>
+  createTokenTransfer: (params: CreateTokenTransferParams) => Promise<ExecutePreparedResponse>
 }
 
 export interface SendTokensPanelProps {

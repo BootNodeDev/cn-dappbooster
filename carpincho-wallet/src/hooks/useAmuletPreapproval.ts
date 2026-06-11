@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useCallback, useMemo, useState } from 'react'
+import type { ExecutePreparedResponse } from '@/api/interactiveSubmission'
 import {
   type AmuletPreapprovalActionParams,
   type AmuletPreapprovalStatus,
@@ -14,10 +15,10 @@ export interface AmuletPreapprovalApi {
   getAmuletPreapprovalStatus: (receiver: string) => Promise<AmuletPreapprovalStatus>
   createAmuletPreapproval: (
     params: AmuletPreapprovalActionParams,
-  ) => Promise<{ updateId?: string; completionOffset?: number }>
+  ) => Promise<ExecutePreparedResponse>
   cancelAmuletPreapproval: (
     params: AmuletPreapprovalActionParams,
-  ) => Promise<{ updateId?: string; completionOffset?: number }>
+  ) => Promise<ExecutePreparedResponse>
 }
 
 export interface AmuletPreapprovalState {

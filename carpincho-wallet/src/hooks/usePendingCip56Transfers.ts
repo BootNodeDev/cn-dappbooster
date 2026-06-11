@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useCallback, useMemo } from 'react'
+import type { ExecutePreparedResponse } from '@/api/interactiveSubmission'
 import {
   acceptPendingTransfer,
   listPendingIncomingTransfers,
@@ -15,7 +16,7 @@ export interface Cip56TransferApi {
     transferInstructionCid: string
     signMessage: VaultContextValue['signMessage']
     recordTransaction: VaultContextValue['recordTransaction']
-  }) => Promise<{ updateId?: string; completionOffset?: number }>
+  }) => Promise<ExecutePreparedResponse>
 }
 
 export interface PendingCip56TransfersState {

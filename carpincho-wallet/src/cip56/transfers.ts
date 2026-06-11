@@ -1,4 +1,8 @@
-import { executePreparedCommands } from '@/api/interactiveSubmission'
+import {
+  type ExecutePreparedResponse,
+  executePreparedCommands,
+  type WalletServiceCommands,
+} from '@/api/interactiveSubmission'
 import { walletServiceRequest } from '@/api/walletService'
 import type { AccountPublic } from '@/vault/types'
 import type { VaultContextValue } from '@/vault/VaultContext'
@@ -31,16 +35,6 @@ export interface PendingTokenTransfer {
       } | null
     }
   }
-}
-
-interface AcceptTransferCommands {
-  commands: unknown
-  disclosedContracts?: unknown[]
-}
-
-interface CreateTransferCommands {
-  commands: unknown
-  disclosedContracts?: unknown[]
 }
 
 interface AcceptTransferParams {
@@ -110,8 +104,8 @@ export const acceptPendingTransfer = async ({
   transferInstructionCid,
   signMessage,
   recordTransaction,
-}: AcceptTransferParams): Promise<{ updateId?: string; completionOffset?: number }> => {
-  const { commands, disclosedContracts } = await walletServiceRequest<AcceptTransferCommands>(
+}: AcceptTransferParams): Promise<ExecutePreparedResponse> => {
+  const { commands, disclosedContracts } = await walletServiceRequest<WalletServiceCommands>(
     'cip56.acceptTransfer',
     { transferInstructionCid },
   )
@@ -136,8 +130,8 @@ export const createTokenTransfer = async ({
   expirationDate,
   signMessage,
   recordTransaction,
-}: CreateTokenTransferParams): Promise<{ updateId?: string; completionOffset?: number }> => {
-  const { commands, disclosedContracts } = await walletServiceRequest<CreateTransferCommands>(
+}: CreateTokenTransferParams): Promise<ExecutePreparedResponse> => {
+  const { commands, disclosedContracts } = await walletServiceRequest<WalletServiceCommands>(
     'cip56.createTransfer',
     {
       sender: account.partyId,
