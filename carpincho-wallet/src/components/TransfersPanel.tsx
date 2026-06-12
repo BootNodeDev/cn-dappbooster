@@ -110,8 +110,9 @@ interface TransferCardProps {
   direction: 'incoming' | 'outgoing'
   isExpanded: boolean
   onToggleDetails: (transferInstructionCid: string) => void
-  isAccepting: boolean
-  onAccept: (transferInstructionCid: string) => void
+  // Acceptance only applies to incoming transfers; senders just watch theirs settle.
+  isAccepting?: boolean
+  onAccept?: (transferInstructionCid: string) => void
 }
 
 // One active transfer instruction; receivers can accept, senders only watch it settle.
@@ -120,7 +121,7 @@ const TransferCard = ({
   direction,
   isExpanded,
   onToggleDetails,
-  isAccepting,
+  isAccepting = false,
   onAccept,
 }: TransferCardProps): JSX.Element => {
   const transferView = transfer.interfaceViewValue?.transfer
@@ -132,7 +133,12 @@ const TransferCard = ({
   const counterpartyLabel = direction === 'incoming' ? 'from' : 'to'
   const counterparty = direction === 'incoming' ? transferView?.sender : transferView?.receiver
   return (
-    <article className="rounded-md border border-border bg-surface px-3 py-3">
+    <article
+      aria-label={
+        direction === 'incoming' ? 'Incoming transfer' : 'Outgoing transfer, awaiting acceptance'
+      }
+      className="rounded-md border border-border bg-surface px-3 py-3"
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="m-0 text-[0.95rem] font-semibold text-foreground">{label}</p>
@@ -150,7 +156,7 @@ const TransferCard = ({
               className="px-3 py-1.5 text-[0.82rem]"
               disabled={isAccepting}
               onClick={() => {
-                onAccept(transfer.contractId)
+                onAccept?.(transfer.contractId)
               }}
             >
               {isAccepting ? 'Accepting...' : 'Accept'}
@@ -222,14 +228,18 @@ export const TransfersPanel = ({
     recordTransaction: vault.recordTransaction,
   })
 
-  // The ledger returns every instruction the party is a stakeholder on; the sender of an
-  // outgoing transfer cannot accept it, so only transfers we did not send are actionable.
+  // The ledger returns every instruction the party is a stakeholder on. A transfer is
+  // outgoing only when we sent it to someone else; if we are the receiver (including a
+  // transfer to ourselves) we are the one who must accept it, so it stays actionable.
   const { incoming, outgoing } = useMemo(() => {
     const partyId = activeAccount?.partyId
     const incomingTransfers: PendingTokenTransfer[] = []
     const outgoingTransfers: PendingTokenTransfer[] = []
     for (const transfer of transfers) {
-      if (transfer.interfaceViewValue?.transfer?.sender === partyId) {
+      const view = transfer.interfaceViewValue?.transfer
+      const isOutgoing =
+        partyId !== undefined && view?.sender === partyId && view.receiver !== partyId
+      if (isOutgoing) {
         outgoingTransfers.push(transfer)
       } else {
         incomingTransfers.push(transfer)
@@ -320,8 +330,6 @@ export const TransfersPanel = ({
               direction="outgoing"
               isExpanded={expandedCid === transfer.contractId}
               onToggleDetails={toggleDetails}
-              isAccepting={false}
-              onAccept={() => undefined}
             />
           ))}
         </div>

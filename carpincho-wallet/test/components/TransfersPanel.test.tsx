@@ -152,6 +152,88 @@ describe('TransfersPanel', () => {
     assert.equal(screen.queryByRole('button', { name: 'Accept' }), null)
   })
 
+  it('shows Accept for a transfer the active party sent to itself', async () => {
+    // Scenario: a transfer whose sender and receiver are both the active party is
+    // still only acceptable by that party as the receiver, so Accept must appear.
+    const api: Cip56TransferApi = {
+      listPendingIncomingTransfers: async () => [
+        {
+          contractId: 'self-cid-1',
+          interfaceViewValue: {
+            transfer: {
+              sender: 'alice::party',
+              receiver: 'alice::party',
+              amount: '7',
+              instrumentId: { id: 'Amulet' },
+            },
+            status: { tag: 'TransferPendingReceiverAcceptance' },
+          },
+        },
+      ],
+      acceptTransfer: async ({ transferInstructionCid }) => {
+        assert.equal(transferInstructionCid, 'self-cid-1')
+        return { updateId: 'update-1' }
+      },
+    }
+
+    renderTransfers(api)
+
+    await screen.findByText('7.00 Amulet')
+    assert.ok(screen.getByRole('button', { name: 'Accept' }))
+    assert.equal(screen.queryByText('Awaiting acceptance'), null)
+  })
+
+  it('counts only incoming transfers toward the pending badge', async () => {
+    // Scenario: a mixed list of one incoming and one outgoing transfer must show a
+    // single Accept button and report a pending count of one to the parent badge.
+    const counts: number[] = []
+    const api: Cip56TransferApi = {
+      listPendingIncomingTransfers: async () => [
+        {
+          contractId: 'incoming-cid-1',
+          interfaceViewValue: {
+            transfer: {
+              sender: 'sender-party-1234567890abcdef',
+              receiver: 'alice::party',
+              amount: '3',
+              instrumentId: { id: 'Amulet' },
+            },
+          },
+        },
+        {
+          contractId: 'outgoing-cid-2',
+          interfaceViewValue: {
+            transfer: {
+              sender: 'alice::party',
+              receiver: 'bob-party-1234567890abcdef',
+              amount: '4',
+              instrumentId: { id: 'Amulet' },
+            },
+          },
+        },
+      ],
+      acceptTransfer: async () => ({ updateId: 'update-1' }),
+    }
+
+    render(
+      <TestQueryClientProvider>
+        <TooltipProvider>
+          <VaultContext.Provider value={baseVault()}>
+            <TransfersPanel
+              api={api}
+              preapprovalApi={inactivePreapprovalApi}
+              onPendingCountChange={(count) => counts.push(count)}
+            />
+          </VaultContext.Provider>
+        </TooltipProvider>
+      </TestQueryClientProvider>,
+    )
+
+    await screen.findByText('Awaiting acceptance')
+    assert.equal(screen.getAllByRole('button', { name: 'Accept' }).length, 1)
+    assert.equal(counts.at(-1), 1)
+  })
+
   it('shows transfer description and exposes raw details on demand', async () => {
     // Scenario: Amulet transfers can carry a sender-provided description and
     // operational metadata. The compact card should show the description, while
