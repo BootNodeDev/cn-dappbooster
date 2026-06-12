@@ -78,7 +78,7 @@ const ToastItem = ({ entry }: ToastItemProps): JSX.Element => {
       >
         {accent.icon}
       </span>
-      <RadixToast.Description className="min-w-0 grow break-words pt-1 text-[0.9rem] font-medium leading-snug">
+      <RadixToast.Description className="min-w-0 grow max-h-40 overflow-y-auto break-words pt-1 text-[0.9rem] font-medium leading-snug">
         {entry.message}
       </RadixToast.Description>
       <RadixToast.Close
