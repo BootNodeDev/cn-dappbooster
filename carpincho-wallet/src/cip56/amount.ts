@@ -41,9 +41,10 @@ export const formatAmountInput = (value: string): string => {
   if (cleaned === '') {
     return ''
   }
-  const [whole, ...fraction] = cleaned.split('.')
-  const grouped = groupThousands(whole)
-  return fraction.length === 0 ? grouped : `${grouped}.${fraction.join('')}`
+  const dot = cleaned.indexOf('.')
+  return dot === -1
+    ? groupThousands(cleaned)
+    : `${groupThousands(cleaned.slice(0, dot))}${cleaned.slice(dot)}`
 }
 
 // Compares two decimal strings exactly (no float). Returns -1/0/1, or undefined for non-decimals.

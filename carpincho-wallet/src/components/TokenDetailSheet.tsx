@@ -243,16 +243,16 @@ export const TokenDetailSheet = ({
     handleOpenChange(false)
   }
 
-  const title =
-    screen === 'send' || screen === 'confirm'
-      ? `Send ${summary.tokenLabel}`
-      : screen === 'contacts'
-        ? 'Choose recipient'
-        : screen === 'receive'
-          ? 'Receive'
-          : screen === 'holding'
-            ? 'Holding details'
-            : summary.tokenLabel
+  const sendTitle = `Send ${summary.tokenLabel}`
+  const titles: Record<Screen, string> = {
+    detail: summary.tokenLabel,
+    send: sendTitle,
+    confirm: sendTitle,
+    contacts: 'Choose recipient',
+    receive: 'Receive',
+    holding: 'Holding details',
+  }
+  const title = titles[screen]
   const animationClass =
     direction === 'forward' ? 'animate-slide-in-right' : 'animate-slide-in-left'
 

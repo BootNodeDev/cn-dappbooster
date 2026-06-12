@@ -52,14 +52,14 @@ export const SendConfirm = ({
 
   const expirationDate = transferDeadlineExpiration(deadline).toISOString()
   const trimmedMemo = memo.trim()
-  const request = {
-    sender: account.partyId,
+  // Shared by the inspector JSON and the actual submission so the two cannot drift.
+  const shared = {
     recipient: recipient.trim(),
     amount: amount.trim(),
-    instrumentId: summary.instrumentId?.id,
     ...(trimmedMemo === '' ? {} : { memo: trimmedMemo }),
     expirationDate,
   }
+  const request = { sender: account.partyId, instrumentId: summary.instrumentId?.id, ...shared }
 
   const onConfirm = async (): Promise<void> => {
     if (summary.instrumentId?.id === undefined) {
@@ -71,11 +71,8 @@ export const SendConfirm = ({
     try {
       await sendApi.createTokenTransfer({
         account,
-        recipient: recipient.trim(),
-        amount: amount.trim(),
         instrumentId: summary.instrumentId,
-        ...(trimmedMemo === '' ? {} : { memo: trimmedMemo }),
-        expirationDate,
+        ...shared,
         signMessage: vault.signMessage,
         recordTransaction: vault.recordTransaction,
       })

@@ -66,14 +66,6 @@ export interface SendTokenFormProps {
   onReview: () => void
 }
 
-// True when amount is a positive decimal not exceeding the spendable balance.
-const amountIsValid = (amount: string, balance: string): boolean => {
-  if (compareDecimalStrings(amount, '0') !== 1) {
-    return false
-  }
-  return compareDecimalStrings(amount, balance) !== 1
-}
-
 // Send screen body: controlled fields preset to one token; advances to confirmation via Review.
 export const SendTokenForm = ({
   summary,
@@ -90,11 +82,13 @@ export const SendTokenForm = ({
   onReview,
 }: SendTokenFormProps): JSX.Element => {
   const trimmedAmount = amount.trim()
-  const overBalance =
-    trimmedAmount !== '' && compareDecimalStrings(trimmedAmount, spendableBalance) === 1
+  const vsBalance = compareDecimalStrings(trimmedAmount, spendableBalance)
+  const overBalance = trimmedAmount !== '' && vsBalance === 1
+  const isPositive = compareDecimalStrings(trimmedAmount, '0') === 1
   const canReview =
     recipient.trim() !== '' &&
-    amountIsValid(trimmedAmount, spendableBalance) &&
+    isPositive &&
+    vsBalance !== 1 &&
     summary.instrumentId?.id !== undefined
 
   return (
