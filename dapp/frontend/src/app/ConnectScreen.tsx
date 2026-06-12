@@ -8,7 +8,7 @@ import { ThemeToggle } from './ThemeToggle'
 
 export const ConnectScreen = (): React.JSX.Element => {
   const { connect } = useConnect()
-  const { pool, operator } = useParties()
+  const { pool } = useParties()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -79,11 +79,8 @@ export const ConnectScreen = (): React.JSX.Element => {
                         className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-muted"
                       >
                         <span className="size-7 shrink-0 rounded-full bg-[image:var(--gradient-brand)]" />
-                        <span className="flex min-w-0 flex-col">
-                          <span className="truncate font-semibold text-fg">{party.name}</span>
-                          <span className="font-mono text-xs text-fg-muted">
-                            {party.partyId === operator ? 'Manager' : 'Beneficiary'}
-                          </span>
+                        <span className="min-w-0 flex-1 truncate font-semibold text-fg">
+                          {party.name}
                         </span>
                       </button>
                     </li>

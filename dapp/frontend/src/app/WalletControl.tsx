@@ -10,7 +10,7 @@ import { useConnect, useParties, useParty } from '@/wallet/hooks'
 export const WalletControl = (): React.JSX.Element | null => {
   const { connect, disconnect } = useConnect()
   const { party } = useParty()
-  const { pool, operator } = useParties()
+  const { pool } = useParties()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -75,13 +75,8 @@ export const WalletControl = (): React.JSX.Element | null => {
                     )}
                   >
                     <span className="size-7 shrink-0 rounded-full bg-[image:var(--gradient-brand)]" />
-                    <span className="flex min-w-0 flex-col">
-                      <span className="truncate text-sm font-semibold text-fg">
-                        {candidate.name}
-                      </span>
-                      <span className="font-mono text-xs text-fg-muted">
-                        {candidate.partyId === operator ? 'Manager' : 'Beneficiary'}
-                      </span>
+                    <span className="min-w-0 flex-1 truncate text-sm font-semibold text-fg">
+                      {candidate.name}
                     </span>
                     {selected && (
                       <CheckIcon width={16} height={16} className="ml-auto shrink-0 text-primary" />
