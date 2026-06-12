@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { claimAmountInput, clampClaimAmount, formatCC, formatCCFull } from './format'
+import { claimAmountInput, clampClaimAmount, formatCC, formatCCFull, shortenParty } from './format'
 
 describe('claimAmountInput', () => {
   it('fills the full-precision remaining, not a 2dp floor', () => {
@@ -53,5 +53,27 @@ describe('clampClaimAmount', () => {
   it('clamps and then truncates when both apply', () => {
     // amount > available and has >10dp; result should be available at 10dp.
     expect(clampClaimAmount(99.99999999991, 50.123456789)).toBe(50.123456789)
+  })
+})
+
+describe('shortenParty', () => {
+  it('ellipsizes both the hint and a long fingerprint', () => {
+    expect(shortenParty('app_provider_long_hint::1220abcdef1234567890')).toBe(
+      'app_pr…hint::1220…7890',
+    )
+  })
+
+  it('keeps a short hint whole', () => {
+    expect(shortenParty('alice::1220abcdef1234567890')).toBe('alice::1220…7890')
+  })
+
+  it('keeps a short fingerprint whole instead of duplicating its ends', () => {
+    // The regression: a <=10-char fingerprint shortened to head…tail overlapped and
+    // rendered the same 4 chars twice.
+    expect(shortenParty('alice::1220')).toBe('alice::1220')
+  })
+
+  it('handles a party id with no fingerprint', () => {
+    expect(shortenParty('alice')).toBe('alice')
   })
 })

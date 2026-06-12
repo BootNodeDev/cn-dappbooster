@@ -31,6 +31,24 @@ export interface VestingSchedule {
 // Enforced floor for new grants and for re-lock remainders.
 export const MIN_GRANT_AMOUNT = 1.0
 
+// The locked backing left behind after withdrawing `amount`. The contract re-locks
+// `(totalAmount - alreadyWithdrawn) - amount`, i.e. the still-unvested `locked` plus
+// the unclaimed vested slice. `available` is the vested-claimable; `locked` is the
+// unvested remainder that stays locked regardless (0 for a flat residual claim).
+export const remainderAfter = (amount: number, available: number, locked: number): number =>
+  locked + Math.max(0, available - amount)
+
+// Mirror of the on-ledger re-lock guard: the remainder must be exactly drained or
+// stay at/above the floor.
+export const floorOk = (remainder: number): boolean =>
+  remainder <= 1e-9 || remainder >= MIN_GRANT_AMOUNT
+
+// Whether any valid withdraw exists for this claimable given the locked backing.
+// Full drain is allowed only when nothing stays locked; otherwise a partial withdraw
+// must be able to leave a remainder at/above the floor (backing >= floor).
+export const canClaim = (available: number, locked: number): boolean =>
+  available > 1e-9 && (locked <= 1e-9 || available + locked >= MIN_GRANT_AMOUNT)
+
 const ms = (iso: ISO): number => new Date(iso).getTime()
 const clamp01 = (x: number): number => (x < 0 ? 0 : x > 1 ? 1 : x)
 

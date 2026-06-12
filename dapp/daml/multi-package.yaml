@@ -1,3 +1,4 @@
-# Single-package umbrella for vesting-lite.
+# Multi-package umbrella: vesting-lite (bare Canton) + amulet-vesting (Splice runtime).
 packages:
   - ./vesting-lite
+  - ./amulet-vesting

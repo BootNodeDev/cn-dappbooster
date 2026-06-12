@@ -79,6 +79,8 @@ Or call an action directly:
 | Docker down | `docker-down` | Quit Docker Desktop (macOS only). |
 | Stack up | `up` | Bring up containers, build + deploy the DAR, start the wallet (3011) and dApp (3012) dev servers, build the extension. |
 | Stack down | `down` | Stop the dev servers and tear down the containers. |
+| Amulet up | `amulet-up` | Splice LocalNet path: bootstrap parties/factory/funding, start the `:3020` wallet-service proxy, serve the dApp (3012). Assumes LocalNet is already booted. |
+| Amulet down | `amulet-down` | Stop the amulet proxy + dApp dev server (LocalNet is left running). |
 | Wallet up | `mock-up` | Start the mocked wallet-service (3010) + Carpincho web app (3011) with no Docker. |
 | Wallet down | `mock-down` | Stop the mocked wallet-service + Carpincho web app only. |
 | Build extension | `extension` | Build the Chrome extension and copy it to `~/Desktop/dist-extension`. |
@@ -87,6 +89,7 @@ Or call an action directly:
 Notes:
 
 - Docker lifecycle is managed separately from the stack: `up` and `down` assume Docker is already running and never start or quit it. Start/quit Docker with `docker-up` / `docker-down`, the Docker app, or your own CLI.
+- The `amulet-*` actions target the Splice LocalNet stack (ports 3020/3975/4000), not bare Canton. LocalNet is run by the external `canton builder` tool — the script preflights it but never boots or stops it. Boot it first with `canton builder start --validators app-provider` then `canton builder deploy canton-barebones/dars/amulet-vesting-0.0.1.dar`.
 - `up` requires Docker running and `dpm` on `PATH` (for the DAR build). It fails fast with a clear message if the daemon is not reachable.
 - Background dev-server PIDs and logs live under `${TMPDIR:-/tmp}/cn-dev-stack/`.
 - The two Docker actions are macOS only; on other platforms they warn and no-op, while every other action runs unchanged.

@@ -35,13 +35,13 @@ describe('splitNote / composeNote', () => {
 })
 
 describe('rowToProposal', () => {
-  it('maps proposer→proposer, beneficiary→receiver, decodes the schedule, splits the note', () => {
+  it('maps proposer, receiver (amulet field names), totalAmount, decodes the schedule', () => {
     const proposal = rowToProposal(
       row('p1', {
         provider: 'OP',
         proposer: 'funder',
-        beneficiary: 'receiver',
-        total: '1000.0000000000',
+        receiver: 'beneficiary-party',
+        totalAmount: '1000.0000000000',
         schedule: linearEncoded,
         note: 'Advisor grant\n24-month linear',
       }),
@@ -51,7 +51,7 @@ describe('rowToProposal', () => {
       title: 'Advisor grant',
       provider: 'OP',
       proposer: 'funder',
-      receiver: 'receiver',
+      receiver: 'beneficiary-party',
       totalAmount: 1000,
       schedule: {
         cliff: '2026-01-01T00:00:00Z',
@@ -67,14 +67,14 @@ describe('rowToProposal', () => {
 })
 
 describe('rowToGrant', () => {
-  it('maps a contract row, parsing claimed and using proposer as creator', () => {
+  it('maps a contract row using creator, receiver, totalAmount, alreadyWithdrawn', () => {
     const grant = rowToGrant(
       row('c1', {
         provider: 'OP',
-        proposer: 'funder',
-        beneficiary: 'receiver',
-        total: '1000',
-        claimed: '250',
+        creator: 'funder',
+        receiver: 'beneficiary-party',
+        totalAmount: '1000',
+        alreadyWithdrawn: '250',
         schedule: linearEncoded,
         note: 'Core grant',
       }),
@@ -82,7 +82,7 @@ describe('rowToGrant', () => {
     expect(grant?.id).toBe('c1')
     expect(grant?.title).toBe('Core grant')
     expect(grant?.creator).toBe('funder')
-    expect(grant?.receiver).toBe('receiver')
+    expect(grant?.receiver).toBe('beneficiary-party')
     expect(grant?.totalAmount).toBe(1000)
     expect(grant?.alreadyWithdrawn).toBe(250)
     expect(grant?.note).toBeUndefined()
@@ -90,12 +90,12 @@ describe('rowToGrant', () => {
 })
 
 describe('rowToClaim', () => {
-  it('maps a residual claim row with amount + withdrawn', () => {
+  it('maps a residual claim row with amount + withdrawn, using creator + receiver fields', () => {
     const claim = rowToClaim(
       row('r1', {
         provider: 'OP',
-        proposer: 'funder',
-        beneficiary: 'receiver',
+        creator: 'funder',
+        receiver: 'beneficiary-party',
         amount: '500',
         withdrawn: '100',
         note: 'Residual\nfrom cancelled grant',
@@ -106,7 +106,7 @@ describe('rowToClaim', () => {
       title: 'Residual',
       provider: 'OP',
       creator: 'funder',
-      receiver: 'receiver',
+      receiver: 'beneficiary-party',
       amount: 500,
       withdrawn: 100,
       note: 'from cancelled grant',

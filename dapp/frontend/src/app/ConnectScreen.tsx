@@ -1,4 +1,6 @@
-import { shortenParty } from '@/lib/format'
+import { useEffect, useRef, useState } from 'react'
+import { ChevronDownIcon } from '@/components/icons'
+import { PartyAvatar } from '@/components/PartyAvatar'
 import { useConnect, useParties } from '@/wallet/hooks'
 import { ThemeToggle } from './ThemeToggle'
 
@@ -7,60 +9,95 @@ import { ThemeToggle } from './ThemeToggle'
 
 export const ConnectScreen = (): React.JSX.Element => {
   const { connect } = useConnect()
-  const { pool, operator } = useParties()
+  const { pool } = useParties()
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) {
+      return
+    }
+    const onDown = (e: PointerEvent): void => {
+      if (ref.current !== null && !ref.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('pointerdown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('pointerdown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
 
   return (
     <div className="flex min-h-screen flex-col">
       <header className="flex items-center justify-between px-6 py-5">
         <div className="flex items-center gap-2.5">
-          <span className="size-8 rounded-xl bg-[image:var(--gradient-brand)] shadow-[var(--glow)]" />
-          <span className="text-base font-extrabold tracking-tight text-fg">Canton Vesting</span>
+          <img src="/favicon.svg" alt="" className="size-8 rounded-xl shadow-[var(--glow)]" />
+          <span className="text-base font-extrabold tracking-tight text-fg">
+            Canton Coin Vesting
+          </span>
         </div>
         <ThemeToggle />
       </header>
 
       <main className="flex flex-1 flex-col items-center justify-center px-6 pb-24 text-center">
-        <span className="mb-8 size-24 rounded-[1.75rem] bg-[image:var(--gradient-brand)] shadow-[var(--glow)]" />
+        <img
+          src="/favicon.svg"
+          alt=""
+          className="mb-8 size-24 rounded-[1.75rem] shadow-[var(--glow)]"
+        />
         <h1 className="max-w-xl text-4xl font-extrabold leading-[1.05] tracking-tight text-fg sm:text-5xl">
-          Vesting for Canton Coin
+          Canton Coin Vesting
         </h1>
         <p className="mt-4 max-w-lg text-base leading-relaxed text-fg-muted">
-          Track grants vesting to you, claim what has unlocked, and create grants for others. Every
-          claim is a real Canton transaction; the factory is delivered via explicit disclosure.
+          Watch the escrows vesting to you unlock over time, claim whatever is ready whenever you
+          like, and set up new escrows for the people you want to reward. Every claim settles as a
+          real transaction on the Canton ledger.
         </p>
 
-        <p className="mt-9 text-lg font-bold text-fg">Choose a party to act as</p>
-
-        <div className="mt-4 w-full max-w-md">
+        <div className="mt-9 w-full max-w-md">
           {pool.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border p-6 text-sm text-fg-muted">
               No parties available. Run the vest-lite bootstrap to populate the pool.
             </div>
           ) : (
-            <ul className="flex flex-col gap-2">
-              {pool.map((party) => (
-                <li key={party.partyId}>
-                  <button
-                    type="button"
-                    onClick={() => connect(party)}
-                    className="flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-surface px-4 py-3 text-left transition-colors hover:border-primary hover:shadow-[var(--glow)]"
-                  >
-                    <span className="flex items-center gap-3">
-                      <span className="size-7 shrink-0 rounded-full bg-[image:var(--gradient-brand)]" />
-                      <span className="font-semibold text-fg">{party.name}</span>
-                    </span>
-                    <span className="truncate font-mono text-xs text-fg-muted">
-                      {shortenParty(party.partyId)}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-          {operator !== '' && (
-            <p className="mt-3 font-mono text-[0.7rem] text-fg-soft">
-              factory owner · {shortenParty(operator)}
-            </p>
+            <div className="relative" ref={ref}>
+              <button
+                type="button"
+                onClick={() => setOpen((o) => !o)}
+                aria-haspopup="true"
+                aria-expanded={open}
+                className="flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-surface px-4 py-3 text-left transition-colors hover:border-primary"
+              >
+                <span className="text-fg-muted">Select a party</span>
+                <ChevronDownIcon width={16} height={16} className="text-fg-muted" />
+              </button>
+              {open && (
+                <ul className="absolute z-40 mt-2 w-full overflow-hidden rounded-xl border border-border bg-surface p-1 shadow-[var(--shadow-popover)]">
+                  {pool.map((party) => (
+                    <li key={party.partyId}>
+                      <button
+                        type="button"
+                        onClick={() => connect(party)}
+                        className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-muted"
+                      >
+                        <PartyAvatar id={party.partyId} size={28} />
+                        <span className="min-w-0 flex-1 truncate font-semibold text-fg">
+                          {party.name}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           )}
         </div>
       </main>

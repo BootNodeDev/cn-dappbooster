@@ -1,4 +1,5 @@
 import { strict as assert } from 'node:assert'
+import * as http from 'node:http'
 import { describe, it } from 'node:test'
 import { createRpc, errorData, errorMessage } from '../src/rpc.ts'
 import type { JsonRpcResponse } from '../src/types.ts'
@@ -18,6 +19,8 @@ const baseConfig = () => ({
     jsonApiUrl: 'http://localhost:3013',
     ledgerApiUrl: 'grpc://localhost:3014',
     adminApiUrl: 'grpc://localhost:3015',
+    scanUrl: 'http://localhost:4000',
+    scanHost: 'scan.localhost',
     backendUserId: 'wallet-service',
     backendToken: undefined as string | undefined,
     tokenSource: 'none' as const,
@@ -284,6 +287,57 @@ describe('party methods are off the dapp-api surface', () => {
     })) as JsonRpcResponse
     assert.ok('error' in res)
     assert.equal(res.error.code, -32601)
+  })
+})
+
+describe('scanApi pass-through', () => {
+  it('forwards to scanUrl + resource with Host header and returns parsed body', async () => {
+    const responseBody = { rounds: [{ number: 1 }] }
+    let capturedHost: string | undefined
+    let capturedAuth: string | undefined
+
+    const server = http.createServer((req, res) => {
+      capturedHost = req.headers.host
+      capturedAuth = req.headers.authorization
+      res.writeHead(200, { 'content-type': 'application/json' })
+      res.end(JSON.stringify(responseBody))
+    })
+
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+    const { port } = server.address() as { port: number }
+
+    const config = baseConfig()
+    config.canton.scanUrl = `http://127.0.0.1:${port}`
+
+    try {
+      const rpc = createRpc(config)
+      const res = (await rpc.handle({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'scanApi',
+        params: { resource: '/v0/domains/global-domain/rounds/open', requestMethod: 'get' },
+      })) as JsonRpcResponse
+      assert.ok('result' in res, `expected result, got: ${JSON.stringify(res)}`)
+      assert.deepEqual(res.result, responseBody)
+      assert.equal(capturedHost, 'scan.localhost')
+      assert.equal(capturedAuth, undefined)
+    } finally {
+      await new Promise<void>((resolve, reject) =>
+        server.close((err) => (err ? reject(err) : resolve())),
+      )
+    }
+  })
+
+  it('returns -32602 when resource is missing', async () => {
+    const rpc = createRpc(baseConfig())
+    const res = (await rpc.handle({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'scanApi',
+      params: { requestMethod: 'get' },
+    })) as JsonRpcResponse
+    assert.ok('error' in res)
+    assert.equal(res.error.code, -32602)
   })
 })
 

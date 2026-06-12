@@ -1,9 +1,5 @@
-// JSON-Ledger-API v2 command builders + explicit-disclosure shaping + the single
-// curve encode/decode pair. No I/O — unit-tested in commands.test.ts. Salvaged from
-// dapp/frontend's vesting.ts and adapted to the upgraded vest-lite domain:
-//   - claim drops nowMicros (the contract reads on-ledger getTime),
-//   - the schedule carries a VestingCurve variant + ISO cliff,
-//   - adds cancel (Contract_Cancel) and residual withdraw (Claim_Withdraw).
+// JSON-Ledger-API v2 shared infra: explicit-disclosure shaping + curve encode/decode.
+// No I/O — unit-tested in commands.test.ts.
 
 import type { VestingSchedule } from '@/lib/schedule'
 
@@ -45,12 +41,11 @@ export const buildDisclosedContract = (templateId: string, ref: DisclosedRef) =>
 })
 
 // ── Curve variant encoding ────────────────────────────────────────────────────
-// THE ONE GENUINE UNKNOWN. The Daml JSON Ledger API v2 encodes a DAML variant as
+// Daml JSON Ledger API v2 encodes a DAML variant as
 // `{ "tag": "<Constructor>", "value": <fields-record> }`, a tuple `(Time, Decimal)`
 // as a record `{ "_1": <time>, "_2": <decimal> }`, Time as an ISO-8601 string, and
-// Decimal as a string. This is the single place that convention lives; decode is
-// its mirror (decodeSchedule below).
-// VERIFY: curve encoding to be round-trip-confirmed in Phase 6 smoke.
+// Decimal as a string.
+// VERIFY: curve encoding to be round-trip-confirmed in smoke tests.
 
 type EncodedCurve =
   | { tag: 'LinearVesting'; value: { start: string; end: string } }
@@ -66,11 +61,18 @@ export const encodeSchedule = (schedule: VestingSchedule): EncodedSchedule => {
       cliff: schedule.cliff,
     }
   }
+  const last = curve.points.length - 1
   return {
     curve: {
       tag: 'MilestoneVesting',
       value: {
-        points: curve.points.map((point) => ({ _1: point.time, _2: String(point.fraction) })),
+        // The contract checks the final cumulative fraction with an exact `== 1.0`,
+        // while the UI validator tolerates 1e-9. Snap the last point to exactly 1 so a
+        // schedule the form accepts cannot be rejected on-ledger by float drift.
+        points: curve.points.map((point, i) => ({
+          _1: point.time,
+          _2: i === last ? '1.0' : String(point.fraction),
+        })),
       },
     },
     cliff: schedule.cliff,
@@ -108,73 +110,3 @@ export const decodeSchedule = (raw: unknown): VestingSchedule => {
     },
   }
 }
-
-// ── Command builders ────────────────────────────────────────────────────────
-
-type CreateVestingArgs = {
-  proposer: string
-  beneficiary: string
-  total: number
-  schedule: VestingSchedule
-  note?: string
-}
-
-export const buildCreateVestingCommand = (
-  templateId: string,
-  factoryCid: string,
-  args: CreateVestingArgs,
-) => ({
-  ExerciseCommand: {
-    templateId,
-    contractId: factoryCid,
-    choice: 'Factory_CreateVesting',
-    choiceArgument: {
-      proposer: args.proposer,
-      beneficiary: args.beneficiary,
-      total: String(args.total),
-      schedule: encodeSchedule(args.schedule),
-      note: args.note ?? null,
-    },
-  },
-})
-
-export const buildAcceptCommand = (templateId: string, proposalCid: string) => ({
-  ExerciseCommand: {
-    templateId,
-    contractId: proposalCid,
-    choice: 'Proposal_Accept',
-    choiceArgument: {},
-  },
-})
-
-// No nowMicros: VestingContract.Contract_Claim reads on-ledger getTime.
-export const buildClaimCommand = (templateId: string, contractCid: string, amount: number) => ({
-  ExerciseCommand: {
-    templateId,
-    contractId: contractCid,
-    choice: 'Contract_Claim',
-    choiceArgument: { amount: String(amount) },
-  },
-})
-
-export const buildCancelCommand = (templateId: string, contractCid: string) => ({
-  ExerciseCommand: {
-    templateId,
-    contractId: contractCid,
-    choice: 'Contract_Cancel',
-    choiceArgument: {},
-  },
-})
-
-export const buildClaimResidualCommand = (
-  templateId: string,
-  claimCid: string,
-  withdrawAmount: number,
-) => ({
-  ExerciseCommand: {
-    templateId,
-    contractId: claimCid,
-    choice: 'Claim_Withdraw',
-    choiceArgument: { withdrawAmount: String(withdrawAmount) },
-  },
-})

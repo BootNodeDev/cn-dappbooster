@@ -97,6 +97,12 @@ export type LedgerApiRequest = {
 
 export type LedgerApiResult = Record<string, unknown>
 
+export type ScanApiRequest = {
+  resource: string
+  requestMethod?: 'get' | 'post'
+  body?: unknown
+}
+
 export type SignMessageRequest = { message: string }
 export type SignMessageResult = { signature: string }
 

@@ -1,13 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { ChevronDownIcon, CopyIcon, LogoutIcon } from '@/components/icons'
+import { PartyAvatar } from '@/components/PartyAvatar'
 import { toast } from '@/components/toast'
-import { partyHint, shortenParty } from '@/lib/format'
+import { copyPartyId } from '@/lib/clipboard'
+import { cn } from '@/lib/cn'
+import { partyHint } from '@/lib/format'
 import { useConnect, useParties, useParty } from '@/wallet/hooks'
 
-// Party switcher. Pill shows the acting party hint + chevron. The menu lets you
-// copy the acting id, switch to another party in the pool, see the operator as the
-// (non-selectable) factory owner, and sign out back to the picker.
+// Party switcher. Pill shows the acting party hint + chevron. The menu lists every
+// party in the pool (the acting one highlighted), copies any id, and signs out.
 export const WalletControl = (): React.JSX.Element | null => {
+  const navigate = useNavigate()
   const { connect, disconnect } = useConnect()
   const { party } = useParty()
   const { pool, operator } = useParties()
@@ -23,24 +27,22 @@ export const WalletControl = (): React.JSX.Element | null => {
         setOpen(false)
       }
     }
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') {
+        setOpen(false)
+      }
+    }
     document.addEventListener('pointerdown', onDown)
-    return () => document.removeEventListener('pointerdown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('pointerdown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
   }, [open])
 
   if (party === undefined) {
     return null
   }
-
-  const copyId = async (id: string): Promise<void> => {
-    try {
-      await navigator.clipboard.writeText(id)
-      toast.success('Party id copied')
-    } catch {
-      toast.error('Could not copy')
-    }
-  }
-
-  const others = pool.filter((candidate) => candidate.partyId !== party.partyId)
 
   return (
     <div className="relative" ref={ref}>
@@ -51,79 +53,65 @@ export const WalletControl = (): React.JSX.Element | null => {
         aria-expanded={open}
         className="inline-flex h-9 max-w-[220px] items-center gap-2 rounded-full border border-border bg-surface pl-1.5 pr-3 text-sm font-semibold text-fg transition-colors hover:border-primary"
       >
-        <span className="size-6 shrink-0 rounded-full bg-[image:var(--gradient-brand)]" />
+        <PartyAvatar id={party.partyId} size={24} />
         <span className="truncate font-mono text-xs">{partyHint(party.partyId)}</span>
         <ChevronDownIcon width={15} height={15} className="text-fg-muted" />
       </button>
       {open && (
-        <div className="absolute right-0 z-50 mt-2 w-72 rounded-xl border border-border bg-surface p-3 shadow-[var(--shadow-popover)]">
-          <span className="text-[0.65rem] font-bold uppercase tracking-[0.08em] text-fg-muted">
-            Acting as
-          </span>
-          <div className="mt-1 flex items-stretch gap-2">
-            <code className="min-w-0 flex-1 truncate rounded-lg bg-muted p-2 font-mono text-xs text-fg">
-              {shortenParty(party.partyId)}
-            </code>
-            <button
-              type="button"
-              aria-label="Copy party id"
-              onClick={() => void copyId(party.partyId)}
-              className="grid size-9 shrink-0 place-items-center rounded-lg border border-border bg-surface text-fg-muted transition-colors hover:border-primary hover:text-primary"
-            >
-              <CopyIcon width={15} height={15} />
-            </button>
-          </div>
-
-          {others.length > 0 && (
-            <div className="mt-3">
-              <span className="text-[0.65rem] font-bold uppercase tracking-[0.08em] text-fg-muted">
-                Switch party
-              </span>
-              <ul className="mt-1.5 flex max-h-56 flex-col gap-1 overflow-y-auto">
-                {others.map((candidate) => (
-                  <li key={candidate.partyId} className="flex items-stretch gap-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        connect(candidate)
-                        setOpen(false)
-                        toast.success(`Acting as ${candidate.name}`)
-                      }}
-                      className="flex min-w-0 flex-1 items-center justify-between gap-2 rounded-lg p-2 text-sm font-semibold text-fg transition-colors hover:bg-muted"
-                    >
-                      <span className="flex items-center gap-2">
-                        <span className="size-5 shrink-0 rounded-full bg-[image:var(--gradient-brand)]" />
+        <div className="absolute right-0 z-50 mt-2 w-72 rounded-xl border border-border bg-surface p-2 shadow-[var(--shadow-popover)]">
+          <ul className="flex max-h-72 flex-col gap-1 overflow-y-auto">
+            {pool.map((candidate) => {
+              const selected = candidate.partyId === party.partyId
+              return (
+                <li
+                  key={candidate.partyId}
+                  className={cn(
+                    'flex items-stretch rounded-lg pr-1 transition-colors',
+                    selected ? 'bg-primary-soft' : 'hover:bg-muted',
+                  )}
+                >
+                  <button
+                    type="button"
+                    disabled={selected}
+                    aria-current={selected}
+                    onClick={() => {
+                      connect(candidate)
+                      setOpen(false)
+                      navigate('/dashboard')
+                      toast.success(`Acting as ${candidate.name}`)
+                    }}
+                    className="flex min-w-0 flex-1 items-center gap-3 px-3 py-2 text-left"
+                  >
+                    <PartyAvatar id={candidate.partyId} size={28} />
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="truncate text-sm font-semibold text-fg">
                         {candidate.name}
                       </span>
-                      <span className="truncate font-mono text-[0.7rem] text-fg-muted">
-                        {shortenParty(candidate.partyId)}
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={`Copy ${candidate.name} party id`}
-                      title={`Copy ${candidate.name} party id`}
-                      onClick={() => void copyId(candidate.partyId)}
-                      className="grid w-8 shrink-0 place-items-center rounded-lg border border-border bg-surface text-fg-muted transition-colors hover:border-primary hover:text-primary"
-                    >
-                      <CopyIcon width={13} height={13} />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+                      {candidate.partyId === operator && (
+                        <span className="text-[0.6rem] font-bold uppercase tracking-[0.08em] text-fg-muted">
+                          factory owner
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`Copy ${candidate.name} party id`}
+                    title={`Copy ${candidate.name} party id`}
+                    onClick={() => void copyPartyId(candidate.partyId)}
+                    className="shrink-0 self-center px-2 text-fg-muted transition-colors hover:text-primary"
+                  >
+                    <CopyIcon width={14} height={14} />
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
 
-          {operator !== '' && (
-            <div className="mt-3 rounded-lg border border-border bg-bg/40 p-2.5">
-              <span className="text-[0.6rem] font-bold uppercase tracking-[0.08em] text-fg-muted">
-                factory owner
-              </span>
-              <div className="truncate font-mono text-[0.7rem] text-fg-soft">
-                {shortenParty(operator)}
-              </div>
-            </div>
-          )}
+          <div className="mt-2 flex items-center gap-2 border-t border-border px-2 pt-2.5 text-[0.7rem] text-fg-muted">
+            <span className="size-1.5 rounded-full bg-success" />
+            Canton · direct ledger
+          </div>
 
           <button
             type="button"
@@ -132,7 +120,7 @@ export const WalletControl = (): React.JSX.Element | null => {
               disconnect()
               toast.success('Signed out')
             }}
-            className="mt-3 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-danger/40 bg-surface text-sm font-semibold text-danger transition-colors hover:bg-danger-soft"
+            className="mt-2 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-danger/40 bg-surface text-sm font-semibold text-danger transition-colors hover:bg-danger-soft"
           >
             <LogoutIcon width={15} height={15} />
             Sign out

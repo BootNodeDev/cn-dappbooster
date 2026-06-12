@@ -12,8 +12,14 @@ import { StatusPill } from '@/components/StatusPill'
 import { toast } from '@/components/toast'
 import { useNow } from '@/lib/clock'
 import { formatCC, formatDate, shortenParty } from '@/lib/format'
-import { MIN_GRANT_AMOUNT } from '@/lib/schedule'
-import { deriveGrant, useVesting, useVestingStore } from '@/store/useVestingStore'
+import { canClaim } from '@/lib/schedule'
+import {
+  deriveGrant,
+  statusPillLabel,
+  statusPillTone,
+  useVesting,
+  useVestingStore,
+} from '@/store/useVestingStore'
 
 const Stat = ({
   label,
@@ -47,7 +53,7 @@ export const GrantDetailPage = (): React.JSX.Element => {
   if (grant === undefined) {
     return (
       <Card className="p-10 text-center">
-        <h2 className="text-lg font-bold text-fg">Grant not found</h2>
+        <h2 className="text-lg font-bold text-fg">Escrow not found</h2>
         <p className="mt-1 text-sm text-fg-muted">It may have been fully claimed or cancelled.</p>
         <Button asLink to="/dashboard" size="sm" className="mt-4">
           Back to dashboard
@@ -61,13 +67,13 @@ export const GrantDetailPage = (): React.JSX.Element => {
   const isCreator = grant.creator === partyId
   const isMilestone = grant.schedule.curve.kind === 'milestone'
   const grantHistory = history.filter((h) => h.grantId === grant.id)
-  const canClaim = derived.claimable >= MIN_GRANT_AMOUNT
+  const claimEnabled = canClaim(derived.claimable, derived.unvested)
 
   const onCancel = async (): Promise<void> => {
     setCancelling(true)
     try {
       await cancel(backend, partyId, grant.id)
-      toast.success('Grant cancelled')
+      toast.success('Escrow cancelled')
       setCancelOpen(false)
     } catch (err) {
       toast.error((err as Error).message)
@@ -92,12 +98,8 @@ export const GrantDetailPage = (): React.JSX.Element => {
             <StatusPill tone={isMilestone ? 'milestone' : 'linear'}>
               {isMilestone ? 'Milestone' : 'Linear'}
             </StatusPill>
-            <StatusPill tone={derived.status === 'in_cliff' ? 'neutral' : 'success'}>
-              {derived.status === 'in_cliff'
-                ? 'In cliff'
-                : derived.status === 'fully_vested'
-                  ? 'Fully vested'
-                  : 'Vesting'}
+            <StatusPill tone={statusPillTone(derived.status)}>
+              {statusPillLabel(derived.status)}
             </StatusPill>
           </div>
         </div>
@@ -108,13 +110,13 @@ export const GrantDetailPage = (): React.JSX.Element => {
                 <LockIcon width={14} height={14} /> Locked until cliff
               </span>
             ) : (
-              <Button disabled={!canClaim} onClick={() => setClaimOpen(true)}>
+              <Button disabled={!claimEnabled} onClick={() => setClaimOpen(true)}>
                 Claim {formatCC(derived.claimable)} CC
               </Button>
             ))}
           {isCreator && (
             <Button variant="danger" onClick={() => setCancelOpen(true)}>
-              Cancel grant
+              Cancel escrow
             </Button>
           )}
         </div>
@@ -178,8 +180,8 @@ export const GrantDetailPage = (): React.JSX.Element => {
             {(
               [
                 ['Provider', grant.provider],
-                ['Funder', grant.creator],
-                ['Receiver', grant.receiver],
+                ['Manager', grant.creator],
+                ['Beneficiary', grant.receiver],
               ] as const
             ).map(([label, value]) => (
               <div key={label} className="flex justify-between gap-3">
@@ -216,6 +218,7 @@ export const GrantDetailPage = (): React.JSX.Element => {
           onClose={() => setClaimOpen(false)}
           title="Claim vested CC"
           available={derived.claimable}
+          locked={derived.unvested}
           onConfirm={(amount) => withdraw(backend, partyId, grant.id, amount)}
         />
       )}
@@ -223,8 +226,8 @@ export const GrantDetailPage = (): React.JSX.Element => {
       <Modal
         open={cancelOpen}
         onClose={() => setCancelOpen(false)}
-        title="Cancel grant"
-        description="Vested-but-unclaimed CC becomes a residual claim for the receiver; the contract is archived."
+        title="Cancel escrow"
+        description="Vested-but-unclaimed CC becomes a residual claim for the beneficiary; the contract is archived."
       >
         <div className="flex flex-col gap-4">
           <div className="rounded-xl border border-border bg-bg/40 p-4 text-sm">
@@ -233,7 +236,7 @@ export const GrantDetailPage = (): React.JSX.Element => {
               <AmountDisplay value={derived.unvested} className="font-semibold" />
             </div>
             <div className="mt-1.5 flex justify-between">
-              <span className="text-fg-muted">Residual to receiver</span>
+              <span className="text-fg-muted">Residual to beneficiary</span>
               <AmountDisplay value={derived.claimable} className="font-semibold" />
             </div>
           </div>
@@ -244,7 +247,7 @@ export const GrantDetailPage = (): React.JSX.Element => {
               onClick={() => setCancelOpen(false)}
               disabled={cancelling}
             >
-              Keep grant
+              Keep escrow
             </Button>
             <Button
               variant="danger"
@@ -252,7 +255,7 @@ export const GrantDetailPage = (): React.JSX.Element => {
               onClick={() => void onCancel()}
               disabled={cancelling}
             >
-              {cancelling ? 'Submitting…' : 'Cancel grant'}
+              {cancelling ? 'Submitting…' : 'Cancel escrow'}
             </Button>
           </div>
         </div>
