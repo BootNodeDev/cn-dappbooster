@@ -39,6 +39,7 @@ Prerequisites:
 - npm `>=7`
 - Docker with about 8 GB memory available
 - `dpm` on `PATH` (DAML SDK 3.4.11), required for building DARs
+- `canton builder` CLI installed (manages the Splice 0.6.7 LocalNet; used by `amulet-up`)
 
 Install workspace dependencies:
 
@@ -83,44 +84,33 @@ Set `VITE_WC_PROJECT_ID` in both files only if you use WalletConnect.
 
 ## Quick Start
 
-Start the stack:
+One command brings up the full **Amulet / Canton-Coin vesting demo** against the
+Splice 0.6.7 LocalNet (managed by the `canton builder` CLI) — LocalNet (sv +
+app-provider) + wallet-service (`:3010`) + the amulet-vesting DAR + bootstrap +
+dApp (`:3012`) + the Chrome extension copied to `~/Desktop/dist-extension`:
 
 ```bash
-npm run canton:up
-npm run canton:health
+./scripts/dev-stack.sh amulet-up
 ```
 
-Build and deploy the sample DAR:
+Then load the wallet and run the flow:
 
-```bash
-npm run build-dar -- dapp/daml
-npm run deploy-dar -- dapp/daml/.daml/dist/quickstart-tally-0.0.1.dar
-```
+- **Load the wallet** — `chrome://extensions` → Developer mode → Load unpacked →
+  `~/Desktop/dist-extension`. Use **two** browser profiles (a funder and a
+  receiver); in each, create a vault, create an account, then open
+  **Tokens → Enable Amulet auto-accept**.
+- **Fund the funder** — `./scripts/dev-stack.sh fund <funder-party-id> 1000`
+  (taps the operator, then transfers to the party; the party must have auto-accept on).
+- **Run the flow** — open <http://localhost:3012> → **Connect** → **Create escrow**
+  to the receiver's party id → switch to the receiver profile → **Accept** → **Claim**.
 
-Verify wallet-service:
+Stop with `./scripts/dev-stack.sh amulet-down` (LocalNet data preserved; full wipe:
+`canton builder reset`). Run `./scripts/dev-stack.sh` with no arguments for an
+arrow-key menu of every action.
 
-```bash
-npm run wallet-service:health
-```
-
-Start Carpincho and the dApp:
-
-```bash
-npm run wallet:dev
-npm run app:dev
-```
-
-Open the dApp:
-
-```text
-http://localhost:3012
-```
-
-In the frontend:
-
-1. Keep `canton:localnet` in settings.
-2. Click `Connect with Carpincho`.
-3. Approve the request in Carpincho.
+> Other modes: `./scripts/dev-stack.sh mock-up` (mocked wallet-service, no Docker)
+> and `up` (the lighter vesting-lite demo on `npm run canton:up`, which boots the
+> repo's bundled Splice **0.5.18** — older than the 0.6.7 the amulet demo targets).
 
 ## Extension
 
