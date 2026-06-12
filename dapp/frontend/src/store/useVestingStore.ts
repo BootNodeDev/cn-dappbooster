@@ -19,6 +19,20 @@ export interface GrantDerived {
   status: GrantStatus
 }
 
+// Human label + StatusPill tone for a derived status, shared by the card and
+// detail views (the dense table keeps its own lowercase variant).
+export const statusPillLabel = (status: GrantStatus): string =>
+  status === 'pending'
+    ? 'Pending'
+    : status === 'in_cliff'
+      ? 'In cliff'
+      : status === 'fully_vested'
+        ? 'Fully vested'
+        : 'Vesting'
+
+export const statusPillTone = (status: GrantStatus): 'warning' | 'neutral' | 'success' =>
+  status === 'pending' ? 'warning' : status === 'in_cliff' ? 'neutral' : 'success'
+
 // Pure projection of a grant at a moment in time. The single source of the
 // vested/claimable numbers shown everywhere. Kept identical across the mock→ledger
 // swap — components read figures only from here / lib/schedule.

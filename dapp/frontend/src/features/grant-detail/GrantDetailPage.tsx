@@ -13,7 +13,13 @@ import { toast } from '@/components/toast'
 import { useNow } from '@/lib/clock'
 import { formatCC, formatDate, shortenParty } from '@/lib/format'
 import { MIN_GRANT_AMOUNT } from '@/lib/schedule'
-import { deriveGrant, useVesting, useVestingStore } from '@/store/useVestingStore'
+import {
+  deriveGrant,
+  statusPillLabel,
+  statusPillTone,
+  useVesting,
+  useVestingStore,
+} from '@/store/useVestingStore'
 
 const Stat = ({
   label,
@@ -92,12 +98,8 @@ export const GrantDetailPage = (): React.JSX.Element => {
             <StatusPill tone={isMilestone ? 'milestone' : 'linear'}>
               {isMilestone ? 'Milestone' : 'Linear'}
             </StatusPill>
-            <StatusPill tone={derived.status === 'in_cliff' ? 'neutral' : 'success'}>
-              {derived.status === 'in_cliff'
-                ? 'In cliff'
-                : derived.status === 'fully_vested'
-                  ? 'Fully vested'
-                  : 'Vesting'}
+            <StatusPill tone={statusPillTone(derived.status)}>
+              {statusPillLabel(derived.status)}
             </StatusPill>
           </div>
         </div>

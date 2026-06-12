@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ChevronDownIcon, CopyIcon, LogoutIcon } from '@/components/icons'
 import { PartyAvatar } from '@/components/PartyAvatar'
 import { toast } from '@/components/toast'
+import { copyPartyId } from '@/lib/clipboard'
 import { cn } from '@/lib/cn'
 import { partyHint } from '@/lib/format'
 import { useConnect, useParties, useParty } from '@/wallet/hooks'
@@ -32,15 +33,6 @@ export const WalletControl = (): React.JSX.Element | null => {
 
   if (party === undefined) {
     return null
-  }
-
-  const copyId = async (id: string): Promise<void> => {
-    try {
-      await navigator.clipboard.writeText(id)
-      toast.success('Party id copied')
-    } catch {
-      toast.error('Could not copy')
-    }
   }
 
   return (
@@ -97,7 +89,7 @@ export const WalletControl = (): React.JSX.Element | null => {
                     type="button"
                     aria-label={`Copy ${candidate.name} party id`}
                     title={`Copy ${candidate.name} party id`}
-                    onClick={() => void copyId(candidate.partyId)}
+                    onClick={() => void copyPartyId(candidate.partyId)}
                     className="shrink-0 self-center px-2 text-fg-muted transition-colors hover:text-primary"
                   >
                     <CopyIcon width={14} height={14} />

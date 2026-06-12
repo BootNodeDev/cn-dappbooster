@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { copyPartyId } from '@/lib/clipboard'
 import { formatCC, formatDate, formatPct, shortenParty } from '@/lib/format'
 import { MIN_GRANT_AMOUNT } from '@/lib/schedule'
 import type { Grant, Role } from '@/store/types'
@@ -8,16 +9,6 @@ import { Card } from './Card'
 import { CopyIcon } from './icons'
 import { ScheduleBar } from './ScheduleBar'
 import { StatusPill } from './StatusPill'
-import { toast } from './toast'
-
-const copyPartyId = async (partyId: string): Promise<void> => {
-  try {
-    await navigator.clipboard.writeText(partyId)
-    toast.success('Party id copied')
-  } catch {
-    toast.error('Could not copy')
-  }
-}
 
 export interface GrantRow {
   grant: Grant
