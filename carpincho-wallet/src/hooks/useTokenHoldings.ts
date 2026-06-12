@@ -57,10 +57,11 @@ export const useTokenHoldings = (
   return useMemo(
     () => ({
       summaries,
-      loading: query.isFetching,
+      // Initial load only; background poll refetches must not toggle the empty state.
+      loading: query.isLoading,
       ...(error === undefined ? {} : { error }),
       refresh,
     }),
-    [summaries, query.isFetching, error, refresh],
+    [summaries, query.isLoading, error, refresh],
   )
 }

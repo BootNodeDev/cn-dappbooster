@@ -146,10 +146,7 @@ export const SendTokensPanel = ({
         void onSubmit(event)
       }}
     >
-      <div className="flex items-center justify-between gap-3 px-1">
-        <h2 className="m-0 text-[0.95rem] font-semibold text-foreground">Send tokens</h2>
-        {loading ? <span className="text-[0.78rem] text-muted-foreground">Refreshing</span> : null}
-      </div>
+      <h2 className="m-0 px-1 text-[0.95rem] font-semibold text-foreground">Send tokens</h2>
 
       {error === undefined ? null : (
         <div className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-[0.82rem] text-danger">

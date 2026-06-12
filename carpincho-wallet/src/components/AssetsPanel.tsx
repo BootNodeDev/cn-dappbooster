@@ -181,10 +181,6 @@ export const AssetsPanel = ({ account, api }: AssetsPanelProps): JSX.Element => 
           })}
         </div>
       )}
-
-      {loading ? (
-        <span className="px-1 text-[0.78rem] text-muted-foreground">Refreshing</span>
-      ) : null}
     </div>
   )
 }

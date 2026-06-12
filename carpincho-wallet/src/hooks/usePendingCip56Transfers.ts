@@ -86,11 +86,12 @@ export const usePendingCip56Transfers = (
   return useMemo(
     () => ({
       transfers,
-      loading: query.isFetching,
+      // Initial load only; background poll refetches must not toggle the empty state.
+      loading: query.isLoading,
       ...(error === undefined ? {} : { error }),
       refresh,
       accept,
     }),
-    [transfers, query.isFetching, error, refresh, accept],
+    [transfers, query.isLoading, error, refresh, accept],
   )
 }
