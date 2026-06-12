@@ -1,25 +1,32 @@
-import { avatarStyle, initials } from '@/utils/account'
+import Avatar from 'boring-avatars'
 import { cn } from '@/utils/cn'
 
 interface AccountAvatarProps {
-  name: string
   partyId: string
   size?: 'sm' | 'md'
 }
 
-const SIZE_CLASS: Record<NonNullable<AccountAvatarProps['size']>, string> = {
-  sm: 'size-6 text-[0.6rem]',
-  md: 'size-10 text-[0.82rem]',
+const SIZE_PX: Record<NonNullable<AccountAvatarProps['size']>, number> = {
+  sm: 24,
+  md: 40,
 }
 
-export const AccountAvatar = ({ name, partyId, size = 'md' }: AccountAvatarProps): JSX.Element => (
+const SIZE_CLASS: Record<NonNullable<AccountAvatarProps['size']>, string> = {
+  sm: 'size-6',
+  md: 'size-10',
+}
+
+const AVATAR_COLORS = ['#692581', '#a563bf', '#c670e5', '#e71d73', '#7d2d99']
+
+export const AccountAvatar = ({ partyId, size = 'md' }: AccountAvatarProps): JSX.Element => (
   <span
-    className={cn(
-      'shrink-0 grid place-items-center rounded-md text-white font-mono font-bold tracking-[0.05em] ring-1 ring-black/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]',
-      SIZE_CLASS[size],
-    )}
-    style={avatarStyle(partyId)}
+    className={cn('shrink-0 overflow-hidden rounded-full ring-1 ring-black/10', SIZE_CLASS[size])}
   >
-    {initials(name)}
+    <Avatar
+      name={partyId}
+      size={SIZE_PX[size]}
+      variant="marble"
+      colors={AVATAR_COLORS}
+    />
   </span>
 )
