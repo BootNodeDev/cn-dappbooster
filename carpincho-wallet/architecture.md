@@ -32,14 +32,16 @@ src/
                     AccountRow, AccountListRow, AccountsDialog, CopyPartyIdButton,
                     ActivityList, HomeTabs, AssetsPanel, TransfersPanel,
                     TokenRow, TokenDetailSheet, TokenReceive, TokenHoldingDetail,
-                    SendTokenForm, ConnectionFooter,
+                    SendTokenForm, SendConfirm, ContactsPicker, AmountField,
+                    ConnectionFooter,
                     NewPasswordFields, CreateAccountForm, PasswordStrengthIndicator,
                     SecurityPanel, menu/* drawer, ui/* primitives).
                     ui/* wraps Radix headless primitives (Tabs on top of
-                    @radix-ui/react-tabs; Sheet on top of @radix-ui/react-dialog)
+                    @radix-ui/react-tabs; Sheet on top of @radix-ui/react-dialog;
+                    Select on top of @radix-ui/react-select)
                     and provides static visuals (Button, TextInput, PasswordInput,
                     Alert, Card, OptionList, Stepper, DangerConfirm, AccountAvatar,
-                    PendingActionCard).
+                    PendingActionCard, Select).
   theme/            ThemeProvider + ThemeContext + useTheme hook driving the
                     [data-theme] attribute on <html>
   cip56/            Token-standard domain logic: holdings/UTXO summaries, transfers, amount formatting,
