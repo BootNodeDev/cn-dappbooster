@@ -3,13 +3,16 @@ import { useNavigate } from 'react-router-dom'
 import { AmountDisplay } from '@/components/AmountDisplay'
 import { Button } from '@/components/Button'
 import { Card } from '@/components/Card'
+import { ContactsIcon } from '@/components/icons'
+import { Modal } from '@/components/Modal'
 import { ScheduleCurve } from '@/components/ScheduleCurve'
 import { toast } from '@/components/toast'
 import { now, useNow } from '@/lib/clock'
 import { cn } from '@/lib/cn'
+import { shortenParty } from '@/lib/format'
 import { MIN_GRANT_AMOUNT, type VestingSchedule, validVestingSchedule } from '@/lib/schedule'
 import { useVesting, useVestingStore } from '@/store/useVestingStore'
-import { useParty } from '@/wallet/hooks'
+import { useParties, useParty } from '@/wallet/hooks'
 
 type CurveKind = 'linear' | 'milestone'
 
@@ -65,11 +68,16 @@ export const CreateGrantPage = (): React.JSX.Element => {
   const nowMs = useNow()
   const navigate = useNavigate()
   const { party } = useParty()
+  const { pool } = useParties()
   const { backend, partyId } = useVesting()
   const createVesting = useVestingStore((s) => s.createVesting)
 
+  // Pickable contacts = every party in the pool except yourself (self-vesting is rejected).
+  const contacts = pool.filter((p) => p.partyId !== partyId)
+
   const today = new Date(now())
   const [receiver, setReceiver] = useState('')
+  const [pickerOpen, setPickerOpen] = useState(false)
   const [amount, setAmount] = useState('')
   const [curveKind, setCurveKind] = useState<CurveKind>('linear')
   const [cliff, setCliff] = useState(addMonths(today, 3).toISOString())
@@ -212,9 +220,20 @@ export const CreateGrantPage = (): React.JSX.Element => {
           <h2 className="text-sm font-extrabold text-fg">Beneficiary &amp; amount</h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
-              <label htmlFor="receiver" className={labelClass}>
-                Beneficiary party id
-              </label>
+              <div className="flex items-center justify-between">
+                <label htmlFor="receiver" className={labelClass}>
+                  Beneficiary party id
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setPickerOpen(true)}
+                  aria-label="Choose from contacts"
+                  title="Choose from contacts"
+                  className="text-fg-muted transition-colors hover:text-primary"
+                >
+                  <ContactsIcon width={16} height={16} />
+                </button>
+              </div>
               <input
                 id="receiver"
                 value={receiver}
@@ -496,6 +515,42 @@ export const CreateGrantPage = (): React.JSX.Element => {
           </div>
         </Card>
       </div>
+
+      <Modal
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        title="Choose a beneficiary"
+        description="Pick a party to autofill the beneficiary id."
+      >
+        {contacts.length === 0 ? (
+          <p className="rounded-lg border border-dashed border-border p-4 text-center text-sm text-fg-muted">
+            No other parties available.
+          </p>
+        ) : (
+          <ul className="flex max-h-80 flex-col gap-1 overflow-y-auto">
+            {contacts.map((c) => (
+              <li key={c.partyId}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setReceiver(c.partyId)
+                    setPickerOpen(false)
+                  }}
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-muted"
+                >
+                  <span className="size-7 shrink-0 rounded-full bg-[image:var(--gradient-brand)]" />
+                  <span className="flex min-w-0 flex-col">
+                    <span className="truncate text-sm font-semibold text-fg">{c.name}</span>
+                    <span className="truncate font-mono text-xs text-fg-muted">
+                      {shortenParty(c.partyId)}
+                    </span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Modal>
     </div>
   )
 }

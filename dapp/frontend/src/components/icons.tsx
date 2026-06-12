@@ -153,3 +153,11 @@ export const CloseIcon = (p: IconProps) => (
     <path d="M18 6L6 18M6 6l12 12" />
   </Svg>
 )
+
+export const ContactsIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M16 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1" />
+    <circle cx="9" cy="7" r="3.5" />
+    <path d="M22 19v-1a4 4 0 0 0-3-3.87M16 3.7a4 4 0 0 1 0 6.6" />
+  </Svg>
+)
