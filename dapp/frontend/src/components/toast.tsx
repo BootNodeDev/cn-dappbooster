@@ -1,7 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { create } from 'zustand'
 import { cn } from '@/lib/cn'
-import { CheckIcon } from './icons'
+import { CheckIcon, CloseIcon, CopyIcon } from './icons'
 
 type ToastTone = 'success' | 'error' | 'info'
 
@@ -38,12 +38,69 @@ const toneStyles: Record<ToastTone, string> = {
   info: 'border-accent/40 text-accent',
 }
 
+// Errors can be long (raw ledger rejections), so they get a scrollable body, a copy
+// button, and no auto-dismiss; success/info stay as click-to-dismiss pills.
+const ErrorToast = ({ item }: { item: ToastItem }): React.JSX.Element => {
+  const dismiss = useToastStore((s) => s.dismiss)
+  const [copied, setCopied] = useState(false)
+  const copy = async (): Promise<void> => {
+    try {
+      await navigator.clipboard.writeText(item.message)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch {
+      // clipboard unavailable; nothing to do
+    }
+  }
+  return (
+    <div
+      className={cn(
+        'pointer-events-auto w-full rounded-xl border bg-surface shadow-[var(--shadow-popover)]',
+        toneStyles.error,
+      )}
+    >
+      <div className="flex items-start gap-1.5 p-2.5">
+        <div className="max-h-40 flex-1 overflow-auto whitespace-pre-wrap break-words font-mono text-xs leading-relaxed text-fg">
+          {item.message}
+        </div>
+        <div className="flex shrink-0 flex-col items-center gap-1.5">
+          <button
+            type="button"
+            aria-label="Copy error"
+            title="Copy error"
+            onClick={() => void copy()}
+            className="text-fg-muted transition-colors hover:text-fg"
+          >
+            {copied ? <CheckIcon width={14} height={14} /> : <CopyIcon width={14} height={14} />}
+          </button>
+          <button
+            type="button"
+            aria-label="Dismiss"
+            title="Dismiss"
+            onClick={() => dismiss(item.id)}
+            className="text-fg-muted transition-colors hover:text-fg"
+          >
+            <CloseIcon width={14} height={14} />
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const ToastRow = ({ item }: { item: ToastItem }): React.JSX.Element => {
   const dismiss = useToastStore((s) => s.dismiss)
   useEffect(() => {
+    if (item.tone === 'error') {
+      return
+    }
     const timer = setTimeout(() => dismiss(item.id), 3200)
     return () => clearTimeout(timer)
-  }, [item.id, dismiss])
+  }, [item.id, item.tone, dismiss])
+
+  if (item.tone === 'error') {
+    return <ErrorToast item={item} />
+  }
   return (
     <button
       type="button"
