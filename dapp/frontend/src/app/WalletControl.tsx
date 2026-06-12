@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { ChevronDownIcon, CopyIcon, LogoutIcon } from '@/components/icons'
 import { toast } from '@/components/toast'
 import { cn } from '@/lib/cn'
@@ -8,6 +9,7 @@ import { useConnect, useParties, useParty } from '@/wallet/hooks'
 // Party switcher. Pill shows the acting party hint + chevron. The menu lists every
 // party in the pool (the acting one highlighted), copies any id, and signs out.
 export const WalletControl = (): React.JSX.Element | null => {
+  const navigate = useNavigate()
   const { connect, disconnect } = useConnect()
   const { party } = useParty()
   const { pool } = useParties()
@@ -73,6 +75,7 @@ export const WalletControl = (): React.JSX.Element | null => {
                     onClick={() => {
                       connect(candidate)
                       setOpen(false)
+                      navigate('/dashboard')
                       toast.success(`Acting as ${candidate.name}`)
                     }}
                     className="flex min-w-0 flex-1 items-center gap-3 px-3 py-2 text-left"

@@ -11,7 +11,7 @@ export const Footer = (): React.JSX.Element => {
           Canton · direct ledger
         </div>
         {operator !== '' && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 text-[0.7rem]">
             <span className="font-bold uppercase tracking-[0.08em]">Factory owner</span>
             <span className="truncate font-mono text-fg-soft">{shortenParty(operator)}</span>
           </div>
