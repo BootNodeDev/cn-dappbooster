@@ -13,6 +13,7 @@
 | Language | TypeScript 5.9 (strict) | |
 | Wallet protocol | Injected CIP-0103 provider + optional WalletConnect Sign Client 2.x | Browser extension provider events by default; Reown relay only for WalletConnect fallback |
 | Cryptography | @noble/ed25519 3.x, @noble/hashes 1.x | Ed25519 signing; PBKDF2 + AES-GCM vault |
+| Data fetching | @tanstack/react-query 5.x | Polls CIP-56 token holdings, pending transfers, and Amulet preapproval status (5 s); imperative refetch after sends. Single `QueryClient` mounted in `App.tsx` |
 | UI primitives | React 18 + Radix UI | `@radix-ui/react-{dialog,tabs,toast,tooltip}` for modals/tabs/toasts/tooltips; local wrappers (Button family, TextInput, PasswordInput, Alert, Card, AccountAvatar, PendingActionCard, Sheet, Tabs, OptionList, Stepper, DangerConfirm, MenuRow, ToastProvider, Tooltip) for static visuals and Radix re-skins; shared icon SVG literals live in `src/components/ui/icons.tsx`; `Sheet` is the shared Radix Dialog scaffold for sheet-style flows (overlay, title, close button) and takes `side: 'bottom' | 'right' | 'center'` (default `'bottom'`; right opens as a 400px-wide top-aligned drawer clamped by `100vw`; center renders a centered modal dialog); `ToastProvider` and `TooltipProvider` are both mounted once in `App.tsx`; `TextInput` and `PasswordInput` accept `error?: boolean` which applies a danger border, a persistent focus ring, and `aria-invalid`; `Button.tsx` exports `GHOST_BUTTON_CLASS` / `ICON_BUTTON_CLASS` for ad-hoc buttons (e.g. `PasswordInput`'s show/hide button) |
 | Styling | Tailwind CSS v4 (`@tailwindcss/vite`) | Utility classes inline in JSX; `src/index.css` declares CSS-variable tokens on `:root` / `[data-theme="dark"]` and exposes them to Tailwind through `@theme inline`; `@layer base` holds global resets; Radix `data-[state=...]` and `data-[highlighted]` attrs drive interactive variants |
 | Fonts | `@fontsource-variable/manrope`, `@fontsource-variable/jetbrains-mono` | Self-hosted variable fonts so the extension popup works offline. Manrope is the whole UI: `font-sans` (UI chrome, body, labels, buttons) and `font-display` (hero wordmarks, view headings, section markers — heavier weight for hierarchy). JetBrains Mono is `font-mono` (party IDs, hashes, RPC URLs, JSON payloads) |
@@ -24,21 +25,30 @@
 
 ```
 src/
-  api/              JSON-RPC client for the external wallet-service backend
+  api/              JSON-RPC client for the external wallet-service backend, plus
+                    interactiveSubmission.ts (prepare -> local sign -> execute orchestration)
   assets/           SVG brand assets (carpincho-logo.svg)
   components/       Shared UI components (Logo, Header, WelcomeHero, AccountCard,
                     AccountRow, AccountListRow, AccountsDialog, CopyPartyIdButton,
-                    ActivityList, HomeTabs, AssetsPanel, ConnectionFooter,
+                    ActivityList, HomeTabs, AssetsPanel, TransfersPanel,
+                    TokenRow, TokenDetailSheet, TokenReceive, TokenHoldingDetail,
+                    SendTokenForm, SendConfirm, ContactsPicker, AmountField,
+                    ConnectionFooter,
                     NewPasswordFields, CreateAccountForm, PasswordStrengthIndicator,
                     SecurityPanel, menu/* drawer, ui/* primitives).
                     ui/* wraps Radix headless primitives (Tabs on top of
-                    @radix-ui/react-tabs; Sheet on top of @radix-ui/react-dialog)
+                    @radix-ui/react-tabs; Sheet on top of @radix-ui/react-dialog;
+                    Select on top of @radix-ui/react-select)
                     and provides static visuals (Button, TextInput, PasswordInput,
                     Alert, Card, OptionList, Stepper, DangerConfirm, AccountAvatar,
-                    PendingActionCard).
+                    PendingActionCard, Select).
   theme/            ThemeProvider + ThemeContext + useTheme hook driving the
                     [data-theme] attribute on <html>
-  config/           Runtime config persisted to localStorage (RPC URL, network)
+  cip56/            Token-standard domain logic: holdings/UTXO summaries, transfers, amount formatting,
+                    and Amulet preapproval; calls wallet-service cip56.* / amulet.* RPC
+  hooks/            React Query wrappers over cip56/ (token holdings, pending transfers,
+                    Amulet preapproval) with polling and imperative refetch
+  config/           Runtime config persisted to localStorage (wallet-service RPC URL)
   extension/        Chrome extension scripts: background, content script, provider injection
   provider/         CIP-0103 wallet provider — request dispatcher and method handlers
   vault/            Encrypted local vault: PBKDF2 key derivation, AES-GCM storage, React context
@@ -107,6 +117,16 @@ Connects the extension popup UI to web pages and the extension background.
 - **`directConnectionState.ts`** — Pure helper that normalizes page URLs to stable http(s) origins and derives a remember/forget/none update from a provider request/response pair: remembers on a successful `connect` whose result reports `isConnected: true`, forgets on `disconnect`.
 - **`walletSnapshot.ts`** — Serialises the current wallet state (accounts, network, lock status) into a plain object the background caches so the popup can render without unlocking the vault.
 
+### CIP-56 Token Operations (`src/cip56/` + `src/hooks/` + `src/api/interactiveSubmission.ts`)
+
+Token balances, transfers, and Amulet auto-accept are layered on top of the wallet-service JSON-RPC bridge and React Query.
+
+- **`cip56/holdings.ts`** — Groups raw token UTXOs into per-instrument summaries (`summarizeTokenHoldings`) and exposes `listTokenHoldingSummaries` / `listTokenHoldings`, which call the wallet-service `cip56.listHoldingSummary` / `cip56.listHoldings` methods.
+- **`cip56/transfers.ts`** — `listPendingIncomingTransfers` reads pending CIP-56 transfers (the ledger returns every instruction the party is a stakeholder on, so the list spans both directions) and `transferDirection` classifies each as incoming or outgoing relative to the active party; `acceptPendingTransfer` and `createTokenTransfer` run write flows through `executePreparedCommands`.
+- **`cip56/amuletPreapproval.ts`** — `getAmuletPreapprovalStatus` reads the Amulet auto-accept (preapproval) state; `createAmuletPreapproval` / `cancelAmuletPreapproval` toggle it via `executePreparedCommands`.
+- **`api/interactiveSubmission.ts`** — `executePreparedCommands` orchestrates the Canton interactive submission pattern: wallet-service `prepareTransaction`, then local signing through the Vault (`signMessage`), then wallet-service `executePrepared`, then an optional `recordTransaction`. It is the single write path for every token transfer and preapproval action, keeping command preparation and ledger submission on the wallet-service while signing stays local.
+- **`hooks/`** — Thin React Query wrappers: `useTokenHoldings` and `usePendingCip56Transfers` poll every 5 s; `useTokenHoldingDetails` lazy-loads a token's UTXOs when its detail modal opens; `useAmuletPreapproval` polls status and exposes `enable()` / `disable()`. `AssetsPanel`, `TokenDetailSheet`, and `TransfersPanel` consume these hooks.
+
 ### Data Access Layer
 
 The app communicates with two external systems:
@@ -149,7 +169,7 @@ State mutations (unlock, add account, sign) go through `VaultContext`. Network c
 |----------|---------|
 | `VITE_WC_PROJECT_ID` | Optional WalletConnect / Reown project ID (from cloud.reown.com), only needed for the WalletConnect fallback |
 
-Runtime-only configuration (RPC URL, Canton network name) is stored in `localStorage` via `src/config/runtimeConfig.ts` and is not an environment variable.
+Runtime-only configuration (the wallet-service RPC URL) is stored in `localStorage` via `src/config/runtimeConfig.ts` and is not an environment variable. The Canton network identity is no longer stored locally — it comes from wallet-service status.
 
 ## Scripts
 
@@ -170,20 +190,21 @@ Runtime-only configuration (RPC URL, Canton network name) is stored in `localSto
 
 ### Provider / Context Hierarchy
 
-Two React contexts wrap the app. `ThemeProvider` is mounted outermost (in `src/main.tsx`) because theme state is independent of vault state and must apply even on Setup / Unlock screens. `VaultProvider` is mounted by `src/App.tsx`.
+Three providers wrap the app. `ThemeProvider` is mounted outermost (in `src/main.tsx`) because theme state is independent of vault state and must apply even on Setup / Unlock screens. `QueryClientProvider` (a singleton `@tanstack/react-query` client, `refetchOnWindowFocus: false`, `retry: false`) and `VaultProvider` are mounted by `src/App.tsx`.
 
 ```
-<ThemeProvider>           src/theme/ThemeProvider.tsx (mounted in src/main.tsx)
-  <VaultProvider>         src/vault/VaultContext.tsx (mounted in src/App.tsx)
-    <TooltipProvider>     src/components/ui/Tooltip.tsx (mounted in src/App.tsx)
-      <ToastProvider>     src/components/ui/ToastProvider.tsx (mounted in src/App.tsx)
-        <Shell>           src/App.tsx — reads vault state to pick the active view
-          <Header />      includes the Menu burger button
-          <HomeView />    or <OnboardingFlow />, <UnlockView />, etc.
-          <MenuSheet />   drill-down drawer (Menu → Settings → Theme / Security & Password → Password / Auto-lock)
-        </Shell>
-      </ToastProvider>
-    </TooltipProvider>
+<ThemeProvider>             src/theme/ThemeProvider.tsx (mounted in src/main.tsx)
+  <QueryClientProvider>     @tanstack/react-query (mounted in src/App.tsx)
+    <VaultProvider>         src/vault/VaultContext.tsx (mounted in src/App.tsx)
+      <TooltipProvider>     src/components/ui/Tooltip.tsx (mounted in src/App.tsx)
+        <ToastProvider>     src/components/ui/ToastProvider.tsx (mounted in src/App.tsx)
+          <Shell>           src/App.tsx — reads vault state to pick the active view
+            <Header />      includes the Menu burger button
+            <HomeView />    or <OnboardingFlow />, <UnlockView />, etc.
+            <MenuSheet />   drill-down drawer (Menu → Settings → Theme / Security & Password → Password / Auto-lock)
+          </Shell>
+        </ToastProvider>
+      </TooltipProvider>
 ```
 
 There is no router. `Shell` picks one view from `useVault()` via the pure `selectShellView` helper in `src/App.tsx`, branching on `hasVault`, `isLocked`, and `accounts.length`: no vault → `OnboardingFlow` (step 1, create vault); unlocked vault with no account yet → `OnboardingFlow` (step 2, create first account); locked vault → `UnlockView`; unlocked vault with at least one account → `HomeView`. While `useVault()` reports `isLoading`, `Shell` renders a centred spinner instead of any view so the session-restore decision lands in one paint and the Unlock screen never flashes.
