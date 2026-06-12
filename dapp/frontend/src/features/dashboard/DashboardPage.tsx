@@ -240,6 +240,34 @@ export const DashboardPage = (): React.JSX.Element => {
         </Link>
       </div>
 
+      {/* tabs — below the title, above the cards */}
+      <div className="flex">
+        <div className="inline-flex rounded-lg border border-border bg-surface p-1">
+          {tabs.map((t) => (
+            <button
+              key={t.value}
+              type="button"
+              onClick={() => setTab(t.value)}
+              aria-pressed={tab === t.value}
+              className={cn(
+                'inline-flex h-7 items-center gap-1.5 rounded-md px-3 text-xs font-bold transition-colors',
+                tab === t.value ? 'bg-primary-soft text-fg' : 'text-fg-muted hover:text-fg',
+              )}
+            >
+              {t.label}
+              <span
+                className={cn(
+                  'rounded-full px-1.5 font-mono text-[0.65rem]',
+                  tab === t.value ? 'bg-surface text-fg-muted' : 'text-fg-soft',
+                )}
+              >
+                {t.count}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* KPIs for the active tab — always shown so the figures never vanish */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {isReceived ? (
@@ -298,32 +326,8 @@ export const DashboardPage = (): React.JSX.Element => {
         )}
       </div>
 
-      {/* controls directly above the list: tabs + filter left, view switch right */}
+      {/* controls directly above the list: filter left, view switch right */}
       <div className="flex flex-wrap items-center gap-3">
-        <div className="inline-flex rounded-lg border border-border bg-surface p-1">
-          {tabs.map((t) => (
-            <button
-              key={t.value}
-              type="button"
-              onClick={() => setTab(t.value)}
-              aria-pressed={tab === t.value}
-              className={cn(
-                'inline-flex h-7 items-center gap-1.5 rounded-md px-3 text-xs font-bold transition-colors',
-                tab === t.value ? 'bg-primary-soft text-fg' : 'text-fg-muted hover:text-fg',
-              )}
-            >
-              {t.label}
-              <span
-                className={cn(
-                  'rounded-full px-1.5 font-mono text-[0.65rem]',
-                  tab === t.value ? 'bg-surface text-fg-muted' : 'text-fg-soft',
-                )}
-              >
-                {t.count}
-              </span>
-            </button>
-          ))}
-        </div>
         <div className="relative" ref={filterRef}>
           <button
             type="button"
