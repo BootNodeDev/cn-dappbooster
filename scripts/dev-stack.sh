@@ -337,15 +337,15 @@ menu() {
   local keys=(install docker-up docker-down up down mock-up mock-down extension quit)
   local labels=("Install" "Docker up" "Docker down" "Stack up" "Stack down" "Wallet up" "Wallet down" "Build extension" "Quit")
   local descs=(
-    "install + link every workspace (root npm install)"
-    "start Docker Desktop, wait for daemon (macOS)"
+    "install + link every workspace"
+    "start Docker Desktop (macOS)"
     "quit Docker Desktop (macOS)"
-    "containers, DAR, dev servers, extension"
+    "start containers, dev servers, build DAR and extension"
     "stop dev servers + tear down containers"
-    "mock wallet-service + carpincho web app (no Docker)"
-    "stop the mock server + web app only"
-    "build the extension into carpincho-wallet/dist-extension"
-    "exit this menu"
+    "start mock wallet-service + carpincho web app (no Docker)"
+    "stop the mock wallet-service + carpincho web app"
+    "build the extension (carpincho-wallet/dist-extension)"
+    "exit"
   )
   local n=${#keys[@]} sel=0 key rest i num choice
 
