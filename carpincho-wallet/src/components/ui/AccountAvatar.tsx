@@ -41,13 +41,15 @@ const hslToHex = (h: number, s: number, l: number): string => {
 
 // 256 distinct colors: golden-angle hue spread keeps neighbouring indices far apart,
 // with small saturation/lightness steps so wrapped hues stay separable. boring-avatars
-// hashes the full party id and picks colors[hash % 256], so schemes repeat only every 256.
+// picks colors[hash % 256] for the face, so there are 256 colour schemes; the shape, eyes,
+// and rotation still derive from the full party-id hash, so whole-avatar collisions stay rare.
 const AVATAR_COLORS = Array.from({ length: 256 }, (_value, i) =>
   hslToHex((i * 137.508) % 360, 0.62 + (i % 3) * 0.08, 0.52 + (i % 2) * 0.08),
 )
 
 export const AccountAvatar = ({ partyId, size = 'md' }: AccountAvatarProps): JSX.Element => (
   <span
+    aria-hidden="true"
     className={cn('shrink-0 overflow-hidden rounded-full ring-1 ring-black/10', SIZE_CLASS[size])}
   >
     <Avatar
