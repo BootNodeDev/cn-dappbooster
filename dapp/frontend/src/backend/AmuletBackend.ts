@@ -381,7 +381,20 @@ export class AmuletBackend implements VestingBackend {
     try {
       await this.submit(args.receiver, command, allDisclosed)
     } catch (e) {
-      console.error('[accept] submit failed:', e)
+      // TEMP: map a CONTRACT_NOT_FOUND cid back to the contract we passed, so the toast
+      // says which one (proposal / amuletRules / openMiningRound / input amulet) is stale.
+      const text = e instanceof Error ? e.message : String(e)
+      const known: [string, string][] = [
+        ['proposal', args.proposalCid],
+        ['amuletRules', arg.amuletRules],
+        ['openMiningRound', arg.openMiningRound],
+        ...inputDisclosures.map((d, i) => [`inputAmulet[${i}]`, d.contractId] as [string, string]),
+      ]
+      const culprit = known.find(([, cid]) => cid !== '' && text.includes(cid))
+      console.error('[accept] submit failed; missing contract is:', culprit?.[0] ?? 'UNKNOWN', e)
+      if (culprit !== undefined && /CONTRACT_NOT_FOUND/.test(text)) {
+        throw new Error(`Accept failed — the ${culprit[0]} contract was not found on the ledger.`)
+      }
       throw e
     }
   }
