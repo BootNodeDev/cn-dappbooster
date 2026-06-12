@@ -1,59 +1,18 @@
-import type { PartyRef, VestingBackend } from '@/backend/VestingBackend'
-import { useWalletContext } from './WalletProvider'
+// Hook surface for the dApp. Wallet-lifecycle hooks (useConnect, useParty,
+// useWalletStatus) come straight from canton-connect-kit; useBackend hands the
+// store the AmuletBackend wired to the connected wallet. Components import from
+// here so the wallet layer stays a single swap point.
 
-// Hook surface kept stable across the mock→direct swap: components still import
-// useParty / useConnect / useWalletStatus. useParties exposes the pool + operator +
-// availability for the picker; useBackend hands the store the active VestingBackend.
+import type { VestingBackend } from '@/backend/VestingBackend'
+import { useVestingData } from './VestingDataProvider'
 
-export interface UseConnectResult {
-  connect: (party: PartyRef) => void
-  disconnect: () => void
-  isConnecting: boolean
-  isConnected: boolean
-}
+export type {
+  UseConnectResult,
+  UsePartyResult,
+  UseWalletStatusResult,
+} from 'canton-connect-kit'
+export { useConnect, useParty, useWalletStatus } from 'canton-connect-kit'
 
-export const useConnect = (): UseConnectResult => {
-  const ctx = useWalletContext()
-  return {
-    connect: ctx.connect,
-    disconnect: ctx.disconnect,
-    isConnecting: ctx.isConnecting,
-    isConnected: ctx.isConnected,
-  }
-}
+export const useBackend = (): VestingBackend => useVestingData().backend
 
-export interface UsePartyResult {
-  party: PartyRef | undefined
-  isConnected: boolean
-}
-
-export const useParty = (): UsePartyResult => {
-  const ctx = useWalletContext()
-  return { party: ctx.party, isConnected: ctx.isConnected }
-}
-
-export interface UseWalletStatusResult {
-  isConnected: boolean
-}
-
-export const useWalletStatus = (): UseWalletStatusResult => {
-  const ctx = useWalletContext()
-  return { isConnected: ctx.isConnected }
-}
-
-export interface UsePartiesResult {
-  pool: PartyRef[]
-  operator: string
-  backendAvailable: boolean
-}
-
-export const useParties = (): UsePartiesResult => {
-  const ctx = useWalletContext()
-  return {
-    pool: ctx.pool,
-    operator: ctx.operator,
-    backendAvailable: ctx.backendAvailable,
-  }
-}
-
-export const useBackend = (): VestingBackend => useWalletContext().backend
+export const useBackendAvailable = (): boolean => useVestingData().backendAvailable

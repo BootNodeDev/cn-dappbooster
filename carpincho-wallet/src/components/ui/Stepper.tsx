@@ -23,7 +23,7 @@ const LABEL_CLASS: Record<StepState, string> = {
   upcoming: 'text-muted-foreground font-normal',
 }
 
-export const Stepper = ({ steps, current }: StepperProps): JSX.Element => (
+export const Stepper = ({ steps, current }: StepperProps): React.JSX.Element => (
   <ol
     aria-label="Setup progress"
     className="flex items-center justify-center gap-2 px-2 pt-3 pb-5"

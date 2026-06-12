@@ -1,0 +1,21 @@
+# for config file options, refer to
+# https://docs.digitalasset.com/build/3.4/dpm/configuration.html#project-configuration
+# SDK pinned to 3.4.11 / LF target 2.1 to match the vendored Splice deps
+# (splice-amulet et al. are built with sdk 3.4.11 + --target=2.1). Keeping the
+# same SDK/LF as the deps lets the amulet-vesting-test package data-depend on this
+# DAR directly instead of recompiling the source at a different target.
+sdk-version: 3.4.11
+name: amulet-vesting
+source: daml
+version: 0.0.1
+dependencies:
+  - daml-prim
+  - daml-stdlib
+data-dependencies:
+  # paths are relative to this package dir (dapp/daml/amulet-vesting/); ../../ is dapp/ (the vendor root in this repo)
+  - ../../deps/splice-daml/dars/splice-amulet-0.1.19.dar
+  - ../../deps/splice-daml/dars/splice-api-token-holding-v1-1.0.0.dar
+  - ../../deps/splice-daml/dars/splice-api-token-metadata-v1-1.0.0.dar
+  - ../../deps/splice-daml/dars/splice-api-token-transfer-instruction-v1-1.0.0.dar
+build-options:
+  - --target=2.1

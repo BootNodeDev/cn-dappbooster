@@ -45,7 +45,7 @@ const buildTracePath = (w: number, h: number): string => {
 // Once `held` is true the comet finishes its lap, stops looping, and the tint stays on.
 export const useBorderTrace = (
   held: boolean,
-): { containerRef: RefObject<HTMLLabelElement>; overlay: ReactNode } => {
+): { containerRef: RefObject<HTMLLabelElement | null>; overlay: ReactNode } => {
   const containerRef = useRef<HTMLLabelElement>(null)
   const groupRef = useRef<SVGGElement>(null)
   const segRefs = useRef<(SVGPathElement | null)[]>([])

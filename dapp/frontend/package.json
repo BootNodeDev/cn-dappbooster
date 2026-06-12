@@ -18,8 +18,15 @@
     "typecheck": "tsc -b --noEmit"
   },
   "dependencies": {
+    "@canton-network/dapp-sdk": "^1.1.0",
     "@fontsource-variable/jetbrains-mono": "^5.2.8",
     "@fontsource-variable/manrope": "^5.2.8",
+    "@radix-ui/react-tooltip": "^1.2.9",
+    "@walletconnect/sign-client": "^2.23.9",
+    "@walletconnect/types": "^2.23.9",
+    "boring-avatars": "^2.0.4",
+    "canton-connect-kit": "^0.2.0",
+    "framer-motion": "^12.40.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.2",
@@ -30,6 +37,7 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^4.7.0",
+    "happy-dom": "^20.10.2",
     "tailwindcss": "^4.3.0",
     "typescript": "^5.9.3",
     "vite": "^6.4.2",

@@ -24,7 +24,7 @@ export const PendingActionCard = ({
   busy,
   payload,
   children,
-}: PendingActionCardProps): JSX.Element => (
+}: PendingActionCardProps): React.JSX.Element => (
   <div
     className="flex flex-col gap-3"
     data-pending-kind={method}

@@ -8,7 +8,7 @@ const THEME_OPTIONS: Array<{ value: ThemeMode; label: string }> = [
   { value: 'system', label: 'System' },
 ]
 
-export const ThemeMenu = (): JSX.Element => {
+export const ThemeMenu = (): React.JSX.Element => {
   const { mode, setMode } = useTheme()
   return (
     <OptionList

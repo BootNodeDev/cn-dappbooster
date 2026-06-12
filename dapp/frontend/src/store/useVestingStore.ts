@@ -3,10 +3,17 @@ import { create } from 'zustand'
 import type { CreateVestInput, VestingBackend } from '@/backend/VestingBackend'
 import { now } from '@/lib/clock'
 import { vestedAmount, vestedFraction } from '@/lib/schedule'
+import { uuid } from '@/lib/uuid'
 import { useBackend, useParty } from '@/wallet/hooks'
 import type { Grant, Proposal, VestedClaim, WithdrawEvent } from './types'
 
-export type GrantStatus = 'in_cliff' | 'vesting' | 'fully_vested'
+// How often the connected view re-reads the ledger so it reflects the other
+// party's actions without a manual reload.
+const REFRESH_POLL_MS = 5000
+
+// 'pending' is not produced by deriveGrant — it marks an unaccepted proposal shown
+// alongside active escrows in the dashboard.
+export type GrantStatus = 'pending' | 'in_cliff' | 'vesting' | 'fully_vested'
 
 export interface GrantDerived {
   fraction: number
@@ -16,6 +23,20 @@ export interface GrantDerived {
   unvested: number
   status: GrantStatus
 }
+
+// Human label + StatusPill tone for a derived status, shared by the card and
+// detail views (the dense table keeps its own lowercase variant).
+export const statusPillLabel = (status: GrantStatus): string =>
+  status === 'pending'
+    ? 'Pending'
+    : status === 'in_cliff'
+      ? 'In cliff'
+      : status === 'fully_vested'
+        ? 'Fully vested'
+        : 'Vesting'
+
+export const statusPillTone = (status: GrantStatus): 'warning' | 'neutral' | 'success' =>
+  status === 'pending' ? 'warning' : status === 'in_cliff' ? 'neutral' : 'success'
 
 // Pure projection of a grant at a moment in time. The single source of the
 // vested/claimable numbers shown everywhere. Kept identical across the mock→ledger
@@ -42,7 +63,7 @@ interface VestingState {
   loading: boolean
   error: string | undefined
 
-  refresh: (backend: VestingBackend, partyId: string) => Promise<void>
+  refresh: (backend: VestingBackend, partyId: string, opts?: { silent?: boolean }) => Promise<void>
   createVesting: (
     backend: VestingBackend,
     partyId: string,
@@ -64,7 +85,7 @@ interface VestingState {
   ) => Promise<void>
 }
 
-const uid = (prefix: string): string => `${prefix}-${crypto.randomUUID().slice(0, 8)}`
+const uid = (prefix: string): string => `${prefix}-${uuid().slice(0, 8)}`
 
 const errorText = (err: unknown): string => (err instanceof Error ? err.message : String(err))
 
@@ -76,12 +97,15 @@ export const useVestingStore = create<VestingState>((set, get) => ({
   loading: false,
   error: undefined,
 
-  refresh: async (backend, partyId) => {
+  refresh: async (backend, partyId, opts) => {
+    const silent = opts?.silent === true
     if (partyId === '') {
       set({ grants: [], proposals: [], claims: [] })
       return
     }
-    set({ loading: true, error: undefined })
+    if (!silent) {
+      set({ loading: true, error: undefined })
+    }
     try {
       const view = await backend.viewAs(partyId)
       set({
@@ -91,6 +115,11 @@ export const useVestingStore = create<VestingState>((set, get) => ({
         loading: false,
       })
     } catch (err) {
+      // A background poll must not clobber good data or flash an error on a
+      // transient blip — keep the last good view and stay quiet.
+      if (silent) {
+        return
+      }
       set({ loading: false, error: errorText(err) })
     }
   },
@@ -140,8 +169,15 @@ export const useVesting = (): {
   const partyId = party?.partyId ?? ''
   const refresh = useVestingStore((state) => state.refresh)
 
+  // Re-read on party/backend change, then poll so a party's view reflects the
+  // other party's actions live (e.g. the funder sees the receiver's withdrawals).
+  // Polls are silent: no loading flicker, no transient-error flash.
   useEffect(() => {
     void refresh(backend, partyId)
+    const interval = setInterval(() => {
+      void refresh(backend, partyId, { silent: true })
+    }, REFRESH_POLL_MS)
+    return () => clearInterval(interval)
   }, [backend, partyId, refresh])
 
   return { backend, partyId }

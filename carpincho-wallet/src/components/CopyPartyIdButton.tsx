@@ -9,7 +9,7 @@ interface CopyPartyIdButtonProps {
 
 // Inline copy button used in the address row; pointer-events restored so it stays clickable
 // inside pointer-events-none row wrappers.
-export const CopyPartyIdButton = ({ partyId }: CopyPartyIdButtonProps): JSX.Element => (
+export const CopyPartyIdButton = ({ partyId }: CopyPartyIdButtonProps): React.JSX.Element => (
   <button
     type="button"
     data-testid="account-copy-party-id"

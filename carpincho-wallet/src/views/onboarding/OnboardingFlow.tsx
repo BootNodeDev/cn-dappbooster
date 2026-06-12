@@ -6,7 +6,7 @@ import { CreateVault } from '@/views/onboarding/CreateVault'
 
 const ONBOARDING_STEPS = ['Create Vault', 'Create Account']
 
-export const OnboardingFlow = (): JSX.Element => {
+export const OnboardingFlow = (): React.JSX.Element => {
   const v = useVault()
   const step = v.hasVault ? 2 : 1
 

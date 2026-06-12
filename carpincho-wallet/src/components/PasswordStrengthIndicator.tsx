@@ -19,7 +19,7 @@ type Props = {
   id?: string
 }
 
-export const PasswordStrengthIndicator = ({ password, id }: Props): JSX.Element => {
+export const PasswordStrengthIndicator = ({ password, id }: Props): React.JSX.Element => {
   const score = scorePassword(password)
   const tier = TIERS[Math.min(Math.max(score, 0), 4)] ?? TOO_WEAK
   const empty = password.length === 0

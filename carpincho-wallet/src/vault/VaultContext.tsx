@@ -116,7 +116,7 @@ export interface VaultContextValue {
 
 export const VaultContext = createContext<VaultContextValue | undefined>(undefined)
 
-export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
+export const VaultProvider = ({ children }: PropsWithChildren): React.JSX.Element => {
   assertSecureContext()
 
   const [tick, setTick] = useState(0)

@@ -7,7 +7,7 @@ import { toast } from '@/components/ui/toast'
 import { useVault } from '@/vault/useVault'
 import { useBorderTrace } from '@/views/onboarding/useBorderTrace'
 
-export const CreateVault = (): JSX.Element => {
+export const CreateVault = (): React.JSX.Element => {
   const v = useVault()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')

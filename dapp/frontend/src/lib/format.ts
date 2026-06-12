@@ -29,14 +29,42 @@ export const clampClaimAmount = (amount: number, available: number): number =>
 
 export const formatPct = (fraction: number): string => `${(fraction * 100).toFixed(1)}%`
 
-// A Canton party id is `hint::fingerprint`. Show the readable hint plus a short
-// fingerprint tail, e.g. `alice::1220…c4d1`.
+// Group the integer part of a raw decimal string with thousands separators while
+// preserving a trailing dot / decimals being typed (e.g. "1000.5" → "1,000.5").
+export const groupDecimalString = (raw: string): string => {
+  if (raw === '') {
+    return ''
+  }
+  const [intPart, decPart] = raw.split('.')
+  const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  return decPart === undefined ? grouped : `${grouped}.${decPart}`
+}
+
+// Sanitize free-typed amount input to a valid decimal: digits with at most one
+// decimal point, capped at 10 fractional digits (Canton Decimal precision).
+export const sanitizeAmountInput = (raw: string): string => {
+  const cleaned = raw.replace(/[^0-9.]/g, '')
+  const [intPart, ...rest] = cleaned.split('.')
+  if (rest.length === 0) {
+    return intPart
+  }
+  return `${intPart}.${rest.join('').slice(0, 10)}`
+}
+
+// A Canton party id is `hint::fingerprint`. Shorten EVM-style (head…tail) on both
+// halves: a long hint gets truncated and the fingerprint shows only its ends, e.g.
+// `alice::1220…c4d1` or `app_pr…cal-1::1220…c4d1`.
 export const shortenParty = (partyId: string): string => {
   const [hint, fingerprint] = partyId.split('::')
+  const shortHint = hint.length > 14 ? `${hint.slice(0, 6)}…${hint.slice(-4)}` : hint
   if (fingerprint === undefined) {
-    return hint.length > 14 ? `${hint.slice(0, 6)}…${hint.slice(-4)}` : hint
+    return shortHint
   }
-  return `${hint}::${fingerprint.slice(0, 4)}…${fingerprint.slice(-4)}`
+  // Only ellipsize a fingerprint long enough that head…tail is actually shorter;
+  // at <=10 chars the 4+4 ends would overlap and duplicate, so keep it whole.
+  const shortFingerprint =
+    fingerprint.length > 10 ? `${fingerprint.slice(0, 4)}…${fingerprint.slice(-4)}` : fingerprint
+  return `${shortHint}::${shortFingerprint}`
 }
 
 export const partyHint = (partyId: string): string => partyId.split('::')[0]

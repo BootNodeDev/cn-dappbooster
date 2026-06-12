@@ -150,6 +150,21 @@ export const createMockRpc = (
           return rpcResult(id, executePrepared(request.params))
         case 'ledgerApi':
           return rpcResult(id, ledgerApi(request.params))
+        case 'cip56.listPendingTransfers':
+          return rpcResult(id, [])
+        case 'cip56.listHoldingSummary':
+          return rpcResult(id, [])
+        case 'cip56.listHoldings':
+          return rpcResult(id, [])
+        case 'cip56.createTransfer':
+          return rpcResult(id, { commands: [], disclosedContracts: [] })
+        case 'amulet.preapproval.status':
+          return rpcResult(id, { active: false, expired: false })
+        case 'amulet.preapproval.create':
+        case 'amulet.preapproval.cancel':
+          return rpcResult(id, { commands: [], disclosedContracts: [] })
+        case 'amulet.preapproval.acceptProposal':
+          return rpcResult(id, { updateId: 'mock-amulet-preapproval-accept', completionOffset: 0 })
         case 'prepareExecute':
         case 'prepareExecuteAndWait':
         case 'signMessage':
@@ -199,6 +214,14 @@ export const createMockRpc = (
       'ledgerApi',
       'prepareTransaction',
       'executePrepared',
+      'cip56.listPendingTransfers',
+      'cip56.listHoldingSummary',
+      'cip56.listHoldings',
+      'cip56.createTransfer',
+      'amulet.preapproval.status',
+      'amulet.preapproval.create',
+      'amulet.preapproval.acceptProposal',
+      'amulet.preapproval.cancel',
     ],
     reservedMethods: ['prepareExecute', 'prepareExecuteAndWait', 'signMessage'],
     network: mockNetworkId(config),

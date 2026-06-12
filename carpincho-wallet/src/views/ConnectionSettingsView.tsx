@@ -16,7 +16,7 @@ interface WalletServiceStatus {
   }
 }
 
-export const ConnectionSettingsView = (): JSX.Element => {
+export const ConnectionSettingsView = (): React.JSX.Element => {
   const { config, saveConfig } = useRuntimeConfig()
   const [draft, setDraft] = useState<RuntimeConfig>(config)
   const [busy, setBusy] = useState(false)
@@ -73,18 +73,6 @@ export const ConnectionSettingsView = (): JSX.Element => {
           value={draft.walletServiceRpcUrl}
           onChange={(e) => setDraft((prev) => ({ ...prev, walletServiceRpcUrl: e.target.value }))}
           placeholder="http://localhost:3010/rpc"
-        />
-      </div>
-
-      <div>
-        <label htmlFor="canton-network">Canton network</label>
-        <TextInput
-          id="canton-network"
-          type="text"
-          className="font-mono"
-          value={draft.cantonNetwork}
-          onChange={(e) => setDraft((prev) => ({ ...prev, cantonNetwork: e.target.value }))}
-          placeholder="canton:local"
         />
       </div>
 

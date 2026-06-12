@@ -12,7 +12,7 @@ COPY canton-connect-kit/package.json canton-connect-kit/
 COPY carpincho-wallet/package.json carpincho-wallet/
 COPY canton-barebones/package.json canton-barebones/
 COPY canton-barebones/wallet-service/package.json canton-barebones/wallet-service/
-COPY dapp/daml/package.json dapp/daml/
+COPY dapp/daml/vesting-lite/package.json dapp/daml/vesting-lite/
 COPY dapp/e2e/package.json dapp/e2e/
 COPY dapp/frontend/package.json dapp/frontend/
 # --ignore-scripts skips the root husky prepare hook (no .git in the image) and
@@ -31,7 +31,7 @@ COPY canton-connect-kit/package.json canton-connect-kit/
 COPY carpincho-wallet/package.json carpincho-wallet/
 COPY canton-barebones/package.json canton-barebones/
 COPY canton-barebones/wallet-service/package.json canton-barebones/wallet-service/
-COPY dapp/daml/package.json dapp/daml/
+COPY dapp/daml/vesting-lite/package.json dapp/daml/vesting-lite/
 COPY dapp/e2e/package.json dapp/e2e/
 COPY dapp/frontend/package.json dapp/frontend/
 RUN npm ci --omit=dev --ignore-scripts

@@ -32,21 +32,23 @@ const BASE_TOAST_CLASS = cn(
 )
 
 // Per-variant accent: only the rail and icon badge carry colour; message text stays neutral.
-const VARIANT_ACCENT: Record<FeedbackVariant, { rail: string; badge: string; icon: JSX.Element }> =
-  {
-    info: { rail: 'before:bg-primary', badge: 'bg-primary-soft text-primary', icon: INFO_ICON },
-    success: { rail: 'before:bg-success', badge: 'bg-success-soft text-success', icon: CHECK_ICON },
-    warning: {
-      rail: 'before:bg-warning',
-      badge: 'bg-warning-soft text-warning',
-      icon: ALERT_TRIANGLE_ICON,
-    },
-    error: {
-      rail: 'before:bg-danger',
-      badge: 'bg-danger-soft text-danger',
-      icon: ALERT_CIRCLE_ICON,
-    },
-  }
+const VARIANT_ACCENT: Record<
+  FeedbackVariant,
+  { rail: string; badge: string; icon: React.JSX.Element }
+> = {
+  info: { rail: 'before:bg-primary', badge: 'bg-primary-soft text-primary', icon: INFO_ICON },
+  success: { rail: 'before:bg-success', badge: 'bg-success-soft text-success', icon: CHECK_ICON },
+  warning: {
+    rail: 'before:bg-warning',
+    badge: 'bg-warning-soft text-warning',
+    icon: ALERT_TRIANGLE_ICON,
+  },
+  error: {
+    rail: 'before:bg-danger',
+    badge: 'bg-danger-soft text-danger',
+    icon: ALERT_CIRCLE_ICON,
+  },
+}
 
 const ANNOUNCE_TYPE: Record<FeedbackVariant, 'foreground' | 'background'> = {
   info: 'background',
@@ -59,7 +61,7 @@ interface ToastItemProps {
   entry: ToastEntry
 }
 
-const ToastItem = ({ entry }: ToastItemProps): JSX.Element => {
+const ToastItem = ({ entry }: ToastItemProps): React.JSX.Element => {
   const accent = VARIANT_ACCENT[entry.variant]
   return (
     <RadixToast.Root
@@ -95,7 +97,7 @@ interface ToastProviderProps {
   children: ReactNode
 }
 
-export const ToastProvider = ({ children }: ToastProviderProps): JSX.Element => {
+export const ToastProvider = ({ children }: ToastProviderProps): React.JSX.Element => {
   const [entries, setEntries] = useState<ReadonlyArray<ToastEntry>>([])
   useEffect(() => subscribeToasts(setEntries), [])
   return (

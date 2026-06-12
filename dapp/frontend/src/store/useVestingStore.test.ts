@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import type { VestingBackend } from '@/backend/VestingBackend'
 import type { Grant } from './types'
-import { deriveGrant } from './useVestingStore'
+import { deriveGrant, useVestingStore } from './useVestingStore'
 
 const ms = (iso: string): number => new Date(iso).getTime()
 
@@ -56,5 +57,58 @@ describe('deriveGrant', () => {
     expect(d.vested).toBe(0)
     expect(d.claimable).toBe(0)
     expect(d.unvested).toBe(0)
+  })
+})
+
+describe('refresh', () => {
+  const view = (grants: Grant[]) => ({ grants, proposals: [], claims: [] })
+  const reset = (): void =>
+    useVestingStore.setState({
+      grants: [],
+      proposals: [],
+      claims: [],
+      loading: false,
+      error: undefined,
+    })
+
+  it('loads the view and clears loading on success', async () => {
+    reset()
+    const backend = {
+      viewAs: vi.fn().mockResolvedValue(view([grant()])),
+    } as unknown as VestingBackend
+    await useVestingStore.getState().refresh(backend, 'p::1')
+    expect(useVestingStore.getState().grants).toHaveLength(1)
+    expect(useVestingStore.getState().loading).toBe(false)
+    expect(useVestingStore.getState().error).toBeUndefined()
+  })
+
+  it('surfaces the error on a failed non-silent refresh', async () => {
+    reset()
+    const backend = {
+      viewAs: vi.fn().mockRejectedValue(new Error('boom')),
+    } as unknown as VestingBackend
+    await useVestingStore.getState().refresh(backend, 'p::1')
+    expect(useVestingStore.getState().error).toBe('boom')
+  })
+
+  // A background poll must not clobber good data or flash an error on a transient blip.
+  it('silent refresh keeps prior data and swallows transient errors', async () => {
+    reset()
+    useVestingStore.setState({ grants: [grant()] })
+    const backend = {
+      viewAs: vi.fn().mockRejectedValue(new Error('blip')),
+    } as unknown as VestingBackend
+    await useVestingStore.getState().refresh(backend, 'p::1', { silent: true })
+    expect(useVestingStore.getState().grants).toHaveLength(1)
+    expect(useVestingStore.getState().error).toBeUndefined()
+  })
+
+  it('silent refresh still applies fresh data on success', async () => {
+    reset()
+    const backend = {
+      viewAs: vi.fn().mockResolvedValue(view([grant(), grant()])),
+    } as unknown as VestingBackend
+    await useVestingStore.getState().refresh(backend, 'p::1', { silent: true })
+    expect(useVestingStore.getState().grants).toHaveLength(2)
   })
 })

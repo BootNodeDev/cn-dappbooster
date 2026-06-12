@@ -22,7 +22,7 @@ export const DangerConfirm = ({
   onConfirm,
   testId,
   confirmTestId,
-}: DangerConfirmProps): JSX.Element => (
+}: DangerConfirmProps): React.JSX.Element => (
   <div
     data-testid={testId}
     className="flex flex-col gap-4"

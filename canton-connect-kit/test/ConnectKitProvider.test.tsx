@@ -6,7 +6,7 @@ import { ConnectKitProvider, useConnectKitContext } from '../src/ConnectKitProvi
 
 const config = { appName: 'Test dApp' }
 
-const StatusProbe = (): JSX.Element => {
+const StatusProbe = (): React.JSX.Element => {
   const ctx = useConnectKitContext()
   return (
     <>
@@ -30,7 +30,7 @@ describe('ConnectKitProvider', () => {
   })
 
   it('useConnectKitContext throws when used outside the provider', () => {
-    const Naked = (): JSX.Element => {
+    const Naked = (): React.JSX.Element => {
       useConnectKitContext()
       return <span />
     }

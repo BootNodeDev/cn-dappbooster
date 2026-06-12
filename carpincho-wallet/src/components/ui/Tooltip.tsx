@@ -12,7 +12,7 @@ export const Tooltip = ({
   content,
   label = 'More information',
   side = 'bottom',
-}: TooltipProps): JSX.Element => (
+}: TooltipProps): React.JSX.Element => (
   <RadixTooltip.Root delayDuration={150}>
     <RadixTooltip.Trigger asChild>
       <button

@@ -13,7 +13,12 @@ interface MenuRowProps {
   icon?: ReactNode
 }
 
-export const MenuRow = ({ label, onClick, tone = 'default', icon }: MenuRowProps): JSX.Element => (
+export const MenuRow = ({
+  label,
+  onClick,
+  tone = 'default',
+  icon,
+}: MenuRowProps): React.JSX.Element => (
   <li>
     <button
       type="button"

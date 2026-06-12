@@ -2,6 +2,8 @@
 // the working dapp/frontend direct/disclosure stack — framework-agnostic, no I/O
 // beyond fetch, so it ports unchanged.
 
+import { uuid } from '@/lib/uuid'
+
 export interface JsonRpcErrorObject {
   code: number
   message: string
@@ -41,7 +43,7 @@ export const walletServiceRequest = async <T>(
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
       jsonrpc: '2.0',
-      id: crypto.randomUUID(),
+      id: uuid(),
       method,
       ...(params === undefined ? {} : { params }),
     }),

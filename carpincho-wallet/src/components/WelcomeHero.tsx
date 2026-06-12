@@ -17,7 +17,13 @@ const DEFAULT_LOGO_SIZE: Record<WelcomeHeroLayout, number> = {
   compact: 52,
 }
 
-const FloatingLogo = ({ size, duration }: { size: number; duration?: string }): JSX.Element => {
+const FloatingLogo = ({
+  size,
+  duration,
+}: {
+  size: number
+  duration?: string
+}): React.JSX.Element => {
   const durationStyle = duration ? { animationDuration: duration } : undefined
   return (
     <div className="relative inline-flex items-center justify-center">
@@ -46,7 +52,7 @@ export const WelcomeHero = ({
   description,
   logoSize,
   layout = 'stacked',
-}: WelcomeHeroProps): JSX.Element => {
+}: WelcomeHeroProps): React.JSX.Element => {
   const size = logoSize ?? DEFAULT_LOGO_SIZE[layout]
 
   if (layout === 'compact') {

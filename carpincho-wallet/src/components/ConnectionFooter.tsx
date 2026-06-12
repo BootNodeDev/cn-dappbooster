@@ -27,7 +27,7 @@ export const ConnectionFooter = ({
   dappAccountAddress,
   onDisconnectDapp,
   onOpenSettings,
-}: ConnectionFooterProps): JSX.Element => {
+}: ConnectionFooterProps): React.JSX.Element => {
   const dotClass = walletService.connected ? 'bg-success' : 'bg-danger'
   const networkLabel = walletService.connected ? (walletService.networkId ?? 'unknown') : undefined
   const formattedNetwork =

@@ -1,5 +1,8 @@
+import { motion } from 'framer-motion'
 import { cn } from '@/lib/cn'
+import { fadeUp } from '@/lib/motion'
 import { AmountDisplay } from './AmountDisplay'
+import { InfoTooltip } from './InfoTooltip'
 
 interface KpiCardProps {
   label: string
@@ -7,7 +10,9 @@ interface KpiCardProps {
   unit?: string
   sub?: string
   subTone?: 'muted' | 'success'
-  // Aurora hero treatment for the headline metric (Claimable now).
+  // Plain-language explanation shown in a tooltip next to the label.
+  hint?: string
+  // Soft highlight for the headline metric (Claimable now).
   hero?: boolean
 }
 
@@ -17,17 +22,22 @@ export const KpiCard = ({
   unit = 'CC',
   sub,
   subTone = 'muted',
+  hint,
   hero = false,
 }: KpiCardProps): React.JSX.Element => (
-  <div
+  <motion.div
+    variants={fadeUp}
     className={cn(
       'relative overflow-hidden rounded-2xl border p-5',
       hero
-        ? 'border-accent/35 bg-[image:linear-gradient(135deg,color-mix(in_oklab,var(--primary)_30%,transparent),color-mix(in_oklab,var(--pink)_16%,transparent))] shadow-[var(--shadow-card)]'
+        ? 'border-accent/35 bg-primary-soft shadow-[var(--shadow-card)]'
         : 'border-border bg-surface shadow-[var(--shadow-card)]',
     )}
   >
-    <div className="mb-3 text-xs font-semibold text-fg-muted">{label}</div>
+    <div className="mb-3 flex items-center gap-1.5 text-xs font-semibold text-fg-muted">
+      {label}
+      {hint !== undefined && <InfoTooltip label={`About ${label}`}>{hint}</InfoTooltip>}
+    </div>
     <AmountDisplay
       value={amount}
       unit={unit}
@@ -44,8 +54,5 @@ export const KpiCard = ({
         {sub}
       </div>
     )}
-    {hero && (
-      <span className="pointer-events-none absolute -bottom-10 -right-8 size-36 rounded-full bg-[radial-gradient(circle,color-mix(in_oklab,var(--pink)_40%,transparent),transparent_70%)] blur-md" />
-    )}
-  </div>
+  </motion.div>
 )

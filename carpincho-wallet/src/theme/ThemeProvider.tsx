@@ -22,7 +22,7 @@ interface ThemeProviderProps {
   children: ReactNode
 }
 
-export const ThemeProvider = ({ children }: ThemeProviderProps): JSX.Element => {
+export const ThemeProvider = ({ children }: ThemeProviderProps): React.JSX.Element => {
   const [mode, setModeState] = useState<ThemeMode>(() => readStoredMode() ?? 'system')
 
   useEffect(() => {

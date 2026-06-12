@@ -1,9 +1,11 @@
+import { QueryClientProvider } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { Header } from '@/components/Header'
 import { MenuSheet } from '@/components/menu/MenuSheet'
 import { SPINNER_ICON } from '@/components/ui/icons'
 import { ToastProvider } from '@/components/ui/ToastProvider'
 import { TooltipProvider } from '@/components/ui/Tooltip'
+import { createQueryClient } from '@/config/queryClient'
 import { cn } from '@/utils/cn'
 import { useVault } from '@/vault/useVault'
 import type { VaultContextValue } from '@/vault/VaultContext'
@@ -11,6 +13,8 @@ import { VaultProvider } from '@/vault/VaultContext'
 import { HomeView } from '@/views/HomeView'
 import { OnboardingFlow } from '@/views/onboarding/OnboardingFlow'
 import { UnlockView } from '@/views/UnlockView'
+
+const queryClient = createQueryClient()
 
 export type ShellView = 'loading' | 'unlock' | 'onboarding' | 'home'
 
@@ -26,7 +30,7 @@ export const selectShellView = (
   return 'home'
 }
 
-const Shell = (): JSX.Element => {
+const Shell = (): React.JSX.Element => {
   const v = useVault()
   const [menuOpen, setMenuOpen] = useState(false)
   const view = selectShellView(v)
@@ -64,14 +68,16 @@ const Shell = (): JSX.Element => {
   )
 }
 
-const App = (): JSX.Element => (
-  <VaultProvider>
-    <TooltipProvider>
-      <ToastProvider>
-        <Shell />
-      </ToastProvider>
-    </TooltipProvider>
-  </VaultProvider>
+const App = (): React.JSX.Element => (
+  <QueryClientProvider client={queryClient}>
+    <VaultProvider>
+      <TooltipProvider>
+        <ToastProvider>
+          <Shell />
+        </ToastProvider>
+      </TooltipProvider>
+    </VaultProvider>
+  </QueryClientProvider>
 )
 
 export default App

@@ -13,7 +13,7 @@ export const OptionList = <T extends string>({
   options,
   value,
   onSelect,
-}: OptionListProps<T>): JSX.Element => (
+}: OptionListProps<T>): React.JSX.Element => (
   <ul className="flex flex-col gap-1.5 list-none m-0 p-0">
     {options.map((opt) => {
       const active = value === opt.value

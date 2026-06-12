@@ -1,14 +1,11 @@
-import { createCantonToken } from './canton-token.ts'
 import { isMockEnabled } from './mock.ts'
 
-export type TokenSource = 'env' | 'mint' | 'none'
+export type TokenSource = 'env' | 'none'
 
 export interface WalletServiceConfig {
   port: number
   corsOrigins: string[]
   network: string
-  // When set, listAccounts returns only parties whose hint starts with this prefix.
-  accountsHintPrefix?: string
   provider: {
     id: string
     version: string
@@ -19,9 +16,13 @@ export interface WalletServiceConfig {
     jsonApiUrl: string
     ledgerApiUrl: string
     adminApiUrl: string
-    backendUserId: string
     backendToken?: string
     tokenSource: TokenSource
+  }
+  splice: {
+    validatorUrl: string
+    scanApiUrl: string
+    registryApiUrl: string
   }
 }
 
@@ -42,7 +43,8 @@ const optionalNumber = (name: string, fallback: number): number => {
   return parsed
 }
 
-const resolveToken = (backendUserId: string): { token?: string; source: TokenSource } => {
+// Resolves the explicit runtime bearer token without exposing the local signing recipe to services.
+const resolveToken = (): { token?: string; source: TokenSource } => {
   if (isMockEnabled()) {
     return { source: 'none' }
   }
@@ -50,20 +52,13 @@ const resolveToken = (backendUserId: string): { token?: string; source: TokenSou
   if (explicit !== undefined) {
     return { token: explicit, source: 'env' }
   }
-  const audience = optional('CANTON_AUTH_AUDIENCE')
-  const secret = optional('CANTON_AUTH_SECRET')
-  if (audience !== undefined && secret !== undefined) {
-    return {
-      token: createCantonToken({ subject: backendUserId, audience, secret }),
-      source: 'mint',
-    }
-  }
-  return { source: 'none' }
+  throw new Error(
+    'CANTON_BACKEND_TOKEN is required. Generate one with: npm run canton:token -- ledger-api-user',
+  )
 }
 
 export const loadConfig = (): WalletServiceConfig => {
-  const backendUserId = optional('CANTON_ADMIN_USER_ID') ?? 'wallet-service'
-  const resolved = resolveToken(backendUserId)
+  const resolved = resolveToken()
   return {
     port: optionalNumber('WALLET_SERVICE_PORT', 3010),
     corsOrigins: (
@@ -75,7 +70,6 @@ export const loadConfig = (): WalletServiceConfig => {
       .map((origin) => origin.trim())
       .filter((origin) => origin.length > 0),
     network: optional('NETWORK') ?? 'canton:local',
-    accountsHintPrefix: optional('WALLET_SERVICE_ACCOUNTS_PREFIX'),
     provider: {
       id: optional('WALLET_PROVIDER_ID') ?? 'wallet-service',
       version: optional('WALLET_PROVIDER_VERSION') ?? '0.1.0',
@@ -86,9 +80,14 @@ export const loadConfig = (): WalletServiceConfig => {
       jsonApiUrl: optional('CANTON_JSON_API_URL') ?? 'http://localhost:3013',
       ledgerApiUrl: optional('CANTON_LEDGER_API_URL') ?? 'grpc://localhost:3014',
       adminApiUrl: optional('CANTON_ADMIN_API_URL') ?? 'grpc://localhost:3015',
-      backendUserId,
       backendToken: resolved.token,
       tokenSource: resolved.source,
+    },
+    splice: {
+      validatorUrl: optional('SPLICE_VALIDATOR_URL') ?? 'http://localhost:2000/api/validator',
+      scanApiUrl: optional('SPLICE_SCAN_API_URL') ?? 'http://scan.localhost:4000/api/scan',
+      registryApiUrl:
+        optional('SPLICE_REGISTRY_API_URL') ?? 'http://localhost:2000/api/validator/v0/scan-proxy',
     },
   }
 }

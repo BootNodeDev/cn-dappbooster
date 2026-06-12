@@ -40,7 +40,7 @@ export const PrimaryButton = ({
   type = 'button',
   className,
   ...rest
-}: ButtonProps): JSX.Element => (
+}: ButtonProps): React.JSX.Element => (
   <button
     type={type}
     className={cn(VARIANT_CLASS.primary, className)}
@@ -52,7 +52,7 @@ export const SecondaryButton = ({
   type = 'button',
   className,
   ...rest
-}: ButtonProps): JSX.Element => (
+}: ButtonProps): React.JSX.Element => (
   <button
     type={type}
     className={cn(VARIANT_CLASS.secondary, className)}
@@ -60,7 +60,11 @@ export const SecondaryButton = ({
   />
 )
 
-export const GhostButton = ({ type = 'button', className, ...rest }: ButtonProps): JSX.Element => (
+export const GhostButton = ({
+  type = 'button',
+  className,
+  ...rest
+}: ButtonProps): React.JSX.Element => (
   <button
     type={type}
     className={cn(VARIANT_CLASS.ghost, className)}
@@ -68,7 +72,7 @@ export const GhostButton = ({ type = 'button', className, ...rest }: ButtonProps
   />
 )
 
-export const DangerButton = ({ className, ...rest }: ButtonProps): JSX.Element => (
+export const DangerButton = ({ className, ...rest }: ButtonProps): React.JSX.Element => (
   <PrimaryButton
     className={cn(DANGER_OVERRIDE, className)}
     {...rest}

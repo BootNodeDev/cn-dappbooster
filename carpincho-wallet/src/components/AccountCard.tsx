@@ -11,7 +11,7 @@ interface AccountCardProps {
 }
 
 // The whole card opens the Accounts popup; the inline copy button stays independent of that action.
-export const AccountCard = ({ primary }: AccountCardProps): JSX.Element => {
+export const AccountCard = ({ primary }: AccountCardProps): React.JSX.Element => {
   const [accountsOpen, setAccountsOpen] = useState(false)
 
   return (

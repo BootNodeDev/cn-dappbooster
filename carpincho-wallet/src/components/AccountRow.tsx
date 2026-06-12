@@ -18,7 +18,7 @@ export const AccountRow = ({
   withName = false,
   addressTrailing,
   avatarSize = 'md',
-}: AccountRowProps): JSX.Element => (
+}: AccountRowProps): React.JSX.Element => (
   <div className="flex min-w-0 flex-1 items-center gap-2">
     <AccountAvatar
       name={account.name}

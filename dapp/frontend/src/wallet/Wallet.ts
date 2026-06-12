@@ -1,6 +1,11 @@
-// Party discovery + submission seam. StealthWallet (hosted) implements it today;
-// CarpinchoWallet (external keys) slots in later without touching the dApp.
-import type { PartyRef } from '@/backend/VestingBackend'
+// Submission seam. The dApp builds ledger commands + explicit disclosures and
+// hands them to a SubmitFn, which signs and submits them as the acting party.
+//
+// Today the SubmitFn is backed by canton-connect-kit's useExecute() → Carpincho
+// (external-key signing via prepareExecuteAndWait). ACS/SCAN reads do NOT go
+// through here — they use the wallet-service /rpc sidecar (see AmuletBackend),
+// because the connected external party cannot read the operator/DSO contracts
+// the Amulet flow discloses.
 
 // JSON Ledger API v2 command — always an ExerciseCommand in this dApp.
 export type LedgerCommand = {
@@ -20,11 +25,9 @@ export type DisclosedContract = {
   synchronizerId?: string
 }
 
-export interface Wallet {
-  listParties(): Promise<PartyRef[]>
-  execute(
-    actingParty: string,
-    command: LedgerCommand,
-    disclosed?: DisclosedContract[],
-  ): Promise<unknown>
-}
+// Signs and submits a command as `actingParty`, carrying any explicit disclosures.
+export type SubmitFn = (
+  actingParty: string,
+  command: LedgerCommand,
+  disclosed?: DisclosedContract[],
+) => Promise<unknown>
