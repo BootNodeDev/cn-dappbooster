@@ -77,9 +77,6 @@ type TransferContext = {
   disclosures: DisclosedContract[]
 }
 
-// The package id portion of a `packageId:Module:Entity` template id.
-export const packageIdOf = (templateId: string): string => templateId.split(':')[0] ?? ''
-
 // ── SCAN API response shapes ─────────────────────────────────────────────────
 // Verified against live Splice SCAN responses.
 
@@ -100,7 +97,6 @@ type ScanAmuletRulesResponse = {
 type ScanMiningRoundContract = {
   contract_id?: string
   created_event_blob?: string
-  template_id?: string
   payload?: {
     round?: {
       number?: unknown
@@ -127,7 +123,8 @@ export class AmuletBackend implements VestingBackend {
   private readonly contractTid: string
   private readonly claimTid: string
   private readonly amuletTid: string
-  private readonly splicePkg: string
+  private readonly amuletRulesTid: string
+  private readonly openMiningRoundTid: string
   private readonly filterNameByPkg: Record<string, string>
 
   constructor(rpcUrl: string, deployment: Deployment, wallet: Wallet) {
@@ -136,12 +133,13 @@ export class AmuletBackend implements VestingBackend {
     this.operator = deployment.operator
     const pkg = deployment.pkg
     const sp = deployment.splicePkg ?? SPLICE_PKG_FALLBACK
-    this.splicePkg = sp
     this.factoryTid = `${pkg}:AmuletVesting:AmuletVestingFactory`
     this.proposalTid = `${pkg}:AmuletVesting:AmuletVestingProposal`
     this.contractTid = `${pkg}:AmuletVesting:AmuletVestingContract`
     this.claimTid = `${pkg}:AmuletVesting:AmuletVestedClaim`
     this.amuletTid = `${sp}:Splice.Amulet:Amulet`
+    this.amuletRulesTid = `${sp}:Splice.AmuletRules:AmuletRules`
+    this.openMiningRoundTid = `${sp}:Splice.Round:OpenMiningRound`
     this.filterNameByPkg = { [pkg]: AMULET_VESTING_PKG_NAME, [sp]: SPLICE_AMULET_PKG_NAME }
   }
 
@@ -286,20 +284,11 @@ export class AmuletBackend implements VestingBackend {
       )
       throw new Error('AmuletRules contract_id or created_event_blob absent in SCAN response')
     }
-    // The configured/fallback splice-amulet package id (assumption [A1]) can be a
-    // different version than what this LocalNet actually deployed. A disclosed contract
-    // must declare the package its created_event_blob decodes to, or the submission is
-    // rejected with a template-id Mismatch. So each disclosure carries the live
-    // template_id the source reports (SCAN here, the verbose ACS read for inputs); the
-    // configured id is only a fallback.
     const rulesRef: DisclosedRef = {
       contractId: rulesCid,
       createdEventBlob: rulesBlob,
       synchronizerId,
-      templateId: rulesContract.template_id,
     }
-    const amuletRulesTid = `${this.splicePkg}:Splice.AmuletRules:AmuletRules`
-    const openMiningRoundTid = `${this.splicePkg}:Splice.Round:OpenMiningRound`
 
     // ── OpenMiningRound — pick highest round number ──────────────────────────
     const openRoundsMap = roundsResponse.open_mining_rounds
@@ -329,8 +318,8 @@ export class AmuletBackend implements VestingBackend {
     }
 
     const disclosures: DisclosedContract[] = [
-      buildDisclosedContract(amuletRulesTid, rulesRef),
-      buildDisclosedContract(openMiningRoundTid, roundRef),
+      buildDisclosedContract(this.amuletRulesTid, rulesRef),
+      buildDisclosedContract(this.openMiningRoundTid, roundRef),
     ]
 
     return { arg, disclosures }
@@ -350,11 +339,14 @@ export class AmuletBackend implements VestingBackend {
       throw new Error('AmuletVestingFactory not found — run the amulet-vesting bootstrap')
     }
 
+    const amuletCids = await this.selectAmuletCids(args.proposer, args.totalAmount)
+
     const command = buildAmuletCreateVestingCommand(this.factoryTid, factoryRef.contractId, {
       proposer: args.proposer,
       receiver: args.receiver,
       totalAmount: args.totalAmount,
       schedule: args.schedule,
+      amuletCids,
       note: composeNote(args.title, args.note),
     })
 
@@ -365,37 +357,39 @@ export class AmuletBackend implements VestingBackend {
 
   async accept(args: { receiver: string; proposalCid: string }): Promise<void> {
     const { arg, disclosures } = await this.loadTransferContext()
-    const { cids, disclosures: inputDisclosures } = await this.selectAcceptInputs(args.proposalCid)
-    const command = buildAmuletAcceptCommand(this.proposalTid, args.proposalCid, arg, cids)
+    const inputDisclosures = await this.discloseAcceptInputs(args.proposalCid)
+    const command = buildAmuletAcceptCommand(this.proposalTid, args.proposalCid, arg)
     await this.submit(args.receiver, command, [...disclosures, ...inputDisclosures])
   }
 
-  // ── selectAcceptInputs ───────────────────────────────────────────────────────
-  // AmuletVestingProposal_Accept self-transfers the PROPOSER's Amulets into the escrow.
-  // The coins are NOT pinned on the proposal (they would go stale as Splice merges/re-mints
-  // Amulets); they are chosen fresh here from the proposer's current holdings, disclosed to
-  // the receiver (who is not a stakeholder of them), and passed into the choice.
-  private async selectAcceptInputs(
-    proposalCid: string,
-  ): Promise<{ cids: string[]; disclosures: DisclosedContract[] }> {
+  // ── discloseAcceptInputs ─────────────────────────────────────────────────────
+  // AmuletVestingProposal_Accept is submitted by the receiver but self-transfers the
+  // PROPOSER's input Amulets into the escrow. The receiver is not a stakeholder of those
+  // Amulets, so they must be explicitly disclosed or the submission fails CONTRACT_NOT_FOUND.
+  // Read the proposal (visible to the operator, always a signatory as provider) for its
+  // amuletCids + proposer, then pull each input Amulet's createdEventBlob from the proposer's
+  // ACS (operator-owned Amulets carry a non-empty blob, unlike DSO-signed AmuletRules).
+  private async discloseAcceptInputs(proposalCid: string): Promise<DisclosedContract[]> {
     const proposalRows = await this.readAcs(this.operator, this.proposalTid)
     const proposal = proposalRows
       .map((row) => createdArg(row))
       .find((entry) => entry?.contractId === proposalCid)
     if (proposal === undefined) {
-      throw new Error('AmuletVestingProposal not found for accept')
+      throw new Error('AmuletVestingProposal not found for accept disclosure')
     }
+    const amuletCids = Array.isArray(proposal.arg.amuletCids)
+      ? (proposal.arg.amuletCids as string[])
+      : []
     const proposer = String(proposal.arg.proposer ?? '')
-    const totalAmount = Number(proposal.arg.totalAmount ?? 0)
-    if (proposer === '' || !(totalAmount > 0)) {
-      throw new Error('Proposal is missing a proposer or amount; cannot accept.')
+    if (amuletCids.length === 0 || proposer === '') {
+      return []
     }
-    const wanted = new Set(await this.selectAmuletCids(proposer, totalAmount))
-    const disclosures = (await this.readAcs(proposer, this.amuletTid))
+    const wanted = new Set(amuletCids)
+    const amuletRows = await this.readAcs(proposer, this.amuletTid)
+    return amuletRows
       .map((row) => extractCreatedEventBlob(row as Parameters<typeof extractCreatedEventBlob>[0]))
       .filter((ref): ref is DisclosedRef => ref !== undefined && wanted.has(ref.contractId))
       .map((ref) => buildDisclosedContract(this.amuletTid, ref))
-    return { cids: [...wanted], disclosures }
   }
 
   async withdraw(args: { receiver: string; contractCid: string; amount: number }): Promise<void> {
@@ -511,12 +505,7 @@ const pickLatestScanRound = (
       }
       const roundNum = Number(contract.payload?.round?.number ?? 0)
       return {
-        ref: {
-          contractId: cid,
-          createdEventBlob: blob,
-          synchronizerId,
-          templateId: contract.template_id,
-        } satisfies DisclosedRef,
+        ref: { contractId: cid, createdEventBlob: blob, synchronizerId } satisfies DisclosedRef,
         roundNum,
       }
     })

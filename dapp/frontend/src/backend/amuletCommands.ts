@@ -26,12 +26,9 @@ type CreateVestingArgs = {
   receiver: string
   totalAmount: number
   schedule: VestingSchedule
+  amuletCids: string[]
   note?: string
 }
-
-// Legacy choice field, kept for SCU upgrade compatibility. Coins are now chosen at
-// accept time, so creation always passes an empty list.
-const LEGACY_AMULET_CIDS: string[] = []
 
 export const buildAmuletCreateVestingCommand = (
   factoryTid: string,
@@ -47,7 +44,7 @@ export const buildAmuletCreateVestingCommand = (
       receiver: args.receiver,
       totalAmount: String(args.totalAmount),
       schedule: encodeSchedule(args.schedule),
-      amuletCids: LEGACY_AMULET_CIDS,
+      amuletCids: args.amuletCids,
       note: args.note ?? null,
     },
   },
@@ -60,13 +57,12 @@ export const buildAmuletAcceptCommand = (
   proposalTid: string,
   proposalCid: string,
   ctx: AppTransferContextArg,
-  inputAmuletCids: string[],
 ) => ({
   ExerciseCommand: {
     templateId: proposalTid,
     contractId: proposalCid,
     choice: 'AmuletVestingProposal_Accept',
-    choiceArgument: { ctx, inputAmuletCids },
+    choiceArgument: { ctx },
   },
 })
 

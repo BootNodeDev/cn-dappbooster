@@ -265,7 +265,7 @@ template AmuletVestingProposal
     receiver    : Party
     totalAmount : Decimal
     schedule    : VestingSchedule
-    amuletCids  : [ContractId Amulet]   -- legacy: unused now (kept for SCU upgrade compatibility)
+    amuletCids  : [ContractId Amulet]
     note        : Optional Text
   where
     signatory provider, proposer
@@ -274,16 +274,8 @@ template AmuletVestingProposal
     choice AmuletVestingProposal_Accept : ContractId AmuletVestingContract
       with
         ctx : AppTransferContext   -- supplied off-ledger by the app backend
-        -- The proposer's input Amulets are chosen at ACCEPT time, not pinned at create:
-        -- Amulets are merged/re-minted by wallet automation, so contract ids stored on a
-        -- pending proposal go stale. Optional (trailing) so this stays a valid SCU upgrade;
-        -- None falls back to the legacy stored `amuletCids`.
-        inputAmuletCids : Optional [ContractId Amulet]
       controller receiver
       do
-        let cids = case inputAmuletCids of
-              Some xs@(_ :: _) -> xs
-              _                -> amuletCids
         -- Derive the DSO from the funder's own input Amulets rather than trusting a
         -- caller-supplied `dso`. An `Amulet` is signed by `{dso, owner}`, and the proposer
         -- (owner of these amulets) is a signatory of this proposal, so fetching one is
@@ -291,7 +283,7 @@ template AmuletVestingProposal
         -- derived `dso` is the actual admin of the very CC being locked, so the stored `dso`
         -- is correct by construction and consistent with the transfer's `expectedDso`; this
         -- removes the footgun where a typo'd `dso` produced a proposal that could never Accept.
-        dso <- case cids of
+        dso <- case amuletCids of
           (cid :: _) -> (.dso) <$> fetch cid
           []         -> abort "AmuletVestingProposal_Accept: no input amulets to fund the grant"
         -- Self-transfer the funder's CC into a single LockedAmulet escrow:
@@ -303,7 +295,7 @@ template AmuletVestingProposal
         result <- exerciseAppTransfer dso ctx Transfer with
           sender = proposer
           provider = provider
-          inputs = map InputAmulet cids
+          inputs = map InputAmulet amuletCids
           outputs =
             [ TransferOutput with
                 receiver = proposer
@@ -350,7 +342,7 @@ template AmuletVestingFactory
         receiver    : Party
         totalAmount : Decimal
         schedule    : VestingSchedule
-        amuletCids  : [ContractId Amulet]   -- legacy: pass [] now; coins are chosen at accept
+        amuletCids  : [ContractId Amulet]
         note        : Optional Text
       controller proposer
       do
