@@ -3,6 +3,8 @@ import { afterEach, describe, it } from 'node:test'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TransfersPanel } from '@/components/TransfersPanel'
+import { TooltipProvider } from '@/components/ui/Tooltip'
+import type { AmuletPreapprovalApi } from '@/hooks/useAmuletPreapproval'
 import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
 import { TestQueryClientProvider } from '@/test-utils/queryClient'
 import type { AccountPublic } from '@/vault/types'
@@ -42,13 +44,28 @@ const baseVault = (): VaultContextValue =>
     setAutoLockOption: () => undefined,
   }) as VaultContextValue
 
+// Keeps the auto-accept toggle inert for transfer-list scenarios that do not exercise it.
+const inactivePreapprovalApi: AmuletPreapprovalApi = {
+  getAmuletPreapprovalStatus: async () => ({ active: false, expired: false }),
+  createAmuletPreapproval: async () => ({ updateId: 'noop' }),
+  cancelAmuletPreapproval: async () => ({ updateId: 'noop' }),
+}
+
 // Mounts incoming transfers under vault context so accept can use wallet signing hooks.
-const renderTransfers = (api: Cip56TransferApi): void => {
+const renderTransfers = (
+  api: Cip56TransferApi,
+  preapprovalApi: AmuletPreapprovalApi = inactivePreapprovalApi,
+): void => {
   render(
     <TestQueryClientProvider>
-      <VaultContext.Provider value={baseVault()}>
-        <TransfersPanel api={api} />
-      </VaultContext.Provider>
+      <TooltipProvider>
+        <VaultContext.Provider value={baseVault()}>
+          <TransfersPanel
+            api={api}
+            preapprovalApi={preapprovalApi}
+          />
+        </VaultContext.Provider>
+      </TooltipProvider>
     </TestQueryClientProvider>,
   )
 }
@@ -150,5 +167,104 @@ describe('TransfersPanel', () => {
     assert.equal(screen.getByText('2026-06-09 20:41 UTC').textContent, '2026-06-09 20:41 UTC')
     assert.equal(screen.getByText('2026-06-10 20:41 UTC').textContent, '2026-06-10 20:41 UTC')
     assert.equal(screen.getByText('transfer-cid-1').textContent, 'transfer-cid-1')
+  })
+
+  it('enables Amulet auto-accept for the selected party', async () => {
+    // Scenario: the selected party has no active Amulet receiver preapproval.
+    // Enabling auto-accept must sign the prepared command for that same party.
+    let createCalls = 0
+    const transfersApi: Cip56TransferApi = {
+      listPendingIncomingTransfers: async () => [],
+    }
+    const preapprovalApi: AmuletPreapprovalApi = {
+      getAmuletPreapprovalStatus: async (receiver) => {
+        assert.equal(receiver, 'alice::party')
+        return { active: false, expired: false }
+      },
+      createAmuletPreapproval: async ({ account, signMessage, recordTransaction }) => {
+        createCalls += 1
+        assert.equal(account.partyId, 'alice::party')
+        assert.equal(await signMessage(ACCOUNT.id, new Uint8Array()), 'signature')
+        assert.ok(
+          recordTransaction,
+          'preapproval execution should be recorded like token transfers',
+        )
+        return { updateId: 'create-update-1' }
+      },
+      cancelAmuletPreapproval: async () => {
+        throw new Error('cancel should not run while enabling')
+      },
+    }
+
+    renderTransfers(transfersApi, preapprovalApi)
+
+    await screen.findByText('Auto-accept')
+    const toggle = await screen.findByRole('switch', { name: 'Auto-accept' })
+    await waitFor(() => {
+      assert.equal(toggle.hasAttribute('disabled'), false)
+    })
+    await userEvent.click(toggle)
+
+    assert.equal(createCalls, 1)
+  })
+
+  it('disables active Amulet auto-accept for the selected party', async () => {
+    // Scenario: the selected party already has an active receiver preapproval.
+    // The toggle reads as on and flipping it cancels the same receiver preapproval.
+    let cancelCalls = 0
+    const transfersApi: Cip56TransferApi = {
+      listPendingIncomingTransfers: async () => [],
+    }
+    const preapprovalApi: AmuletPreapprovalApi = {
+      getAmuletPreapprovalStatus: async (receiver) => {
+        assert.equal(receiver, 'alice::party')
+        return {
+          active: true,
+          expired: false,
+          expiresAt: '2026-06-11T12:00:00.000Z',
+          contractId: 'preapproval-cid-1',
+        }
+      },
+      createAmuletPreapproval: async () => {
+        throw new Error('create should not run while disabling')
+      },
+      cancelAmuletPreapproval: async ({ account }) => {
+        cancelCalls += 1
+        assert.equal(account.partyId, 'alice::party')
+        return { updateId: 'cancel-update-1' }
+      },
+    }
+
+    renderTransfers(transfersApi, preapprovalApi)
+
+    const toggle = await screen.findByRole('switch', { name: 'Auto-accept', checked: true })
+    await userEvent.click(toggle)
+
+    assert.equal(cancelCalls, 1)
+  })
+
+  it('reads expired Amulet auto-accept as on so it can be cleared', async () => {
+    // Scenario: a preapproval contract can still exist after its expiry. The toggle
+    // stays on so the user can flip it off to clear the stale preapproval.
+    const transfersApi: Cip56TransferApi = {
+      listPendingIncomingTransfers: async () => [],
+    }
+    const preapprovalApi: AmuletPreapprovalApi = {
+      getAmuletPreapprovalStatus: async () => ({
+        active: false,
+        expired: true,
+        expiresAt: '2026-06-01T12:00:00.000Z',
+        contractId: 'expired-preapproval-cid',
+      }),
+      createAmuletPreapproval: async () => {
+        throw new Error('create should not run for expired status action')
+      },
+      cancelAmuletPreapproval: async () => ({ updateId: 'cancel-expired-1' }),
+    }
+
+    renderTransfers(transfersApi, preapprovalApi)
+
+    const toggle = await screen.findByRole('switch', { name: 'Auto-accept', checked: true })
+    assert.equal(toggle.getAttribute('aria-checked'), 'true')
   })
 })

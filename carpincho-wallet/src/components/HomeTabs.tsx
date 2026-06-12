@@ -4,6 +4,7 @@ import { AssetsPanel } from '@/components/AssetsPanel'
 import { type Cip56SendApi, SendTokensPanel } from '@/components/SendTokensPanel'
 import { TransfersPanel } from '@/components/TransfersPanel'
 import { TabContent, Tabs, TabsList, TabTrigger } from '@/components/ui/Tabs'
+import type { AmuletPreapprovalApi } from '@/hooks/useAmuletPreapproval'
 import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
 import type { Cip56HoldingsApi } from '@/hooks/useTokenHoldings'
 import type { AccountPublic, TransactionRecord } from '@/vault/types'
@@ -13,6 +14,7 @@ interface HomeTabsProps {
   transactions: TransactionRecord[]
   tokensApi?: Cip56HoldingsApi
   transfersApi?: Cip56TransferApi
+  preapprovalApi?: AmuletPreapprovalApi
   sendApi?: Cip56SendApi
 }
 
@@ -25,6 +27,7 @@ export const HomeTabs = ({
   transactions,
   tokensApi,
   transfersApi,
+  preapprovalApi,
   sendApi,
 }: HomeTabsProps): JSX.Element => {
   const activeAccountId = account?.id
@@ -52,7 +55,7 @@ export const HomeTabs = ({
 
   return (
     <Tabs
-      defaultValue="activity"
+      defaultValue="assets"
       className="flex min-h-0 flex-1 flex-col"
     >
       <TabsList>
@@ -85,6 +88,7 @@ export const HomeTabs = ({
         <TransfersPanel
           account={account}
           api={transfersApi}
+          preapprovalApi={preapprovalApi}
           onPendingCountChange={onPendingTransferCountChange}
         />
       </TabContent>

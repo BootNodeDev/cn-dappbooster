@@ -2,7 +2,10 @@ import { strict as assert } from 'node:assert'
 import { afterEach, describe, it } from 'node:test'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import type { ReactNode } from 'react'
 import { HomeTabs } from '@/components/HomeTabs'
+import { TooltipProvider } from '@/components/ui/Tooltip'
+import type { AmuletPreapprovalApi } from '@/hooks/useAmuletPreapproval'
 import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
 import type { Cip56HoldingsApi } from '@/hooks/useTokenHoldings'
 import { TestQueryClientProvider } from '@/test-utils/queryClient'
@@ -69,6 +72,24 @@ const baseVault = (): VaultContextValue =>
     setAutoLockOption: () => undefined,
   }) as VaultContextValue
 
+// Keeps the Transfers tab auto-accept toggle inert for navigation-focused scenarios.
+const inactivePreapprovalApi: AmuletPreapprovalApi = {
+  getAmuletPreapprovalStatus: async () => ({ active: false, expired: false }),
+  createAmuletPreapproval: async () => ({ updateId: 'noop' }),
+  cancelAmuletPreapproval: async () => ({ updateId: 'noop' }),
+}
+
+// Wraps HomeTabs in the providers its child panels depend on (query, tooltip, vault).
+const renderHome = (vault: VaultContextValue, children: ReactNode): void => {
+  render(
+    <TestQueryClientProvider>
+      <TooltipProvider>
+        <VaultContext.Provider value={vault}>{children}</VaultContext.Provider>
+      </TooltipProvider>
+    </TestQueryClientProvider>,
+  )
+}
+
 describe('HomeTabs navigation', () => {
   afterEach(() => {
     // HomeTabs child panels can own polling hooks, so unmount them between scenarios.
@@ -77,18 +98,18 @@ describe('HomeTabs navigation', () => {
 
   it('renders Assets, Transfers, Activity, and Send tabs', () => {
     // Scenario: token balances, incoming transfers, history, and sending each own a
-    // top-level tab. Activity stays the default landing view.
-    render(
-      <TestQueryClientProvider>
-        <VaultContext.Provider value={baseVault()}>
-          <HomeTabs transactions={[]} />
-        </VaultContext.Provider>
-      </TestQueryClientProvider>,
+    // top-level tab. Assets is the default landing view.
+    renderHome(
+      baseVault(),
+      <HomeTabs
+        transactions={[]}
+        preapprovalApi={inactivePreapprovalApi}
+      />,
     )
 
-    assert.equal(screen.getByRole('tab', { name: 'Activity' }).getAttribute('data-state'), 'active')
-    assert.ok(screen.getByRole('tab', { name: 'Assets' }))
+    assert.equal(screen.getByRole('tab', { name: 'Assets' }).getAttribute('data-state'), 'active')
     assert.ok(screen.getByRole('tab', { name: 'Transfers' }))
+    assert.ok(screen.getByRole('tab', { name: 'Activity' }))
     assert.ok(screen.getByRole('tab', { name: 'Send' }))
   })
 
@@ -108,20 +129,17 @@ describe('HomeTabs navigation', () => {
       ],
     }
 
-    render(
-      <TestQueryClientProvider>
-        <VaultContext.Provider value={baseVault()}>
-          <HomeTabs
-            transactions={[]}
-            tokensApi={holdingsApi}
-          />
-        </VaultContext.Provider>
-      </TestQueryClientProvider>,
+    renderHome(
+      baseVault(),
+      <HomeTabs
+        transactions={[]}
+        tokensApi={holdingsApi}
+        preapprovalApi={inactivePreapprovalApi}
+      />,
     )
 
     await userEvent.click(screen.getByRole('tab', { name: 'Assets' }))
 
-    await screen.findByText('Token holdings')
     await screen.findByText('7 Amulet')
   })
 
@@ -149,40 +167,36 @@ describe('HomeTabs navigation', () => {
       listTokenHoldingSummaries: async () => [],
     }
 
-    render(
-      <TestQueryClientProvider>
-        <VaultContext.Provider value={baseVault()}>
-          <HomeTabs
-            transactions={[]}
-            tokensApi={holdingsApi}
-            transfersApi={transfersApi}
-          />
-        </VaultContext.Provider>
-      </TestQueryClientProvider>,
+    renderHome(
+      baseVault(),
+      <HomeTabs
+        transactions={[]}
+        tokensApi={holdingsApi}
+        transfersApi={transfersApi}
+        preapprovalApi={inactivePreapprovalApi}
+      />,
     )
 
-    assert.equal(screen.getByRole('tab', { name: 'Activity' }).getAttribute('data-state'), 'active')
+    assert.equal(screen.getByRole('tab', { name: 'Assets' }).getAttribute('data-state'), 'active')
     await screen.findByRole('tab', { name: 'Transfers 1' })
   })
 
-  it('shows Activity only for the selected account', () => {
+  it('shows Activity only for the selected account', async () => {
     // Scenario: Alice and Bob share one local vault, but Activity belongs to the
     // selected party. Switching to Bob must hide Alice's transaction history.
-    render(
-      <TestQueryClientProvider>
-        <VaultContext.Provider
-          value={{ ...baseVault(), accounts: [ACCOUNT, SECOND_ACCOUNT], primary: SECOND_ACCOUNT }}
-        >
-          <HomeTabs
-            account={SECOND_ACCOUNT}
-            transactions={[
-              txFor(ACCOUNT, 'tx-alice', 'Alice transfer'),
-              txFor(SECOND_ACCOUNT, 'tx-bob', 'Bob transfer'),
-            ]}
-          />
-        </VaultContext.Provider>
-      </TestQueryClientProvider>,
+    renderHome(
+      { ...baseVault(), accounts: [ACCOUNT, SECOND_ACCOUNT], primary: SECOND_ACCOUNT },
+      <HomeTabs
+        account={SECOND_ACCOUNT}
+        transactions={[
+          txFor(ACCOUNT, 'tx-alice', 'Alice transfer'),
+          txFor(SECOND_ACCOUNT, 'tx-bob', 'Bob transfer'),
+        ]}
+        preapprovalApi={inactivePreapprovalApi}
+      />,
     )
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Activity' }))
 
     assert.equal(screen.queryByText('Alice transfer'), null)
     assert.equal(screen.getByText('Bob transfer').textContent, 'Bob transfer')

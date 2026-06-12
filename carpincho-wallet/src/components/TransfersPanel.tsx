@@ -6,7 +6,11 @@ import {
   transferTimeLabel,
 } from '@/cip56/transfers'
 import { PrimaryButton, SecondaryButton } from '@/components/ui/Button'
+import { Switch } from '@/components/ui/Switch'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { toast } from '@/components/ui/toast'
+import type { AmuletPreapprovalApi } from '@/hooks/useAmuletPreapproval'
+import { useAmuletPreapproval } from '@/hooks/useAmuletPreapproval'
 import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
 import { usePendingCip56Transfers } from '@/hooks/usePendingCip56Transfers'
 import { shortMiddle } from '@/utils/account'
@@ -16,6 +20,7 @@ import { useVault } from '@/vault/useVault'
 export interface TransfersPanelProps {
   account?: AccountPublic
   api?: Cip56TransferApi
+  preapprovalApi?: AmuletPreapprovalApi
   hideWhenEmpty?: boolean
   onPendingCountChange?: (count: number) => void
 }
@@ -23,6 +28,56 @@ export interface TransfersPanelProps {
 interface TransferDetailRowProps {
   label: string
   value: string
+}
+
+interface AmuletPreapprovalSectionProps {
+  account: AccountPublic
+  api?: AmuletPreapprovalApi
+}
+
+// Lets the receiver opt into Amulet auto-accept without routing signing through wallet-service.
+const AmuletPreapprovalSection = ({ account, api }: AmuletPreapprovalSectionProps): JSX.Element => {
+  const vault = useVault()
+  const preapproval = useAmuletPreapproval(account, {
+    api,
+    signMessage: vault.signMessage,
+    recordTransaction: vault.recordTransaction,
+  })
+  const status = preapproval.status
+  const isExpired = status?.expired === true
+  const isActive = status?.active === true && !isExpired
+  const canDisable = isActive || isExpired
+
+  const handleToggle = async (): Promise<void> => {
+    try {
+      if (canDisable) {
+        await preapproval.disable()
+        toast.success('Amulet auto-accept disabled')
+      } else {
+        await preapproval.enable()
+        toast.success('Amulet auto-accept enabled')
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Amulet auto-accept failed')
+    }
+  }
+
+  return (
+    <div className="flex items-center justify-between gap-3 px-1">
+      <div className="flex items-center gap-1.5">
+        <h2 className="m-0 text-[0.95rem] font-semibold text-foreground">Auto-accept</h2>
+        <Tooltip content="When this is on, any Amulet someone sends you drops straight into your wallet. Turn it off and you'll have to accept each incoming transfer yourself." />
+      </div>
+      <Switch
+        aria-label="Auto-accept"
+        checked={canDisable}
+        disabled={preapproval.busy || (preapproval.loading && status === undefined)}
+        onCheckedChange={() => {
+          void handleToggle()
+        }}
+      />
+    </div>
+  )
 }
 
 // Keeps long Canton identifiers readable without hiding the full value in the details area.
@@ -37,6 +92,7 @@ const TransferDetailRow = ({ label, value }: TransferDetailRowProps): JSX.Elemen
 export const TransfersPanel = ({
   account,
   api,
+  preapprovalApi,
   hideWhenEmpty = false,
   onPendingCountChange,
 }: TransfersPanelProps): JSX.Element | null => {
@@ -96,6 +152,11 @@ export const TransfersPanel = ({
 
   return (
     <div className="flex min-h-full flex-col gap-3 px-1 py-2">
+      <AmuletPreapprovalSection
+        account={activeAccount}
+        api={preapprovalApi}
+      />
+
       <div className="flex items-center justify-between gap-3 px-1">
         <h2 className="m-0 text-[0.95rem] font-semibold text-foreground">Incoming transfers</h2>
         {loading ? <span className="text-[0.78rem] text-muted-foreground">Refreshing</span> : null}
