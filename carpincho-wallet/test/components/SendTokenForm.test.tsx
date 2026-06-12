@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert'
 import { afterEach, describe, it } from 'node:test'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { TokenHoldingSummary } from '@/cip56/holdings'
 import {
@@ -94,7 +94,7 @@ describe('SendTokenForm', () => {
     await userEvent.type(screen.getByLabelText('Memo'), 'lunch')
     await userEvent.click(screen.getByRole('button', { name: 'Send' }))
 
-    await screen.findByText('Transfer submitted.')
+    await waitFor(() => assert.equal(sentCount, 1))
     assert.equal(sent.length, 1)
     assert.equal(sent[0]?.account.partyId, 'alice::party')
     assert.equal(sent[0]?.recipient, 'receiver::party')

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import cantonIcon from '@/assets/canton.png'
 import type { TokenHolding, TokenHoldingSummary } from '@/cip56/holdings'
 import { type Cip56SendApi, SendTokenForm } from '@/components/SendTokenForm'
@@ -158,6 +158,18 @@ export const TokenDetailSheet = ({
   const [screen, setScreen] = useState<Screen>('detail')
   const [activeHolding, setActiveHolding] = useState<TokenHolding | null>(null)
   const [direction, setDirection] = useState<'forward' | 'back'>('forward')
+  const screenRef = useRef<HTMLDivElement>(null)
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: re-run on every screen change to refocus the new view.
+  useEffect(() => {
+    if (!open) return
+    const root = screenRef.current
+    if (root === null) return
+    const target = root.querySelector<HTMLElement>(
+      'button, [href], input, [tabindex]:not([tabindex="-1"])',
+    )
+    target?.focus()
+  }, [open, screen])
 
   const detailsApi =
     holdingsApi?.listTokenHoldings === undefined
@@ -227,6 +239,7 @@ export const TokenDetailSheet = ({
     >
       <div
         key={screen}
+        ref={screenRef}
         className={animationClass}
       >
         {screen === 'detail' && (

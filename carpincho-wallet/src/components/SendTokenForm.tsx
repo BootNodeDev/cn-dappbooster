@@ -71,7 +71,6 @@ export const SendTokenForm = ({
   const [deadline, setDeadline] = useState<TransferDeadline>('1h')
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | undefined>(undefined)
-  const [submitStatus, setSubmitStatus] = useState<string | undefined>(undefined)
 
   // Submits the transfer intent while Carpincho remains the signer of the prepared transaction.
   const onSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
@@ -82,7 +81,6 @@ export const SendTokenForm = ({
     }
     setSubmitting(true)
     setSubmitError(undefined)
-    setSubmitStatus(undefined)
     try {
       await sendApi.createTokenTransfer({
         account,
@@ -97,7 +95,6 @@ export const SendTokenForm = ({
       setRecipient('')
       setAmount('')
       setMemo('')
-      setSubmitStatus('Transfer submitted.')
       toast.success('Transfer submitted.')
       onSent?.()
     } catch (err) {
@@ -119,12 +116,6 @@ export const SendTokenForm = ({
       {submitError === undefined ? null : (
         <div className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-[0.82rem] text-danger">
           {submitError}
-        </div>
-      )}
-
-      {submitStatus === undefined ? null : (
-        <div className="rounded-md border border-primary/30 bg-primary-soft px-3 py-2 text-[0.82rem] text-primary">
-          {submitStatus}
         </div>
       )}
 
