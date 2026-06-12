@@ -16,7 +16,7 @@ const SIZE_CLASS: Record<NonNullable<AccountAvatarProps['size']>, string> = {
   md: 'size-10',
 }
 
-const AVATAR_COLORS = ['#692581', '#a563bf', '#c670e5', '#e71d73', '#7d2d99']
+const AVATAR_COLORS = ['#692581', '#e71d73', '#f7b32b', '#2d9d92', '#3a86ff']
 
 export const AccountAvatar = ({ partyId, size = 'md' }: AccountAvatarProps): JSX.Element => (
   <span
@@ -25,7 +25,7 @@ export const AccountAvatar = ({ partyId, size = 'md' }: AccountAvatarProps): JSX
     <Avatar
       name={partyId}
       size={SIZE_PX[size]}
-      variant="abstract"
+      variant="beam"
       colors={AVATAR_COLORS}
     />
   </span>
