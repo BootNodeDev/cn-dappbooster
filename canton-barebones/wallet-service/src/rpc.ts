@@ -1,4 +1,5 @@
 import * as http from 'node:http'
+import * as https from 'node:https'
 import { SDK } from '@canton-network/wallet-sdk'
 import type { WalletServiceConfig } from './config.ts'
 import type {
@@ -364,11 +365,16 @@ export const createRpc = (config: WalletServiceConfig): Rpc => {
         ? JSON.stringify(p.body)
         : undefined
     const target = new URL(config.canton.scanUrl.replace(/\/$/, '') + p.resource)
+    // node:http(s) directly (not fetch) so the Host header survives for nginx vhost
+    // routing. Pick the transport + default port from the URL scheme so an https
+    // scanUrl is not silently sent as cleartext to port 80.
+    const isHttps = target.protocol === 'https:'
+    const transport = isHttps ? https : http
     return new Promise<unknown>((resolve, reject) => {
-      const req = http.request(
+      const req = transport.request(
         {
           hostname: target.hostname,
-          port: target.port || 80,
+          port: target.port || (isHttps ? 443 : 80),
           path: target.pathname + target.search,
           method,
           headers: {

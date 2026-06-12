@@ -417,12 +417,14 @@ export const CreateGrantPage = (): React.JSX.Element => {
                       <div key={m.id} className="flex gap-2">
                         <input
                           type="date"
+                          aria-label={`Milestone ${i + 1} date`}
                           value={dateOf(m.date)}
                           onChange={(e) => setMilestone(i, { date: atMidnight(e.target.value) })}
                           className={cn(inputClass, 'mt-0 flex-1')}
                         />
                         <input
                           inputMode="numeric"
+                          aria-label={`Milestone ${i + 1} cumulative percent`}
                           value={m.pct}
                           onChange={(e) =>
                             setMilestone(i, { pct: e.target.value.replace(/[^0-9]/g, '') })

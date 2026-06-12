@@ -128,8 +128,17 @@ export const DashboardPage = (): React.JSX.Element => {
         setFilterOpen(false)
       }
     }
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') {
+        setFilterOpen(false)
+      }
+    }
     document.addEventListener('pointerdown', onDown)
-    return () => document.removeEventListener('pointerdown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('pointerdown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
   }, [filterOpen])
 
   const activeFilterLabel = filters.find((f) => f.value === filter)?.label ?? 'All'

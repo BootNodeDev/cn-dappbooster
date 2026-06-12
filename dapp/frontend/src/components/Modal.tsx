@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { type ReactNode, useEffect, useRef } from 'react'
+import { type ReactNode, useEffect, useId, useRef } from 'react'
 import { cn } from '@/lib/cn'
 import { CloseIcon } from './icons'
 
@@ -25,6 +25,8 @@ export const Modal = ({
   className,
 }: ModalProps): React.JSX.Element | null => {
   const dialogRef = useRef<HTMLDivElement>(null)
+  const titleId = useId()
+  const descId = useId()
 
   useEffect(() => {
     if (!open) {
@@ -87,7 +89,8 @@ export const Modal = ({
             ref={dialogRef}
             role="dialog"
             aria-modal="true"
-            aria-label={title}
+            aria-labelledby={titleId}
+            aria-describedby={description === undefined ? undefined : descId}
             tabIndex={-1}
             className={cn(
               'relative w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-[var(--shadow-popover)]',
@@ -106,9 +109,13 @@ export const Modal = ({
             >
               <CloseIcon width={16} height={16} />
             </button>
-            <h2 className="pr-10 text-lg font-bold tracking-tight text-fg">{title}</h2>
+            <h2 id={titleId} className="pr-10 text-lg font-bold tracking-tight text-fg">
+              {title}
+            </h2>
             {description !== undefined && (
-              <p className="mt-1 text-sm text-fg-muted">{description}</p>
+              <p id={descId} className="mt-1 text-sm text-fg-muted">
+                {description}
+              </p>
             )}
             <div className="mt-5">{children}</div>
           </motion.div>
