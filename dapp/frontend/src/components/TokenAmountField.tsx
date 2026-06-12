@@ -1,5 +1,5 @@
 import { cn } from '@/lib/cn'
-import { formatCC, sanitizeAmountInput } from '@/lib/format'
+import { formatCC, groupDecimalString, sanitizeAmountInput } from '@/lib/format'
 import { CcCoin } from './CcCoin'
 
 interface TokenAmountFieldProps {
@@ -29,7 +29,7 @@ export const TokenAmountField = ({
         <div className="flex items-center gap-3">
           <input
             inputMode="decimal"
-            value={value}
+            value={groupDecimalString(value)}
             onChange={(e) => onChange(sanitizeAmountInput(e.target.value))}
             placeholder="0"
             aria-label="Amount"

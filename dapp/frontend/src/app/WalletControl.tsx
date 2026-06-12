@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { CheckIcon, ChevronDownIcon, CopyIcon, LogoutIcon } from '@/components/icons'
+import { ChevronDownIcon, CopyIcon, LogoutIcon } from '@/components/icons'
 import { toast } from '@/components/toast'
 import { cn } from '@/lib/cn'
 import { partyHint } from '@/lib/format'
@@ -59,7 +59,13 @@ export const WalletControl = (): React.JSX.Element | null => {
             {pool.map((candidate) => {
               const selected = candidate.partyId === party.partyId
               return (
-                <li key={candidate.partyId} className="flex items-stretch gap-1">
+                <li
+                  key={candidate.partyId}
+                  className={cn(
+                    'flex items-stretch rounded-lg pr-1 transition-colors',
+                    selected ? 'bg-primary-soft' : 'hover:bg-muted',
+                  )}
+                >
                   <button
                     type="button"
                     disabled={selected}
@@ -69,25 +75,19 @@ export const WalletControl = (): React.JSX.Element | null => {
                       setOpen(false)
                       toast.success(`Acting as ${candidate.name}`)
                     }}
-                    className={cn(
-                      'flex min-w-0 flex-1 items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors',
-                      selected ? 'bg-primary-soft' : 'hover:bg-muted',
-                    )}
+                    className="flex min-w-0 flex-1 items-center gap-3 px-3 py-2 text-left"
                   >
                     <span className="size-7 shrink-0 rounded-full bg-[image:var(--gradient-brand)]" />
                     <span className="min-w-0 flex-1 truncate text-sm font-semibold text-fg">
                       {candidate.name}
                     </span>
-                    {selected && (
-                      <CheckIcon width={16} height={16} className="ml-auto shrink-0 text-primary" />
-                    )}
                   </button>
                   <button
                     type="button"
                     aria-label={`Copy ${candidate.name} party id`}
                     title={`Copy ${candidate.name} party id`}
                     onClick={() => void copyId(candidate.partyId)}
-                    className="shrink-0 self-center text-fg-muted transition-colors hover:text-primary"
+                    className="shrink-0 self-center px-2 text-fg-muted transition-colors hover:text-primary"
                   >
                     <CopyIcon width={14} height={14} />
                   </button>

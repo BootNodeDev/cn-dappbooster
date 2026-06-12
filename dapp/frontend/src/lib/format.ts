@@ -29,6 +29,17 @@ export const clampClaimAmount = (amount: number, available: number): number =>
 
 export const formatPct = (fraction: number): string => `${(fraction * 100).toFixed(1)}%`
 
+// Group the integer part of a raw decimal string with thousands separators while
+// preserving a trailing dot / decimals being typed (e.g. "1000.5" → "1,000.5").
+export const groupDecimalString = (raw: string): string => {
+  if (raw === '') {
+    return ''
+  }
+  const [intPart, decPart] = raw.split('.')
+  const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  return decPart === undefined ? grouped : `${grouped}.${decPart}`
+}
+
 // Sanitize free-typed amount input to a valid decimal: digits with at most one
 // decimal point, capped at 10 fractional digits (Canton Decimal precision).
 export const sanitizeAmountInput = (raw: string): string => {
