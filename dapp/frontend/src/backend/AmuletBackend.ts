@@ -418,35 +418,31 @@ export class AmuletBackend implements VestingBackend {
       ? (proposal.arg.amuletCids as string[])
       : []
     const proposer = String(proposal.arg.proposer ?? '')
-    // TEMP diagnostic: surface whether the proposal's input amulets are even being read.
-    console.warn('[accept] proposal inputs:', {
-      proposalArgKeys: Object.keys(proposal.arg),
-      amuletCids,
-      proposer,
-    })
-    if (amuletCids.length === 0 || proposer === '') {
-      return []
+    if (proposer === '' || amuletCids.length === 0) {
+      throw new Error('Proposal records no funding amulets, so it cannot be accepted.')
     }
-    // The ACS read filters by package name (version-agnostic); each row's verbose
-    // createdEvent carries the live templateId, which buildDisclosedContract uses over
-    // the configured fallback.
-    const wanted = new Set(amuletCids)
-    const amuletRows = await this.readAcs(proposer, this.amuletTid)
-    const liveAmuletCids = amuletRows
-      .map((row) => row.contractEntry?.JsActiveContract?.createdEvent?.contractId)
-      .filter((cid): cid is string => cid !== undefined)
-    const disclosed = amuletRows
+    // The proposal pins specific input-Amulet contract ids at creation. They must still be
+    // active in the proposer's wallet AND disclosed to the receiver. Splice's wallet
+    // automation merges/re-mints Amulets over time, archiving the pinned ones — making an
+    // old proposal permanently unacceptable. Detect that here and say so plainly instead of
+    // submitting and getting an opaque CONTRACT_NOT_FOUND.
+    const refs = (await this.readAcs(proposer, this.amuletTid))
       .map((row) => extractCreatedEventBlob(row as Parameters<typeof extractCreatedEventBlob>[0]))
-      .filter((ref): ref is DisclosedRef => ref !== undefined && wanted.has(ref.contractId))
+      .filter((ref): ref is DisclosedRef => ref !== undefined)
+    const liveCids = new Set(refs.map((ref) => ref.contractId))
+    const missing = amuletCids.filter((cid) => !liveCids.has(cid))
+    if (missing.length > 0) {
+      const who = proposer.split('::')[0]
+      throw new Error(
+        `This escrow proposal can no longer be accepted: ${missing.length} of its funding ` +
+          `amulet(s) are no longer in ${who}'s wallet (Splice merged or spent them after the ` +
+          `proposal was created). Create a fresh escrow and accept it promptly.`,
+      )
+    }
+    const wanted = new Set(amuletCids)
+    return refs
+      .filter((ref) => wanted.has(ref.contractId))
       .map((ref) => buildDisclosedContract(this.amuletTid, ref))
-    // TEMP diagnostic: which stored cids are still live in the proposer's wallet?
-    console.warn('[accept] amulet match:', {
-      proposerLiveAmuletCids: liveAmuletCids,
-      wanted: amuletCids,
-      missing: amuletCids.filter((c) => !liveAmuletCids.includes(c)),
-      disclosedCount: disclosed.length,
-    })
-    return disclosed
   }
 
   async withdraw(args: { receiver: string; contractCid: string; amount: number }): Promise<void> {
