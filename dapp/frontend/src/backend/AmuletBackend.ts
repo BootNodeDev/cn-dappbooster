@@ -418,6 +418,12 @@ export class AmuletBackend implements VestingBackend {
       ? (proposal.arg.amuletCids as string[])
       : []
     const proposer = String(proposal.arg.proposer ?? '')
+    // TEMP diagnostic: surface whether the proposal's input amulets are even being read.
+    console.warn('[accept] proposal inputs:', {
+      proposalArgKeys: Object.keys(proposal.arg),
+      amuletCids,
+      proposer,
+    })
     if (amuletCids.length === 0 || proposer === '') {
       return []
     }
@@ -426,10 +432,21 @@ export class AmuletBackend implements VestingBackend {
     // the configured fallback.
     const wanted = new Set(amuletCids)
     const amuletRows = await this.readAcs(proposer, this.amuletTid)
-    return amuletRows
+    const liveAmuletCids = amuletRows
+      .map((row) => row.contractEntry?.JsActiveContract?.createdEvent?.contractId)
+      .filter((cid): cid is string => cid !== undefined)
+    const disclosed = amuletRows
       .map((row) => extractCreatedEventBlob(row as Parameters<typeof extractCreatedEventBlob>[0]))
       .filter((ref): ref is DisclosedRef => ref !== undefined && wanted.has(ref.contractId))
       .map((ref) => buildDisclosedContract(this.amuletTid, ref))
+    // TEMP diagnostic: which stored cids are still live in the proposer's wallet?
+    console.warn('[accept] amulet match:', {
+      proposerLiveAmuletCids: liveAmuletCids,
+      wanted: amuletCids,
+      missing: amuletCids.filter((c) => !liveAmuletCids.includes(c)),
+      disclosedCount: disclosed.length,
+    })
+    return disclosed
   }
 
   async withdraw(args: { receiver: string; contractCid: string; amount: number }): Promise<void> {
