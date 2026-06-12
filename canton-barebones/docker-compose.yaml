@@ -6,13 +6,16 @@ services:
     container_name: canton-barebones-wallet-service
     extra_hosts:
       - "host.docker.internal:host-gateway"
+      # Resolve the scan vhost to the host so the container both reaches the scan
+      # and sends Host: scan.localhost (the nginx vhost the scan routes on).
+      - "scan.localhost:host-gateway"
     environment:
       CANTON_BACKEND_TOKEN: "${CANTON_BACKEND_TOKEN}"
       CANTON_JSON_API_URL: "http://host.docker.internal:2975"
       CANTON_LEDGER_API_URL: "grpc://host.docker.internal:2901"
       CANTON_ADMIN_API_URL: "grpc://host.docker.internal:2902"
       SPLICE_VALIDATOR_URL: "${SPLICE_VALIDATOR_URL:-http://host.docker.internal:2000/api/validator}"
-      SPLICE_SCAN_API_URL: "${SPLICE_SCAN_API_URL:-http://host.docker.internal:4000/api/scan}"
+      SPLICE_SCAN_API_URL: "${SPLICE_SCAN_API_URL:-http://scan.localhost:4000/api/scan}"
       SPLICE_REGISTRY_API_URL: "${SPLICE_REGISTRY_API_URL:-http://host.docker.internal:2000/api/validator/v0/scan-proxy}"
       WALLET_SERVICE_PORT: "3010"
       WALLET_SERVICE_CORS_ORIGINS: "${WALLET_SERVICE_CORS_ORIGINS:-http://localhost:3011}"
