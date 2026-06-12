@@ -22,9 +22,6 @@ interface GrantCardProps {
 }
 
 const scheduleMeta = (grant: Grant, derived: GrantDerived, nowMs: number): string => {
-  if (derived.status === 'pending') {
-    return 'Awaiting acceptance'
-  }
   if (derived.status === 'in_cliff') {
     return `Cliff ${relativeTime(grant.schedule.cliff, nowMs)}`
   }
@@ -89,48 +86,36 @@ export const GrantCard = ({
       </div>
 
       <div className="min-w-0">
-        {isPending ? (
-          <dl className="flex flex-col gap-1.5 text-xs">
-            <div className="flex justify-between gap-3">
-              <dt className="text-fg-muted">Cliff</dt>
-              <dd className="font-mono text-fg">{formatDate(grant.schedule.cliff)}</dd>
-            </div>
-            <div className="flex justify-between gap-3">
-              <dt className="text-fg-muted">
-                {curve.kind === 'milestone' ? 'Milestones' : 'Window'}
-              </dt>
-              <dd className="truncate font-mono text-fg">
+        <div className="mb-2 flex items-center justify-between text-xs text-fg-muted">
+          {isPending ? (
+            <>
+              <span>Cliff {formatDate(grant.schedule.cliff)}</span>
+              <span>
                 {curve.kind === 'milestone'
-                  ? `${curve.points.length} steps`
+                  ? `${curve.points.length} milestones`
                   : `${formatDate(curve.start)} → ${formatDate(curve.end)}`}
-              </dd>
-            </div>
-          </dl>
-        ) : (
-          <>
-            <div className="mb-2 flex items-center justify-between text-xs text-fg-muted">
+              </span>
+            </>
+          ) : (
+            <>
               <span>Vested {formatPct(derived.fraction)}</span>
               <span>{scheduleMeta(grant, derived, nowMs)}</span>
-            </div>
-            <ScheduleBar
-              vestedFraction={derived.fraction}
-              claimedFraction={claimedFraction}
-              milestones={milestones}
-            />
-            <Legend
-              className="mt-3"
-              items={[
-                {
-                  label: 'Vested',
-                  value: derived.vested,
-                  swatch: 'bg-[image:var(--gradient-brand)]',
-                },
-                { label: 'Claimable', value: derived.claimable, swatch: 'bg-success' },
-                { label: 'Claimed', value: derived.claimed, swatch: 'bg-surface-2' },
-              ]}
-            />
-          </>
-        )}
+            </>
+          )}
+        </div>
+        <ScheduleBar
+          vestedFraction={derived.fraction}
+          claimedFraction={claimedFraction}
+          milestones={milestones}
+        />
+        <Legend
+          className="mt-3"
+          items={[
+            { label: 'Vested', value: derived.vested, swatch: 'bg-[image:var(--gradient-brand)]' },
+            { label: 'Claimable', value: derived.claimable, swatch: 'bg-success' },
+            { label: 'Claimed', value: derived.claimed, swatch: 'bg-surface-2' },
+          ]}
+        />
       </div>
 
       <div className="flex flex-col items-stretch gap-2.5 md:items-end">

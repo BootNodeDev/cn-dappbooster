@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { AmountDisplay } from '@/components/AmountDisplay'
 import { Button } from '@/components/Button'
 import { Card } from '@/components/Card'
-import { ContactsIcon } from '@/components/icons'
+import { ArrowLeftIcon, ContactsIcon } from '@/components/icons'
 import { Modal } from '@/components/Modal'
 import { ScheduleCurve } from '@/components/ScheduleCurve'
 import { TokenAmountField } from '@/components/TokenAmountField'
@@ -91,7 +91,6 @@ export const CreateGrantPage = (): React.JSX.Element => {
   ])
   const [name, setName] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [disclosedBytes, setDisclosedBytes] = useState<number | null>(null)
   // When set, the schedule is a quick-demo preset and gets re-anchored to submit time.
   const [demo, setDemo] = useState<DemoPreset | null>(null)
   // The manager's available Canton Coin (sum of their Amulet holdings), loaded live.
@@ -197,7 +196,7 @@ export const CreateGrantPage = (): React.JSX.Element => {
     const finalSchedule = demo === null ? schedule : buildDemoSchedule(demo, now())
     setSubmitting(true)
     try {
-      const result = await createVesting(backend, partyId, {
+      await createVesting(backend, partyId, {
         proposer: partyId,
         receiver: receiver.trim(),
         totalAmount: amountNum,
@@ -205,10 +204,8 @@ export const CreateGrantPage = (): React.JSX.Element => {
         title: name.trim().slice(0, 60),
         note: undefined,
       })
-      setDisclosedBytes(result.disclosedBytes)
-      toast.success(
-        `Proposal created · delivered via explicit disclosure · ${result.disclosedBytes} bytes`,
-      )
+      toast.success('Escrow proposal created')
+      navigate('/dashboard')
     } catch (err) {
       toast.error((err as Error).message)
     } finally {
@@ -217,328 +214,336 @@ export const CreateGrantPage = (): React.JSX.Element => {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-      <div className="flex flex-col gap-5">
-        <Card className="p-6">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <label htmlFor="name" className={labelClass}>
-                Name
-              </label>
-              <input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Advisor grant"
-                maxLength={60}
-                className={cn(inputClass, 'text-sm')}
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <div className="flex items-center justify-between">
-                <label htmlFor="receiver" className={labelClass}>
-                  Beneficiary party id
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => navigate('/dashboard')}
+          aria-label="Back"
+          title="Back"
+          className="grid size-9 place-items-center rounded-lg border border-border bg-surface text-fg-muted transition-colors hover:border-primary hover:text-fg"
+        >
+          <ArrowLeftIcon width={18} height={18} />
+        </button>
+        <h1 className="text-xl font-extrabold tracking-tight text-fg">Create escrow</h1>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+        <div className="flex flex-col gap-5">
+          <Card className="p-6">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <label htmlFor="name" className={labelClass}>
+                  Name
                 </label>
-                <button
-                  type="button"
-                  onClick={() => setPickerOpen(true)}
-                  aria-label="Choose from contacts"
-                  title="Choose from contacts"
-                  className="grid size-8 place-items-center rounded-lg border border-border bg-surface text-fg-muted transition-colors hover:border-primary hover:text-primary"
-                >
-                  <ContactsIcon width={16} height={16} />
-                </button>
-              </div>
-              <input
-                id="receiver"
-                value={receiver}
-                onChange={(e) => setReceiver(e.target.value)}
-                placeholder="bob::1220…"
-                className={cn(inputClass, 'font-mono text-sm')}
-              />
-              {receiver !== '' && !receiverWellFormed && (
-                <p className="mt-1 text-xs text-danger">Use a full party id (hint::fingerprint).</p>
-              )}
-              {receiver !== '' && receiverWellFormed && isSelf && (
-                <p className="mt-1 text-xs text-danger">Cannot escrow to your own party.</p>
-              )}
-            </div>
-            <div className="sm:col-span-2">
-              <span className={labelClass}>Amount</span>
-              <div className="mt-1.5">
-                <TokenAmountField
-                  value={amount}
-                  onChange={setAmount}
-                  balance={holdings}
-                  error={amountError}
+                <input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. Advisor grant"
+                  maxLength={60}
+                  className={cn(inputClass, 'text-sm')}
                 />
               </div>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-extrabold text-fg">Schedule</h2>
-            <div className="inline-flex rounded-lg border border-border bg-surface p-1">
-              {(['linear', 'milestone'] as const).map((k) => (
-                <button
-                  key={k}
-                  type="button"
-                  onClick={() => {
-                    setDemo(null)
-                    setCurveKind(k)
-                  }}
-                  className={cn(
-                    'rounded-md px-3 py-1 text-xs font-bold capitalize transition-colors',
-                    curveKind === k ? 'bg-primary-soft text-fg' : 'text-fg-muted hover:text-fg',
-                  )}
-                >
-                  {k}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="text-[0.65rem] font-bold uppercase tracking-[0.06em] text-fg-muted">
-              Quick demo
-            </span>
-            {curveKind === 'linear' ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => demoLinear(60_000)}
-                  className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-fg-muted transition-colors hover:border-primary hover:text-primary"
-                >
-                  1 min
-                </button>
-                <button
-                  type="button"
-                  onClick={() => demoLinear(120_000)}
-                  className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-fg-muted transition-colors hover:border-primary hover:text-primary"
-                >
-                  2 min
-                </button>
-              </>
-            ) : (
-              <button
-                type="button"
-                onClick={demoMilestones}
-                className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-fg-muted transition-colors hover:border-primary hover:text-primary"
-              >
-                90s
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={resetSchedule}
-              className="ml-auto rounded-full px-3 py-1 text-xs font-semibold text-fg-muted underline-offset-2 transition-colors hover:text-fg hover:underline"
-            >
-              Reset
-            </button>
-          </div>
-          {demo !== null && (
-            <p className="mt-2 text-xs text-primary">
-              Demo schedule — the window starts when you submit, so you have time to switch parties
-              and accept before it fully vests.
-            </p>
-          )}
-
-          <div className="mt-4 flex flex-col gap-4">
-            <div>
-              <label htmlFor="cliff" className={labelClass}>
-                Cliff date
-              </label>
-              <input
-                id="cliff"
-                type="date"
-                value={dateOf(cliff)}
-                onChange={(e) => {
-                  setDemo(null)
-                  setCliff(atMidnight(e.target.value))
-                }}
-                className={inputClass}
-              />
-            </div>
-            {curveKind === 'linear' ? (
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="start" className={labelClass}>
-                    Start date
+              <div className="sm:col-span-2">
+                <div className="flex items-center justify-between">
+                  <label htmlFor="receiver" className={labelClass}>
+                    Beneficiary party id
                   </label>
-                  <input
-                    id="start"
-                    type="date"
-                    value={dateOf(start)}
-                    onChange={(e) => {
-                      setDemo(null)
-                      setStart(atMidnight(e.target.value))
-                    }}
-                    className={inputClass}
-                  />
+                  <button
+                    type="button"
+                    onClick={() => setPickerOpen(true)}
+                    aria-label="Choose from contacts"
+                    title="Choose from contacts"
+                    className="grid size-8 place-items-center rounded-lg border border-border bg-surface text-fg-muted transition-colors hover:border-primary hover:text-primary"
+                  >
+                    <ContactsIcon width={16} height={16} />
+                  </button>
                 </div>
-                <div>
-                  <label htmlFor="end" className={labelClass}>
-                    End date
-                  </label>
-                  <input
-                    id="end"
-                    type="date"
-                    value={dateOf(end)}
-                    onChange={(e) => {
-                      setDemo(null)
-                      setEnd(atMidnight(e.target.value))
-                    }}
-                    className={inputClass}
+                <input
+                  id="receiver"
+                  value={receiver}
+                  onChange={(e) => setReceiver(e.target.value)}
+                  placeholder="bob::1220…"
+                  className={cn(inputClass, 'font-mono text-sm')}
+                />
+                {receiver !== '' && !receiverWellFormed && (
+                  <p className="mt-1 text-xs text-danger">
+                    Use a full party id (hint::fingerprint).
+                  </p>
+                )}
+                {receiver !== '' && receiverWellFormed && isSelf && (
+                  <p className="mt-1 text-xs text-danger">Cannot escrow to your own party.</p>
+                )}
+              </div>
+              <div className="sm:col-span-2">
+                <span className={labelClass}>Amount</span>
+                <div className="mt-1.5">
+                  <TokenAmountField
+                    value={amount}
+                    onChange={setAmount}
+                    balance={holdings}
+                    error={amountError}
                   />
                 </div>
               </div>
-            ) : (
-              <div>
-                <span className={labelClass}>Milestones (date · cumulative %)</span>
-                <div className="mt-2 flex flex-col gap-2">
-                  {milestones.map((m, i) => (
-                    <div key={m.id} className="flex gap-2">
-                      <input
-                        type="date"
-                        value={dateOf(m.date)}
-                        onChange={(e) => setMilestone(i, { date: atMidnight(e.target.value) })}
-                        className={cn(inputClass, 'mt-0 flex-1')}
-                      />
-                      <input
-                        inputMode="numeric"
-                        value={m.pct}
-                        onChange={(e) =>
-                          setMilestone(i, { pct: e.target.value.replace(/[^0-9]/g, '') })
-                        }
-                        className={cn(inputClass, 'mt-0 w-20 font-mono')}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setDemo(null)
-                          setMilestones((l) => l.filter((_, idx) => idx !== i))
-                        }}
-                        disabled={milestones.length <= 1}
-                        aria-label="Remove milestone"
-                        className="shrink-0 self-center px-1 text-fg-muted transition-colors hover:text-danger disabled:opacity-40"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-extrabold text-fg">Schedule</h2>
+              <div className="inline-flex rounded-lg border border-border bg-surface p-1">
+                {(['linear', 'milestone'] as const).map((k) => (
                   <button
+                    key={k}
                     type="button"
                     onClick={() => {
                       setDemo(null)
-                      setMilestones((l) => [
-                        ...l,
-                        {
-                          id: crypto.randomUUID().slice(0, 8),
-                          date: addMonths(today, 24).toISOString(),
-                          pct: '100',
-                        },
-                      ])
+                      setCurveKind(k)
                     }}
-                    className="self-start text-xs font-bold text-primary hover:underline"
+                    className={cn(
+                      'rounded-md px-3 py-1 text-xs font-bold capitalize transition-colors',
+                      curveKind === k ? 'bg-primary-soft text-fg' : 'text-fg-muted hover:text-fg',
+                    )}
                   >
-                    + Add milestone
+                    {k}
                   </button>
-                </div>
-                <p className="mt-2 text-xs text-fg-muted">
-                  Percentages are cumulative and must end at 100%.
-                </p>
+                ))}
               </div>
-            )}
-          </div>
-          {!scheduleValid && (
-            <p className="mt-3 text-xs text-danger">
-              Schedule is invalid. Check that dates ascend, the cliff sits within the schedule, and
-              milestone percentages strictly increase to 100%.
-            </p>
-          )}
-        </Card>
+            </div>
 
-        {disclosedBytes !== null ? (
-          <div className="rounded-xl border border-success/40 bg-success-soft p-4 text-center">
-            <p className="text-sm font-bold text-fg">Proposal created</p>
-            <p className="mt-1 font-mono text-xs text-success">
-              delivered via explicit disclosure · {disclosedBytes} bytes
-            </p>
-            <Button size="sm" className="mt-3" onClick={() => navigate('/dashboard')}>
-              View escrows
-            </Button>
-          </div>
-        ) : (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="text-[0.65rem] font-bold uppercase tracking-[0.06em] text-fg-muted">
+                Quick demo
+              </span>
+              {curveKind === 'linear' ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => demoLinear(60_000)}
+                    className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-fg-muted transition-colors hover:border-primary hover:text-primary"
+                  >
+                    1 min
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => demoLinear(120_000)}
+                    className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-fg-muted transition-colors hover:border-primary hover:text-primary"
+                  >
+                    2 min
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={demoMilestones}
+                  className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-fg-muted transition-colors hover:border-primary hover:text-primary"
+                >
+                  90s
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={resetSchedule}
+                className="ml-auto rounded-full px-3 py-1 text-xs font-semibold text-fg-muted underline-offset-2 transition-colors hover:text-fg hover:underline"
+              >
+                Reset
+              </button>
+            </div>
+            {demo !== null && (
+              <p className="mt-2 text-xs text-primary">
+                Demo schedule — the window starts when you submit, so you have time to switch
+                parties and accept before it fully vests.
+              </p>
+            )}
+
+            <div className="mt-4 flex flex-col gap-4">
+              <div>
+                <label htmlFor="cliff" className={labelClass}>
+                  Cliff date
+                </label>
+                <input
+                  id="cliff"
+                  type="date"
+                  value={dateOf(cliff)}
+                  onChange={(e) => {
+                    setDemo(null)
+                    setCliff(atMidnight(e.target.value))
+                  }}
+                  className={inputClass}
+                />
+              </div>
+              {curveKind === 'linear' ? (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="start" className={labelClass}>
+                      Start date
+                    </label>
+                    <input
+                      id="start"
+                      type="date"
+                      value={dateOf(start)}
+                      onChange={(e) => {
+                        setDemo(null)
+                        setStart(atMidnight(e.target.value))
+                      }}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="end" className={labelClass}>
+                      End date
+                    </label>
+                    <input
+                      id="end"
+                      type="date"
+                      value={dateOf(end)}
+                      onChange={(e) => {
+                        setDemo(null)
+                        setEnd(atMidnight(e.target.value))
+                      }}
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <span className={labelClass}>Milestones (date · cumulative %)</span>
+                  <div className="mt-2 flex flex-col gap-2">
+                    {milestones.map((m, i) => (
+                      <div key={m.id} className="flex gap-2">
+                        <input
+                          type="date"
+                          value={dateOf(m.date)}
+                          onChange={(e) => setMilestone(i, { date: atMidnight(e.target.value) })}
+                          className={cn(inputClass, 'mt-0 flex-1')}
+                        />
+                        <input
+                          inputMode="numeric"
+                          value={m.pct}
+                          onChange={(e) =>
+                            setMilestone(i, { pct: e.target.value.replace(/[^0-9]/g, '') })
+                          }
+                          className={cn(inputClass, 'mt-0 w-20 font-mono')}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDemo(null)
+                            setMilestones((l) => l.filter((_, idx) => idx !== i))
+                          }}
+                          disabled={milestones.length <= 1}
+                          aria-label="Remove milestone"
+                          className="shrink-0 self-center px-1 text-fg-muted transition-colors hover:text-danger disabled:opacity-40"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDemo(null)
+                        setMilestones((l) => [
+                          ...l,
+                          {
+                            id: crypto.randomUUID().slice(0, 8),
+                            date: addMonths(today, 24).toISOString(),
+                            pct: '100',
+                          },
+                        ])
+                      }}
+                      className="self-start text-xs font-bold text-primary hover:underline"
+                    >
+                      + Add milestone
+                    </button>
+                  </div>
+                  <p className="mt-2 text-xs text-fg-muted">
+                    Percentages are cumulative and must end at 100%.
+                  </p>
+                </div>
+              )}
+            </div>
+            {!scheduleValid && (
+              <p className="mt-3 text-xs text-danger">
+                Schedule is invalid. Check that dates ascend, the cliff sits within the schedule,
+                and milestone percentages strictly increase to 100%.
+              </p>
+            )}
+          </Card>
+
           <Button className="w-full" disabled={!valid || submitting} onClick={() => void submit()}>
             {submitting ? 'Submitting…' : 'Create escrow'}
           </Button>
-        )}
-      </div>
+        </div>
 
-      {/* preview */}
-      <div className="lg:sticky lg:top-24 lg:self-start">
-        <Card className="p-6">
-          <h2 className="text-sm font-extrabold text-fg">Preview</h2>
-          <div className="mt-3 flex items-baseline justify-between">
-            <span className="text-xs text-fg-muted">Total</span>
-            <AmountDisplay value={amountValid ? amountNum : 0} className="text-xl font-semibold" />
-          </div>
-          <div className="mt-1 flex items-baseline justify-between">
-            <span className="text-xs text-fg-muted">Beneficiary</span>
-            <span className="font-mono text-xs text-fg">
-              {receiver === '' ? '—' : receiver.split('::')[0]}
-            </span>
-          </div>
+        {/* preview */}
+        <div className="lg:sticky lg:top-24 lg:self-start">
+          <Card className="p-6">
+            <h2 className="text-sm font-extrabold text-fg">Preview</h2>
+            <div className="mt-3 flex items-baseline justify-between">
+              <span className="text-xs text-fg-muted">Total</span>
+              <AmountDisplay
+                value={amountValid ? amountNum : 0}
+                className="text-xl font-semibold"
+              />
+            </div>
+            <div className="mt-1 flex items-baseline justify-between">
+              <span className="text-xs text-fg-muted">Beneficiary</span>
+              <span className="font-mono text-xs text-fg">
+                {receiver === '' ? '—' : receiver.split('::')[0]}
+              </span>
+            </div>
 
-          <div className="mt-5">
-            {scheduleValid ? (
-              <ScheduleCurve schedule={schedule} nowMs={nowMs} />
-            ) : (
-              <div className="grid h-40 place-items-center rounded-xl border border-dashed border-border text-xs text-fg-muted">
-                Enter a valid schedule to preview the curve
-              </div>
-            )}
-          </div>
-        </Card>
-      </div>
+            <div className="mt-5">
+              {scheduleValid ? (
+                <ScheduleCurve schedule={schedule} nowMs={nowMs} />
+              ) : (
+                <div className="grid h-40 place-items-center rounded-xl border border-dashed border-border text-xs text-fg-muted">
+                  Enter a valid schedule to preview the curve
+                </div>
+              )}
+            </div>
+          </Card>
+        </div>
 
-      <Modal
-        open={pickerOpen}
-        onClose={() => setPickerOpen(false)}
-        title="Choose a beneficiary"
-        description="Pick a party"
-      >
-        {contacts.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-border p-4 text-center text-sm text-fg-muted">
-            No other parties available.
-          </p>
-        ) : (
-          <ul className="flex h-60 flex-col gap-1 overflow-y-auto">
-            {contacts.map((c) => (
-              <li key={c.partyId}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setReceiver(c.partyId)
-                    setPickerOpen(false)
-                  }}
-                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-muted"
-                >
-                  <span className="size-7 shrink-0 rounded-full bg-[image:var(--gradient-brand)]" />
-                  <span className="flex min-w-0 flex-col">
-                    <span className="truncate text-sm font-semibold text-fg">{c.name}</span>
-                    <span className="truncate font-mono text-xs text-fg-muted">
-                      {shortenParty(c.partyId)}
+        <Modal
+          open={pickerOpen}
+          onClose={() => setPickerOpen(false)}
+          title="Choose a beneficiary"
+          description="Pick a party"
+        >
+          {contacts.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-border p-4 text-center text-sm text-fg-muted">
+              No other parties available.
+            </p>
+          ) : (
+            <ul className="flex h-60 flex-col gap-1 overflow-y-auto">
+              {contacts.map((c) => (
+                <li key={c.partyId}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReceiver(c.partyId)
+                      setPickerOpen(false)
+                    }}
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-muted"
+                  >
+                    <span className="size-7 shrink-0 rounded-full bg-[image:var(--gradient-brand)]" />
+                    <span className="flex min-w-0 flex-col">
+                      <span className="truncate text-sm font-semibold text-fg">{c.name}</span>
+                      <span className="truncate font-mono text-xs text-fg-muted">
+                        {shortenParty(c.partyId)}
+                      </span>
                     </span>
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Modal>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Modal>
+      </div>
     </div>
   )
 }
