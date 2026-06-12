@@ -34,6 +34,7 @@ export const AmountField = ({
     >
       <input
         aria-label="Amount"
+        aria-invalid={error ? true : undefined}
         inputMode="decimal"
         autoComplete="off"
         placeholder="0.00"

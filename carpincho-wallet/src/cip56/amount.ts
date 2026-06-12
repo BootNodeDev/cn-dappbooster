@@ -25,12 +25,13 @@ export const formatTokenAmount = (value: string): string => {
   return `${groupThousands(wholeValue.toString())}.${cents.toString().padStart(2, '0')}`
 }
 
-// Strips grouping commas and any non-decimal characters, collapsing extra dots so the
-// stored amount stays a plain decimal string.
+// Strips grouping commas and any non-decimal characters, collapsing extra dots and
+// normalizing a leading dot to "0." so the stored amount stays a plain decimal string.
 export const stripAmountGroups = (value: string): string => {
   const cleaned = value.replace(/[^\d.]/g, '')
   const [whole, ...rest] = cleaned.split('.')
-  return rest.length === 0 ? whole : `${whole}.${rest.join('')}`
+  const normalizedWhole = whole === '' && rest.length > 0 ? '0' : whole
+  return rest.length === 0 ? normalizedWhole : `${normalizedWhole}.${rest.join('')}`
 }
 
 // Groups the integer part of a partial amount with commas, keeping the fraction and a

@@ -23,6 +23,12 @@ describe('stripAmountGroups', () => {
     assert.equal(stripAmountGroups('1.2.3'), '1.23')
     assert.equal(stripAmountGroups('12a3'), '123')
   })
+
+  it('normalizes a leading dot to "0."', () => {
+    assert.equal(stripAmountGroups('.5'), '0.5')
+    assert.equal(stripAmountGroups('.'), '0.')
+    assert.equal(stripAmountGroups(''), '')
+  })
 })
 
 describe('formatAmountInput', () => {
@@ -31,6 +37,7 @@ describe('formatAmountInput', () => {
     assert.equal(formatAmountInput('9997.5'), '9,997.5')
     assert.equal(formatAmountInput('9997.'), '9,997.')
     assert.equal(formatAmountInput('1234567.891'), '1,234,567.891')
+    assert.equal(formatAmountInput('.5'), '0.5')
     assert.equal(formatAmountInput(''), '')
   })
 })
