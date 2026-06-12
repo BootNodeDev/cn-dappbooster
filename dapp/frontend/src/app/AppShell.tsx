@@ -6,6 +6,10 @@ import { readReconnect, writeReconnect } from '@/wallet/reconnect'
 import { ConnectScreen } from './ConnectScreen'
 import { TopBar } from './TopBar'
 
+// Cap the silent-reconnect spinner: if the extension handshake never settles,
+// drop to the ConnectScreen instead of spinning forever.
+const RECONNECT_TIMEOUT_MS = 8000
+
 // Full-page state card used for the locked / no-account gates.
 const GateCard = ({ title, body }: { title: string; body: string }): React.JSX.Element => (
   <div className="grid min-h-screen place-items-center bg-bg px-6">
@@ -38,9 +42,16 @@ export const AppShell = (): React.JSX.Element => {
       return
     }
     reconnectStarted.current = true
+    // Fall back to the ConnectScreen if the silent reconnect never settles, so a
+    // stuck Carpincho handshake can't pin the app on an infinite spinner.
+    const timer = setTimeout(() => setReconnecting(false), RECONNECT_TIMEOUT_MS)
     void connect('extension')
       .catch(() => writeReconnect(null))
-      .finally(() => setReconnecting(false))
+      .finally(() => {
+        clearTimeout(timer)
+        setReconnecting(false)
+      })
+    return () => clearTimeout(timer)
   }, [])
 
   if (reconnecting && !isConnected) {
