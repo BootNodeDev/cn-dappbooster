@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { ChevronDownIcon } from '@/components/icons'
+import { PartyAvatar } from '@/components/PartyAvatar'
 import { useConnect, useParties } from '@/wallet/hooks'
 import { ThemeToggle } from './ThemeToggle'
 
@@ -78,7 +79,7 @@ export const ConnectScreen = (): React.JSX.Element => {
                         onClick={() => connect(party)}
                         className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-muted"
                       >
-                        <span className="size-7 shrink-0 rounded-full bg-[image:var(--gradient-brand)]" />
+                        <PartyAvatar id={party.partyId} size={28} />
                         <span className="min-w-0 flex-1 truncate font-semibold text-fg">
                           {party.name}
                         </span>

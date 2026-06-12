@@ -5,6 +5,7 @@ import { Button } from '@/components/Button'
 import { Card } from '@/components/Card'
 import { ArrowLeftIcon, ContactsIcon } from '@/components/icons'
 import { Modal } from '@/components/Modal'
+import { PartyAvatar } from '@/components/PartyAvatar'
 import { ScheduleCurve } from '@/components/ScheduleCurve'
 import { TokenAmountField } from '@/components/TokenAmountField'
 import { toast } from '@/components/toast'
@@ -530,7 +531,7 @@ export const CreateGrantPage = (): React.JSX.Element => {
                     }}
                     className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-muted"
                   >
-                    <span className="size-7 shrink-0 rounded-full bg-[image:var(--gradient-brand)]" />
+                    <PartyAvatar id={c.partyId} size={28} />
                     <span className="flex min-w-0 flex-col">
                       <span className="truncate text-sm font-semibold text-fg">{c.name}</span>
                       <span className="truncate font-mono text-xs text-fg-muted">
