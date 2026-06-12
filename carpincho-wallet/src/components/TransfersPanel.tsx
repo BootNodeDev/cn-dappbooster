@@ -7,7 +7,6 @@ import {
   transferStatusLabel,
   transferTimeLabel,
 } from '@/cip56/transfers'
-import { ActivityList } from '@/components/ActivityList'
 import { PrimaryButton, SecondaryButton } from '@/components/ui/Button'
 import { Switch } from '@/components/ui/Switch'
 import { Tooltip } from '@/components/ui/Tooltip'
@@ -17,7 +16,7 @@ import { useAmuletPreapproval } from '@/hooks/useAmuletPreapproval'
 import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
 import { usePendingCip56Transfers } from '@/hooks/usePendingCip56Transfers'
 import { shortMiddle } from '@/utils/account'
-import type { AccountPublic, TransactionRecord } from '@/vault/types'
+import type { AccountPublic } from '@/vault/types'
 import { useVault } from '@/vault/useVault'
 
 export interface TransfersPanelProps {
@@ -25,7 +24,6 @@ export interface TransfersPanelProps {
   api?: Cip56TransferApi
   preapprovalApi?: AmuletPreapprovalApi
   onPendingCountChange?: (count: number) => void
-  historyTransactions?: TransactionRecord[]
 }
 
 interface TransferDetailRowProps {
@@ -207,13 +205,12 @@ const TransferCard = ({
   )
 }
 
-// Renders active CIP-56 transfers split by direction, plus this account's transfer history.
+// Renders active CIP-56 transfers split by direction; receivers can accept, senders watch.
 export const TransfersPanel = ({
   account,
   api,
   preapprovalApi,
   onPendingCountChange,
-  historyTransactions,
 }: TransfersPanelProps): JSX.Element => {
   const vault = useVault()
   const activeAccount = account ?? vault.primary ?? vault.accounts[0]
@@ -240,8 +237,6 @@ export const TransfersPanel = ({
     }
     return { incoming: incomingTransfers, outgoing: outgoingTransfers }
   }, [transfers, activeAccount?.partyId])
-
-  const history = historyTransactions ?? []
 
   // Only incoming transfers need receiver action, so the badge counts those alone.
   useEffect(() => {
@@ -281,7 +276,6 @@ export const TransfersPanel = ({
   }
 
   const hasActive = incoming.length > 0 || outgoing.length > 0
-  const hasContent = hasActive || history.length > 0
 
   return (
     <div className="flex min-h-full flex-col gap-3 px-1 pt-4 pb-2">
@@ -296,9 +290,11 @@ export const TransfersPanel = ({
         </div>
       )}
 
-      {!hasContent && !loading ? (
+      {!hasActive && !loading ? (
         <div className="flex flex-1 flex-col items-center justify-center px-4 py-10 text-center">
-          <p className="m-0 text-[0.95rem] font-medium text-muted-foreground">No transfers yet</p>
+          <p className="m-0 text-[0.95rem] font-medium text-muted-foreground">
+            No pending transfers
+          </p>
         </div>
       ) : null}
 
@@ -329,15 +325,6 @@ export const TransfersPanel = ({
             />
           ))}
         </div>
-      ) : null}
-
-      {history.length > 0 ? (
-        <section className="flex flex-col">
-          <h2 className="m-0 px-1 pt-1 text-[0.8rem] font-semibold tracking-tight text-muted-foreground">
-            History
-          </h2>
-          <ActivityList transactions={history} />
-        </section>
       ) : null}
     </div>
   )

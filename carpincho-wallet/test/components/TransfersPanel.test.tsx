@@ -104,7 +104,7 @@ describe('TransfersPanel', () => {
 
     await screen.findByText('42.00 Amulet')
     await userEvent.click(screen.getByRole('button', { name: 'Accept' }))
-    await waitFor(() => assert.ok(screen.getByText('No transfers yet')))
+    await waitFor(() => assert.ok(screen.getByText('No pending transfers')))
 
     assert.deepEqual(calls, ['list', 'accept', 'list'])
   })
@@ -117,7 +117,7 @@ describe('TransfersPanel', () => {
 
     renderTransfers(api)
 
-    await screen.findByText('No transfers yet')
+    await screen.findByText('No pending transfers')
     assert.equal(screen.queryByText('Incoming transfers'), null)
   })
 
@@ -150,43 +150,6 @@ describe('TransfersPanel', () => {
     await screen.findByText('10.00 Amulet')
     await screen.findByText('Awaiting acceptance')
     assert.equal(screen.queryByRole('button', { name: 'Accept' }), null)
-  })
-
-  it('lists transfer history passed to the panel', async () => {
-    // Scenario: completed transfers come from the local transaction log and render
-    // in the Transfers tab alongside any active transfer instructions.
-    const api: Cip56TransferApi = {
-      listPendingIncomingTransfers: async () => [],
-    }
-
-    render(
-      <TestQueryClientProvider>
-        <TooltipProvider>
-          <VaultContext.Provider value={baseVault()}>
-            <TransfersPanel
-              api={api}
-              preapprovalApi={inactivePreapprovalApi}
-              historyTransactions={[
-                {
-                  id: 'tx-history-1',
-                  accountId: ACCOUNT.id,
-                  accountName: ACCOUNT.name,
-                  partyId: ACCOUNT.partyId,
-                  network: ACCOUNT.network,
-                  method: 'cip56.transfer.create',
-                  status: 'executed',
-                  createdAt: Date.parse('2026-06-10T12:00:00.000Z'),
-                  preparedTransactionHash: 'history-hash',
-                  summary: 'Send 5 Amulet',
-                },
-              ]}
-            />
-          </VaultContext.Provider>
-        </TooltipProvider>
-      </TestQueryClientProvider>,
-    )
-
-    await screen.findByText('Send 5 Amulet')
   })
 
   it('shows transfer description and exposes raw details on demand', async () => {
