@@ -1,7 +1,7 @@
 import * as SwitchPrimitive from '@radix-ui/react-switch'
 import { cn } from '@/utils/cn'
 
-// Pill toggle for binary on/off settings; thumb slides on checked.
+// On/off pill toggle.
 export const Switch = ({ className, ...props }: SwitchPrimitive.SwitchProps): JSX.Element => (
   <SwitchPrimitive.Root
     className={cn(

@@ -50,9 +50,7 @@ const AmuletPreapprovalSection = ({ account, api }: AmuletPreapprovalSectionProp
   const isActive = status?.active === true && !isExpired
   const confirmed = isActive || isExpired
 
-  // Reflect the requested state immediately: creating or cancelling the preapproval
-  // can take a few seconds to land on the ledger, so hold the optimistic value until
-  // the polled status agrees rather than leaving the switch stuck in its old position.
+  // Optimistic: hold the requested state until polling confirms it; the ledger can lag.
   const [optimistic, setOptimistic] = useState<boolean | undefined>(undefined)
   const checked = optimistic ?? confirmed
 

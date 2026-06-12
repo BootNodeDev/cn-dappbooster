@@ -109,8 +109,7 @@ export const useAmuletPreapproval = (
     () => ({
       status: query.data,
       loading: query.isFetching,
-      // Action-in-flight only; background refetches must not read as busy or callers
-      // would gate input on every poll.
+      // Action-in-flight only, so poll refetches don't gate callers' input.
       busy: actionBusy,
       ...(error === undefined ? {} : { error }),
       refresh,
