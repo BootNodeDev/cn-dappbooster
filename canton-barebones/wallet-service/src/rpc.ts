@@ -1,3 +1,4 @@
+import http from 'node:http'
 import { SDK } from '@canton-network/wallet-sdk'
 import type { WalletServiceConfig } from './config.ts'
 import type {
@@ -733,25 +734,53 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
       throw new InvalidParams('resource is required')
     }
     const method = (p.requestMethod ?? 'post').toUpperCase()
-    const url = new URL(config.splice.scanApiUrl).origin + p.resource
-    const init: RequestInit = {
-      method,
-      headers: { 'content-type': 'application/json' },
-      signal: AbortSignal.timeout(15_000),
-    }
-    if (method !== 'GET' && method !== 'HEAD' && p.body !== undefined) {
-      init.body = JSON.stringify(p.body)
-    }
-    const response = await fetch(url, init)
-    const text = await response.text()
-    const isJson =
-      text.length > 0 && response.headers.get('content-type')?.includes('json') === true
-    const parsed: unknown = isJson ? safeJsonParse(text) : text
-    if (!response.ok) {
-      const detail = typeof parsed === 'string' ? parsed : JSON.stringify(parsed)
-      throw new Error(`Scan API ${method} ${p.resource} → HTTP ${response.status}: ${detail}`)
-    }
-    return parsed
+    const payload =
+      method !== 'GET' && method !== 'HEAD' && p.body !== undefined
+        ? JSON.stringify(p.body)
+        : undefined
+    // Connect to the scanApiUrl host:port (host.docker.internal from inside the
+    // container) but send Host: scan.localhost so the LocalNet nginx routes to the
+    // scan vhost. fetch cannot override the forbidden Host header, so use node:http.
+    const target = new URL(new URL(config.splice.scanApiUrl).origin + p.resource)
+    const scanHost = process.env.SPLICE_SCAN_VHOST ?? 'scan.localhost'
+    return new Promise<unknown>((resolve, reject) => {
+      const req = http.request(
+        {
+          hostname: target.hostname,
+          port: target.port || 80,
+          path: target.pathname + target.search,
+          method,
+          headers: {
+            'content-type': 'application/json',
+            host: scanHost,
+            ...(payload !== undefined ? { 'content-length': Buffer.byteLength(payload) } : {}),
+          },
+        },
+        (res) => {
+          const chunks: Buffer[] = []
+          res.on('data', (chunk: Buffer) => chunks.push(chunk))
+          res.on('end', () => {
+            const text = Buffer.concat(chunks).toString('utf8')
+            const isJson = text.length > 0 && (res.headers['content-type'] ?? '').includes('json')
+            const parsed: unknown = isJson ? safeJsonParse(text) : text
+            const status = res.statusCode ?? 0
+            if (status < 200 || status >= 300) {
+              const detail = typeof parsed === 'string' ? parsed : JSON.stringify(parsed)
+              reject(new Error(`Scan API ${method} ${p.resource} → HTTP ${status}: ${detail}`))
+            } else {
+              resolve(parsed)
+            }
+          })
+          res.on('error', reject)
+        },
+      )
+      req.setTimeout(15_000, () => req.destroy(new Error('Scan API timed out')))
+      req.on('error', reject)
+      if (payload !== undefined) {
+        req.write(payload)
+      }
+      req.end()
+    })
   }
 
   const cip56ListPendingTransfers = async (params: unknown): Promise<unknown> => {
