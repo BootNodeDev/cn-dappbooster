@@ -24,3 +24,18 @@ export const formatTokenAmount = (value: string): string => {
   }
   return `${groupThousands(wholeValue.toString())}.${cents.toString().padStart(2, '0')}`
 }
+
+// Compares two decimal strings exactly (no float). Returns -1/0/1, or undefined for non-decimals.
+export const compareDecimalStrings = (a: string, b: string): -1 | 0 | 1 | undefined => {
+  const ta = a.trim()
+  const tb = b.trim()
+  if (!DECIMAL_RE.test(ta) || !DECIMAL_RE.test(tb)) {
+    return undefined
+  }
+  const [aw, af = ''] = ta.split('.')
+  const [bw, bf = ''] = tb.split('.')
+  const scale = Math.max(af.length, bf.length)
+  const av = BigInt(`${aw}${af.padEnd(scale, '0')}`)
+  const bv = BigInt(`${bw}${bf.padEnd(scale, '0')}`)
+  return av < bv ? -1 : av > bv ? 1 : 0
+}
