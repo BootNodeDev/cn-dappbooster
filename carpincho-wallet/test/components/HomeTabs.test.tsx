@@ -175,6 +175,42 @@ describe('HomeTabs navigation', () => {
     await screen.findByRole('tab', { name: 'Transfers 1' })
   })
 
+  it('routes transfer records to the Transfers tab and the rest to Activity', async () => {
+    // Scenario: transfer history is merged into the Transfers tab, so transfer
+    // records must not also appear under Activity. Non-transfer records stay there.
+    const transferRecord: TransactionRecord = {
+      id: 'tx-transfer',
+      accountId: ACCOUNT.id,
+      accountName: ACCOUNT.name,
+      partyId: ACCOUNT.partyId,
+      network: ACCOUNT.network,
+      method: 'cip56.transfer.create',
+      status: 'executed',
+      createdAt: Date.parse('2026-06-10T12:00:00.000Z'),
+      preparedTransactionHash: 'transfer-hash',
+      summary: 'Send 5 Amulet',
+    }
+    const otherRecord = txFor(ACCOUNT, 'tx-other', 'dApp execute')
+
+    renderHome(
+      baseVault(),
+      <HomeTabs
+        transactions={[transferRecord, otherRecord]}
+        preapprovalApi={inactivePreapprovalApi}
+      />,
+    )
+
+    // The Transfers tab is force-mounted, so its merged history is in the DOM already.
+    await screen.findByText('Send 5 Amulet')
+    assert.equal(screen.queryByText('dApp execute'), null)
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Activity' }))
+
+    assert.equal(screen.getByText('dApp execute').textContent, 'dApp execute')
+    // The transfer record lives only in Transfers, never duplicated into Activity.
+    assert.equal(screen.getAllByText('Send 5 Amulet').length, 1)
+  })
+
   it('shows Activity only for the selected account', async () => {
     // Scenario: Alice and Bob share one local vault, but Activity belongs to the
     // selected party. Switching to Bob must hide Alice's transaction history.

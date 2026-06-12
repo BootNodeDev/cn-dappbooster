@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
+import { isTransferHistoryTransaction } from '@/cip56/transfers'
 import { ActivityList } from '@/components/ActivityList'
 import { AssetsPanel } from '@/components/AssetsPanel'
 import type { Cip56SendApi } from '@/components/SendTokenForm'
@@ -52,6 +53,19 @@ export const HomeTabs = ({
           ),
     [account, transactions],
   )
+  // Transfer history moves into the Transfers tab; everything else stays under Activity.
+  const { transferTransactions, otherTransactions } = useMemo(() => {
+    const transfersHistory: TransactionRecord[] = []
+    const other: TransactionRecord[] = []
+    for (const tx of activeTransactions) {
+      if (isTransferHistoryTransaction(tx.method)) {
+        transfersHistory.push(tx)
+      } else {
+        other.push(tx)
+      }
+    }
+    return { transferTransactions: transfersHistory, otherTransactions: other }
+  }, [activeTransactions])
 
   return (
     <Tabs
@@ -90,13 +104,14 @@ export const HomeTabs = ({
           api={transfersApi}
           preapprovalApi={preapprovalApi}
           onPendingCountChange={onPendingTransferCountChange}
+          historyTransactions={transferTransactions}
         />
       </TabContent>
       <TabContent
         value="activity"
         className={TAB_CONTENT_CLASS}
       >
-        <ActivityList transactions={activeTransactions} />
+        <ActivityList transactions={otherTransactions} />
       </TabContent>
     </Tabs>
   )

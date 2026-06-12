@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { formatTokenAmount } from '@/cip56/amount'
+import type { PendingTokenTransfer } from '@/cip56/transfers'
 import {
   tokenDisplayLabel,
   transferDescription,
   transferStatusLabel,
   transferTimeLabel,
 } from '@/cip56/transfers'
+import { ActivityList } from '@/components/ActivityList'
 import { PrimaryButton, SecondaryButton } from '@/components/ui/Button'
 import { Switch } from '@/components/ui/Switch'
 import { Tooltip } from '@/components/ui/Tooltip'
@@ -15,7 +17,7 @@ import { useAmuletPreapproval } from '@/hooks/useAmuletPreapproval'
 import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
 import { usePendingCip56Transfers } from '@/hooks/usePendingCip56Transfers'
 import { shortMiddle } from '@/utils/account'
-import type { AccountPublic } from '@/vault/types'
+import type { AccountPublic, TransactionRecord } from '@/vault/types'
 import { useVault } from '@/vault/useVault'
 
 export interface TransfersPanelProps {
@@ -23,6 +25,7 @@ export interface TransfersPanelProps {
   api?: Cip56TransferApi
   preapprovalApi?: AmuletPreapprovalApi
   onPendingCountChange?: (count: number) => void
+  historyTransactions?: TransactionRecord[]
 }
 
 interface TransferDetailRowProps {
@@ -104,12 +107,113 @@ const TransferDetailRow = ({ label, value }: TransferDetailRowProps): JSX.Elemen
   </div>
 )
 
-// Renders incoming CIP-56 transfer instructions that require receiver acceptance.
+interface TransferCardProps {
+  transfer: PendingTokenTransfer
+  direction: 'incoming' | 'outgoing'
+  isExpanded: boolean
+  onToggleDetails: (transferInstructionCid: string) => void
+  isAccepting: boolean
+  onAccept: (transferInstructionCid: string) => void
+}
+
+// One active transfer instruction; receivers can accept, senders only watch it settle.
+const TransferCard = ({
+  transfer,
+  direction,
+  isExpanded,
+  onToggleDetails,
+  isAccepting,
+  onAccept,
+}: TransferCardProps): JSX.Element => {
+  const transferView = transfer.interfaceViewValue?.transfer
+  const label = `${
+    transferView?.amount === undefined ? 'unknown' : formatTokenAmount(transferView.amount)
+  } ${tokenDisplayLabel(transferView?.instrumentId)}`
+  const description = transferDescription(transfer)
+  const detailsId = `transfer-details-${transfer.contractId}`
+  const counterpartyLabel = direction === 'incoming' ? 'from' : 'to'
+  const counterparty = direction === 'incoming' ? transferView?.sender : transferView?.receiver
+  return (
+    <article className="rounded-md border border-border bg-surface px-3 py-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="m-0 text-[0.95rem] font-semibold text-foreground">{label}</p>
+          {description === undefined ? null : (
+            <p className="m-0 mt-1 text-[0.83rem] leading-5 text-foreground">{description}</p>
+          )}
+          <p className="m-0 mt-1 font-mono text-[0.76rem] text-muted-foreground">
+            {counterpartyLabel}:{' '}
+            {counterparty === undefined ? 'unknown' : shortMiddle(counterparty, 10, 6)}
+          </p>
+        </div>
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          {direction === 'incoming' ? (
+            <PrimaryButton
+              className="px-3 py-1.5 text-[0.82rem]"
+              disabled={isAccepting}
+              onClick={() => {
+                onAccept(transfer.contractId)
+              }}
+            >
+              {isAccepting ? 'Accepting...' : 'Accept'}
+            </PrimaryButton>
+          ) : (
+            <span className="rounded-full bg-muted px-2.5 py-1 text-[0.74rem] font-medium text-muted-foreground">
+              Awaiting acceptance
+            </span>
+          )}
+          <SecondaryButton
+            aria-controls={detailsId}
+            aria-expanded={isExpanded}
+            className="px-3 py-1.5 text-[0.78rem]"
+            onClick={() => onToggleDetails(transfer.contractId)}
+          >
+            {isExpanded ? 'Hide details' : 'Show details'}
+          </SecondaryButton>
+        </div>
+      </div>
+      {isExpanded ? (
+        <dl
+          id={detailsId}
+          className="mt-3 grid gap-3 rounded-md border border-border bg-background/60 p-3"
+        >
+          <TransferDetailRow
+            label="status"
+            value={transferStatusLabel(transfer)}
+          />
+          <TransferDetailRow
+            label="requested"
+            value={transferTimeLabel(transferView?.requestedAt)}
+          />
+          <TransferDetailRow
+            label="expires"
+            value={transferTimeLabel(transferView?.executeBefore)}
+          />
+          <TransferDetailRow
+            label="sender"
+            value={transferView?.sender ?? 'unknown'}
+          />
+          <TransferDetailRow
+            label="receiver"
+            value={transferView?.receiver ?? 'unknown'}
+          />
+          <TransferDetailRow
+            label="contract id"
+            value={transfer.contractId}
+          />
+        </dl>
+      ) : null}
+    </article>
+  )
+}
+
+// Renders active CIP-56 transfers split by direction, plus this account's transfer history.
 export const TransfersPanel = ({
   account,
   api,
   preapprovalApi,
   onPendingCountChange,
+  historyTransactions,
 }: TransfersPanelProps): JSX.Element => {
   const vault = useVault()
   const activeAccount = account ?? vault.primary ?? vault.accounts[0]
@@ -121,10 +225,28 @@ export const TransfersPanel = ({
     recordTransaction: vault.recordTransaction,
   })
 
-  // Exposes the pending count to any parent that wants to surface action badges.
+  // The ledger returns every instruction the party is a stakeholder on; the sender of an
+  // outgoing transfer cannot accept it, so only transfers we did not send are actionable.
+  const { incoming, outgoing } = useMemo(() => {
+    const partyId = activeAccount?.partyId
+    const incomingTransfers: PendingTokenTransfer[] = []
+    const outgoingTransfers: PendingTokenTransfer[] = []
+    for (const transfer of transfers) {
+      if (transfer.interfaceViewValue?.transfer?.sender === partyId) {
+        outgoingTransfers.push(transfer)
+      } else {
+        incomingTransfers.push(transfer)
+      }
+    }
+    return { incoming: incomingTransfers, outgoing: outgoingTransfers }
+  }, [transfers, activeAccount?.partyId])
+
+  const history = historyTransactions ?? []
+
+  // Only incoming transfers need receiver action, so the badge counts those alone.
   useEffect(() => {
-    onPendingCountChange?.(transfers.length)
-  }, [onPendingCountChange, transfers.length])
+    onPendingCountChange?.(incoming.length)
+  }, [onPendingCountChange, incoming.length])
 
   useEffect(() => {
     return () => onPendingCountChange?.(0)
@@ -158,6 +280,9 @@ export const TransfersPanel = ({
     )
   }
 
+  const hasActive = incoming.length > 0 || outgoing.length > 0
+  const hasContent = hasActive || history.length > 0
+
   return (
     <div className="flex min-h-full flex-col gap-3 px-1 pt-4 pb-2">
       <AmuletPreapprovalSection
@@ -165,109 +290,55 @@ export const TransfersPanel = ({
         api={preapprovalApi}
       />
 
-      <h2 className="m-0 px-1 text-[0.95rem] font-semibold text-foreground">Incoming transfers</h2>
-
       {error === undefined ? null : (
         <div className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-[0.82rem] text-danger">
           {error}
         </div>
       )}
 
-      {transfers.length === 0 && !loading ? (
+      {!hasContent && !loading ? (
         <div className="flex flex-1 flex-col items-center justify-center px-4 py-10 text-center">
-          <p className="m-0 text-[0.95rem] font-medium text-muted-foreground">
-            No pending transfers
-          </p>
+          <p className="m-0 text-[0.95rem] font-medium text-muted-foreground">No transfers yet</p>
         </div>
-      ) : (
+      ) : null}
+
+      {hasActive ? (
         <div className="flex flex-col gap-2">
-          {transfers.map((transfer) => {
-            const transferView = transfer.interfaceViewValue?.transfer
-            const label = `${
-              transferView?.amount === undefined
-                ? 'unknown'
-                : formatTokenAmount(transferView.amount)
-            } ${tokenDisplayLabel(transferView?.instrumentId)}`
-            const description = transferDescription(transfer)
-            const isAccepting = acceptingCid === transfer.contractId
-            const isExpanded = expandedCid === transfer.contractId
-            const detailsId = `transfer-details-${transfer.contractId}`
-            return (
-              <article
-                key={transfer.contractId}
-                className="rounded-md border border-border bg-surface px-3 py-3"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="m-0 text-[0.95rem] font-semibold text-foreground">{label}</p>
-                    {description === undefined ? null : (
-                      <p className="m-0 mt-1 text-[0.83rem] leading-5 text-foreground">
-                        {description}
-                      </p>
-                    )}
-                    <p className="m-0 mt-1 font-mono text-[0.76rem] text-muted-foreground">
-                      from:{' '}
-                      {transferView?.sender === undefined
-                        ? 'unknown'
-                        : shortMiddle(transferView.sender, 10, 6)}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 flex-col gap-2">
-                    <PrimaryButton
-                      className="px-3 py-1.5 text-[0.82rem]"
-                      disabled={isAccepting}
-                      onClick={() => {
-                        void onAccept(transfer.contractId)
-                      }}
-                    >
-                      {isAccepting ? 'Accepting...' : 'Accept'}
-                    </PrimaryButton>
-                    <SecondaryButton
-                      aria-controls={detailsId}
-                      aria-expanded={isExpanded}
-                      className="px-3 py-1.5 text-[0.78rem]"
-                      onClick={() => toggleDetails(transfer.contractId)}
-                    >
-                      {isExpanded ? 'Hide details' : 'Show details'}
-                    </SecondaryButton>
-                  </div>
-                </div>
-                {isExpanded ? (
-                  <dl
-                    id={detailsId}
-                    className="mt-3 grid gap-3 rounded-md border border-border bg-background/60 p-3"
-                  >
-                    <TransferDetailRow
-                      label="status"
-                      value={transferStatusLabel(transfer)}
-                    />
-                    <TransferDetailRow
-                      label="requested"
-                      value={transferTimeLabel(transferView?.requestedAt)}
-                    />
-                    <TransferDetailRow
-                      label="expires"
-                      value={transferTimeLabel(transferView?.executeBefore)}
-                    />
-                    <TransferDetailRow
-                      label="sender"
-                      value={transferView?.sender ?? 'unknown'}
-                    />
-                    <TransferDetailRow
-                      label="receiver"
-                      value={transferView?.receiver ?? 'unknown'}
-                    />
-                    <TransferDetailRow
-                      label="contract id"
-                      value={transfer.contractId}
-                    />
-                  </dl>
-                ) : null}
-              </article>
-            )
-          })}
+          {incoming.map((transfer) => (
+            <TransferCard
+              key={transfer.contractId}
+              transfer={transfer}
+              direction="incoming"
+              isExpanded={expandedCid === transfer.contractId}
+              onToggleDetails={toggleDetails}
+              isAccepting={acceptingCid === transfer.contractId}
+              onAccept={(cid) => {
+                void onAccept(cid)
+              }}
+            />
+          ))}
+          {outgoing.map((transfer) => (
+            <TransferCard
+              key={transfer.contractId}
+              transfer={transfer}
+              direction="outgoing"
+              isExpanded={expandedCid === transfer.contractId}
+              onToggleDetails={toggleDetails}
+              isAccepting={false}
+              onAccept={() => undefined}
+            />
+          ))}
         </div>
-      )}
+      ) : null}
+
+      {history.length > 0 ? (
+        <section className="flex flex-col">
+          <h2 className="m-0 px-1 pt-1 text-[0.8rem] font-semibold tracking-tight text-muted-foreground">
+            History
+          </h2>
+          <ActivityList transactions={history} />
+        </section>
+      ) : null}
     </div>
   )
 }

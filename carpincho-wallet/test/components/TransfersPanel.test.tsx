@@ -102,12 +102,91 @@ describe('TransfersPanel', () => {
 
     renderTransfers(api)
 
-    await screen.findByText('Incoming transfers')
     await screen.findByText('42.00 Amulet')
     await userEvent.click(screen.getByRole('button', { name: 'Accept' }))
-    await waitFor(() => assert.ok(screen.getByText('No pending transfers')))
+    await waitFor(() => assert.ok(screen.getByText('No transfers yet')))
 
     assert.deepEqual(calls, ['list', 'accept', 'list'])
+  })
+
+  it('does not show the removed "Incoming transfers" heading', async () => {
+    // Scenario: the heading was redundant once outgoing transfers also appear here.
+    const api: Cip56TransferApi = {
+      listPendingIncomingTransfers: async () => [],
+    }
+
+    renderTransfers(api)
+
+    await screen.findByText('No transfers yet')
+    assert.equal(screen.queryByText('Incoming transfers'), null)
+  })
+
+  it("shows the active party's own outgoing transfer as read-only pending", async () => {
+    // Scenario: when sending between own accounts, the sender's outgoing transfer
+    // is returned by the ledger query too. The sender must not be able to accept
+    // it; it shows as awaiting the recipient's acceptance instead.
+    const api: Cip56TransferApi = {
+      listPendingIncomingTransfers: async () => [
+        {
+          contractId: 'outgoing-cid-1',
+          interfaceViewValue: {
+            transfer: {
+              sender: 'alice::party',
+              receiver: 'bob-party-1234567890abcdef',
+              amount: '10',
+              instrumentId: { id: 'Amulet' },
+            },
+            status: { tag: 'TransferPendingReceiverAcceptance' },
+          },
+        },
+      ],
+      acceptTransfer: async () => {
+        throw new Error('the sender must not accept their own transfer')
+      },
+    }
+
+    renderTransfers(api)
+
+    await screen.findByText('10.00 Amulet')
+    await screen.findByText('Awaiting acceptance')
+    assert.equal(screen.queryByRole('button', { name: 'Accept' }), null)
+  })
+
+  it('lists transfer history passed to the panel', async () => {
+    // Scenario: completed transfers come from the local transaction log and render
+    // in the Transfers tab alongside any active transfer instructions.
+    const api: Cip56TransferApi = {
+      listPendingIncomingTransfers: async () => [],
+    }
+
+    render(
+      <TestQueryClientProvider>
+        <TooltipProvider>
+          <VaultContext.Provider value={baseVault()}>
+            <TransfersPanel
+              api={api}
+              preapprovalApi={inactivePreapprovalApi}
+              historyTransactions={[
+                {
+                  id: 'tx-history-1',
+                  accountId: ACCOUNT.id,
+                  accountName: ACCOUNT.name,
+                  partyId: ACCOUNT.partyId,
+                  network: ACCOUNT.network,
+                  method: 'cip56.transfer.create',
+                  status: 'executed',
+                  createdAt: Date.parse('2026-06-10T12:00:00.000Z'),
+                  preparedTransactionHash: 'history-hash',
+                  summary: 'Send 5 Amulet',
+                },
+              ]}
+            />
+          </VaultContext.Provider>
+        </TooltipProvider>
+      </TestQueryClientProvider>,
+    )
+
+    await screen.findByText('Send 5 Amulet')
   })
 
   it('shows transfer description and exposes raw details on demand', async () => {

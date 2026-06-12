@@ -57,6 +57,13 @@ export interface CreateTokenTransferParams {
 
 const TRANSFER_REASON_KEY = 'splice.lfdecentralizedtrust.org/reason'
 
+// Transaction-log methods that represent transfers; these move from Activity into Transfers.
+const TRANSFER_HISTORY_METHODS = new Set(['cip56.transfer.create', 'cip56.transfer.accept'])
+
+// True when a recorded transaction is a transfer, so the two tabs can split their history.
+export const isTransferHistoryTransaction = (method: string): boolean =>
+  TRANSFER_HISTORY_METHODS.has(method)
+
 // Keeps token labels readable while preserving the SDK contract payload shape elsewhere.
 export const tokenDisplayLabel = (instrumentId?: TokenInstrumentId): string =>
   instrumentId?.id?.trim() === undefined || instrumentId.id.trim() === ''
