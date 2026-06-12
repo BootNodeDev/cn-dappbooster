@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom'
-import { formatCC, formatPct, shortenParty } from '@/lib/format'
+import { formatCC, formatDate, formatPct, shortenParty } from '@/lib/format'
 import { MIN_GRANT_AMOUNT } from '@/lib/schedule'
 import type { Grant, Role } from '@/store/types'
 import type { GrantDerived } from '@/store/useVestingStore'
 import { Button } from './Button'
 import { Card } from './Card'
 import { ScheduleBar } from './ScheduleBar'
+import { StatusPill } from './StatusPill'
 
 export interface GrantRow {
   grant: Grant
@@ -97,17 +98,23 @@ export const GrantTable = ({
                   </span>
                 </td>
                 <td className="px-4 py-3.5">
-                  <div className="flex items-center gap-2">
-                    <ScheduleBar
-                      className="w-28"
-                      vestedFraction={derived.fraction}
-                      claimedFraction={claimedFraction}
-                      milestones={milestones}
-                    />
-                    <span className="w-9 font-mono text-[0.7rem] text-fg-muted">
-                      {formatPct(derived.fraction)}
+                  {isPending ? (
+                    <span className="font-mono text-[0.7rem] text-fg-muted">
+                      Cliff {formatDate(grant.schedule.cliff)}
                     </span>
-                  </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <ScheduleBar
+                        className="w-28"
+                        vestedFraction={derived.fraction}
+                        claimedFraction={claimedFraction}
+                        milestones={milestones}
+                      />
+                      <span className="w-9 font-mono text-[0.7rem] text-fg-muted">
+                        {formatPct(derived.fraction)}
+                      </span>
+                    </div>
+                  )}
                 </td>
                 <td className="px-4 py-3.5 text-right font-mono">{formatCC(grant.totalAmount)}</td>
                 <td className="px-4 py-3.5 text-right font-mono text-fg-muted">
@@ -131,7 +138,7 @@ export const GrantTable = ({
                         Accept
                       </Button>
                     ) : (
-                      <span className="font-mono text-xs text-fg-muted">awaiting</span>
+                      <StatusPill tone="neutral">Awaiting</StatusPill>
                     )
                   ) : role === 'beneficiary' ? (
                     <Button size="sm" disabled={!canClaim} onClick={() => onClaim?.(grant)}>
