@@ -46,8 +46,14 @@ const AmuletPreapprovalSection = ({ account, api }: AmuletPreapprovalSectionProp
   const isExpired = status?.expired === true
   const isActive = status?.active === true && !isExpired
   const canDisable = isActive || isExpired
+  const [toggling, setToggling] = useState(false)
+
+  // Block input only while a toggle is in flight or the first status load is pending;
+  // background polling refetches must not flip the switch to a disabled state.
+  const disabled = toggling || (preapproval.loading && status === undefined)
 
   const handleToggle = async (): Promise<void> => {
+    setToggling(true)
     try {
       if (canDisable) {
         await preapproval.disable()
@@ -58,6 +64,8 @@ const AmuletPreapprovalSection = ({ account, api }: AmuletPreapprovalSectionProp
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Amulet auto-accept failed')
+    } finally {
+      setToggling(false)
     }
   }
 
@@ -70,7 +78,7 @@ const AmuletPreapprovalSection = ({ account, api }: AmuletPreapprovalSectionProp
       <Switch
         aria-label="Auto-accept"
         checked={canDisable}
-        disabled={preapproval.busy || (preapproval.loading && status === undefined)}
+        disabled={disabled}
         onCheckedChange={() => {
           void handleToggle()
         }}
@@ -113,7 +121,7 @@ export const TransfersPanel = ({
     return () => onPendingCountChange?.(0)
   }, [onPendingCountChange])
 
-  // Tracks one open transfer details section at a time to keep the assets list compact.
+  // Tracks one open transfer details section at a time to keep the transfers list compact.
   const toggleDetails = (transferInstructionCid: string): void => {
     setExpandedCid((current) =>
       current === transferInstructionCid ? undefined : transferInstructionCid,
