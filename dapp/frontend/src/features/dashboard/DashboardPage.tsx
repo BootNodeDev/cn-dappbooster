@@ -198,75 +198,51 @@ export const DashboardPage = (): React.JSX.Element => {
           ))}
         </div>
 
-        <div className="ml-auto flex items-center gap-2">
-          <div className="relative" ref={filterRef}>
-            <button
-              type="button"
-              onClick={() => setFilterOpen((o) => !o)}
-              aria-haspopup="true"
-              aria-expanded={filterOpen}
-              className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-surface px-3 text-xs font-semibold text-fg transition-colors hover:border-primary"
-            >
-              <FilterIcon width={15} height={15} className="text-fg-muted" />
-              {activeFilterLabel}
-              <ChevronDownIcon width={14} height={14} className="text-fg-muted" />
-            </button>
-            {filterOpen && (
-              <div className="absolute right-0 z-40 mt-2 w-40 rounded-lg border border-border bg-surface p-1 shadow-[var(--shadow-popover)]">
-                {filters.map((f) => (
-                  <button
-                    key={f.value}
-                    type="button"
-                    onClick={() => {
-                      setFilter(f.value)
-                      setFilterOpen(false)
-                    }}
-                    className={cn(
-                      'flex w-full items-center justify-between rounded-md px-3 py-1.5 text-xs font-semibold transition-colors',
-                      filter === f.value
-                        ? 'bg-accent/12 text-accent'
-                        : 'text-fg-muted hover:bg-muted hover:text-fg',
-                    )}
-                  >
-                    {f.label}
-                    {filter === f.value && <CheckIcon width={13} height={13} />}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-          <div className="inline-flex rounded-lg border border-border bg-surface p-1">
-            {(
-              [
-                ['cards', CardsIcon, 'Card view'],
-                ['table', TableIcon, 'Table view'],
-              ] as const
-            ).map(([v, Icon, label]) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => setView(v)}
-                aria-label={label}
-                title={label}
-                aria-pressed={view === v}
-                className={cn(
-                  'grid size-7 place-items-center rounded-md transition-colors',
-                  view === v ? 'bg-primary-soft text-fg' : 'text-fg-muted hover:text-fg',
-                )}
-              >
-                <Icon width={16} height={16} />
-              </button>
-            ))}
-          </div>
-          <Link
-            to="/create"
-            aria-label="Create escrow"
-            title="Create escrow"
-            className="grid size-9 place-items-center rounded-full border border-primary bg-primary text-primary-fg transition-colors hover:shadow-[var(--glow)]"
+        <div className="relative" ref={filterRef}>
+          <button
+            type="button"
+            onClick={() => setFilterOpen((o) => !o)}
+            aria-haspopup="true"
+            aria-expanded={filterOpen}
+            className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-surface px-3 text-xs font-semibold text-fg transition-colors hover:border-primary"
           >
-            <PlusIcon width={18} height={18} />
-          </Link>
+            <FilterIcon width={15} height={15} className="text-fg-muted" />
+            {activeFilterLabel}
+            <ChevronDownIcon width={14} height={14} className="text-fg-muted" />
+          </button>
+          {filterOpen && (
+            <div className="absolute left-0 z-40 mt-2 w-40 rounded-lg border border-border bg-surface p-1 shadow-[var(--shadow-popover)]">
+              {filters.map((f) => (
+                <button
+                  key={f.value}
+                  type="button"
+                  onClick={() => {
+                    setFilter(f.value)
+                    setFilterOpen(false)
+                  }}
+                  className={cn(
+                    'flex w-full items-center justify-between rounded-md px-3 py-1.5 text-xs font-semibold transition-colors',
+                    filter === f.value
+                      ? 'bg-accent/12 text-accent'
+                      : 'text-fg-muted hover:bg-muted hover:text-fg',
+                  )}
+                >
+                  {f.label}
+                  {filter === f.value && <CheckIcon width={13} height={13} />}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
+
+        <Link
+          to="/create"
+          aria-label="Create escrow"
+          title="Create escrow"
+          className="ml-auto grid size-9 place-items-center rounded-full border border-primary bg-primary text-primary-fg transition-colors hover:shadow-[var(--glow)]"
+        >
+          <PlusIcon width={18} height={18} />
+        </Link>
       </div>
 
       {/* KPIs for the active tab — always shown so the figures never vanish */}
@@ -325,6 +301,33 @@ export const DashboardPage = (): React.JSX.Element => {
             />
           </>
         )}
+      </div>
+
+      {/* view switch, sitting directly above the list */}
+      <div className="flex justify-end">
+        <div className="inline-flex rounded-lg border border-border bg-surface p-1">
+          {(
+            [
+              ['cards', CardsIcon, 'Card view'],
+              ['table', TableIcon, 'Table view'],
+            ] as const
+          ).map(([v, Icon, label]) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setView(v)}
+              aria-label={label}
+              title={label}
+              aria-pressed={view === v}
+              className={cn(
+                'grid size-7 place-items-center rounded-md transition-colors',
+                view === v ? 'bg-primary-soft text-fg' : 'text-fg-muted hover:text-fg',
+              )}
+            >
+              <Icon width={16} height={16} />
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* list for the active tab */}
