@@ -6,7 +6,9 @@ import { vestedAmount, vestedFraction } from '@/lib/schedule'
 import { useBackend, useParty } from '@/wallet/hooks'
 import type { Grant, Proposal, VestedClaim, WithdrawEvent } from './types'
 
-export type GrantStatus = 'in_cliff' | 'vesting' | 'fully_vested'
+// 'pending' is not produced by deriveGrant — it marks an unaccepted proposal shown
+// alongside active escrows in the dashboard.
+export type GrantStatus = 'pending' | 'in_cliff' | 'vesting' | 'fully_vested'
 
 export interface GrantDerived {
   fraction: number

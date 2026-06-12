@@ -1,10 +1,9 @@
 import type { ComponentType, SVGProps } from 'react'
 import { NavLink } from 'react-router-dom'
-import { DashboardIcon, InboxIcon } from '@/components/icons'
+import { DashboardIcon } from '@/components/icons'
 import { cn } from '@/lib/cn'
 import { shortenParty } from '@/lib/format'
-import { useVestingStore } from '@/store/useVestingStore'
-import { useParties, useParty } from '@/wallet/hooks'
+import { useParties } from '@/wallet/hooks'
 
 interface NavItem {
   to: string
@@ -12,17 +11,10 @@ interface NavItem {
   Icon: ComponentType<SVGProps<SVGSVGElement>>
 }
 
-const items: NavItem[] = [
-  { to: '/dashboard', label: 'Dashboard', Icon: DashboardIcon },
-  { to: '/proposals', label: 'Proposals', Icon: InboxIcon },
-]
+const items: NavItem[] = [{ to: '/dashboard', label: 'Escrows', Icon: DashboardIcon }]
 
 export const Sidebar = (): React.JSX.Element => {
-  const { party } = useParty()
   const { operator } = useParties()
-  const proposals = useVestingStore((s) => s.proposals)
-  const incoming =
-    party === undefined ? 0 : proposals.filter((p) => p.receiver === party.partyId).length
 
   return (
     <aside className="hidden w-60 shrink-0 flex-col border-r border-border bg-surface/70 px-3.5 py-6 lg:flex">
@@ -54,11 +46,6 @@ export const Sidebar = (): React.JSX.Element => {
           >
             <Icon width={18} height={18} />
             <span className="flex-1">{label}</span>
-            {to === '/proposals' && incoming > 0 && (
-              <span className="rounded-full bg-pink px-2 py-0.5 font-mono text-[0.65rem] font-bold text-white">
-                {incoming}
-              </span>
-            )}
           </NavLink>
         ))}
       </nav>

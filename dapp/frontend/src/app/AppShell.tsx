@@ -5,9 +5,6 @@ import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
 
 const titleFor = (pathname: string): string => {
-  if (pathname.startsWith('/proposals')) {
-    return 'Proposals'
-  }
   if (pathname.startsWith('/create')) {
     return 'Create escrow'
   }

@@ -20,7 +20,7 @@ import { Modal } from '@/components/Modal'
 import { toast } from '@/components/toast'
 import { now, useNow } from '@/lib/clock'
 import { cn } from '@/lib/cn'
-import type { Grant, Role, VestedClaim } from '@/store/types'
+import type { Grant, Proposal, Role, VestedClaim } from '@/store/types'
 import { useUiStore } from '@/store/useUiStore'
 import { deriveGrant, useVesting, useVestingStore } from '@/store/useVestingStore'
 
@@ -58,6 +58,29 @@ const filterRows = (rows: GrantRow[], filter: Filter): GrantRow[] =>
     return true
   })
 
+// A pending (unaccepted) proposal rendered as an escrow row with status 'pending'.
+const pendingRow = (p: Proposal): GrantRow => ({
+  grant: {
+    id: p.id,
+    title: p.title,
+    provider: p.provider,
+    creator: p.proposer,
+    receiver: p.receiver,
+    totalAmount: p.totalAmount,
+    schedule: p.schedule,
+    alreadyWithdrawn: 0,
+    note: p.note,
+  },
+  derived: {
+    fraction: 0,
+    vested: 0,
+    claimable: 0,
+    claimed: 0,
+    unvested: p.totalAmount,
+    status: 'pending',
+  },
+})
+
 const sumTotals = (rows: GrantRow[]) => {
   const acc = { total: 0, vested: 0, claimable: 0, claimed: 0, unvested: 0 }
   for (const { grant, derived } of rows) {
@@ -77,10 +100,12 @@ export const DashboardPage = (): React.JSX.Element => {
   const setView = useUiStore((s) => s.setDashboardView)
 
   const grants = useVestingStore((s) => s.grants)
+  const proposals = useVestingStore((s) => s.proposals)
   const claims = useVestingStore((s) => s.claims)
   const withdraw = useVestingStore((s) => s.withdraw)
   const claimResidual = useVestingStore((s) => s.claimResidual)
   const cancel = useVestingStore((s) => s.cancel)
+  const accept = useVestingStore((s) => s.accept)
 
   const [tab, setTab] = useState<Tab>('received')
   const [filter, setFilter] = useState<Filter>('all')
@@ -105,26 +130,48 @@ export const DashboardPage = (): React.JSX.Element => {
 
   const activeFilterLabel = filters.find((f) => f.value === filter)?.label ?? 'All'
 
-  const receivedRows = useMemo<GrantRow[]>(
+  // Active escrows (accepted AmuletVestingContracts) per side.
+  const receivedActive = useMemo<GrantRow[]>(
     () =>
       grants
         .filter((g) => g.receiver === partyId)
         .map((grant) => ({ grant, derived: deriveGrant(grant, nowMs) })),
     [grants, partyId, nowMs],
   )
-  const createdRows = useMemo<GrantRow[]>(
+  const createdActive = useMemo<GrantRow[]>(
     () =>
       grants
         .filter((g) => g.creator === partyId)
         .map((grant) => ({ grant, derived: deriveGrant(grant, nowMs) })),
     [grants, partyId, nowMs],
   )
+  // Pending proposals shown alongside active escrows; incoming to me / sent by me.
+  const receivedPending = useMemo(
+    () => proposals.filter((p) => p.receiver === partyId).map(pendingRow),
+    [proposals, partyId],
+  )
+  const createdPending = useMemo(
+    () => proposals.filter((p) => p.proposer === partyId).map(pendingRow),
+    [proposals, partyId],
+  )
+
+  // Pending first so the call-to-action sits on top.
+  const receivedRows = useMemo(
+    () => [...receivedPending, ...receivedActive],
+    [receivedPending, receivedActive],
+  )
+  const createdRows = useMemo(
+    () => [...createdPending, ...createdActive],
+    [createdPending, createdActive],
+  )
 
   const isReceived = tab === 'received'
   const activeRows = isReceived ? receivedRows : createdRows
+  const activeForTotals = isReceived ? receivedActive : createdActive
+  const activeCount = activeForTotals.length
   const activeRole: Role = isReceived ? 'beneficiary' : 'manager'
   const filtered = useMemo(() => filterRows(activeRows, filter), [activeRows, filter])
-  const totals = useMemo(() => sumTotals(activeRows), [activeRows])
+  const totals = useMemo(() => sumTotals(activeForTotals), [activeForTotals])
 
   const myClaims = useMemo(() => claims.filter((c) => c.receiver === partyId), [claims, partyId])
   const residualClaimable = myClaims.reduce((sum, c) => sum + (c.amount - c.withdrawn), 0)
@@ -164,6 +211,15 @@ export const DashboardPage = (): React.JSX.Element => {
     setClaimTarget({ kind: 'claim', id: claim.id, available: claim.amount - claim.withdrawn })
   }
 
+  const onAccept = async (grant: Grant): Promise<void> => {
+    try {
+      await accept(backend, partyId, grant.id)
+      toast.success('Proposal accepted, escrow active')
+    } catch (err) {
+      toast.error((err as Error).message)
+    }
+  }
+
   const tabs: { value: Tab; label: string; count: number }[] = [
     { value: 'received', label: 'Received', count: receivedRows.length },
     { value: 'created', label: 'Created', count: createdRows.length },
@@ -192,14 +248,14 @@ export const DashboardPage = (): React.JSX.Element => {
               hero
               label="Claimable now"
               amount={totals.claimable}
-              sub={`Across ${receivedRows.length} escrows`}
+              sub={`Across ${activeCount} escrows`}
               subTone="success"
               hint="Tokens that have unlocked and are yours to withdraw right now, across all the escrows vesting to you."
             />
             <KpiCard
               label="Total escrowed"
               amount={totals.total}
-              sub={`${receivedRows.length} active`}
+              sub={`${activeCount} active`}
               hint="The full amount set aside for you, whether it has vested yet or not."
             />
             <KpiCard
@@ -219,7 +275,7 @@ export const DashboardPage = (): React.JSX.Element => {
               hero
               label="Total committed"
               amount={totals.total}
-              sub={`${createdRows.length} escrows funded`}
+              sub={`${activeCount} escrows funded`}
               hint="The full amount you've locked into escrows for others. It leaves your balance once a proposal is accepted."
             />
             <KpiCard
@@ -234,7 +290,7 @@ export const DashboardPage = (): React.JSX.Element => {
             />
             <KpiCard
               label="Active escrows"
-              amount={createdRows.length}
+              amount={activeCount}
               unit=""
               hint="How many of the escrows you created are currently live."
             />
@@ -351,6 +407,7 @@ export const DashboardPage = (): React.JSX.Element => {
               nowMs={nowMs}
               onClaim={openClaim}
               onCancel={setCancelTarget}
+              onAccept={(g) => void onAccept(g)}
             />
           ))}
         </div>
@@ -360,6 +417,7 @@ export const DashboardPage = (): React.JSX.Element => {
           role={activeRole}
           onClaim={openClaim}
           onCancel={setCancelTarget}
+          onAccept={(g) => void onAccept(g)}
         />
       )}
 

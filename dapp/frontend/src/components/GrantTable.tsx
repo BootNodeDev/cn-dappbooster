@@ -17,10 +17,17 @@ interface GrantTableProps {
   role: Role
   onClaim?: (grant: Grant) => void
   onCancel?: (grant: Grant) => void
+  onAccept?: (grant: Grant) => void
 }
 
 const statusText = (d: GrantDerived): string =>
-  d.status === 'in_cliff' ? 'in cliff' : d.status === 'fully_vested' ? 'vested' : 'vesting'
+  d.status === 'pending'
+    ? 'pending'
+    : d.status === 'in_cliff'
+      ? 'in cliff'
+      : d.status === 'fully_vested'
+        ? 'vested'
+        : 'vesting'
 
 // Dense, table-driven view (Direction C) for users tracking many grants.
 export const GrantTable = ({
@@ -28,6 +35,7 @@ export const GrantTable = ({
   role,
   onClaim,
   onCancel,
+  onAccept,
 }: GrantTableProps): React.JSX.Element => (
   <Card className="overflow-hidden">
     <div className="overflow-x-auto">
@@ -47,6 +55,7 @@ export const GrantTable = ({
         </thead>
         <tbody>
           {rows.map(({ grant, derived }) => {
+            const isPending = derived.status === 'pending'
             const claimedFraction =
               grant.totalAmount === 0 ? 0 : derived.claimed / grant.totalAmount
             const milestones =
@@ -54,15 +63,27 @@ export const GrantTable = ({
                 ? grant.schedule.curve.points.map((p) => p.fraction)
                 : undefined
             const canClaim = derived.claimable >= MIN_GRANT_AMOUNT
+            const dotColor = isPending
+              ? 'bg-warning'
+              : derived.status === 'in_cliff'
+                ? 'bg-fg-soft'
+                : 'bg-success'
             return (
               <tr
                 key={grant.id}
                 className="border-b border-border/60 last:border-0 hover:bg-accent/[0.04]"
               >
                 <td className="px-4 py-3.5">
-                  <Link to={`/grants/${grant.id}`} className="font-bold text-fg hover:text-primary">
-                    {grant.title}
-                  </Link>
+                  {isPending ? (
+                    <span className="font-bold text-fg">{grant.title}</span>
+                  ) : (
+                    <Link
+                      to={`/grants/${grant.id}`}
+                      className="font-bold text-fg hover:text-primary"
+                    >
+                      {grant.title}
+                    </Link>
+                  )}
                   <div className="mt-0.5 font-mono text-[0.7rem] text-fg-soft">
                     {role === 'beneficiary'
                       ? shortenParty(grant.creator)
@@ -71,9 +92,7 @@ export const GrantTable = ({
                 </td>
                 <td className="px-4 py-3.5">
                   <span className="inline-flex items-center gap-1.5 font-mono text-xs text-fg-muted">
-                    <span
-                      className={`size-1.5 rounded-full ${derived.status === 'in_cliff' ? 'bg-fg-soft' : 'bg-success'}`}
-                    />
+                    <span className={`size-1.5 rounded-full ${dotColor}`} />
                     {statusText(derived)}
                   </span>
                 </td>
@@ -92,10 +111,12 @@ export const GrantTable = ({
                 </td>
                 <td className="px-4 py-3.5 text-right font-mono">{formatCC(grant.totalAmount)}</td>
                 <td className="px-4 py-3.5 text-right font-mono text-fg-muted">
-                  {formatCC(derived.vested)}
+                  {isPending ? '—' : formatCC(derived.vested)}
                 </td>
                 <td className="px-4 py-3.5 text-right font-mono">
-                  {role === 'beneficiary' ? (
+                  {isPending ? (
+                    <span className="text-fg-muted">—</span>
+                  ) : role === 'beneficiary' ? (
                     <span className="font-semibold text-success">
                       {formatCC(derived.claimable)}
                     </span>
@@ -104,7 +125,15 @@ export const GrantTable = ({
                   )}
                 </td>
                 <td className="px-4 py-3.5 text-right">
-                  {role === 'beneficiary' ? (
+                  {isPending ? (
+                    role === 'beneficiary' ? (
+                      <Button size="sm" onClick={() => onAccept?.(grant)}>
+                        Accept
+                      </Button>
+                    ) : (
+                      <span className="font-mono text-xs text-fg-muted">awaiting</span>
+                    )
+                  ) : role === 'beneficiary' ? (
                     <Button size="sm" disabled={!canClaim} onClick={() => onClaim?.(grant)}>
                       Claim
                     </Button>

@@ -18,9 +18,13 @@ interface GrantCardProps {
   nowMs: number
   onClaim?: (grant: Grant) => void
   onCancel?: (grant: Grant) => void
+  onAccept?: (grant: Grant) => void
 }
 
 const scheduleMeta = (grant: Grant, derived: GrantDerived, nowMs: number): string => {
+  if (derived.status === 'pending') {
+    return 'Awaiting acceptance'
+  }
   if (derived.status === 'in_cliff') {
     return `Cliff ${relativeTime(grant.schedule.cliff, nowMs)}`
   }
@@ -41,29 +45,37 @@ export const GrantCard = ({
   nowMs,
   onClaim,
   onCancel,
+  onAccept,
 }: GrantCardProps): React.JSX.Element => {
   const curve = grant.schedule.curve
   const isMilestone = curve.kind === 'milestone'
   const milestones = curve.kind === 'milestone' ? curve.points.map((p) => p.fraction) : undefined
   const claimedFraction = grant.totalAmount === 0 ? 0 : derived.claimed / grant.totalAmount
   const canClaim = derived.claimable >= MIN_GRANT_AMOUNT
+  const isPending = derived.status === 'pending'
   const counterparty = role === 'beneficiary' ? grant.creator : grant.receiver
   const counterpartyLabel = role === 'beneficiary' ? 'from' : 'to'
 
   return (
     <Card className="grid gap-5 p-5 md:grid-cols-[1.5fr_2.2fr_auto] md:items-center md:gap-7">
       <div className="min-w-0">
-        <Link
-          to={`/grants/${grant.id}`}
-          className="text-base font-bold tracking-tight text-fg transition-colors hover:text-primary"
-        >
-          {grant.title}
-        </Link>
+        {isPending ? (
+          <span className="text-base font-bold tracking-tight text-fg">{grant.title}</span>
+        ) : (
+          <Link
+            to={`/grants/${grant.id}`}
+            className="text-base font-bold tracking-tight text-fg transition-colors hover:text-primary"
+          >
+            {grant.title}
+          </Link>
+        )}
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <StatusPill tone={isMilestone ? 'milestone' : 'linear'}>
             {isMilestone ? 'Milestone' : 'Linear'}
           </StatusPill>
-          {derived.status === 'in_cliff' ? (
+          {isPending ? (
+            <StatusPill tone="warning">Pending</StatusPill>
+          ) : derived.status === 'in_cliff' ? (
             <StatusPill tone="neutral">In cliff</StatusPill>
           ) : derived.status === 'fully_vested' ? (
             <StatusPill tone="success">Fully vested</StatusPill>
@@ -97,7 +109,23 @@ export const GrantCard = ({
       </div>
 
       <div className="flex flex-col items-stretch gap-2.5 md:items-end">
-        {role === 'beneficiary' ? (
+        {isPending ? (
+          <>
+            <div className="md:text-right">
+              <div className="text-[0.7rem] font-semibold uppercase tracking-[0.07em] text-fg-muted">
+                Total
+              </div>
+              <AmountDisplay value={grant.totalAmount} className="text-xl font-semibold text-fg" />
+            </div>
+            {role === 'beneficiary' ? (
+              <Button size="sm" onClick={() => onAccept?.(grant)} className="md:w-auto">
+                Accept &amp; fund
+              </Button>
+            ) : (
+              <span className="font-mono text-xs text-fg-muted">Awaiting acceptance</span>
+            )}
+          </>
+        ) : role === 'beneficiary' ? (
           <>
             <div className="md:text-right">
               <div className="text-[0.7rem] font-semibold uppercase tracking-[0.07em] text-fg-muted">
