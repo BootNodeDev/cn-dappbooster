@@ -18,11 +18,17 @@ const TAP_API  = "http://localhost:3903";
 // through the :3010 wallet-service container (canton-barebones compose).
 const RPC_URL  = "http://localhost:3010/rpc";
 
-const APP_PROVIDER_PARTY =
+// The app-provider party fingerprint is regenerated on every `canton builder reset`,
+// so it is discovered at runtime from the participant's `app-provider` user (see
+// resolveAppProviderParty in main). The env / literal below are only fallbacks.
+let APP_PROVIDER_PARTY =
+  process.env.APP_PROVIDER_PARTY ??
   "appprovider-localparty-1::1220e352fba014c1faedb9432b08021c34b1c4cbfd99f3cfda95a5f0a58027d1d53c";
 
+// The amulet-vesting package id changes whenever the DAR is rebuilt, so prefer the
+// PKG env (pass the id printed by `canton builder deploy`); fall back to the last-known.
 const VESTING_PKG =
-  "e4afada33a78374359383b769431ea68db6406181a368edaf818eb481a7a80a2";
+  process.env.PKG || "e4afada33a78374359383b769431ea68db6406181a368edaf818eb481a7a80a2";
 const SPLICE_PKG =
   "90987abecbcb1d004b063ddfe3b4b5d46cf3814ce89114a86c8cd75ff3cb8a4b";
 
@@ -188,6 +194,17 @@ async function main() {
   const ledgerToken = mintToken("ledger-api-user");
   const appToken    = mintToken("app-provider");
   console.log("[1] Minted JWT tokens for ledger-api-user and app-provider");
+
+  // Resolve the app-provider party from the participant — it is regenerated on
+  // every `canton builder reset`, so hardcoding it breaks a from-scratch run.
+  const apUsers = await get("/v2/users", ledgerToken);
+  const apUser = (apUsers.json?.users ?? []).find((u) => u.id === "app-provider");
+  if (apUser?.primaryParty) {
+    APP_PROVIDER_PARTY = apUser.primaryParty;
+    console.log(`    Resolved app-provider party: ${APP_PROVIDER_PARTY}`);
+  } else {
+    console.log(`    WARN: could not resolve app-provider party; using fallback`);
+  }
 
   // --- 2. Check / create AmuletVestingFactory ---
   console.log("\n[2] Looking for existing AmuletVestingFactory in app-provider ACS...");
