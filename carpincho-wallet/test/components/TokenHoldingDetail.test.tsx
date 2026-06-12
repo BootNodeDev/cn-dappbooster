@@ -34,7 +34,7 @@ describe('TokenHoldingDetail', () => {
     // unlocked holding has no expiry row.
     render(<TokenHoldingDetail holding={UNLOCKED} />)
 
-    assert.equal(screen.getByText('12.5000000000').textContent, '12.5000000000')
+    assert.equal(screen.getByText('12.50').textContent, '12.50')
     assert.equal(screen.getByText('unlocked').textContent, 'unlocked')
     assert.equal(screen.getByText('holding-cid-1').textContent, 'holding-cid-1')
     assert.equal(screen.queryByText('expires'), null)

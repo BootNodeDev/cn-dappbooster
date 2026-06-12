@@ -99,9 +99,9 @@ describe('TokenDetailSheet', () => {
     // total in big type and each holding listed below.
     renderSheet()
 
-    assert.equal(screen.getByText('9997').textContent, '9997')
-    assert.ok(screen.getByText('9000.0000000000'))
-    assert.ok(screen.getByText('997.0000000000'))
+    assert.equal(screen.getByText('9,997.00').textContent, '9,997.00')
+    assert.ok(screen.getByText('9,000.00'))
+    assert.ok(screen.getByText('997.00'))
   })
 
   it('opens only one dialog at a time across screens', async () => {
@@ -124,7 +124,7 @@ describe('TokenDetailSheet', () => {
     assert.equal(screen.queryByLabelText('Token'), null)
 
     await userEvent.click(screen.getByRole('button', { name: /back/i }))
-    assert.ok(screen.getByText('9000.0000000000'))
+    assert.ok(screen.getByText('9,000.00'))
   })
 
   it('navigates to the receive screen showing the party QR and id', async () => {
@@ -143,10 +143,10 @@ describe('TokenDetailSheet', () => {
     // Scenario: each holding row drills into the full UTXO detail (contract id, lock).
     renderSheet()
 
-    await userEvent.click(screen.getByRole('button', { name: /9000\.0000000000/ }))
+    await userEvent.click(screen.getByRole('button', { name: /9,000\.00/ }))
     assert.equal(screen.getByText('holding-cid-1').textContent, 'holding-cid-1')
 
     await userEvent.click(screen.getByRole('button', { name: /back/i }))
-    assert.ok(screen.getByText('997.0000000000'))
+    assert.ok(screen.getByText('997.00'))
   })
 })

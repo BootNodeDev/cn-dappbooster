@@ -103,7 +103,7 @@ describe('TransfersPanel', () => {
     renderTransfers(api)
 
     await screen.findByText('Incoming transfers')
-    await screen.findByText('42 Amulet')
+    await screen.findByText('42.00 Amulet')
     await userEvent.click(screen.getByRole('button', { name: 'Accept' }))
     await waitFor(() => assert.ok(screen.getByText('No pending transfers')))
 
@@ -143,7 +143,7 @@ describe('TransfersPanel', () => {
 
     renderTransfers(api)
 
-    await screen.findByText('666.0000000000 Amulet')
+    await screen.findByText('666.00 Amulet')
     assert.equal(screen.getByText('invoice 42').textContent, 'invoice 42')
     assert.equal(screen.queryByText('transfer-cid-1'), null)
 

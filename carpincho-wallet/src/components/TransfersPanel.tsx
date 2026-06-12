@@ -14,6 +14,7 @@ import { useAmuletPreapproval } from '@/hooks/useAmuletPreapproval'
 import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
 import { usePendingCip56Transfers } from '@/hooks/usePendingCip56Transfers'
 import { shortMiddle } from '@/utils/account'
+import { formatTokenAmount } from '@/utils/amount'
 import type { AccountPublic } from '@/vault/types'
 import { useVault } from '@/vault/useVault'
 
@@ -182,9 +183,11 @@ export const TransfersPanel = ({
         <div className="flex flex-col gap-2">
           {transfers.map((transfer) => {
             const transferView = transfer.interfaceViewValue?.transfer
-            const label = `${transferView?.amount ?? 'unknown'} ${tokenDisplayLabel(
-              transferView?.instrumentId,
-            )}`
+            const label = `${
+              transferView?.amount === undefined
+                ? 'unknown'
+                : formatTokenAmount(transferView.amount)
+            } ${tokenDisplayLabel(transferView?.instrumentId)}`
             const description = transferDescription(transfer)
             const isAccepting = acceptingCid === transfer.contractId
             const isExpanded = expandedCid === transfer.contractId

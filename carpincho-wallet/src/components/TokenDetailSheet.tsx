@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import cantonIcon from '@/assets/canton.png'
 import type { TokenHolding, TokenHoldingSummary } from '@/cip56/holdings'
 import { type Cip56SendApi, SendTokenForm } from '@/components/SendTokenForm'
 import { TokenHoldingDetail } from '@/components/TokenHoldingDetail'
@@ -8,6 +9,7 @@ import { CHEVRON_RIGHT_ICON, RECEIVE_ICON, SEND_ICON } from '@/components/ui/ico
 import { Sheet } from '@/components/ui/Sheet'
 import { useTokenHoldingDetails } from '@/hooks/useTokenHoldingDetails'
 import type { Cip56HoldingsApi } from '@/hooks/useTokenHoldings'
+import { formatTokenAmount } from '@/utils/amount'
 import type { AccountPublic } from '@/vault/types'
 
 type Screen = 'detail' | 'send' | 'receive' | 'holding'
@@ -60,8 +62,8 @@ const HoldingListRow = ({
           Amount
         </span>
         <span className="flex items-center gap-2">
-          <span className="min-w-0 truncate font-mono text-[0.9rem] text-foreground">
-            {view?.amount ?? 'unknown'}
+          <span className="min-w-0 truncate text-[0.9rem] font-medium text-foreground">
+            {formatTokenAmount(view?.amount ?? 'unknown')}
           </span>
           {view?.lock == null ? null : (
             <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[0.62rem] font-semibold uppercase text-muted-foreground">
@@ -91,11 +93,18 @@ const DetailScreen = ({
   onOpenHolding,
 }: DetailScreenProps): JSX.Element => (
   <div className="flex flex-col gap-5">
-    <div className="flex flex-col items-center gap-1 text-center">
+    <div className="flex flex-col items-center gap-1.5 text-center">
       <span className="break-all font-display text-3xl font-bold tracking-tight text-foreground">
-        {summary.totalAmount}
+        {formatTokenAmount(summary.totalAmount)}
       </span>
-      <span className="text-[0.9rem] font-semibold text-muted-foreground">
+      <span className="flex items-center gap-1.5 text-[0.9rem] font-semibold text-muted-foreground">
+        <img
+          src={cantonIcon}
+          alt=""
+          aria-hidden="true"
+          draggable={false}
+          className="size-4 rounded-full"
+        />
         {summary.tokenLabel}
       </span>
     </div>
@@ -212,6 +221,7 @@ export const TokenDetailSheet = ({
       onOpenChange={handleOpenChange}
       title={title}
       description={`${summary.tokenLabel} token details`}
+      hideTitle={screen === 'detail'}
       onBack={screen === 'detail' ? undefined : goBack}
       side="center"
     >

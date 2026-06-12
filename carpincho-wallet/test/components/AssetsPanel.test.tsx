@@ -133,7 +133,7 @@ describe('AssetsPanel', () => {
     await userEvent.click(await screen.findByRole('button', { name: /Amulet/ }))
 
     await screen.findByText('15.75')
-    await screen.findByText('12.5000000000')
+    await screen.findByText('12.50')
     assert.equal(detailsCalls, 1)
   })
 
@@ -175,7 +175,10 @@ describe('AssetsPanel', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: /Amulet/ }))
 
-    await screen.findByText('15.7500000000')
+    // Both the balance and the lone cached holding format to 15.75; two matches with
+    // no detail fetch proves the cached UTXO rendered without a round trip.
+    const matches = await screen.findAllByText('15.75')
+    assert.ok(matches.length >= 2)
     assert.equal(detailsCalls, 0)
   })
 

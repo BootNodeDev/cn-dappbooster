@@ -1,5 +1,6 @@
 import type { TokenHolding } from '@/cip56/holdings'
 import { transferTimeLabel } from '@/cip56/transfers'
+import { formatTokenAmount } from '@/utils/amount'
 
 interface HoldingDetailRowProps {
   label: string
@@ -22,7 +23,7 @@ export const TokenHoldingDetail = ({ holding }: { holding: TokenHolding }): JSX.
     <dl className="grid gap-3 rounded-md border border-border bg-surface px-3 py-3">
       <HoldingDetailRow
         label="amount"
-        value={view?.amount ?? 'unknown'}
+        value={view?.amount === undefined ? 'unknown' : formatTokenAmount(view.amount)}
       />
       <HoldingDetailRow
         label="lock"
