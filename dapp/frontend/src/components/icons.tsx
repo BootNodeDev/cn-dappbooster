@@ -22,45 +22,6 @@ const Svg = ({ children, ...props }: IconProps & { children: ReactNode }): React
   </svg>
 )
 
-export const DashboardIcon = (p: IconProps) => (
-  <Svg {...p}>
-    <rect x="3" y="3" width="7" height="9" rx="1.5" />
-    <rect x="14" y="3" width="7" height="5" rx="1.5" />
-    <rect x="14" y="12" width="7" height="9" rx="1.5" />
-    <rect x="3" y="16" width="7" height="5" rx="1.5" />
-  </Svg>
-)
-
-export const InboxIcon = (p: IconProps) => (
-  <Svg {...p}>
-    <path d="M3 12h5l2 3h4l2-3h5" />
-    <path d="M5 5h14l2 7v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-6z" />
-  </Svg>
-)
-
-export const PlusCircleIcon = (p: IconProps) => (
-  <Svg {...p}>
-    <circle cx="12" cy="12" r="9" />
-    <path d="M12 8v8M8 12h8" />
-  </Svg>
-)
-
-export const HistoryIcon = (p: IconProps) => (
-  <Svg {...p}>
-    <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
-    <path d="M3 4v4h4" />
-    <path d="M12 8v4l3 2" />
-  </Svg>
-)
-
-export const WalletIcon = (p: IconProps) => (
-  <Svg {...p}>
-    <path d="M3 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-    <path d="M16 12h.01" />
-    <path d="M3 9h13a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H3" />
-  </Svg>
-)
-
 export const SunIcon = (p: IconProps) => (
   <Svg {...p}>
     <circle cx="12" cy="12" r="4" />
