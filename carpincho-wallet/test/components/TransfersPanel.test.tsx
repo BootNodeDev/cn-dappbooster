@@ -121,6 +121,19 @@ describe('TransfersPanel', () => {
     assert.equal(screen.queryByText('Incoming transfers'), null)
   })
 
+  it('shows a spinner while transfers are loading instead of blank space', async () => {
+    // Scenario: the first pending-transfers fetch is still in flight. The panel must
+    // show a loading indicator rather than the no-pending-transfers message.
+    const api: Cip56TransferApi = {
+      listPendingIncomingTransfers: () => new Promise(() => {}),
+    }
+
+    renderTransfers(api)
+
+    await screen.findByRole('status', { name: /loading/i })
+    assert.equal(screen.queryByText('No pending transfers'), null)
+  })
+
   it("shows the active party's own outgoing transfer as read-only pending", async () => {
     // Scenario: when sending between own accounts, the sender's outgoing transfer
     // is returned by the ledger query too. The sender must not be able to accept

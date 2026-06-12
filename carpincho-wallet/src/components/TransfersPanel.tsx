@@ -9,6 +9,7 @@ import {
   transferTimeLabel,
 } from '@/cip56/transfers'
 import { PrimaryButton, SecondaryButton } from '@/components/ui/Button'
+import { LoadingState } from '@/components/ui/LoadingState'
 import { Switch } from '@/components/ui/Switch'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { toast } from '@/components/ui/toast'
@@ -318,7 +319,9 @@ export const TransfersPanel = ({
             />
           ))}
         </div>
-      ) : loading ? null : (
+      ) : loading ? (
+        <LoadingState label="Loading transfers" />
+      ) : (
         <div className="flex flex-1 flex-col items-center justify-center px-4 py-10 text-center">
           <p className="m-0 text-[0.95rem] font-medium text-muted-foreground">
             No pending transfers

@@ -3,6 +3,7 @@ import type { TokenHoldingSummary } from '@/cip56/holdings'
 import type { Cip56SendApi } from '@/components/SendTokenForm'
 import { TokenDetailSheet } from '@/components/TokenDetailSheet'
 import { TokenRow } from '@/components/TokenRow'
+import { LoadingState } from '@/components/ui/LoadingState'
 import type { Cip56HoldingsApi } from '@/hooks/useTokenHoldings'
 import { useTokenHoldings } from '@/hooks/useTokenHoldings'
 import type { AccountPublic } from '@/vault/types'
@@ -37,11 +38,7 @@ export const AssetsPanel = ({ account, api, sendApi }: AssetsPanelProps): JSX.El
         </div>
       )}
 
-      {summaries.length === 0 && !loading ? (
-        <div className="flex flex-1 flex-col items-center justify-center px-4 py-10 text-center">
-          <p className="m-0 text-[0.95rem] font-medium text-muted-foreground">No token holdings</p>
-        </div>
-      ) : (
+      {summaries.length > 0 ? (
         <div className="flex flex-col">
           {summaries.map((summary) => (
             <TokenRow
@@ -50,6 +47,12 @@ export const AssetsPanel = ({ account, api, sendApi }: AssetsPanelProps): JSX.El
               onOpen={() => setSelected(summary)}
             />
           ))}
+        </div>
+      ) : loading ? (
+        <LoadingState label="Loading assets" />
+      ) : (
+        <div className="flex flex-1 flex-col items-center justify-center px-4 py-10 text-center">
+          <p className="m-0 text-[0.95rem] font-medium text-muted-foreground">No token holdings</p>
         </div>
       )}
 

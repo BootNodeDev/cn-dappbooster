@@ -182,6 +182,19 @@ describe('AssetsPanel', () => {
     assert.equal(detailsCalls, 0)
   })
 
+  it('shows a spinner while holdings are loading instead of blank space', async () => {
+    // Scenario: the first holdings fetch is still in flight. The panel must show a
+    // loading indicator rather than an empty body, and not the no-holdings message.
+    const api: Cip56HoldingsApi = {
+      listTokenHoldingSummaries: () => new Promise(() => {}),
+    }
+
+    renderAssets(api)
+
+    await screen.findByRole('status', { name: /loading/i })
+    assert.equal(screen.queryByText('No token holdings'), null)
+  })
+
   it('shows an empty state when the party owns no tokens', async () => {
     // Scenario: a brand-new party has no holdings; the panel says so instead of
     // rendering an empty list.
