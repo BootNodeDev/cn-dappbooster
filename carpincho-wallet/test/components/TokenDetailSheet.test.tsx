@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert'
 import { afterEach, describe, it } from 'node:test'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { TokenHoldingSummary } from '@/cip56/holdings'
 import { TokenDetailSheet } from '@/components/TokenDetailSheet'
@@ -154,6 +154,35 @@ describe('TokenDetailSheet', () => {
     assert.ok(screen.getByRole('button', { name: 'Confirm' }))
     assert.ok(screen.getByRole('button', { name: 'Cancel' }))
     assert.equal(document.querySelectorAll('[role="dialog"]').length, 1)
+  })
+
+  it('closes the whole sheet after a confirmed send', async () => {
+    // Scenario: confirming returns the user to the assets tab, not the detail screen.
+    let closed = false
+    render(
+      <TestQueryClientProvider>
+        <TooltipProvider>
+          <VaultContext.Provider value={baseVault()}>
+            <TokenDetailSheet
+              open={true}
+              onOpenChange={(open) => {
+                if (!open) closed = true
+              }}
+              account={ACCOUNT}
+              summary={SUMMARY}
+              sendApi={{ createTokenTransfer: async () => ({ updateId: 'u1' }) }}
+            />
+          </VaultContext.Provider>
+        </TooltipProvider>
+      </TestQueryClientProvider>,
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }))
+    await userEvent.type(screen.getByLabelText('Recipient'), 'bob::party')
+    await userEvent.type(screen.getByLabelText('Amount'), '5')
+    await userEvent.click(screen.getByRole('button', { name: 'Review' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm' }))
+
+    await waitFor(() => assert.equal(closed, true))
   })
 
   it('navigates to the receive screen showing the party QR and id', async () => {

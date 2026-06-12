@@ -38,7 +38,20 @@ describe('AmountField', () => {
     assert.equal(maxed, 1)
   })
 
-  it('forwards typed input to onChange', async () => {
+  it('displays the value with comma grouping', () => {
+    render(
+      <AmountField
+        value="1234567.5"
+        onChange={() => undefined}
+        onMax={() => undefined}
+        balance="10"
+        tokenLabel="Amulet"
+      />,
+    )
+    assert.equal((screen.getByLabelText('Amount') as HTMLInputElement).value, '1,234,567.5')
+  })
+
+  it('strips grouping commas before forwarding to onChange', async () => {
     const values: string[] = []
     render(
       <AmountField

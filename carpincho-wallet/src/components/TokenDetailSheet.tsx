@@ -237,12 +237,10 @@ export const TokenDetailSheet = ({
     goTo('holding')
   }
 
-  // After a transfer leaves the wallet, refresh the host and return to the balance view.
+  // After a transfer leaves the wallet, refresh the host and close the whole sheet.
   const handleSent = (): void => {
     onSent?.()
-    resetForm()
-    setDirection('back')
-    setScreen('detail')
+    handleOpenChange(false)
   }
 
   const title =

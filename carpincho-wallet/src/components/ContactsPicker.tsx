@@ -6,8 +6,9 @@ export interface ContactsPickerProps {
   onSelect: (partyId: string) => void
 }
 
-// Fixed height for ~4 rows so a longer list scrolls rather than resizing the sheet.
-const LIST_CLASS = 'flex h-[13rem] flex-col gap-1 overflow-y-auto'
+// Fixed height of exactly 4 rows (4 × h-14 + 3 × gap-1) so the list never resizes the
+// sheet and a longer list scrolls.
+const LIST_CLASS = 'flex h-[236px] flex-col gap-1 overflow-y-auto'
 
 export const ContactsPicker = ({ contacts, onSelect }: ContactsPickerProps): JSX.Element => {
   if (contacts.length === 0) {
@@ -25,7 +26,7 @@ export const ContactsPicker = ({ contacts, onSelect }: ContactsPickerProps): JSX
           type="button"
           aria-label={account.name}
           onClick={() => onSelect(account.partyId)}
-          className="flex items-center rounded-sm p-2 text-left outline-none transition-colors hover:bg-primary-soft focus-visible:shadow-focus"
+          className="flex h-14 shrink-0 items-center rounded-sm px-2 text-left outline-none transition-colors hover:bg-primary-soft focus-visible:shadow-focus"
         >
           <AccountRow
             account={account}

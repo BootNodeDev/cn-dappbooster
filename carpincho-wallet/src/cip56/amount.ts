@@ -25,6 +25,26 @@ export const formatTokenAmount = (value: string): string => {
   return `${groupThousands(wholeValue.toString())}.${cents.toString().padStart(2, '0')}`
 }
 
+// Strips grouping commas and any non-decimal characters, collapsing extra dots so the
+// stored amount stays a plain decimal string.
+export const stripAmountGroups = (value: string): string => {
+  const cleaned = value.replace(/[^\d.]/g, '')
+  const [whole, ...rest] = cleaned.split('.')
+  return rest.length === 0 ? whole : `${whole}.${rest.join('')}`
+}
+
+// Groups the integer part of a partial amount with commas, keeping the fraction and a
+// trailing dot intact so it can format live while the user types.
+export const formatAmountInput = (value: string): string => {
+  const cleaned = stripAmountGroups(value)
+  if (cleaned === '') {
+    return ''
+  }
+  const [whole, ...fraction] = cleaned.split('.')
+  const grouped = groupThousands(whole)
+  return fraction.length === 0 ? grouped : `${grouped}.${fraction.join('')}`
+}
+
 // Compares two decimal strings exactly (no float). Returns -1/0/1, or undefined for non-decimals.
 export const compareDecimalStrings = (a: string, b: string): -1 | 0 | 1 | undefined => {
   const ta = a.trim()

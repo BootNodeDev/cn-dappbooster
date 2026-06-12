@@ -1,4 +1,4 @@
-import { formatTokenAmount } from '@/cip56/amount'
+import { formatAmountInput, formatTokenAmount, stripAmountGroups } from '@/cip56/amount'
 import { cn } from '@/utils/cn'
 
 export interface AmountFieldProps {
@@ -37,8 +37,8 @@ export const AmountField = ({
         inputMode="decimal"
         autoComplete="off"
         placeholder="0.00"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
+        value={formatAmountInput(value)}
+        onChange={(event) => onChange(stripAmountGroups(event.target.value))}
         className="min-w-0 flex-1 border-0 bg-transparent p-0 text-base text-foreground outline-none placeholder:text-form-placeholder"
       />
       <button

@@ -111,10 +111,9 @@ export const SendTokenForm = ({
             type="button"
             aria-label="Contacts"
             onClick={onOpenContacts}
-            className="inline-flex items-center gap-1 rounded-sm text-[0.74rem] font-semibold text-primary transition-colors hover:text-primary-hover focus-visible:outline-none focus-visible:shadow-focus"
+            className="inline-flex items-center justify-center rounded-sm text-primary transition-colors hover:text-primary-hover focus-visible:outline-none focus-visible:shadow-focus"
           >
             {CONTACTS_ICON}
-            Contacts
           </button>
         </div>
         <TextInput
