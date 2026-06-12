@@ -14,7 +14,9 @@ import { fileURLToPath } from "node:url";
 // ---------------------------------------------------------------------------
 const JSON_API = "http://localhost:3975";
 const TAP_API  = "http://localhost:3903";
-const RPC_URL  = "http://localhost:3020/rpc";
+// rpcUrl written into amulet-parties.json: the dApp reads the ACS + SCAN context
+// through the :3010 wallet-service container (canton-barebones compose).
+const RPC_URL  = "http://localhost:3010/rpc";
 
 const APP_PROVIDER_PARTY =
   "appprovider-localparty-1::1220e352fba014c1faedb9432b08021c34b1c4cbfd99f3cfda95a5f0a58027d1d53c";
