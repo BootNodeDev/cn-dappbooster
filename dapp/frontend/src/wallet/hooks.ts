@@ -25,11 +25,12 @@ export const useConnect = (): UseConnectResult => {
 export interface UsePartyResult {
   party: PartyRef | undefined
   isConnected: boolean
+  hydrated: boolean
 }
 
 export const useParty = (): UsePartyResult => {
   const ctx = useWalletContext()
-  return { party: ctx.party, isConnected: ctx.isConnected }
+  return { party: ctx.party, isConnected: ctx.isConnected, hydrated: ctx.hydrated }
 }
 
 export interface UseWalletStatusResult {

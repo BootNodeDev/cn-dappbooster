@@ -45,6 +45,9 @@ export interface WalletContextValue {
   operator: string
   party: PartyRef | undefined
   isConnected: boolean
+  // False until the initial session rehydration finishes; lets the shell show a
+  // spinner instead of flashing the connect screen for an already-logged-in user.
+  hydrated: boolean
   isConnecting: boolean
   backendAvailable: boolean
   backend: VestingBackend
@@ -60,6 +63,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }): React.JSX
   const [operator, setOperator] = useState('')
   const [party, setParty] = useState<PartyRef | undefined>(undefined)
   const [isConnecting, setIsConnecting] = useState(false)
+  const [hydrated, setHydrated] = useState(false)
   const [backendAvailable, setBackendAvailable] = useState(false)
   const [backend, setBackend] = useState<VestingBackend>(() =>
     createBackend({ rpcUrl: '', deployment: { pkg: '', operator: '' } }, new StealthWallet('')),
@@ -108,6 +112,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }): React.JSX
       // not reset it because the newer call already set its own isConnecting=true.
       if (epoch === loadEpoch.current) {
         setIsConnecting(false)
+        setHydrated(true)
       }
     }
   }, [])
@@ -133,13 +138,14 @@ export const WalletProvider = ({ children }: { children: ReactNode }): React.JSX
       operator,
       party,
       isConnected: party !== undefined,
+      hydrated,
       isConnecting,
       backendAvailable,
       backend,
       connect,
       disconnect,
     }),
-    [pool, operator, party, isConnecting, backendAvailable, backend, connect, disconnect],
+    [pool, operator, party, hydrated, isConnecting, backendAvailable, backend, connect, disconnect],
   )
 
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>
