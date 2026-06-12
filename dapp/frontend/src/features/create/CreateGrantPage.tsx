@@ -296,27 +296,32 @@ export const CreateGrantPage = (): React.JSX.Element => {
             <span className="text-[0.65rem] font-bold uppercase tracking-[0.06em] text-fg-muted">
               Quick demo
             </span>
-            <button
-              type="button"
-              onClick={() => demoLinear(60_000)}
-              className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-fg-muted transition-colors hover:border-primary hover:text-primary"
-            >
-              Linear · 1 min
-            </button>
-            <button
-              type="button"
-              onClick={() => demoLinear(120_000)}
-              className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-fg-muted transition-colors hover:border-primary hover:text-primary"
-            >
-              Linear · 2 min
-            </button>
-            <button
-              type="button"
-              onClick={demoMilestones}
-              className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-fg-muted transition-colors hover:border-primary hover:text-primary"
-            >
-              Milestones · 90s
-            </button>
+            {curveKind === 'linear' ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => demoLinear(60_000)}
+                  className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-fg-muted transition-colors hover:border-primary hover:text-primary"
+                >
+                  1 min
+                </button>
+                <button
+                  type="button"
+                  onClick={() => demoLinear(120_000)}
+                  className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-fg-muted transition-colors hover:border-primary hover:text-primary"
+                >
+                  2 min
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={demoMilestones}
+                className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-fg-muted transition-colors hover:border-primary hover:text-primary"
+              >
+                90s
+              </button>
+            )}
             <button
               type="button"
               onClick={resetSchedule}
@@ -332,7 +337,7 @@ export const CreateGrantPage = (): React.JSX.Element => {
             </p>
           )}
 
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div className="mt-4 flex flex-col gap-4">
             <div>
               <label htmlFor="cliff" className={labelClass}>
                 Cliff date
@@ -349,7 +354,7 @@ export const CreateGrantPage = (): React.JSX.Element => {
               />
             </div>
             {curveKind === 'linear' ? (
-              <>
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label htmlFor="start" className={labelClass}>
                     Start date
@@ -380,9 +385,9 @@ export const CreateGrantPage = (): React.JSX.Element => {
                     className={inputClass}
                   />
                 </div>
-              </>
+              </div>
             ) : (
-              <div className="sm:col-span-2">
+              <div>
                 <span className={labelClass}>Milestones (date · cumulative %)</span>
                 <div className="mt-2 flex flex-col gap-2">
                   {milestones.map((m, i) => (
@@ -408,7 +413,8 @@ export const CreateGrantPage = (): React.JSX.Element => {
                           setMilestones((l) => l.filter((_, idx) => idx !== i))
                         }}
                         disabled={milestones.length <= 1}
-                        className="shrink-0 rounded-xl border border-border px-3 text-fg-muted transition-colors hover:border-danger hover:text-danger disabled:opacity-40"
+                        aria-label="Remove milestone"
+                        className="shrink-0 self-center px-1 text-fg-muted transition-colors hover:text-danger disabled:opacity-40"
                       >
                         ✕
                       </button>

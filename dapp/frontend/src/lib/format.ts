@@ -29,6 +29,17 @@ export const clampClaimAmount = (amount: number, available: number): number =>
 
 export const formatPct = (fraction: number): string => `${(fraction * 100).toFixed(1)}%`
 
+// Sanitize free-typed amount input to a valid decimal: digits with at most one
+// decimal point, capped at 10 fractional digits (Canton Decimal precision).
+export const sanitizeAmountInput = (raw: string): string => {
+  const cleaned = raw.replace(/[^0-9.]/g, '')
+  const [intPart, ...rest] = cleaned.split('.')
+  if (rest.length === 0) {
+    return intPart
+  }
+  return `${intPart}.${rest.join('').slice(0, 10)}`
+}
+
 // A Canton party id is `hint::fingerprint`. Shorten EVM-style (head…tail) on both
 // halves: a long hint gets truncated and the fingerprint shows only its ends, e.g.
 // `alice::1220…c4d1` or `app_pr…cal-1::1220…c4d1`.
