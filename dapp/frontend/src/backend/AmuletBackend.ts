@@ -350,14 +350,11 @@ export class AmuletBackend implements VestingBackend {
       throw new Error('AmuletVestingFactory not found — run the amulet-vesting bootstrap')
     }
 
-    const amuletCids = await this.selectAmuletCids(args.proposer, args.totalAmount)
-
     const command = buildAmuletCreateVestingCommand(this.factoryTid, factoryRef.contractId, {
       proposer: args.proposer,
       receiver: args.receiver,
       totalAmount: args.totalAmount,
       schedule: args.schedule,
-      amuletCids,
       note: composeNote(args.title, args.note),
     })
 
@@ -368,81 +365,37 @@ export class AmuletBackend implements VestingBackend {
 
   async accept(args: { receiver: string; proposalCid: string }): Promise<void> {
     const { arg, disclosures } = await this.loadTransferContext()
-    const inputDisclosures = await this.discloseAcceptInputs(args.proposalCid)
-    const allDisclosed = [...disclosures, ...inputDisclosures]
-    // TEMP diagnostic (remove once Accept is confirmed): print every contract the command
-    // touches so a CONTRACT_NOT_FOUND cid can be matched to its source.
-    console.warn('[accept] submitting', {
-      proposalCid: args.proposalCid,
-      ctx: arg,
-      disclosed: allDisclosed.map((d) => ({ templateId: d.templateId, contractId: d.contractId })),
-    })
-    const command = buildAmuletAcceptCommand(this.proposalTid, args.proposalCid, arg)
-    try {
-      await this.submit(args.receiver, command, allDisclosed)
-    } catch (e) {
-      // TEMP: map a CONTRACT_NOT_FOUND cid back to the contract we passed, so the toast
-      // says which one (proposal / amuletRules / openMiningRound / input amulet) is stale.
-      const text = e instanceof Error ? e.message : String(e)
-      const known: [string, string][] = [
-        ['proposal', args.proposalCid],
-        ['amuletRules', arg.amuletRules],
-        ['openMiningRound', arg.openMiningRound],
-        ...inputDisclosures.map((d, i) => [`inputAmulet[${i}]`, d.contractId] as [string, string]),
-      ]
-      const culprit = known.find(([, cid]) => cid !== '' && text.includes(cid))
-      console.error('[accept] submit failed; missing contract is:', culprit?.[0] ?? 'UNKNOWN', e)
-      if (culprit !== undefined && /CONTRACT_NOT_FOUND/.test(text)) {
-        throw new Error(`Accept failed — the ${culprit[0]} contract was not found on the ledger.`)
-      }
-      throw e
-    }
+    const { cids, disclosures: inputDisclosures } = await this.selectAcceptInputs(args.proposalCid)
+    const command = buildAmuletAcceptCommand(this.proposalTid, args.proposalCid, arg, cids)
+    await this.submit(args.receiver, command, [...disclosures, ...inputDisclosures])
   }
 
-  // ── discloseAcceptInputs ─────────────────────────────────────────────────────
-  // AmuletVestingProposal_Accept is submitted by the receiver but self-transfers the
-  // PROPOSER's input Amulets into the escrow. The receiver is not a stakeholder of those
-  // Amulets, so they must be explicitly disclosed or the submission fails CONTRACT_NOT_FOUND.
-  // Read the proposal (visible to the operator, always a signatory as provider) for its
-  // amuletCids + proposer, then pull each input Amulet's createdEventBlob from the proposer's
-  // ACS (operator-owned Amulets carry a non-empty blob, unlike DSO-signed AmuletRules).
-  private async discloseAcceptInputs(proposalCid: string): Promise<DisclosedContract[]> {
+  // ── selectAcceptInputs ───────────────────────────────────────────────────────
+  // AmuletVestingProposal_Accept self-transfers the PROPOSER's Amulets into the escrow.
+  // The coins are NOT pinned on the proposal (they would go stale as Splice merges/re-mints
+  // Amulets); they are chosen fresh here from the proposer's current holdings, disclosed to
+  // the receiver (who is not a stakeholder of them), and passed into the choice.
+  private async selectAcceptInputs(
+    proposalCid: string,
+  ): Promise<{ cids: string[]; disclosures: DisclosedContract[] }> {
     const proposalRows = await this.readAcs(this.operator, this.proposalTid)
     const proposal = proposalRows
       .map((row) => createdArg(row))
       .find((entry) => entry?.contractId === proposalCid)
     if (proposal === undefined) {
-      throw new Error('AmuletVestingProposal not found for accept disclosure')
+      throw new Error('AmuletVestingProposal not found for accept')
     }
-    const amuletCids = Array.isArray(proposal.arg.amuletCids)
-      ? (proposal.arg.amuletCids as string[])
-      : []
     const proposer = String(proposal.arg.proposer ?? '')
-    if (proposer === '' || amuletCids.length === 0) {
-      throw new Error('Proposal records no funding amulets, so it cannot be accepted.')
+    const totalAmount = Number(proposal.arg.totalAmount ?? 0)
+    if (proposer === '' || !(totalAmount > 0)) {
+      throw new Error('Proposal is missing a proposer or amount; cannot accept.')
     }
-    // The proposal pins specific input-Amulet contract ids at creation. They must still be
-    // active in the proposer's wallet AND disclosed to the receiver. Splice's wallet
-    // automation merges/re-mints Amulets over time, archiving the pinned ones — making an
-    // old proposal permanently unacceptable. Detect that here and say so plainly instead of
-    // submitting and getting an opaque CONTRACT_NOT_FOUND.
-    const refs = (await this.readAcs(proposer, this.amuletTid))
+    const wanted = new Set(await this.selectAmuletCids(proposer, totalAmount))
+    const disclosures = (await this.readAcs(proposer, this.amuletTid))
       .map((row) => extractCreatedEventBlob(row as Parameters<typeof extractCreatedEventBlob>[0]))
-      .filter((ref): ref is DisclosedRef => ref !== undefined)
-    const liveCids = new Set(refs.map((ref) => ref.contractId))
-    const missing = amuletCids.filter((cid) => !liveCids.has(cid))
-    if (missing.length > 0) {
-      const who = proposer.split('::')[0]
-      throw new Error(
-        `This escrow proposal can no longer be accepted: ${missing.length} of its funding ` +
-          `amulet(s) are no longer in ${who}'s wallet (Splice merged or spent them after the ` +
-          `proposal was created). Create a fresh escrow and accept it promptly.`,
-      )
-    }
-    const wanted = new Set(amuletCids)
-    return refs
-      .filter((ref) => wanted.has(ref.contractId))
+      .filter((ref): ref is DisclosedRef => ref !== undefined && wanted.has(ref.contractId))
       .map((ref) => buildDisclosedContract(this.amuletTid, ref))
+    return { cids: [...wanted], disclosures }
   }
 
   async withdraw(args: { receiver: string; contractCid: string; amount: number }): Promise<void> {

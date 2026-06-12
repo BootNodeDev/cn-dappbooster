@@ -20,7 +20,7 @@ const APP_PROVIDER_PARTY =
   "appprovider-localparty-1::1220e352fba014c1faedb9432b08021c34b1c4cbfd99f3cfda95a5f0a58027d1d53c";
 
 const VESTING_PKG =
-  "e4afada33a78374359383b769431ea68db6406181a368edaf818eb481a7a80a2";
+  "87064d55ac8bcfa7c908bcc23134e5dca406a012e2127d95f7f30a7b6a9809a6";
 const SPLICE_PKG =
   "90987abecbcb1d004b063ddfe3b4b5d46cf3814ce89114a86c8cd75ff3cb8a4b";
 
@@ -95,7 +95,7 @@ async function queryACS(party, templateSuffix, token) {
     filter: {
       filtersByParty: {
         [party]: {
-          cumulative: [{ Wildcard: {} }],
+          cumulative: [{ identifierFilter: { WildcardFilter: { value: { includeCreatedEventBlob: false } } } }],
         },
       },
     },
@@ -190,7 +190,7 @@ async function main() {
   // --- 2. Check / create AmuletVestingFactory ---
   console.log("\n[2] Looking for existing AmuletVestingFactory in app-provider ACS...");
   let factoryContractId;
-  const existingFactories = await queryACS(APP_PROVIDER_PARTY, "AmuletVestingFactory", ledgerToken);
+  const existingFactories = await queryACS(APP_PROVIDER_PARTY, FACTORY_TEMPLATE_ID, ledgerToken);
   if (existingFactories.length > 0) {
     factoryContractId = getCreatedEvent(existingFactories[0]).contractId;
     console.log(`    Found existing factory: ${factoryContractId}`);
