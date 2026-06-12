@@ -61,6 +61,7 @@ export const GrantCard = ({
   const canClaim = derived.claimable >= MIN_GRANT_AMOUNT
   const isPending = derived.status === 'pending'
   const counterparty = role === 'beneficiary' ? grant.creator : grant.receiver
+  const counterpartyLabel = role === 'beneficiary' ? 'from:' : 'to:'
 
   return (
     <Card className="grid gap-5 p-5 md:grid-cols-[1.5fr_2.2fr_auto] md:items-center md:gap-7">
@@ -90,7 +91,9 @@ export const GrantCard = ({
           )}
         </div>
         <div className="mt-2.5 flex items-center gap-1.5">
-          <span className="font-mono text-xs text-fg-soft">{shortenParty(counterparty)}</span>
+          <span className="font-mono text-xs text-fg-soft">
+            {counterpartyLabel} {shortenParty(counterparty)}
+          </span>
           <button
             type="button"
             aria-label="Copy party id"

@@ -5,8 +5,19 @@ import type { Grant, Role } from '@/store/types'
 import type { GrantDerived } from '@/store/useVestingStore'
 import { Button } from './Button'
 import { Card } from './Card'
+import { CopyIcon } from './icons'
 import { ScheduleBar } from './ScheduleBar'
 import { StatusPill } from './StatusPill'
+import { toast } from './toast'
+
+const copyPartyId = async (partyId: string): Promise<void> => {
+  try {
+    await navigator.clipboard.writeText(partyId)
+    toast.success('Party id copied')
+  } catch {
+    toast.error('Could not copy')
+  }
+}
 
 export interface GrantRow {
   grant: Grant
@@ -85,10 +96,22 @@ export const GrantTable = ({
                       {grant.title}
                     </Link>
                   )}
-                  <div className="mt-0.5 font-mono text-[0.7rem] text-fg-soft">
-                    {role === 'beneficiary'
-                      ? shortenParty(grant.creator)
-                      : shortenParty(grant.receiver)}
+                  <div className="mt-0.5 flex items-center gap-1.5">
+                    <span className="font-mono text-[0.7rem] text-fg-soft">
+                      {role === 'beneficiary' ? 'from:' : 'to:'}{' '}
+                      {shortenParty(role === 'beneficiary' ? grant.creator : grant.receiver)}
+                    </span>
+                    <button
+                      type="button"
+                      aria-label="Copy party id"
+                      title="Copy party id"
+                      onClick={() =>
+                        void copyPartyId(role === 'beneficiary' ? grant.creator : grant.receiver)
+                      }
+                      className="text-fg-muted transition-colors hover:text-primary"
+                    >
+                      <CopyIcon width={12} height={12} />
+                    </button>
                   </div>
                 </td>
                 <td className="px-4 py-3.5">
