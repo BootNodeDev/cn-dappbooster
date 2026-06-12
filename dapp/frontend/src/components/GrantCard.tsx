@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { copyPartyId } from '@/lib/clipboard'
 import { formatDate, formatPct, relativeTime, shortenParty } from '@/lib/format'
 import { fadeUp } from '@/lib/motion'
-import { MIN_GRANT_AMOUNT, nextMilestone } from '@/lib/schedule'
+import { canClaim, nextMilestone } from '@/lib/schedule'
 import type { Grant, Role } from '@/store/types'
 import { type GrantDerived, statusPillLabel, statusPillTone } from '@/store/useVestingStore'
 import { AmountDisplay } from './AmountDisplay'
@@ -51,7 +51,7 @@ export const GrantCard = ({
   const isMilestone = curve.kind === 'milestone'
   const milestones = curve.kind === 'milestone' ? curve.points.map((p) => p.fraction) : undefined
   const claimedFraction = grant.totalAmount === 0 ? 0 : derived.claimed / grant.totalAmount
-  const canClaim = derived.claimable >= MIN_GRANT_AMOUNT
+  const claimEnabled = canClaim(derived.claimable, derived.unvested)
   const isPending = derived.status === 'pending'
   const counterparty = role === 'beneficiary' ? grant.creator : grant.receiver
   const counterpartyLabel = role === 'beneficiary' ? 'from:' : 'to:'
@@ -169,7 +169,7 @@ export const GrantCard = ({
               ) : (
                 <Button
                   size="sm"
-                  disabled={!canClaim}
+                  disabled={!claimEnabled}
                   onClick={() => onClaim?.(grant)}
                   className="md:w-auto"
                 >

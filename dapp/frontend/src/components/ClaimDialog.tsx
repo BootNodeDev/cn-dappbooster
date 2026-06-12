@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { claimAmountInput, clampClaimAmount, formatCC, formatCCFull } from '@/lib/format'
-import { MIN_GRANT_AMOUNT } from '@/lib/schedule'
+import { floorOk, MIN_GRANT_AMOUNT, remainderAfter } from '@/lib/schedule'
 import { Button } from './Button'
 import { Modal } from './Modal'
 import { toast } from './toast'
@@ -10,6 +10,10 @@ interface ClaimDialogProps {
   onClose: () => void
   title: string
   available: number
+  // Still-locked backing that survives this withdraw (unvested, for a grant). The
+  // contract's re-lock floor applies to `locked + (available - amount)`, not just the
+  // claimed slice, so a partial grant withdraw can be rejected if this is ignored.
+  locked?: number
   actionLabel?: string
   // Submits the ledger command; the dialog awaits it and closes on success.
   onConfirm: (amount: number) => Promise<void>
@@ -23,6 +27,7 @@ export const ClaimDialog = ({
   onClose,
   title,
   available,
+  locked = 0,
   actionLabel = 'Claim',
   onConfirm,
 }: ClaimDialogProps): React.JSX.Element => {
@@ -36,8 +41,7 @@ export const ClaimDialog = ({
   }, [open, available])
 
   const amount = Number(raw)
-  const remainder = available - amount
-  const validFloor = remainder <= 1e-9 || remainder >= MIN_GRANT_AMOUNT
+  const validFloor = floorOk(remainderAfter(amount, available, locked))
   const valid = Number.isFinite(amount) && amount > 0 && amount <= available + 1e-9 && validFloor
 
   const submit = async (): Promise<void> => {

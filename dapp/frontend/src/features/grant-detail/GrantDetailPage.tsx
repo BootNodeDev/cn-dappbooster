@@ -12,7 +12,7 @@ import { StatusPill } from '@/components/StatusPill'
 import { toast } from '@/components/toast'
 import { useNow } from '@/lib/clock'
 import { formatCC, formatDate, shortenParty } from '@/lib/format'
-import { MIN_GRANT_AMOUNT } from '@/lib/schedule'
+import { canClaim } from '@/lib/schedule'
 import {
   deriveGrant,
   statusPillLabel,
@@ -67,7 +67,7 @@ export const GrantDetailPage = (): React.JSX.Element => {
   const isCreator = grant.creator === partyId
   const isMilestone = grant.schedule.curve.kind === 'milestone'
   const grantHistory = history.filter((h) => h.grantId === grant.id)
-  const canClaim = derived.claimable >= MIN_GRANT_AMOUNT
+  const claimEnabled = canClaim(derived.claimable, derived.unvested)
 
   const onCancel = async (): Promise<void> => {
     setCancelling(true)
@@ -110,7 +110,7 @@ export const GrantDetailPage = (): React.JSX.Element => {
                 <LockIcon width={14} height={14} /> Locked until cliff
               </span>
             ) : (
-              <Button disabled={!canClaim} onClick={() => setClaimOpen(true)}>
+              <Button disabled={!claimEnabled} onClick={() => setClaimOpen(true)}>
                 Claim {formatCC(derived.claimable)} CC
               </Button>
             ))}
@@ -218,6 +218,7 @@ export const GrantDetailPage = (): React.JSX.Element => {
           onClose={() => setClaimOpen(false)}
           title="Claim vested CC"
           available={derived.claimable}
+          locked={derived.unvested}
           onConfirm={(amount) => withdraw(backend, partyId, grant.id, amount)}
         />
       )}

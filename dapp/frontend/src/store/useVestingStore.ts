@@ -3,6 +3,7 @@ import { create } from 'zustand'
 import type { CreateVestInput, VestingBackend } from '@/backend/VestingBackend'
 import { now } from '@/lib/clock'
 import { vestedAmount, vestedFraction } from '@/lib/schedule'
+import { uuid } from '@/lib/uuid'
 import { useBackend, useParty } from '@/wallet/hooks'
 import type { Grant, Proposal, VestedClaim, WithdrawEvent } from './types'
 
@@ -80,7 +81,7 @@ interface VestingState {
   ) => Promise<void>
 }
 
-const uid = (prefix: string): string => `${prefix}-${crypto.randomUUID().slice(0, 8)}`
+const uid = (prefix: string): string => `${prefix}-${uuid().slice(0, 8)}`
 
 const errorText = (err: unknown): string => (err instanceof Error ? err.message : String(err))
 

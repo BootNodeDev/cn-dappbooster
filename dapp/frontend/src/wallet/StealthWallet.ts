@@ -2,6 +2,7 @@
 // CanActAs pool; execute() submits via the ledgerApi proxy (no signing popup).
 import { walletServiceRequest } from '@/backend/ledgerApi'
 import type { PartyRef } from '@/backend/VestingBackend'
+import { uuid } from '@/lib/uuid'
 import type { DisclosedContract, LedgerCommand, Wallet } from './Wallet'
 
 type Account = { partyId: string; hint?: string }
@@ -37,7 +38,7 @@ export class StealthWallet implements Wallet {
       requestMethod: 'post',
       resource: '/v2/commands/submit-and-wait-for-transaction-tree',
       body: {
-        commandId: `vest-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
+        commandId: `vest-${Date.now()}-${uuid().slice(0, 8)}`,
         actAs: [actingParty],
         readAs: [actingParty],
         commands: [command],

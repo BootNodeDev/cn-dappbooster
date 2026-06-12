@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { create } from 'zustand'
 import { cn } from '@/lib/cn'
+import { uuid } from '@/lib/uuid'
 import { CheckIcon, CloseIcon, CopyIcon } from './icons'
 
 type ToastTone = 'success' | 'error' | 'info'
@@ -22,7 +23,7 @@ const useToastStore = create<ToastState>((set) => ({
   toasts: [],
   push: (tone, message) =>
     set((state) => ({
-      toasts: [...state.toasts, { id: crypto.randomUUID().slice(0, 8), tone, message }],
+      toasts: [...state.toasts, { id: uuid().slice(0, 8), tone, message }],
     })),
   dismiss: (id) => set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) })),
 }))

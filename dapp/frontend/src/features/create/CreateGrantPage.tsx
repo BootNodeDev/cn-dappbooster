@@ -13,6 +13,7 @@ import { now, useNow } from '@/lib/clock'
 import { cn } from '@/lib/cn'
 import { shortenParty } from '@/lib/format'
 import { MIN_GRANT_AMOUNT, type VestingSchedule, validVestingSchedule } from '@/lib/schedule'
+import { uuid } from '@/lib/uuid'
 import { useVesting, useVestingStore } from '@/store/useVestingStore'
 import { useParties, useParty } from '@/wallet/hooks'
 
@@ -449,7 +450,7 @@ export const CreateGrantPage = (): React.JSX.Element => {
                         setMilestones((l) => [
                           ...l,
                           {
-                            id: crypto.randomUUID().slice(0, 8),
+                            id: uuid().slice(0, 8),
                             date: addMonths(today, 24).toISOString(),
                             pct: '100',
                           },

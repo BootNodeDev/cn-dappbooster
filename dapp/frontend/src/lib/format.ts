@@ -60,7 +60,11 @@ export const shortenParty = (partyId: string): string => {
   if (fingerprint === undefined) {
     return shortHint
   }
-  return `${shortHint}::${fingerprint.slice(0, 4)}…${fingerprint.slice(-4)}`
+  // Only ellipsize a fingerprint long enough that head…tail is actually shorter;
+  // at <=10 chars the 4+4 ends would overlap and duplicate, so keep it whole.
+  const shortFingerprint =
+    fingerprint.length > 10 ? `${fingerprint.slice(0, 4)}…${fingerprint.slice(-4)}` : fingerprint
+  return `${shortHint}::${shortFingerprint}`
 }
 
 export const partyHint = (partyId: string): string => partyId.split('::')[0]

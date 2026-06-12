@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { copyPartyId } from '@/lib/clipboard'
 import { formatCC, formatDate, formatPct, shortenParty } from '@/lib/format'
-import { MIN_GRANT_AMOUNT } from '@/lib/schedule'
+import { canClaim } from '@/lib/schedule'
 import type { Grant, Role } from '@/store/types'
 import type { GrantDerived } from '@/store/useVestingStore'
 import { Button } from './Button'
@@ -65,7 +65,7 @@ export const GrantTable = ({
               grant.schedule.curve.kind === 'milestone'
                 ? grant.schedule.curve.points.map((p) => p.fraction)
                 : undefined
-            const canClaim = derived.claimable >= MIN_GRANT_AMOUNT
+            const claimEnabled = canClaim(derived.claimable, derived.unvested)
             const dotColor = isPending
               ? 'bg-warning'
               : derived.status === 'in_cliff'
@@ -155,7 +155,7 @@ export const GrantTable = ({
                       <StatusPill tone="neutral">Awaiting</StatusPill>
                     )
                   ) : role === 'beneficiary' ? (
-                    <Button size="sm" disabled={!canClaim} onClick={() => onClaim?.(grant)}>
+                    <Button size="sm" disabled={!claimEnabled} onClick={() => onClaim?.(grant)}>
                       Claim
                     </Button>
                   ) : (

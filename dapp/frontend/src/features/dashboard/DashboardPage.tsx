@@ -44,6 +44,8 @@ interface ClaimTarget {
   kind: 'grant' | 'claim'
   id: string
   available: number
+  // Still-locked (unvested) backing for a grant withdraw; 0 for a flat residual claim.
+  locked: number
 }
 
 const filterRows = (rows: GrantRow[], filter: Filter): GrantRow[] =>
@@ -207,10 +209,20 @@ export const DashboardPage = (): React.JSX.Element => {
 
   const openClaim = (grant: Grant): void => {
     const derived = deriveGrant(grant, now())
-    setClaimTarget({ kind: 'grant', id: grant.id, available: derived.claimable })
+    setClaimTarget({
+      kind: 'grant',
+      id: grant.id,
+      available: derived.claimable,
+      locked: derived.unvested,
+    })
   }
   const openResidual = (claim: VestedClaim): void => {
-    setClaimTarget({ kind: 'claim', id: claim.id, available: claim.amount - claim.withdrawn })
+    setClaimTarget({
+      kind: 'claim',
+      id: claim.id,
+      available: claim.amount - claim.withdrawn,
+      locked: 0,
+    })
   }
 
   const onAccept = async (grant: Grant): Promise<void> => {
@@ -479,6 +491,7 @@ export const DashboardPage = (): React.JSX.Element => {
           onClose={() => setClaimTarget(null)}
           title={claimTarget.kind === 'grant' ? 'Claim vested CC' : 'Claim residual'}
           available={claimTarget.available}
+          locked={claimTarget.locked}
           onConfirm={onConfirmClaim}
         />
       )}

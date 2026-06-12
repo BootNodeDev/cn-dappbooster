@@ -41,7 +41,9 @@ describe('encodeSchedule', () => {
         value: {
           points: [
             { _1: '2026-02-01T00:00:00Z', _2: '0.4' },
-            { _1: '2026-08-01T00:00:00Z', _2: '1' },
+            // last cumulative fraction is snapped to exactly 1.0 to match the
+            // contract's exact `== 1.0` check
+            { _1: '2026-08-01T00:00:00Z', _2: '1.0' },
           ],
         },
       },
