@@ -147,7 +147,7 @@ export const GrantCard = ({
             </div>
             {role === 'beneficiary' ? (
               <Button size="sm" onClick={() => onAccept?.(grant)} className="md:w-auto">
-                Accept &amp; fund
+                Accept
               </Button>
             ) : (
               <StatusPill tone="neutral">Awaiting</StatusPill>
