@@ -153,6 +153,6 @@ The `/sdlc:issue` skill applies these labels automatically when creating issues 
      stale training data. -->
 
 - [cc-vesting-contracts](https://github.com/BootNodeDev/cc-vesting-contracts) — the DAML/Canton contracts this UI targets (templates, choices, schedule math)
-- [canton-connect-kit](https://github.com/BootNodeDev/bn-canton-dev-stack) — wallet hook API the mocked `src/wallet/` mirrors; Carpincho extension integration
+- [canton-connect-kit](https://github.com/BootNodeDev/bn-canton-dev-stack) — wallet hook API that `src/wallet/` mirrors; `src/wallet/` is now a live wallet-service client (`StealthWallet`), not a mock
 - [dappbooster-canton-landing](https://github.com/BootNodeDev/dappbooster-canton-landing) — source of the palette and typography tokens
 - Live deploy: https://cc-vesting-contracts-ui.vercel.app
