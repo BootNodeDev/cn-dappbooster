@@ -78,7 +78,7 @@ const AmuletPreapprovalSection = ({ account, api }: AmuletPreapprovalSectionProp
   }
 
   return (
-    <div className="flex items-center justify-between gap-3 px-1">
+    <div className="flex items-center justify-between gap-3 border-b border-border px-1 pb-3">
       <div className="flex items-center gap-1.5">
         <h2 className="m-0 text-[0.95rem] font-semibold text-foreground">Auto-accept</h2>
         <Tooltip content={AUTO_ACCEPT_TOOLTIP} />
@@ -158,7 +158,7 @@ export const TransfersPanel = ({
   }
 
   return (
-    <div className="flex min-h-full flex-col gap-3 px-1 py-2">
+    <div className="flex min-h-full flex-col gap-3 px-1 pt-4 pb-2">
       <AmuletPreapprovalSection
         account={activeAccount}
         api={preapprovalApi}
