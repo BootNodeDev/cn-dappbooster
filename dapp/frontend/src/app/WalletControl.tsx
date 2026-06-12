@@ -13,7 +13,7 @@ export const WalletControl = (): React.JSX.Element | null => {
   const navigate = useNavigate()
   const { connect, disconnect } = useConnect()
   const { party } = useParty()
-  const { pool } = useParties()
+  const { pool, operator } = useParties()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -82,8 +82,15 @@ export const WalletControl = (): React.JSX.Element | null => {
                     className="flex min-w-0 flex-1 items-center gap-3 px-3 py-2 text-left"
                   >
                     <PartyAvatar id={candidate.partyId} size={28} />
-                    <span className="min-w-0 flex-1 truncate text-sm font-semibold text-fg">
-                      {candidate.name}
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="truncate text-sm font-semibold text-fg">
+                        {candidate.name}
+                      </span>
+                      {candidate.partyId === operator && (
+                        <span className="text-[0.6rem] font-bold uppercase tracking-[0.08em] text-fg-muted">
+                          factory owner
+                        </span>
+                      )}
                     </span>
                   </button>
                   <button
