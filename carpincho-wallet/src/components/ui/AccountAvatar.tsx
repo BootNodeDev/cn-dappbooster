@@ -25,7 +25,7 @@ export const AccountAvatar = ({ partyId, size = 'md' }: AccountAvatarProps): JSX
     <Avatar
       name={partyId}
       size={SIZE_PX[size]}
-      variant="marble"
+      variant="abstract"
       colors={AVATAR_COLORS}
     />
   </span>
