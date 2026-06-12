@@ -114,7 +114,7 @@ describe('command builders', () => {
   it('create uses string-zero value, empty writers as [] and viewers as { map: [] }', () => {
     assert.deepEqual(createTallyCommand('m::fp'), {
       CreateCommand: {
-        templateId: '#quickstart-tally:Tally.Tally:Tally',
+        templateId: '#quickstart-tally:Tally:Tally',
         createArguments: {
           issuer: 'm::fp',
           value: '0',
@@ -129,7 +129,7 @@ describe('command builders', () => {
     const cmd = addStampCommand(tally({ writers: [['s::fp', 'deleg-1']] }), 's::fp') as {
       ExerciseCommand: { templateId: string; choice: string; choiceArgument: unknown }
     }
-    assert.equal(cmd.ExerciseCommand.templateId, '#quickstart-tally:Tally.Tally:TallyWriter')
+    assert.equal(cmd.ExerciseCommand.templateId, '#quickstart-tally:Tally:TallyWriter')
     assert.equal(cmd.ExerciseCommand.choice, 'TallyWriter_Increment')
     assert.deepEqual(cmd.ExerciseCommand.choiceArgument, { tallyId: 'tally-1' })
   })
@@ -138,7 +138,7 @@ describe('command builders', () => {
     const cmd = addStampCommand(tally({ issuer: 'm::fp' }), 'm::fp') as {
       ExerciseCommand: { templateId: string; choice: string }
     }
-    assert.equal(cmd.ExerciseCommand.templateId, '#quickstart-tally:Tally.Tally:Tally')
+    assert.equal(cmd.ExerciseCommand.templateId, '#quickstart-tally:Tally:Tally')
     assert.equal(cmd.ExerciseCommand.choice, 'Tally_Increment')
   })
 
@@ -147,7 +147,7 @@ describe('command builders', () => {
       tally({ issuer: 'm::fp', writers: [['m::fp', 'deleg-1']] }),
       'm::fp',
     ) as { ExerciseCommand: { templateId: string; choice: string } }
-    assert.equal(cmd.ExerciseCommand.templateId, '#quickstart-tally:Tally.Tally:Tally')
+    assert.equal(cmd.ExerciseCommand.templateId, '#quickstart-tally:Tally:Tally')
     assert.equal(cmd.ExerciseCommand.choice, 'Tally_Increment')
   })
 

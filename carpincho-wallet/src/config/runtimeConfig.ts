@@ -3,11 +3,13 @@ export interface RuntimeConfig {
   cantonNetwork: string
 }
 
-const STORAGE_KEY = 'carpincho.runtime-config.v1'
+const STORAGE_KEY = 'carpincho.runtime-config.v2'
+
+export const DEFAULT_CANTON_NETWORK = 'canton:fivenorth-devnet'
 
 const DEFAULT_RUNTIME_CONFIG: RuntimeConfig = {
   walletServiceRpcUrl: 'http://localhost:3010/rpc',
-  cantonNetwork: 'canton:local',
+  cantonNetwork: DEFAULT_CANTON_NETWORK,
 }
 
 export const defaultRuntimeConfig = (): RuntimeConfig => ({

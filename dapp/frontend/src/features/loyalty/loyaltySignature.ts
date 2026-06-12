@@ -1,7 +1,7 @@
 // Template ids use the `#package-name` reference so the participant resolves the
 // deployed package by name — no hardcoded package-id hash to keep in sync.
-export const TALLY_TEMPLATE_ID = '#quickstart-tally:Tally.Tally:Tally'
-export const TALLY_WRITER_TEMPLATE_ID = '#quickstart-tally:Tally.Tally:TallyWriter'
+export const TALLY_TEMPLATE_ID = '#quickstart-tally:Tally:Tally'
+export const TALLY_WRITER_TEMPLATE_ID = '#quickstart-tally:Tally:TallyWriter'
 
 export interface TallyContract {
   contractId: string
@@ -204,7 +204,10 @@ export const applyOptimisticSlot = (
   slot: number,
 ): SlotOverlay => {
   const base = overlay[contractId] ?? sequentialSlots
-  return { ...overlay, [contractId]: base.includes(slot) ? base : [...base, slot] }
+  return {
+    ...overlay,
+    [contractId]: base.includes(slot) ? base : [...base, slot],
+  }
 }
 
 // Roll back a failed stamp: drop `slot` from the card's overlay.

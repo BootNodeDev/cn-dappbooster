@@ -5,6 +5,8 @@
   "scripts": {
     "up": "docker compose up -d --build",
     "down": "docker compose down",
+    "wallet-service:fivenorth": "docker compose --env-file .env.fivenorth -f docker-compose.wallet-service.yaml up -d --build",
+    "wallet-service:fivenorth:down": "docker compose --env-file .env.fivenorth -f docker-compose.wallet-service.yaml down",
     "health": "./scripts/health-check.sh",
     "token": "node ./scripts/mint-token.mjs wallet-service",
     "lint": "biome check",

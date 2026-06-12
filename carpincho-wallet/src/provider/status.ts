@@ -1,5 +1,5 @@
 import { walletServiceRequest } from '@/api/walletService'
-import { loadRuntimeConfig } from '@/config/runtimeConfig'
+import { DEFAULT_CANTON_NETWORK, loadRuntimeConfig } from '@/config/runtimeConfig'
 import { SIGNING_PROVIDER_ID } from '@/provider/accounts'
 import { CANTON_METHOD_STATUS } from '@/provider/methods'
 
@@ -24,7 +24,7 @@ export interface ProviderStatus {
 export const normalizeCantonNetwork = (value: string): string => {
   const trimmed = value.trim()
   if (trimmed === '') {
-    return 'canton:local'
+    return DEFAULT_CANTON_NETWORK
   }
   return trimmed.startsWith('canton:') ? trimmed : `canton:${trimmed}`
 }

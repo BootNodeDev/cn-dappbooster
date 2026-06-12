@@ -84,7 +84,7 @@ export const ConnectionSettingsView = (): JSX.Element => {
           className="font-mono"
           value={draft.cantonNetwork}
           onChange={(e) => setDraft((prev) => ({ ...prev, cantonNetwork: e.target.value }))}
-          placeholder="canton:local"
+          placeholder="canton:fivenorth-devnet"
         />
       </div>
 

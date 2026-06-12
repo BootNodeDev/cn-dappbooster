@@ -26,6 +26,7 @@ describe('ConnectionSettingsView', () => {
   })
 
   it('renders the current runtime config', () => {
+    // A fresh install should open on the hackathon validator network by default.
     render(<ConnectionSettingsView />)
     assert.equal(
       (screen.getByLabelText('Wallet-service RPC URL') as HTMLInputElement).value,
@@ -33,7 +34,7 @@ describe('ConnectionSettingsView', () => {
     )
     assert.equal(
       (screen.getByLabelText('Canton network') as HTMLInputElement).value,
-      'canton:local',
+      'canton:fivenorth-devnet',
     )
   })
 

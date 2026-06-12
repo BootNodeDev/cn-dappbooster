@@ -3,7 +3,7 @@ import { formatJsonRpcError, formatJsonRpcResult } from '@walletconnect/jsonrpc-
 import SignClient from '@walletconnect/sign-client'
 import type { SignClientTypes } from '@walletconnect/types'
 import { getSdkError } from '@walletconnect/utils'
-import { loadRuntimeConfig } from '@/config/runtimeConfig'
+import { DEFAULT_CANTON_NETWORK, loadRuntimeConfig } from '@/config/runtimeConfig'
 import type { ProviderResponder } from '@/provider/types'
 
 export const CANTON_NAMESPACE = 'canton'
@@ -51,7 +51,7 @@ export const CIP103_EVENTS = ['accountsChanged', 'statusChanged', 'txChanged']
 const normalizeCantonNetwork = (value: string): string => {
   const trimmed = value.trim()
   if (trimmed === '') {
-    return 'canton:local'
+    return DEFAULT_CANTON_NETWORK
   }
   return trimmed.startsWith(`${CANTON_NAMESPACE}:`) ? trimmed : `${CANTON_NAMESPACE}:${trimmed}`
 }
