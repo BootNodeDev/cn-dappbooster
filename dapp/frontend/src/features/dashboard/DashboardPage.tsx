@@ -171,32 +171,17 @@ export const DashboardPage = (): React.JSX.Element => {
 
   return (
     <div className="flex flex-col gap-7">
-      {/* tabs */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="inline-flex rounded-lg border border-border bg-surface p-1">
-          {tabs.map((t) => (
-            <button
-              key={t.value}
-              type="button"
-              onClick={() => setTab(t.value)}
-              aria-pressed={tab === t.value}
-              className={cn(
-                'inline-flex h-7 items-center gap-1.5 rounded-md px-3 text-xs font-bold transition-colors',
-                tab === t.value ? 'bg-primary-soft text-fg' : 'text-fg-muted hover:text-fg',
-              )}
-            >
-              {t.label}
-              <span
-                className={cn(
-                  'rounded-full px-1.5 font-mono text-[0.65rem]',
-                  tab === t.value ? 'bg-surface text-fg-muted' : 'text-fg-soft',
-                )}
-              >
-                {t.count}
-              </span>
-            </button>
-          ))}
-        </div>
+      {/* header */}
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-xl font-extrabold tracking-tight text-fg">Escrows</h1>
+        <Link
+          to="/create"
+          aria-label="Create escrow"
+          title="Create escrow"
+          className="grid size-9 place-items-center rounded-full border border-primary bg-primary text-primary-fg transition-colors hover:shadow-[var(--glow)]"
+        >
+          <PlusIcon width={18} height={18} />
+        </Link>
       </div>
 
       {/* KPIs for the active tab — always shown so the figures never vanish */}
@@ -257,8 +242,32 @@ export const DashboardPage = (): React.JSX.Element => {
         )}
       </div>
 
-      {/* controls directly above the list: filter left, view switch + create right */}
-      <div className="flex items-center justify-between gap-3">
+      {/* controls directly above the list: tabs + filter left, view switch right */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="inline-flex rounded-lg border border-border bg-surface p-1">
+          {tabs.map((t) => (
+            <button
+              key={t.value}
+              type="button"
+              onClick={() => setTab(t.value)}
+              aria-pressed={tab === t.value}
+              className={cn(
+                'inline-flex h-7 items-center gap-1.5 rounded-md px-3 text-xs font-bold transition-colors',
+                tab === t.value ? 'bg-primary-soft text-fg' : 'text-fg-muted hover:text-fg',
+              )}
+            >
+              {t.label}
+              <span
+                className={cn(
+                  'rounded-full px-1.5 font-mono text-[0.65rem]',
+                  tab === t.value ? 'bg-surface text-fg-muted' : 'text-fg-soft',
+                )}
+              >
+                {t.count}
+              </span>
+            </button>
+          ))}
+        </div>
         <div className="relative" ref={filterRef}>
           <button
             type="button"
@@ -296,38 +305,28 @@ export const DashboardPage = (): React.JSX.Element => {
           )}
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="inline-flex rounded-lg border border-border bg-surface p-1">
-            {(
-              [
-                ['cards', CardsIcon, 'Card view'],
-                ['table', TableIcon, 'Table view'],
-              ] as const
-            ).map(([v, Icon, label]) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => setView(v)}
-                aria-label={label}
-                title={label}
-                aria-pressed={view === v}
-                className={cn(
-                  'grid size-7 place-items-center rounded-md transition-colors',
-                  view === v ? 'bg-primary-soft text-fg' : 'text-fg-muted hover:text-fg',
-                )}
-              >
-                <Icon width={16} height={16} />
-              </button>
-            ))}
-          </div>
-          <Link
-            to="/create"
-            aria-label="Create escrow"
-            title="Create escrow"
-            className="grid size-9 place-items-center rounded-full border border-primary bg-primary text-primary-fg transition-colors hover:shadow-[var(--glow)]"
-          >
-            <PlusIcon width={18} height={18} />
-          </Link>
+        <div className="ml-auto inline-flex rounded-lg border border-border bg-surface p-1">
+          {(
+            [
+              ['cards', CardsIcon, 'Card view'],
+              ['table', TableIcon, 'Table view'],
+            ] as const
+          ).map(([v, Icon, label]) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setView(v)}
+              aria-label={label}
+              title={label}
+              aria-pressed={view === v}
+              className={cn(
+                'grid size-7 place-items-center rounded-md transition-colors',
+                view === v ? 'bg-primary-soft text-fg' : 'text-fg-muted hover:text-fg',
+              )}
+            >
+              <Icon width={16} height={16} />
+            </button>
+          ))}
         </div>
       </div>
 
