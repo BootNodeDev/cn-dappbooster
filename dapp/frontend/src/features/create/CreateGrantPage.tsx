@@ -6,6 +6,7 @@ import { Card } from '@/components/Card'
 import { ContactsIcon } from '@/components/icons'
 import { Modal } from '@/components/Modal'
 import { ScheduleCurve } from '@/components/ScheduleCurve'
+import { TokenAmountField } from '@/components/TokenAmountField'
 import { toast } from '@/components/toast'
 import { now, useNow } from '@/lib/clock'
 import { cn } from '@/lib/cn'
@@ -135,6 +136,12 @@ export const CreateGrantPage = (): React.JSX.Element => {
   // The grant locks real CC from the manager's holdings; block over-funding once the
   // balance is known (skipped while it is still loading / unavailable).
   const fundsOk = holdings === undefined || amountNum <= holdings
+  const amountError =
+    amount !== '' && !amountValid
+      ? `Minimum ${MIN_GRANT_AMOUNT} CC`
+      : amountValid && !fundsOk
+        ? 'Exceeds available holdings'
+        : undefined
   // Party ids are `hint::fingerprint`; both halves must be present, and a grant
   // to yourself is rejected (the ledger would refuse a self-vesting).
   const receiverWellFormed = /.+::.+/.test(receiver.trim())
@@ -248,34 +255,15 @@ export const CreateGrantPage = (): React.JSX.Element => {
                 <p className="mt-1 text-xs text-danger">Cannot escrow to your own party.</p>
               )}
             </div>
-            <div>
-              <label htmlFor="amount" className={labelClass}>
-                Total amount (CC)
-              </label>
-              <input
-                id="amount"
-                inputMode="decimal"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ''))}
-                placeholder="0"
-                className={cn(inputClass, 'font-mono')}
-              />
-              {!amountValid && amount !== '' && (
-                <p className="mt-1 text-xs text-danger">Minimum {MIN_GRANT_AMOUNT} CC.</p>
-              )}
-              {amountValid && !fundsOk && (
-                <p className="mt-1 text-xs text-danger">Exceeds available holdings.</p>
-              )}
-            </div>
-            <div>
-              <span className={labelClass}>Fund from</span>
-              <div className="mt-1.5 flex h-11 items-center justify-between rounded-xl border border-border bg-bg px-3 text-sm">
-                <span className="text-fg-muted">Your holdings</span>
-                <span className="font-mono font-semibold text-fg">
-                  {holdings === undefined
-                    ? '…'
-                    : `${holdings.toLocaleString(undefined, { maximumFractionDigits: 4 })} CC`}
-                </span>
+            <div className="sm:col-span-2">
+              <span className={labelClass}>Amount</span>
+              <div className="mt-1.5">
+                <TokenAmountField
+                  value={amount}
+                  onChange={setAmount}
+                  balance={holdings}
+                  error={amountError}
+                />
               </div>
             </div>
           </div>
