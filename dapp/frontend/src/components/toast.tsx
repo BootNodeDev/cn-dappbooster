@@ -1,3 +1,4 @@
+import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { create } from 'zustand'
 import { cn } from '@/lib/cn'
@@ -120,9 +121,20 @@ export const Toaster = (): React.JSX.Element => {
   const toasts = useToastStore((s) => s.toasts)
   return (
     <div className="pointer-events-none fixed bottom-5 right-5 z-[80] flex w-80 flex-col gap-2.5">
-      {toasts.map((item) => (
-        <ToastRow key={item.id} item={item} />
-      ))}
+      <AnimatePresence initial={false}>
+        {toasts.map((item) => (
+          <motion.div
+            key={item.id}
+            layout
+            initial={{ opacity: 0, x: 24, scale: 0.96 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 24, scale: 0.96 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <ToastRow item={item} />
+          </motion.div>
+        ))}
+      </AnimatePresence>
     </div>
   )
 }

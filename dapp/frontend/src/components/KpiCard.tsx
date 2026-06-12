@@ -1,4 +1,6 @@
+import { motion } from 'framer-motion'
 import { cn } from '@/lib/cn'
+import { fadeUp } from '@/lib/motion'
 import { AmountDisplay } from './AmountDisplay'
 import { InfoTooltip } from './InfoTooltip'
 
@@ -23,7 +25,8 @@ export const KpiCard = ({
   hint,
   hero = false,
 }: KpiCardProps): React.JSX.Element => (
-  <div
+  <motion.div
+    variants={fadeUp}
     className={cn(
       'relative overflow-hidden rounded-2xl border p-5',
       hero
@@ -51,5 +54,5 @@ export const KpiCard = ({
         {sub}
       </div>
     )}
-  </div>
+  </motion.div>
 )

@@ -1,3 +1,4 @@
+import { AnimatePresence, motion } from 'framer-motion'
 import { type ReactNode, useEffect, useRef } from 'react'
 import { cn } from '@/lib/cn'
 import { CloseIcon } from './icons'
@@ -67,42 +68,52 @@ export const Modal = ({
     }
   }, [open, onClose])
 
-  if (!open) {
-    return null
-  }
-
   return (
-    <div className="fixed inset-0 z-[70] grid place-items-center p-4">
-      <button
-        type="button"
-        aria-label="Close dialog"
-        onClick={onClose}
-        className="absolute inset-0 bg-[var(--scrim,rgba(8,8,18,0.6))] backdrop-blur-sm"
-        style={{ background: 'rgba(8,8,18,0.6)' }}
-      />
-      <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        tabIndex={-1}
-        className={cn(
-          'relative w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-[var(--shadow-popover)]',
-          className,
-        )}
-      >
-        <button
-          type="button"
-          aria-label="Close"
-          onClick={onClose}
-          className="absolute right-3 top-3 grid size-8 place-items-center rounded-lg text-fg-muted transition-colors hover:bg-muted hover:text-fg"
-        >
-          <CloseIcon width={16} height={16} />
-        </button>
-        <h2 className="pr-10 text-lg font-bold tracking-tight text-fg">{title}</h2>
-        {description !== undefined && <p className="mt-1 text-sm text-fg-muted">{description}</p>}
-        <div className="mt-5">{children}</div>
-      </div>
-    </div>
+    <AnimatePresence>
+      {open && (
+        <div className="fixed inset-0 z-[70] grid place-items-center p-4">
+          <motion.button
+            type="button"
+            aria-label="Close dialog"
+            onClick={onClose}
+            className="absolute inset-0 backdrop-blur-sm"
+            style={{ background: 'rgba(8,8,18,0.6)' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+          />
+          <motion.div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label={title}
+            tabIndex={-1}
+            className={cn(
+              'relative w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-[var(--shadow-popover)]',
+              className,
+            )}
+            initial={{ opacity: 0, scale: 0.96, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.97, y: 6 }}
+            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <button
+              type="button"
+              aria-label="Close"
+              onClick={onClose}
+              className="absolute right-3 top-3 grid size-8 place-items-center rounded-lg text-fg-muted transition-colors hover:bg-muted hover:text-fg"
+            >
+              <CloseIcon width={16} height={16} />
+            </button>
+            <h2 className="pr-10 text-lg font-bold tracking-tight text-fg">{title}</h2>
+            {description !== undefined && (
+              <p className="mt-1 text-sm text-fg-muted">{description}</p>
+            )}
+            <div className="mt-5">{children}</div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   )
 }

@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AmountDisplay } from '@/components/AmountDisplay'
@@ -20,6 +21,7 @@ import { Modal } from '@/components/Modal'
 import { toast } from '@/components/toast'
 import { now, useNow } from '@/lib/clock'
 import { cn } from '@/lib/cn'
+import { staggerChildren } from '@/lib/motion'
 import type { Grant, Proposal, Role, VestedClaim } from '@/store/types'
 import { useUiStore } from '@/store/useUiStore'
 import { deriveGrant, useVesting, useVestingStore } from '@/store/useVestingStore'
@@ -269,7 +271,13 @@ export const DashboardPage = (): React.JSX.Element => {
       </div>
 
       {/* KPIs for the active tab — always shown so the figures never vanish */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <motion.div
+        key={`kpi-${tab}`}
+        variants={staggerChildren}
+        initial="hidden"
+        animate="show"
+        className="grid grid-cols-2 gap-4 lg:grid-cols-4"
+      >
         {isReceived ? (
           <>
             <KpiCard
@@ -324,7 +332,7 @@ export const DashboardPage = (): React.JSX.Element => {
             />
           </>
         )}
-      </div>
+      </motion.div>
 
       {/* controls directly above the list: filter left, view switch right */}
       <div className="flex flex-wrap items-center gap-3">
@@ -401,7 +409,13 @@ export const DashboardPage = (): React.JSX.Element => {
           }
         />
       ) : view === 'cards' ? (
-        <div className="flex flex-col gap-4">
+        <motion.div
+          key={`cards-${tab}`}
+          variants={staggerChildren}
+          initial="hidden"
+          animate="show"
+          className="flex flex-col gap-4"
+        >
           {filtered.map(({ grant, derived }) => (
             <GrantCard
               key={grant.id}
@@ -414,7 +428,7 @@ export const DashboardPage = (): React.JSX.Element => {
               onAccept={(g) => void onAccept(g)}
             />
           ))}
-        </div>
+        </motion.div>
       ) : (
         <GrantTable
           rows={filtered}
