@@ -1,12 +1,14 @@
 // Groups an integer string with comma thousands separators.
 const groupThousands = (whole: string): string => whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 
+const DECIMAL_RE = /^\d+(\.\d+)?$/
+
 // Formats a decimal token amount for display: two decimals, half-up rounding, and
 // comma-grouped thousands. Falls back to the raw string for non-numeric values so
 // labels like "unknown" pass through untouched. BigInt keeps precision past Number range.
 export const formatTokenAmount = (value: string): string => {
   const trimmed = value.trim()
-  if (!/^\d+(\.\d+)?$/.test(trimmed)) {
+  if (!DECIMAL_RE.test(trimmed)) {
     return value
   }
   const [whole, fraction = ''] = trimmed.split('.')

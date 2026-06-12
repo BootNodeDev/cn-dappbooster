@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import cantonIcon from '@/assets/canton.png'
+import { formatTokenAmount } from '@/cip56/amount'
 import type { TokenHolding, TokenHoldingSummary } from '@/cip56/holdings'
 import { type Cip56SendApi, SendTokenForm } from '@/components/SendTokenForm'
 import { TokenHoldingDetail } from '@/components/TokenHoldingDetail'
@@ -9,17 +10,9 @@ import { CHEVRON_RIGHT_ICON, RECEIVE_ICON, SEND_ICON } from '@/components/ui/ico
 import { Sheet } from '@/components/ui/Sheet'
 import { useTokenHoldingDetails } from '@/hooks/useTokenHoldingDetails'
 import type { Cip56HoldingsApi } from '@/hooks/useTokenHoldings'
-import { formatTokenAmount } from '@/utils/amount'
 import type { AccountPublic } from '@/vault/types'
 
 type Screen = 'detail' | 'send' | 'receive' | 'holding'
-
-const PARENT: Record<Screen, Screen | null> = {
-  detail: null,
-  send: 'detail',
-  receive: 'detail',
-  holding: 'detail',
-}
 
 export interface TokenDetailSheetProps {
   open: boolean
@@ -194,14 +187,14 @@ export const TokenDetailSheet = ({
     setScreen(next)
   }
 
+  // The screen hierarchy is flat: every non-detail screen returns to detail.
   const goBack = (): void => {
-    const parent = PARENT[screen]
-    if (parent === null) {
+    if (screen === 'detail') {
       handleOpenChange(false)
       return
     }
     setDirection('back')
-    setScreen(parent)
+    setScreen('detail')
   }
 
   const openHolding = (holding: TokenHolding): void => {

@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert'
 import { describe, it } from 'node:test'
-import { formatTokenAmount } from '@/utils/amount'
+import { formatTokenAmount } from '@/cip56/amount'
 
 describe('formatTokenAmount', () => {
   it('pads to two decimals and groups thousands', () => {

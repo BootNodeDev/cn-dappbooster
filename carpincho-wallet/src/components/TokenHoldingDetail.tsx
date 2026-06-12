@@ -1,6 +1,6 @@
+import { formatTokenAmount } from '@/cip56/amount'
 import type { TokenHolding } from '@/cip56/holdings'
 import { transferTimeLabel } from '@/cip56/transfers'
-import { formatTokenAmount } from '@/utils/amount'
 
 interface HoldingDetailRowProps {
   label: string

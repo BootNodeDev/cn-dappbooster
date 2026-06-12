@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { formatTokenAmount } from '@/cip56/amount'
 import {
   tokenDisplayLabel,
   transferDescription,
@@ -14,7 +15,6 @@ import { useAmuletPreapproval } from '@/hooks/useAmuletPreapproval'
 import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
 import { usePendingCip56Transfers } from '@/hooks/usePendingCip56Transfers'
 import { shortMiddle } from '@/utils/account'
-import { formatTokenAmount } from '@/utils/amount'
 import type { AccountPublic } from '@/vault/types'
 import { useVault } from '@/vault/useVault'
 
