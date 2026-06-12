@@ -48,18 +48,33 @@ const AmuletPreapprovalSection = ({ account, api }: AmuletPreapprovalSectionProp
   const status = preapproval.status
   const isExpired = status?.expired === true
   const isActive = status?.active === true && !isExpired
-  const canDisable = isActive || isExpired
+  const confirmed = isActive || isExpired
+
+  // Reflect the requested state immediately: creating or cancelling the preapproval
+  // can take a few seconds to land on the ledger, so hold the optimistic value until
+  // the polled status agrees rather than leaving the switch stuck in its old position.
+  const [optimistic, setOptimistic] = useState<boolean | undefined>(undefined)
+  const checked = optimistic ?? confirmed
+
+  useEffect(() => {
+    if (optimistic !== undefined && optimistic === confirmed) {
+      setOptimistic(undefined)
+    }
+  }, [optimistic, confirmed])
 
   const handleToggle = async (): Promise<void> => {
+    const next = !checked
+    setOptimistic(next)
     try {
-      if (canDisable) {
-        await preapproval.disable()
-        toast.success('Amulet auto-accept disabled')
-      } else {
+      if (next) {
         await preapproval.enable()
         toast.success('Amulet auto-accept enabled')
+      } else {
+        await preapproval.disable()
+        toast.success('Amulet auto-accept disabled')
       }
     } catch (error) {
+      setOptimistic(undefined)
       toast.error(error instanceof Error ? error.message : 'Amulet auto-accept failed')
     }
   }
@@ -72,7 +87,7 @@ const AmuletPreapprovalSection = ({ account, api }: AmuletPreapprovalSectionProp
       </div>
       <Switch
         aria-label="Auto-accept"
-        checked={canDisable}
+        checked={checked}
         disabled={preapproval.busy || (preapproval.loading && status === undefined)}
         onCheckedChange={() => {
           void handleToggle()

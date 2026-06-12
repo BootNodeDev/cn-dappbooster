@@ -202,6 +202,39 @@ describe('TransfersPanel', () => {
     assert.equal(createCalls, 1)
   })
 
+  it('flips the toggle on while the enable command is still settling', async () => {
+    // Scenario: the preapproval can take seconds to land on the ledger. The switch
+    // must show the requested state right away instead of waiting for the next poll.
+    let resolveCreate: (() => void) | undefined
+    const transfersApi: Cip56TransferApi = {
+      listPendingIncomingTransfers: async () => [],
+    }
+    const preapprovalApi: AmuletPreapprovalApi = {
+      getAmuletPreapprovalStatus: async () => ({ active: false, expired: false }),
+      createAmuletPreapproval: async () => {
+        await new Promise<void>((resolve) => {
+          resolveCreate = resolve
+        })
+        return { updateId: 'create-update-1' }
+      },
+      cancelAmuletPreapproval: async () => {
+        throw new Error('cancel should not run while enabling')
+      },
+    }
+
+    renderTransfers(transfersApi, preapprovalApi)
+
+    const toggle = await screen.findByRole('switch', { name: 'Auto-accept' })
+    await waitFor(() => assert.equal(toggle.hasAttribute('disabled'), false))
+
+    await userEvent.click(toggle)
+
+    // Optimistic: reads as on before the ledger status has caught up.
+    await waitFor(() => assert.equal(toggle.getAttribute('aria-checked'), 'true'))
+
+    resolveCreate?.()
+  })
+
   it('disables active Amulet auto-accept for the selected party', async () => {
     // Scenario: the selected party already has an active receiver preapproval.
     // The toggle reads as on and flipping it cancels the same receiver preapproval.
