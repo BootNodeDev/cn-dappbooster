@@ -6,10 +6,20 @@ import type { GrantDerived } from '@/store/useVestingStore'
 import { AmountDisplay } from './AmountDisplay'
 import { Button } from './Button'
 import { Card } from './Card'
-import { LockIcon } from './icons'
+import { CopyIcon, LockIcon } from './icons'
 import { Legend } from './Legend'
 import { ScheduleBar } from './ScheduleBar'
 import { StatusPill } from './StatusPill'
+import { toast } from './toast'
+
+const copyPartyId = async (partyId: string): Promise<void> => {
+  try {
+    await navigator.clipboard.writeText(partyId)
+    toast.success('Party id copied')
+  } catch {
+    toast.error('Could not copy')
+  }
+}
 
 interface GrantCardProps {
   grant: Grant
@@ -79,7 +89,18 @@ export const GrantCard = ({
             <StatusPill tone="success">Vesting</StatusPill>
           )}
         </div>
-        <div className="mt-2.5 font-mono text-xs text-fg-soft">{shortenParty(counterparty)}</div>
+        <div className="mt-2.5 flex items-center gap-1.5">
+          <span className="font-mono text-xs text-fg-soft">{shortenParty(counterparty)}</span>
+          <button
+            type="button"
+            aria-label="Copy party id"
+            title="Copy party id"
+            onClick={() => void copyPartyId(counterparty)}
+            className="text-fg-muted transition-colors hover:text-primary"
+          >
+            <CopyIcon width={13} height={13} />
+          </button>
+        </div>
       </div>
 
       <div className="min-w-0">
