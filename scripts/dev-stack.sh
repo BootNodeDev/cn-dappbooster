@@ -13,8 +13,9 @@
 #   ./scripts/dev-stack.sh docker-up   # macOS only: launch Docker Desktop, wait for the daemon
 #   ./scripts/dev-stack.sh up          # start the stack (containers, DAR, dev servers, extension)
 #   ./scripts/dev-stack.sh down        # stop dev servers and tear down containers
-#   ./scripts/dev-stack.sh amulet-up   # Splice LocalNet path: bootstrap + :3020 proxy + dApp (LocalNet must already be up)
-#   ./scripts/dev-stack.sh amulet-down # stop the amulet proxy + dApp (LocalNet left running)
+#   ./scripts/dev-stack.sh amulet-up   # Amulet/CC demo: canton:up (Splice LocalNet + :3010 wallet-service) + deploy DAR + bootstrap + dApp + extension
+#   ./scripts/dev-stack.sh amulet-down # stop the dApp + tear down Splice LocalNet + wallet-service
+#   ./scripts/dev-stack.sh fund <party> <amount>  # fund a Carpincho party (operator tap -> transfer; needs Amulet auto-accept on)
 #   ./scripts/dev-stack.sh docker-down # macOS only: quit Docker Desktop
 #   ./scripts/dev-stack.sh status      # show what is currently running
 #   ./scripts/dev-stack.sh extension   # build the Chrome extension and copy it to ~/Desktop
@@ -32,11 +33,12 @@
 #
 # `down` reverses 4/5 (kills the dev servers) and tears down the containers.
 #
-# The `amulet-*` subcommands target the heavier Splice LocalNet stack instead of
-# bare Canton. LocalNet is run by the external `canton builder` tool (interactive,
-# multi-GB) — this script never boots or tears it down. `amulet-up` only
-# preflights it, then: bootstraps parties/factory/funding (scripts/bootstrap-amulet.mjs),
-# starts a SECOND wallet-service on :3020 pointed at Splice, and serves the dApp on :3012.
+# The `amulet-*` subcommands run the Amulet / Canton-Coin demo (vs `up`, which runs
+# the lighter vesting-lite demo). Both share the same `canton:up` stack: the official
+# Splice LocalNet bundle + the :3010 wallet-service container. `amulet-up` brings that
+# up, deploys the amulet-vesting DAR, bootstraps parties/factory/funding
+# (scripts/bootstrap-amulet.mjs -> amulet-parties.json, rpcUrl :3010), serves the dApp
+# on :3012, and builds the extension. Fund a Carpincho party afterward with `fund`.
 
 set -euo pipefail
 
@@ -52,8 +54,6 @@ WALLET_PID="$RUN_DIR/wallet-dev.pid"
 DAPP_PID="$RUN_DIR/dapp-dev.pid"
 MOCK_WS_LOG="$RUN_DIR/mock-wallet-service.log"
 MOCK_WS_PID="$RUN_DIR/mock-wallet-service.pid"
-AMULET_WS_LOG="$RUN_DIR/amulet-wallet-service.log"
-AMULET_WS_PID="$RUN_DIR/amulet-wallet-service.pid"
 
 # Derive the DAR name from daml.yaml so renames/bumps need no edits here.
 DAML_DIR="dapp/daml/vesting-lite"
@@ -326,7 +326,7 @@ tcp_open() { # tcp_open <port> — true if something is listening on localhost:<
   (exec 3<>"/dev/tcp/localhost/$1") >/dev/null 2>&1
 }
 
-# Splice LocalNet endpoints the amulet wallet-service proxy targets (see header).
+# Pre-built Amulet vesting DAR, deployed to the Splice app-user JSON API by `up`.
 SPLICE_DAR="$ROOT_DIR/canton-barebones/dars/amulet-vesting-0.0.1.dar"
 
 amulet_up() {
@@ -337,38 +337,31 @@ amulet_up() {
     install_deps
   fi
 
-  # LocalNet is the external `canton builder` tool — preflight, never boot it.
-  tcp_open 3975 || die "Splice LocalNet JSON API (:3975) not reachable. Boot it first:
-   canton builder start --validators app-provider
-   canton builder deploy $SPLICE_DAR"
-  tcp_open 4000 || warn "Splice scan (:4000) not reachable — scanApi disclosure will fail until it is."
+  # canton:up boots the official Splice LocalNet bundle + the :3010 wallet-service,
+  # so Docker must already be running.
+  docker info >/dev/null 2>&1 \
+    || die "Docker daemon not reachable. Start Docker (menu: docker-up, the app, or your CLI), then run 'amulet-up'."
 
-  # 1. Parties + factory + funding. Idempotent: reuses an existing factory/receiver
-  #    from amulet-parties.json and taps only when the app-provider is unfunded.
-  log "Bootstrapping amulet parties (factory + receiver + tap)..."
-  node scripts/bootstrap-amulet.mjs \
-    || die "amulet bootstrap failed — is the DAR deployed to the app-provider validator? (canton builder deploy $SPLICE_DAR)"
-
-  # 2. Splice-targeted wallet-service proxy on :3020 — separate from the bare-Canton
-  #    :3010 instance; amulet-parties.json's rpcUrl points the dApp here.
-  if tcp_open 3020; then
-    warn "Port 3020 already in use; skipping amulet wallet-service."
-  else
-    log "Starting amulet wallet-service proxy -> http://localhost:3020"
-    WALLET_SERVICE_PORT=3020 \
-    CANTON_JSON_API_URL=http://localhost:3975 \
-    CANTON_LEDGER_API_URL=grpc://localhost:3901 \
-    CANTON_ADMIN_API_URL=grpc://localhost:3902 \
-    CANTON_AUTH_SECRET=unsafe \
-    CANTON_AUTH_AUDIENCE=https://canton.network.global \
-    CANTON_ADMIN_USER_ID=ledger-api-user \
-    CANTON_SCAN_URL=http://localhost:4000 \
-    CANTON_SCAN_HOST=scan.localhost \
-    WALLET_SERVICE_CORS_ORIGINS=http://localhost:3012,http://localhost:3022 \
-    nohup npm run wallet-service:dev >"$AMULET_WS_LOG" 2>&1 &
-    echo $! >"$AMULET_WS_PID"
-    wait_http 60 "http://localhost:3020/health" "amulet wallet-service" || true
+  # canton .env (README step) — create from example if missing.
+  if [ ! -f canton-barebones/.env ]; then
+    log "Creating canton-barebones/.env from .env.example"
+    cp canton-barebones/.env.example canton-barebones/.env
+    warn "Set CANTON_BACKEND_TOKEN in canton-barebones/.env (npm run canton:token -- ledger-api-user) before re-running."
   fi
+
+  # 1. Splice LocalNet + wallet-service (:3010). Idempotent; first run pulls multi-GB images.
+  log "Bringing up Splice LocalNet + wallet-service (:3010)... (first run pulls images)"
+  npm run canton:up
+  log "Health:"
+  npm run canton:health || warn "canton:health reported an issue"
+
+  # 2. Deploy the amulet-vesting DAR, then bootstrap factory + receiver + funding.
+  #    bootstrap-amulet is idempotent (reuses an existing factory/receiver, taps only
+  #    when the app-provider is unfunded) and writes amulet-parties.json (rpcUrl :3010).
+  log "Deploying $(basename "$SPLICE_DAR")..."
+  npm run deploy-dar -- "$SPLICE_DAR"
+  log "Bootstrapping amulet parties (factory + receiver + tap)..."
+  node scripts/bootstrap-amulet.mjs
 
   # 3. dApp frontend dev server (3012) — reads /amulet-parties.json at runtime.
   if tcp_open 3012; then
@@ -380,29 +373,50 @@ amulet_up() {
     wait_for 60 "$DAPP_LOG" "ready in|localhost:3012" "dApp dev server" || true
   fi
 
+  # 4. Build the Chrome extension + copy to Desktop.
+  build_extension
+
   echo
   log "Amulet stack is up:"
   cat <<EOF
-   amulet wallet-service  http://localhost:3020   (log: $AMULET_WS_LOG)
-   dApp frontend          http://localhost:3012   (log: $DAPP_LOG)
-   Splice JSON API        http://localhost:3975
-   Splice scan            http://localhost:4000   (Host: scan.localhost)
+   wallet-service   http://localhost:3010
+   dApp frontend    http://localhost:3012   (log: $DAPP_LOG)
+   Splice scan      http://scan.localhost:4000
+   extension folder $EXT_DEST
 EOF
-  echo "   LocalNet itself is managed by 'canton builder' — stop it separately."
+  echo "   Create wallets in Carpincho + enable Amulet auto-accept, then: $0 fund <party-id> <amount>"
 }
 
 amulet_down() {
-  stop_pidfile "$AMULET_WS_PID" "amulet wallet-service"
   stop_pidfile "$DAPP_PID" "dApp dev server"
-  # Free :3020 if a stray process still holds it. Do NOT broadly `pkill tsx watch`
-  # — that would also kill the bare-Canton :3010 wallet-service if it is running.
-  local pids
-  pids="$(lsof -nP -iTCP:3020 -sTCP:LISTEN -t 2>/dev/null || true)"
-  [ -n "${pids:-}" ] && kill $pids 2>/dev/null || true
   pkill -f "vite --host localhost --port 3012" 2>/dev/null || true
 
+  # Tear down Splice LocalNet + wallet-service (Docker itself is left running).
+  if docker info >/dev/null 2>&1; then
+    log "Tearing down Splice LocalNet + wallet-service..."
+    npm run canton:down || warn "canton:down reported an error"
+  else
+    warn "Docker daemon not reachable; skipping canton:down"
+  fi
+
   echo
-  log "Amulet stack is down. LocalNet left running (stop it with 'canton builder stop')."
+  log "Amulet stack is down."
+}
+
+fund() { # fund <party-id> <amount> — fund a Carpincho party (operator tap -> transfer)
+  local party="${1:-}" amount="${2:-}"
+  if [ -z "$party" ] || [ -z "$amount" ]; then
+    if [ -t 0 ]; then
+      read -rp "  Carpincho party id to fund: " party
+      read -rp "  Amount (CC): " amount
+    fi
+  fi
+  [ -n "$party" ] && [ -n "$amount" ] || die "Usage: $0 fund <party-id> <amount>"
+  # Taps the faucet for the app-provider (operator), then transfers operator -> party.
+  # The party must have Amulet auto-accept enabled in Carpincho, or it lands as a
+  # pending transfer instead of crediting.
+  log "Funding $party with $amount CC..."
+  node scripts/topup-amulet.mjs "$party" "$amount"
 }
 
 menu() {
@@ -411,16 +425,17 @@ menu() {
   fi
 
   # Display label per item; `keys` is the matching action dispatched on select.
-  local keys=(install docker-up docker-down up down amulet-up amulet-down mock-up mock-down extension quit)
-  local labels=("Install" "Docker up" "Docker down" "Stack up" "Stack down" "Amulet up" "Amulet down" "Wallet up" "Wallet down" "Build extension" "Quit")
+  local keys=(install docker-up docker-down up down amulet-up amulet-down fund mock-up mock-down extension quit)
+  local labels=("Install" "Docker up" "Docker down" "Stack up" "Stack down" "Amulet up" "Amulet down" "Fund a party" "Wallet up" "Wallet down" "Build extension" "Quit")
   local descs=(
     "install + link every workspace (root npm install)"
     "start Docker Desktop, wait for daemon (macOS)"
     "quit Docker Desktop (macOS)"
     "containers, DAR, dev servers, extension"
     "stop dev servers + tear down containers"
-    "Splice LocalNet: bootstrap + :3020 proxy + dApp"
-    "stop amulet proxy + dApp (LocalNet left up)"
+    "Splice LocalNet + :3010 wallet-service + DAR + bootstrap + dApp + ext"
+    "stop dApp + tear down Splice LocalNet + wallet-service"
+    "fund a Carpincho party (operator tap -> transfer)"
     "mock wallet-service + carpincho web app (no Docker)"
     "stop the mock server + web app only"
     "build the extension + copy to ~/Desktop"
@@ -479,6 +494,7 @@ menu() {
       down)        ( down ) || warn "down did not finish cleanly" ;;
       amulet-up)   ( amulet_up ) || warn "amulet-up did not finish cleanly (see output above)" ;;
       amulet-down) ( amulet_down ) || warn "amulet-down did not finish cleanly" ;;
+      fund)        ( fund ) || warn "fund did not finish cleanly" ;;
       mock-up)     ( mock_up ) || warn "mock-up did not finish cleanly" ;;
       mock-down)   ( mock_down ) || warn "mock-down did not finish cleanly" ;;
       extension)   ( build_extension ) || warn "extension build failed" ;;
@@ -502,8 +518,8 @@ status() {
   else
     echo "   (none)"
   fi
-  log "Amulet stack (3020 proxy / 3975 Splice / 4000 scan):"
-  for p in 3020 3975 4000; do
+  log "Splice stack (3975 app-provider JSON / 4000 scan):"
+  for p in 3975 4000; do
     if tcp_open "$p"; then echo "   :$p up"; else echo "   :$p down"; fi
   done
 }
@@ -516,10 +532,11 @@ case "${1:-menu}" in
   down)        down ;;
   amulet-up)   amulet_up ;;
   amulet-down) amulet_down ;;
+  fund)        fund "${2:-}" "${3:-}" ;;
   docker-down) docker_down ;;
   status)      status ;;
   extension)   build_extension ;;
   mock-up)     mock_up ;;
   mock-down)   mock_down ;;
-  *)           die "Usage: $0 {menu|install|docker-up|up|down|amulet-up|amulet-down|docker-down|status|extension|mock-up|mock-down}" ;;
+  *)           die "Usage: $0 {menu|install|docker-up|up|down|amulet-up|amulet-down|fund <party> <amount>|docker-down|status|extension|mock-up|mock-down}" ;;
 esac
