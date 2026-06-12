@@ -21,7 +21,6 @@ export interface TransfersPanelProps {
   account?: AccountPublic
   api?: Cip56TransferApi
   preapprovalApi?: AmuletPreapprovalApi
-  hideWhenEmpty?: boolean
   onPendingCountChange?: (count: number) => void
 }
 
@@ -93,9 +92,8 @@ export const TransfersPanel = ({
   account,
   api,
   preapprovalApi,
-  hideWhenEmpty = false,
   onPendingCountChange,
-}: TransfersPanelProps): JSX.Element | null => {
+}: TransfersPanelProps): JSX.Element => {
   const vault = useVault()
   const activeAccount = account ?? vault.primary ?? vault.accounts[0]
   const [acceptingCid, setAcceptingCid] = useState<string | undefined>(undefined)
@@ -136,18 +134,11 @@ export const TransfersPanel = ({
   }
 
   if (activeAccount === undefined) {
-    if (hideWhenEmpty) {
-      return null
-    }
     return (
       <div className="flex h-full flex-col items-center justify-center px-4 py-10 text-center">
         <p className="m-0 text-[0.95rem] font-medium text-muted-foreground">No account selected</p>
       </div>
     )
-  }
-
-  if (hideWhenEmpty && transfers.length === 0) {
-    return null
   }
 
   return (
