@@ -107,6 +107,11 @@ export const WalletControl = (): React.JSX.Element | null => {
             })}
           </ul>
 
+          <div className="mt-2 flex items-center gap-2 border-t border-border px-2 pt-2.5 text-[0.7rem] text-fg-muted">
+            <span className="size-1.5 rounded-full bg-success" />
+            Canton · direct ledger
+          </div>
+
           <button
             type="button"
             onClick={() => {
