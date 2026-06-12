@@ -6,6 +6,7 @@ import { TransfersPanel } from '@/components/TransfersPanel'
 import { TooltipProvider } from '@/components/ui/Tooltip'
 import type { AmuletPreapprovalApi } from '@/hooks/useAmuletPreapproval'
 import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
+import { inactivePreapprovalApi } from '@/test-utils/preapproval'
 import { TestQueryClientProvider } from '@/test-utils/queryClient'
 import type { AccountPublic } from '@/vault/types'
 import { VaultContext, type VaultContextValue } from '@/vault/VaultContext'
@@ -43,13 +44,6 @@ const baseVault = (): VaultContextValue =>
     autoLockOption: 'never',
     setAutoLockOption: () => undefined,
   }) as VaultContextValue
-
-// Keeps the auto-accept toggle inert for transfer-list scenarios that do not exercise it.
-const inactivePreapprovalApi: AmuletPreapprovalApi = {
-  getAmuletPreapprovalStatus: async () => ({ active: false, expired: false }),
-  createAmuletPreapproval: async () => ({ updateId: 'noop' }),
-  cancelAmuletPreapproval: async () => ({ updateId: 'noop' }),
-}
 
 // Mounts incoming transfers under vault context so accept can use wallet signing hooks.
 const renderTransfers = (

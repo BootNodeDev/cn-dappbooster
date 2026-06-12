@@ -5,9 +5,9 @@ import userEvent from '@testing-library/user-event'
 import type { ReactNode } from 'react'
 import { HomeTabs } from '@/components/HomeTabs'
 import { TooltipProvider } from '@/components/ui/Tooltip'
-import type { AmuletPreapprovalApi } from '@/hooks/useAmuletPreapproval'
 import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
 import type { Cip56HoldingsApi } from '@/hooks/useTokenHoldings'
+import { inactivePreapprovalApi } from '@/test-utils/preapproval'
 import { TestQueryClientProvider } from '@/test-utils/queryClient'
 import type { AccountPublic, TransactionRecord } from '@/vault/types'
 import { VaultContext, type VaultContextValue } from '@/vault/VaultContext'
@@ -71,13 +71,6 @@ const baseVault = (): VaultContextValue =>
     autoLockOption: 'never',
     setAutoLockOption: () => undefined,
   }) as VaultContextValue
-
-// Keeps the Transfers tab auto-accept toggle inert for navigation-focused scenarios.
-const inactivePreapprovalApi: AmuletPreapprovalApi = {
-  getAmuletPreapprovalStatus: async () => ({ active: false, expired: false }),
-  createAmuletPreapproval: async () => ({ updateId: 'noop' }),
-  cancelAmuletPreapproval: async () => ({ updateId: 'noop' }),
-}
 
 // Wraps HomeTabs in the providers its child panels depend on (query, tooltip, vault).
 const renderHome = (vault: VaultContextValue, children: ReactNode): void => {
