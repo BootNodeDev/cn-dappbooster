@@ -229,7 +229,7 @@ export const CreateGrantPage = (): React.JSX.Element => {
                   onClick={() => setPickerOpen(true)}
                   aria-label="Choose from contacts"
                   title="Choose from contacts"
-                  className="text-fg-muted transition-colors hover:text-primary"
+                  className="grid size-8 place-items-center rounded-lg border border-border bg-surface text-fg-muted transition-colors hover:border-primary hover:text-primary"
                 >
                   <ContactsIcon width={16} height={16} />
                 </button>
@@ -520,14 +520,14 @@ export const CreateGrantPage = (): React.JSX.Element => {
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
         title="Choose a beneficiary"
-        description="Pick a party to autofill the beneficiary id."
+        description="Pick a party"
       >
         {contacts.length === 0 ? (
           <p className="rounded-lg border border-dashed border-border p-4 text-center text-sm text-fg-muted">
             No other parties available.
           </p>
         ) : (
-          <ul className="flex max-h-80 flex-col gap-1 overflow-y-auto">
+          <ul className="flex h-60 flex-col gap-1 overflow-y-auto">
             {contacts.map((c) => (
               <li key={c.partyId}>
                 <button

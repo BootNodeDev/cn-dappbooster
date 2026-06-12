@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect, useRef } from 'react'
 import { cn } from '@/lib/cn'
+import { CloseIcon } from './icons'
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])'
@@ -90,7 +91,15 @@ export const Modal = ({
           className,
         )}
       >
-        <h2 className="text-lg font-bold tracking-tight text-fg">{title}</h2>
+        <button
+          type="button"
+          aria-label="Close"
+          onClick={onClose}
+          className="absolute right-3 top-3 grid size-8 place-items-center rounded-lg text-fg-muted transition-colors hover:bg-muted hover:text-fg"
+        >
+          <CloseIcon width={16} height={16} />
+        </button>
+        <h2 className="pr-10 text-lg font-bold tracking-tight text-fg">{title}</h2>
         {description !== undefined && <p className="mt-1 text-sm text-fg-muted">{description}</p>}
         <div className="mt-5">{children}</div>
       </div>
