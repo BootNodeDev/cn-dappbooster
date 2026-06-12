@@ -16,7 +16,35 @@ const SIZE_CLASS: Record<NonNullable<AccountAvatarProps['size']>, string> = {
   md: 'size-10',
 }
 
-const AVATAR_COLORS = ['#692581', '#e71d73', '#f7b32b', '#2d9d92', '#3a86ff']
+const hslToHex = (h: number, s: number, l: number): string => {
+  const c = (1 - Math.abs(2 * l - 1)) * s
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1))
+  const base = l - c / 2
+  const [r, g, b] =
+    h < 60
+      ? [c, x, 0]
+      : h < 120
+        ? [x, c, 0]
+        : h < 180
+          ? [0, c, x]
+          : h < 240
+            ? [0, x, c]
+            : h < 300
+              ? [x, 0, c]
+              : [c, 0, x]
+  const channel = (value: number): string =>
+    Math.round((value + base) * 255)
+      .toString(16)
+      .padStart(2, '0')
+  return `#${channel(r)}${channel(g)}${channel(b)}`
+}
+
+// 256 distinct colors: golden-angle hue spread keeps neighbouring indices far apart,
+// with small saturation/lightness steps so wrapped hues stay separable. boring-avatars
+// hashes the full party id and picks colors[hash % 256], so schemes repeat only every 256.
+const AVATAR_COLORS = Array.from({ length: 256 }, (_value, i) =>
+  hslToHex((i * 137.508) % 360, 0.62 + (i % 3) * 0.08, 0.52 + (i % 2) * 0.08),
+)
 
 export const AccountAvatar = ({ partyId, size = 'md' }: AccountAvatarProps): JSX.Element => (
   <span
