@@ -8,7 +8,7 @@ Each subproject can layer its own `AGENTS.md` for stack-specific deltas:
 - [`canton-connect-kit/AGENTS.md`](canton-connect-kit/AGENTS.md) — wagmi-style React hooks for Canton dApps
 - [`canton-barebones/wallet-service/AGENTS.md`](canton-barebones/wallet-service/AGENTS.md) — wallet-service bridge rules
 - [`dapp/e2e/AGENTS.md`](dapp/e2e/AGENTS.md) — Playwright black-box integration test rules
-- `canton-barebones/`, `dapp/daml/vesting-lite/`, `dapp/frontend/` — see each subproject's `README.md`
+- `canton-barebones/`, `dapp/daml/`, `dapp/frontend/` — see each subproject's `README.md`
 
 For the system shape (data flow, components, ports), see [`architecture.md`](architecture.md).
 
@@ -35,7 +35,7 @@ Current distribution:
 | `canton-barebones/wallet-service/` | yes | yes | shim | no | Local bridge rules are useful; README API boundary is enough architecture for now. |
 | `dapp/e2e/` | yes | yes | shim | no | Independent Playwright package with strict black-box testing conventions. |
 | `dapp/frontend/` | yes | no | no | no | Small dApp UI; root rules and README are enough. |
-| `dapp/daml/vesting-lite/` | yes | no | no | no | Single DAML package. |
+| `dapp/daml/` | yes | no | no | no | Single DAML package. |
 | `canton-barebones/` | yes | no | no | no | Docker/Bash local participant wrapper. |
 
 Subproject docs must not restate root rules. They should describe only their local delta and link upward.
@@ -44,7 +44,7 @@ Subproject docs must not restate root rules. They should describe only their loc
 
 | Category | Technology | Notes |
 |----------|-----------|-------|
-| Languages | TypeScript, DAML, Bash | TypeScript across the JS subprojects; DAML in `dapp/daml/vesting-lite/`; Bash for canton-barebones scripts |
+| Languages | TypeScript, DAML, Bash | TypeScript across the JS subprojects; DAML in `dapp/daml/`; Bash for canton-barebones scripts |
 | Package manager | npm workspaces | Single root `package-lock.json`; one root `npm install` links every workspace. Root `package.json` orchestrates scripts via `npm --prefix <dir>` |
 | Node | 24 | Pinned via root `.nvmrc`; inherits to every Node subproject |
 | Container runtime | Docker | Used by `canton-barebones/` for the local participant + Postgres |
@@ -58,10 +58,10 @@ Subproject docs must not restate root rules. They should describe only their loc
 | Path | Purpose | Stack | Port |
 |------|---------|-------|------|
 | [`canton-barebones/`](canton-barebones/) | Local Canton participant + Postgres via docker-compose; deploy + health + token scripts | Docker, Bash, Node scripts | 3013/3014/3015/3016/3017/3018 |
-| [`dapp/daml/vesting-lite/`](dapp/daml/vesting-lite/) | `vesting-lite` DAML model | DAML | n/a (DAR artifact) |
+| [`dapp/daml/`](dapp/daml/) | `quickstart-tally` DAML model | DAML | n/a (DAR artifact) |
 | [`canton-barebones/wallet-service/`](canton-barebones/wallet-service/) | JSON-RPC bridge between the wallet and the Canton participant. Started by `npm run canton:up`. Self-mints its Canton JWT. | Node + Express + TypeScript | 3010 |
 | [`carpincho-wallet/`](carpincho-wallet/) | CIP-0103 wallet — vault, signing, WalletConnect, Chrome extension | Vite 6 + React 18 + Tailwind v4 + Biome | 3011 |
-| [`dapp/frontend/`](dapp/frontend/) | dApp UI — direct-access via wallet-service JSON-RPC | Vite 6 + React 19 + Tailwind v4 + zustand + react-router-dom + Vitest + Biome | 3012 |
+| [`dapp/frontend/`](dapp/frontend/) | dApp UI | Vite + React + Tailwind v4 + Radix UI + Biome | 3012 |
 | [`dapp/e2e/`](dapp/e2e/) | dApp integration tests | Playwright + TypeScript | n/a |
 | [`canton-connect-kit/`](canton-connect-kit/) | wagmi-style React hooks for connecting Canton dApps to CIP-0103 wallets | TypeScript + React 18 + Biome | n/a (library) |
 
@@ -82,7 +82,6 @@ Subproject docs must not restate root rules. They should describe only their loc
   - `npm run build-dar -- <daml-project>` / `npm run deploy-dar -- <dar>`
   - `npm run carpincho:build:extension`
   - `npm run app:dev`
-- For local-stack convenience, [`scripts/dev-stack.sh`](scripts/dev-stack.sh) wraps the shortcuts above behind an interactive menu (run with no args) or direct subcommands (`install`, `docker-up`, `up`, `down`, `amulet-up`, `amulet-down`, `docker-down`, `mock-up`, `mock-down`, `extension`, `status`). The `amulet-*` pair drives the Splice LocalNet stack (`:3020` proxy + dApp); LocalNet itself stays external (`canton builder`). The `npm` scripts remain canonical; the helper just orchestrates them. See [`README.md`](README.md).
 - Local ports are intentionally assigned in the `3010+` range (see table above). Do not change them without updating every subproject's defaults.
 - Treat the single root `package-lock.json` as authoritative. Do not regenerate it as part of unrelated changes, and do not reintroduce per-package lockfiles.
 - The root `package.json` pins `@canton-network/dapp-sdk` to `1.1.0` via `overrides`: consumers declare `^1.1.0`, but `1.2.0` is intentionally held back. npm 11 does not persist `overrides` into `package-lock.json`, so the pin is enforced by the override on every relock and by the resolved `1.1.0` entry in the lock on every plain install. Do not bump it without testing the dApp flow against the newer SDK.
@@ -96,7 +95,7 @@ See [`architecture.md`](architecture.md) for the system shape, subproject layout
 
 - Each subproject owns its own test runner. Run from the subproject directory or via `npm --prefix`:
   - `carpincho-wallet`: `npm test` (Node `node:test` + `tsx` + happy-dom)
-  - `dapp/frontend`: `npm test` (Vitest)
+  - `dapp/frontend`: `npm test` (Node `node:test` with `--experimental-strip-types`)
   - `dapp/e2e`: `npm test` (Playwright against the running local stack)
   - `canton-barebones`: `npm test` (Node `node:test` against the scripts)
 - Cover the paths that matter — business logic, API integrations, component behaviour. Skip styling, third-party library internals, trivial getters/setters.

@@ -3,7 +3,7 @@ import { formatJsonRpcError, formatJsonRpcResult } from '@walletconnect/jsonrpc-
 import SignClient from '@walletconnect/sign-client'
 import type { SignClientTypes } from '@walletconnect/types'
 import { getSdkError } from '@walletconnect/utils'
-import { loadRuntimeConfig } from '@/config/runtimeConfig'
+import { getWalletServiceNetworkId } from '@/api/walletService'
 import type { ProviderResponder } from '@/provider/types'
 
 export const CANTON_NAMESPACE = 'canton'
@@ -48,20 +48,11 @@ export const CIP103_METHODS = [
 
 export const CIP103_EVENTS = ['accountsChanged', 'statusChanged', 'txChanged']
 
-const normalizeCantonNetwork = (value: string): string => {
-  const trimmed = value.trim()
-  if (trimmed === '') {
-    return 'canton:local'
-  }
-  return trimmed.startsWith(`${CANTON_NAMESPACE}:`) ? trimmed : `${CANTON_NAMESPACE}:${trimmed}`
-}
-
 const getWalletConnectProjectId = (): string =>
   ((import.meta.env.VITE_WC_PROJECT_ID as string | undefined) ?? '').trim()
 
-export const getCantonNetwork = (): string =>
-  normalizeCantonNetwork(loadRuntimeConfig().cantonNetwork)
-export const getCantonChain = (): string => getCantonNetwork()
+// Discovers the WalletConnect CAIP-2 chain from wallet-service status.
+export const getCantonChain = async (): Promise<string> => await getWalletServiceNetworkId()
 
 let signClientPromise: Promise<InstanceType<typeof SignClient>> | undefined
 let signClientProjectId: string | undefined
@@ -128,7 +119,7 @@ export const approveProposal = async (args: {
   partyId: string
 }): Promise<void> => {
   const client = await getSignClient()
-  const chain = getCantonChain()
+  const chain = await getCantonChain()
   await client.approve({
     id: args.proposal.id,
     namespaces: {

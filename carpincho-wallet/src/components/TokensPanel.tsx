@@ -1,0 +1,331 @@
+import { useEffect, useState } from 'react'
+import type { TokenHoldingSummary } from '@/cip56/holdings'
+import { transferTimeLabel } from '@/cip56/transfers'
+import { IncomingTransfersSection } from '@/components/IncomingTransfersSection'
+import { PLAIN_ICON_BUTTON_CLASS, PrimaryButton, SecondaryButton } from '@/components/ui/Button'
+import { COPY_ICON } from '@/components/ui/icons'
+import { toast } from '@/components/ui/toast'
+import type { AmuletPreapprovalApi } from '@/hooks/useAmuletPreapproval'
+import { useAmuletPreapproval } from '@/hooks/useAmuletPreapproval'
+import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
+import { useTokenHoldingDetails } from '@/hooks/useTokenHoldingDetails'
+import type { Cip56HoldingsApi } from '@/hooks/useTokenHoldings'
+import { useTokenHoldings } from '@/hooks/useTokenHoldings'
+import { copyText } from '@/utils/clipboard'
+import type { AccountPublic } from '@/vault/types'
+import { useVault } from '@/vault/useVault'
+
+export interface TokensPanelProps {
+  account?: AccountPublic
+  api?: Cip56HoldingsApi
+  transfersApi?: Cip56TransferApi
+  preapprovalApi?: AmuletPreapprovalApi
+  onPendingTransferCountChange?: (count: number) => void
+}
+
+interface HoldingDetailRowProps {
+  label: string
+  value: string
+}
+
+interface TokenHoldingDetailsProps {
+  account: AccountPublic
+  api?: Cip56HoldingsApi
+  summary: TokenHoldingSummary
+}
+
+interface AmuletPreapprovalSectionProps {
+  account: AccountPublic
+  api?: AmuletPreapprovalApi
+}
+
+interface ContractIdRowProps {
+  contractId: string
+}
+
+// Keeps the auto-accept contract id scannable while preserving copy access to the full value.
+const compactContractId = (contractId: string): string => {
+  if (contractId.length <= 10) {
+    return contractId
+  }
+  return `${contractId.slice(0, 4)}..${contractId.slice(-4)}`
+}
+
+// Keeps raw holding values readable in the expanded UTXO details area.
+const HoldingDetailRow = ({ label, value }: HoldingDetailRowProps): JSX.Element => (
+  <div className="grid gap-1">
+    <dt className="text-[0.7rem] font-semibold uppercase text-muted-foreground">{label}</dt>
+    <dd className="m-0 break-all font-mono text-[0.74rem] leading-5 text-foreground">{value}</dd>
+  </div>
+)
+
+// Fetches UTXO details lazily so Scan summaries can render balances quickly.
+const TokenHoldingDetails = ({ account, api, summary }: TokenHoldingDetailsProps): JSX.Element => {
+  const detailsApi =
+    api?.listTokenHoldings === undefined ? undefined : { listTokenHoldings: api.listTokenHoldings }
+  const { holdings, loading, error } = useTokenHoldingDetails(account, summary, {
+    api: detailsApi,
+    enabled: true,
+  })
+
+  if (loading && holdings.length === 0) {
+    return <p className="m-0 text-[0.82rem] text-muted-foreground">Loading UTXOs</p>
+  }
+
+  if (error !== undefined) {
+    return (
+      <div className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-[0.82rem] text-danger">
+        {error}
+      </div>
+    )
+  }
+
+  if (holdings.length === 0) {
+    return <p className="m-0 text-[0.82rem] text-muted-foreground">No UTXO details</p>
+  }
+
+  return (
+    <>
+      {holdings.map((holding) => {
+        const view = holding.interfaceViewValue
+        const lock = view?.lock
+        return (
+          <dl
+            key={holding.contractId}
+            className="grid gap-3 rounded-md border border-border bg-surface px-3 py-3"
+          >
+            <HoldingDetailRow
+              label="amount"
+              value={view?.amount ?? 'unknown'}
+            />
+            <HoldingDetailRow
+              label="lock"
+              value={lock == null ? 'unlocked' : 'locked'}
+            />
+            {lock?.expiresAt === undefined ? null : (
+              <HoldingDetailRow
+                label="expires"
+                value={transferTimeLabel(lock.expiresAt)}
+              />
+            )}
+            <HoldingDetailRow
+              label="contract id"
+              value={holding.contractId}
+            />
+          </dl>
+        )
+      })}
+    </>
+  )
+}
+
+// Shows the ledger contract id as debug metadata instead of a full-width raw value.
+const ContractIdRow = ({ contractId }: ContractIdRowProps): JSX.Element => (
+  <div className="mt-3 flex min-w-0 items-center gap-1.5 rounded-md border border-border bg-muted px-2 py-1.5 text-[0.74rem] text-muted-foreground">
+    <span className="shrink-0 font-medium">contractId:</span>
+    <span className="min-w-0 font-mono text-foreground">{compactContractId(contractId)}</span>
+    <button
+      type="button"
+      aria-label="Copy contract ID"
+      className={`${PLAIN_ICON_BUTTON_CLASS} ml-auto size-6 shrink-0`}
+      onClick={() => copyText(contractId, 'Contract ID copied')}
+    >
+      {COPY_ICON}
+    </button>
+  </div>
+)
+
+// Lets the receiver opt into Amulet auto-accept without routing signing through wallet-service.
+const AmuletPreapprovalSection = ({ account, api }: AmuletPreapprovalSectionProps): JSX.Element => {
+  const vault = useVault()
+  const [pendingAction, setPendingAction] = useState<'enable' | 'disable' | undefined>(undefined)
+  const preapproval = useAmuletPreapproval(account, {
+    api,
+    signMessage: vault.signMessage,
+    recordTransaction: vault.recordTransaction,
+  })
+  const status = preapproval.status
+  const isExpired = status?.expired === true
+  const isActive = status?.active === true && !isExpired
+  const canDisable = isActive || isExpired
+  const statusLabel = isExpired ? 'Expired' : isActive ? 'Enabled' : 'Disabled'
+  const ActionButton = canDisable ? SecondaryButton : PrimaryButton
+
+  useEffect(() => {
+    if (pendingAction === 'enable' && isActive) {
+      setPendingAction(undefined)
+    }
+    if (pendingAction === 'disable' && status !== undefined && !isActive && !isExpired) {
+      setPendingAction(undefined)
+    }
+  }, [pendingAction, isActive, isExpired, status])
+
+  const handleToggle = async (): Promise<void> => {
+    const action = canDisable ? 'disable' : 'enable'
+    setPendingAction(action)
+    try {
+      if (canDisable) {
+        await preapproval.disable()
+        toast.success('Amulet auto-accept disabled')
+      } else {
+        await preapproval.enable()
+        toast.success('Amulet auto-accept enabled')
+      }
+    } catch (error) {
+      setPendingAction(undefined)
+      toast.error(error instanceof Error ? error.message : 'Amulet auto-accept failed')
+    }
+  }
+
+  return (
+    <section className="rounded-md border border-border bg-surface px-3 py-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="m-0 text-[0.95rem] font-semibold text-foreground">Amulet auto-accept</h2>
+          <p className="m-0 mt-1 text-[0.82rem] text-muted-foreground">
+            {preapproval.loading && status === undefined ? 'Checking' : statusLabel}
+          </p>
+        </div>
+        <ActionButton
+          className="shrink-0 px-3 py-1.5 text-[0.78rem]"
+          disabled={preapproval.busy || (preapproval.loading && status === undefined)}
+          onClick={handleToggle}
+        >
+          {canDisable ? 'Disable auto-accept' : 'Enable auto-accept'}
+        </ActionButton>
+      </div>
+      {status?.expiresAt === undefined ? null : (
+        <p className="m-0 mt-3 text-[0.78rem] text-muted-foreground">
+          Expires {transferTimeLabel(status.expiresAt)}
+        </p>
+      )}
+      {pendingAction === undefined ? null : (
+        <div className="mt-3 rounded-md border border-border bg-muted px-3 py-2 text-[0.78rem] text-muted-foreground">
+          This can take a few moments.
+        </div>
+      )}
+      {status?.contractId === undefined ? null : <ContractIdRow contractId={status.contractId} />}
+      {preapproval.error === undefined ? null : (
+        <div className="mt-3 rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-[0.82rem] text-danger">
+          {preapproval.error}
+        </div>
+      )}
+    </section>
+  )
+}
+
+// Renders active CIP-56 token holding UTXOs grouped as token balances.
+export const TokensPanel = ({
+  account,
+  api,
+  transfersApi,
+  preapprovalApi,
+  onPendingTransferCountChange,
+}: TokensPanelProps): JSX.Element => {
+  const vault = useVault()
+  const activeAccount = account ?? vault.primary ?? vault.accounts[0]
+  const [expandedTokenKey, setExpandedTokenKey] = useState<string | undefined>(undefined)
+  const { summaries, loading, error } = useTokenHoldings(activeAccount, { api })
+
+  // Keeps only one token's UTXO list open so the compact wallet panel stays scannable.
+  const toggleHoldings = (key: string): void => {
+    setExpandedTokenKey((current) => (current === key ? undefined : key))
+  }
+
+  if (activeAccount === undefined) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center px-4 py-10 text-center">
+        <p className="m-0 text-[0.95rem] font-medium text-muted-foreground">No account selected</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex min-h-full flex-col gap-3 px-1 py-2">
+      <IncomingTransfersSection
+        account={activeAccount}
+        api={transfersApi}
+        hideWhenEmpty
+        onPendingCountChange={onPendingTransferCountChange}
+      />
+
+      <AmuletPreapprovalSection
+        account={activeAccount}
+        api={preapprovalApi}
+      />
+
+      <div className="flex items-center justify-between gap-3 px-1">
+        <h2 className="m-0 text-[0.95rem] font-semibold text-foreground">Token holdings</h2>
+        {loading ? <span className="text-[0.78rem] text-muted-foreground">Refreshing</span> : null}
+      </div>
+
+      {error === undefined ? null : (
+        <div className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-[0.82rem] text-danger">
+          {error}
+        </div>
+      )}
+
+      {summaries.length === 0 && !loading ? (
+        <div className="flex flex-1 flex-col items-center justify-center px-4 py-10 text-center">
+          <p className="m-0 text-[0.95rem] font-medium text-muted-foreground">No token holdings</p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {summaries.map((summary) => {
+            const isExpanded = expandedTokenKey === summary.key
+            const detailsId = `token-holdings-${summary.key}`
+            return (
+              <article
+                key={summary.key}
+                className="rounded-md border border-border bg-surface px-3 py-3"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="m-0 text-[0.95rem] font-semibold text-foreground">
+                      {summary.totalAmount} {summary.tokenLabel}
+                    </p>
+                    <p className="m-0 mt-1 flex flex-wrap gap-x-1 text-[0.78rem] text-muted-foreground">
+                      {summary.utxoCount === undefined ? (
+                        <span>UTXOs load on demand</span>
+                      ) : (
+                        <span>
+                          {summary.utxoCount} {summary.utxoCount === 1 ? 'UTXO' : 'UTXOs'}
+                        </span>
+                      )}
+                      {(summary.lockedCount ?? 0) > 0 ? (
+                        <>
+                          <span aria-hidden="true">·</span>
+                          <span>{summary.lockedCount} locked</span>
+                        </>
+                      ) : null}
+                    </p>
+                  </div>
+                  <SecondaryButton
+                    aria-controls={detailsId}
+                    aria-expanded={isExpanded}
+                    className="shrink-0 px-3 py-1.5 text-[0.78rem]"
+                    onClick={() => toggleHoldings(summary.key)}
+                  >
+                    {isExpanded ? 'Hide holdings' : 'Show holdings'}
+                  </SecondaryButton>
+                </div>
+                {isExpanded ? (
+                  <div
+                    id={detailsId}
+                    className="mt-3 flex flex-col gap-3 rounded-md border border-border bg-background/60 p-3"
+                  >
+                    <TokenHoldingDetails
+                      account={activeAccount}
+                      api={api}
+                      summary={summary}
+                    />
+                  </div>
+                ) : null}
+              </article>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
