@@ -1,12 +1,13 @@
-import { type FormEvent, useState } from 'react'
 import type { ExecutePreparedResponse } from '@/api/interactiveSubmission'
+import { compareDecimalStrings } from '@/cip56/amount'
 import type { TokenHoldingSummary } from '@/cip56/holdings'
 import { type CreateTokenTransferParams, createTokenTransfer } from '@/cip56/transfers'
+import { AmountField } from '@/components/AmountField'
 import { PrimaryButton } from '@/components/ui/Button'
+import { CONTACTS_ICON } from '@/components/ui/icons'
+import { Select } from '@/components/ui/Select'
 import { TextInput } from '@/components/ui/TextInput'
-import { toast } from '@/components/ui/toast'
-import type { AccountPublic } from '@/vault/types'
-import { useVault } from '@/vault/useVault'
+import { Tooltip } from '@/components/ui/Tooltip'
 
 export type TransferDeadline = '1h' | '1d' | '1w' | '1m' | '1y'
 
@@ -14,19 +15,9 @@ export interface Cip56SendApi {
   createTokenTransfer: (params: CreateTokenTransferParams) => Promise<ExecutePreparedResponse>
 }
 
-export interface SendTokenFormProps {
-  account: AccountPublic
-  summary: TokenHoldingSummary
-  sendApi?: Cip56SendApi
-  // Called after a transfer is accepted so the host can refresh holdings or navigate back.
-  onSent?: () => void
-}
+export const defaultSendApi: Cip56SendApi = { createTokenTransfer }
 
-const defaultSendApi: Cip56SendApi = {
-  createTokenTransfer,
-}
-
-const DEADLINE_OPTIONS: Array<{ value: TransferDeadline; label: string }> = [
+export const DEADLINE_OPTIONS: Array<{ value: TransferDeadline; label: string }> = [
   { value: '1h', label: '1 hour' },
   { value: '1d', label: '1 day' },
   { value: '1w', label: '1 week' },
@@ -57,144 +48,132 @@ export const transferDeadlineExpiration = (deadline: TransferDeadline, now = new
   return next
 }
 
-// Outgoing CIP-56 transfer form for a token already chosen by the detail modal.
-export const SendTokenForm = ({
-  account,
-  summary,
-  sendApi = defaultSendApi,
-  onSent,
-}: SendTokenFormProps): JSX.Element => {
-  const vault = useVault()
-  const [recipient, setRecipient] = useState('')
-  const [amount, setAmount] = useState('')
-  const [memo, setMemo] = useState('')
-  const [deadline, setDeadline] = useState<TransferDeadline>('1h')
-  const [submitting, setSubmitting] = useState(false)
-  const [submitError, setSubmitError] = useState<string | undefined>(undefined)
+const MEMO_HELP =
+  "A short note that rides along with the transfer, like the reference line on a bank payment. The recipient can read it. Leave it blank if you don't need one."
 
-  // Submits the transfer intent while Carpincho remains the signer of the prepared transaction.
-  const onSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
-    event.preventDefault()
-    if (summary.instrumentId?.id === undefined) {
-      setSubmitError('Token is missing an instrument id')
-      return
-    }
-    setSubmitting(true)
-    setSubmitError(undefined)
-    try {
-      await sendApi.createTokenTransfer({
-        account,
-        recipient: recipient.trim(),
-        amount: amount.trim(),
-        instrumentId: summary.instrumentId,
-        ...(memo.trim() === '' ? {} : { memo: memo.trim() }),
-        expirationDate: transferDeadlineExpiration(deadline).toISOString(),
-        signMessage: vault.signMessage,
-        recordTransaction: vault.recordTransaction,
-      })
-      setRecipient('')
-      setAmount('')
-      setMemo('')
-      toast.success('Transfer submitted.')
-      onSent?.()
-    } catch (err) {
-      const message = (err as Error).message
-      setSubmitError(message)
-      toast.error(`Send failed: ${message}`)
-    } finally {
-      setSubmitting(false)
-    }
+export interface SendTokenFormProps {
+  summary: TokenHoldingSummary
+  spendableBalance: string
+  recipient: string
+  amount: string
+  memo: string
+  deadline: TransferDeadline
+  onRecipientChange: (value: string) => void
+  onAmountChange: (value: string) => void
+  onMemoChange: (value: string) => void
+  onDeadlineChange: (value: TransferDeadline) => void
+  onOpenContacts: () => void
+  onReview: () => void
+}
+
+// True when amount is a positive decimal not exceeding the spendable balance.
+const amountIsValid = (amount: string, balance: string): boolean => {
+  if (compareDecimalStrings(amount, '0') !== 1) {
+    return false
   }
+  return compareDecimalStrings(amount, balance) !== 1
+}
+
+// Send screen body: controlled fields preset to one token; advances to confirmation via Review.
+export const SendTokenForm = ({
+  summary,
+  spendableBalance,
+  recipient,
+  amount,
+  memo,
+  deadline,
+  onRecipientChange,
+  onAmountChange,
+  onMemoChange,
+  onDeadlineChange,
+  onOpenContacts,
+  onReview,
+}: SendTokenFormProps): JSX.Element => {
+  const trimmedAmount = amount.trim()
+  const overBalance =
+    trimmedAmount !== '' && compareDecimalStrings(trimmedAmount, spendableBalance) === 1
+  const canReview =
+    recipient.trim() !== '' &&
+    amountIsValid(trimmedAmount, spendableBalance) &&
+    summary.instrumentId?.id !== undefined
 
   return (
-    <form
-      className="flex flex-col gap-3"
-      onSubmit={(event) => {
-        void onSubmit(event)
-      }}
-    >
-      {submitError === undefined ? null : (
-        <div className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-[0.82rem] text-danger">
-          {submitError}
+    <div className="flex flex-col gap-3">
+      <div className="grid gap-1">
+        <div className="flex items-center justify-between">
+          <label
+            className="text-[0.78rem] font-semibold text-muted-foreground"
+            htmlFor="send-recipient"
+          >
+            Recipient
+          </label>
+          <button
+            type="button"
+            aria-label="Contacts"
+            onClick={onOpenContacts}
+            className="inline-flex items-center gap-1 rounded-sm text-[0.74rem] font-semibold text-primary transition-colors hover:text-primary-hover focus-visible:outline-none focus-visible:shadow-focus"
+          >
+            {CONTACTS_ICON}
+            Contacts
+          </button>
         </div>
-      )}
-
-      <label
-        className="grid gap-1 text-[0.78rem] font-semibold text-muted-foreground"
-        htmlFor="send-recipient"
-      >
-        Recipient party
         <TextInput
-          aria-label="Recipient party"
+          aria-label="Recipient"
           autoComplete="off"
           id="send-recipient"
           value={recipient}
-          onChange={(event) => setRecipient(event.target.value)}
+          onChange={(event) => onRecipientChange(event.target.value)}
         />
-      </label>
+      </div>
 
-      <label
-        className="grid gap-1 text-[0.78rem] font-semibold text-muted-foreground"
-        htmlFor="send-amount"
-      >
-        Amount
-        <TextInput
-          aria-label="Amount"
-          id="send-amount"
-          inputMode="decimal"
-          value={amount}
-          onChange={(event) => setAmount(event.target.value)}
-        />
-      </label>
+      <AmountField
+        value={amount}
+        onChange={onAmountChange}
+        onMax={() => onAmountChange(spendableBalance)}
+        balance={spendableBalance}
+        tokenLabel={summary.tokenLabel}
+        error={overBalance}
+      />
 
-      <label
-        className="grid gap-1 text-[0.78rem] font-semibold text-muted-foreground"
-        htmlFor="send-deadline"
-      >
-        Deadline
-        <select
-          aria-label="Deadline"
-          className="rounded-md border border-border-strong bg-surface px-3 py-2.5 text-base text-foreground focus:border-primary focus:outline-0 focus:shadow-focus"
-          id="send-deadline"
-          value={deadline}
-          onChange={(event) => setDeadline(event.target.value as TransferDeadline)}
+      <div className="grid gap-1">
+        <label
+          className="text-[0.78rem] font-semibold text-muted-foreground"
+          htmlFor="send-deadline"
         >
-          {DEADLINE_OPTIONS.map((option) => (
-            <option
-              key={option.value}
-              value={option.value}
-            >
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </label>
+          Deadline
+        </label>
+        <Select
+          id="send-deadline"
+          ariaLabel="Deadline"
+          value={deadline}
+          onValueChange={(value) => onDeadlineChange(value as TransferDeadline)}
+          options={DEADLINE_OPTIONS}
+        />
+      </div>
 
-      <label
-        className="grid gap-1 text-[0.78rem] font-semibold text-muted-foreground"
-        htmlFor="send-memo"
-      >
-        Memo
+      <div className="grid gap-1">
+        <span className="flex items-center gap-1.5 text-[0.78rem] font-semibold text-muted-foreground">
+          Memo
+          <Tooltip
+            label="What is a memo?"
+            content={MEMO_HELP}
+          />
+        </span>
         <TextInput
           aria-label="Memo"
           id="send-memo"
           value={memo}
-          onChange={(event) => setMemo(event.target.value)}
+          onChange={(event) => onMemoChange(event.target.value)}
         />
-      </label>
+      </div>
 
       <PrimaryButton
         className="mt-1"
-        disabled={
-          submitting ||
-          recipient.trim() === '' ||
-          amount.trim() === '' ||
-          summary.instrumentId?.id === undefined
-        }
-        type="submit"
+        disabled={!canReview}
+        onClick={onReview}
       >
-        {submitting ? 'Sending...' : 'Send'}
+        Review
       </PrimaryButton>
-    </form>
+    </div>
   )
 }

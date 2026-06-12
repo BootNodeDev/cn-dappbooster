@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import cantonIcon from '@/assets/canton.png'
 import { formatTokenAmount } from '@/cip56/amount'
-import type { TokenHolding, TokenHoldingSummary } from '@/cip56/holdings'
-import { type Cip56SendApi, SendTokenForm } from '@/components/SendTokenForm'
+import { sumDecimalAmounts, type TokenHolding, type TokenHoldingSummary } from '@/cip56/holdings'
+import { ContactsPicker } from '@/components/ContactsPicker'
+import { SendConfirm } from '@/components/SendConfirm'
+import { type Cip56SendApi, SendTokenForm, type TransferDeadline } from '@/components/SendTokenForm'
 import { TokenHoldingDetail } from '@/components/TokenHoldingDetail'
 import { TokenReceive } from '@/components/TokenReceive'
 import { SecondaryButton } from '@/components/ui/Button'
@@ -10,9 +12,11 @@ import { CHEVRON_RIGHT_ICON, RECEIVE_ICON, SEND_ICON } from '@/components/ui/ico
 import { Sheet } from '@/components/ui/Sheet'
 import { useTokenHoldingDetails } from '@/hooks/useTokenHoldingDetails'
 import type { Cip56HoldingsApi } from '@/hooks/useTokenHoldings'
+import { sortAccounts } from '@/utils/account'
 import type { AccountPublic } from '@/vault/types'
+import { useVault } from '@/vault/useVault'
 
-type Screen = 'detail' | 'send' | 'receive' | 'holding'
+type Screen = 'detail' | 'send' | 'contacts' | 'confirm' | 'receive' | 'holding'
 
 export interface TokenDetailSheetProps {
   open: boolean
@@ -138,7 +142,8 @@ const DetailScreen = ({
   </div>
 )
 
-// Single token modal: a screen stack (detail / send / receive / holding) inside one sheet.
+// Single token modal: a screen stack inside one sheet. Send-form state lives here so it
+// survives the contacts and confirmation screens.
 export const TokenDetailSheet = ({
   open,
   onOpenChange,
@@ -148,9 +153,14 @@ export const TokenDetailSheet = ({
   sendApi,
   onSent,
 }: TokenDetailSheetProps): JSX.Element => {
+  const vault = useVault()
   const [screen, setScreen] = useState<Screen>('detail')
   const [activeHolding, setActiveHolding] = useState<TokenHolding | null>(null)
   const [direction, setDirection] = useState<'forward' | 'back'>('forward')
+  const [recipient, setRecipient] = useState('')
+  const [amount, setAmount] = useState('')
+  const [memo, setMemo] = useState('')
+  const [deadline, setDeadline] = useState<TransferDeadline>('1h')
   const screenRef = useRef<HTMLDivElement>(null)
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: re-run on every screen change to refocus the new view.
@@ -173,11 +183,36 @@ export const TokenDetailSheet = ({
     enabled: open,
   })
 
+  // Spendable balance excludes locked holdings, which would fail on send.
+  const spendableBalance = useMemo(
+    () =>
+      sumDecimalAmounts(
+        holdings
+          .filter((holding) => holding.interfaceViewValue?.lock == null)
+          .map((holding) => holding.interfaceViewValue?.amount)
+          .filter((value): value is string => value !== undefined),
+      ),
+    [holdings],
+  )
+
+  const contacts = useMemo(
+    () => sortAccounts(vault.accounts).filter((entry) => entry.id !== account.id),
+    [vault.accounts, account.id],
+  )
+
+  const resetForm = (): void => {
+    setRecipient('')
+    setAmount('')
+    setMemo('')
+    setDeadline('1h')
+  }
+
   const handleOpenChange = (next: boolean): void => {
     if (!next) {
       setScreen('detail')
       setActiveHolding(null)
       setDirection('forward')
+      resetForm()
     }
     onOpenChange(next)
   }
@@ -187,14 +222,14 @@ export const TokenDetailSheet = ({
     setScreen(next)
   }
 
-  // The screen hierarchy is flat: every non-detail screen returns to detail.
+  // Send-flow screens step back to the form; everything else returns to detail.
   const goBack = (): void => {
     if (screen === 'detail') {
       handleOpenChange(false)
       return
     }
     setDirection('back')
-    setScreen('detail')
+    setScreen(screen === 'contacts' || screen === 'confirm' ? 'send' : 'detail')
   }
 
   const openHolding = (holding: TokenHolding): void => {
@@ -205,18 +240,21 @@ export const TokenDetailSheet = ({
   // After a transfer leaves the wallet, refresh the host and return to the balance view.
   const handleSent = (): void => {
     onSent?.()
+    resetForm()
     setDirection('back')
     setScreen('detail')
   }
 
   const title =
-    screen === 'send'
+    screen === 'send' || screen === 'confirm'
       ? `Send ${summary.tokenLabel}`
-      : screen === 'receive'
-        ? 'Receive'
-        : screen === 'holding'
-          ? 'Holding details'
-          : summary.tokenLabel
+      : screen === 'contacts'
+        ? 'Choose recipient'
+        : screen === 'receive'
+          ? 'Receive'
+          : screen === 'holding'
+            ? 'Holding details'
+            : summary.tokenLabel
   const animationClass =
     direction === 'forward' ? 'animate-slide-in-right' : 'animate-slide-in-left'
 
@@ -248,9 +286,40 @@ export const TokenDetailSheet = ({
         )}
         {screen === 'send' && (
           <SendTokenForm
+            summary={summary}
+            spendableBalance={spendableBalance}
+            recipient={recipient}
+            amount={amount}
+            memo={memo}
+            deadline={deadline}
+            onRecipientChange={setRecipient}
+            onAmountChange={setAmount}
+            onMemoChange={setMemo}
+            onDeadlineChange={setDeadline}
+            onOpenContacts={() => goTo('contacts')}
+            onReview={() => goTo('confirm')}
+          />
+        )}
+        {screen === 'contacts' && (
+          <ContactsPicker
+            contacts={contacts}
+            onSelect={(partyId) => {
+              setRecipient(partyId)
+              setDirection('back')
+              setScreen('send')
+            }}
+          />
+        )}
+        {screen === 'confirm' && (
+          <SendConfirm
             account={account}
             summary={summary}
+            recipient={recipient}
+            amount={amount}
+            memo={memo}
+            deadline={deadline}
             sendApi={sendApi}
+            onCancel={goBack}
             onSent={handleSent}
           />
         )}

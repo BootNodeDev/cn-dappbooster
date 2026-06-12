@@ -4,6 +4,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { TokenHoldingSummary } from '@/cip56/holdings'
 import { TokenDetailSheet } from '@/components/TokenDetailSheet'
+import { TooltipProvider } from '@/components/ui/Tooltip'
 import { toast } from '@/components/ui/toast'
 import { TestQueryClientProvider } from '@/test-utils/queryClient'
 import type { AccountPublic } from '@/vault/types'
@@ -76,14 +77,16 @@ const baseVault = (): VaultContextValue =>
 const renderSheet = (): void => {
   render(
     <TestQueryClientProvider>
-      <VaultContext.Provider value={baseVault()}>
-        <TokenDetailSheet
-          open={true}
-          onOpenChange={() => undefined}
-          account={ACCOUNT}
-          summary={SUMMARY}
-        />
-      </VaultContext.Provider>
+      <TooltipProvider>
+        <VaultContext.Provider value={baseVault()}>
+          <TokenDetailSheet
+            open={true}
+            onOpenChange={() => undefined}
+            account={ACCOUNT}
+            summary={SUMMARY}
+          />
+        </VaultContext.Provider>
+      </TooltipProvider>
     </TestQueryClientProvider>,
   )
 }
@@ -120,11 +123,37 @@ describe('TokenDetailSheet', () => {
     renderSheet()
 
     await userEvent.click(screen.getByRole('button', { name: 'Send' }))
-    assert.ok(screen.getByLabelText('Recipient party'))
+    assert.ok(screen.getByLabelText('Recipient'))
     assert.equal(screen.queryByLabelText('Token'), null)
 
     await userEvent.click(screen.getByRole('button', { name: /back/i }))
     assert.ok(screen.getByText('9,000.00'))
+  })
+
+  it('shows spendable balance on send and keeps recipient after visiting contacts', async () => {
+    // Scenario: balance excludes locked holdings; visiting contacts and returning
+    // preserves the typed recipient because form state lives in the sheet.
+    renderSheet()
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }))
+    await userEvent.type(screen.getByLabelText('Recipient'), 'bob::party')
+
+    assert.ok(screen.getByText(/Balance: 9,997\.00 Amulet/))
+
+    await userEvent.click(screen.getByRole('button', { name: /contacts/i }))
+    await userEvent.click(screen.getByRole('button', { name: /back/i }))
+    assert.equal((screen.getByLabelText('Recipient') as HTMLInputElement).value, 'bob::party')
+  })
+
+  it('advances Send -> Review -> Confirm and keeps one dialog', async () => {
+    renderSheet()
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }))
+    await userEvent.type(screen.getByLabelText('Recipient'), 'bob::party')
+    await userEvent.type(screen.getByLabelText('Amount'), '5')
+    await userEvent.click(screen.getByRole('button', { name: 'Review' }))
+
+    assert.ok(screen.getByRole('button', { name: 'Confirm' }))
+    assert.ok(screen.getByRole('button', { name: 'Cancel' }))
+    assert.equal(document.querySelectorAll('[role="dialog"]').length, 1)
   })
 
   it('navigates to the receive screen showing the party QR and id', async () => {
