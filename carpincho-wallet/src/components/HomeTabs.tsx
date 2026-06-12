@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { ActivityList } from '@/components/ActivityList'
 import { AssetsPanel } from '@/components/AssetsPanel'
-import { type Cip56SendApi, SendTokensPanel } from '@/components/SendTokensPanel'
+import type { Cip56SendApi } from '@/components/SendTokenForm'
 import { TransfersPanel } from '@/components/TransfersPanel'
 import { TabContent, Tabs, TabsList, TabTrigger } from '@/components/ui/Tabs'
 import type { AmuletPreapprovalApi } from '@/hooks/useAmuletPreapproval'
@@ -69,7 +69,6 @@ export const HomeTabs = ({
           ) : null}
         </TabTrigger>
         <TabTrigger value="activity">Activity</TabTrigger>
-        <TabTrigger value="send">Send</TabTrigger>
       </TabsList>
       <TabContent
         value="assets"
@@ -78,6 +77,7 @@ export const HomeTabs = ({
         <AssetsPanel
           account={account}
           api={tokensApi}
+          sendApi={sendApi}
         />
       </TabContent>
       <TabContent
@@ -97,16 +97,6 @@ export const HomeTabs = ({
         className={TAB_CONTENT_CLASS}
       >
         <ActivityList transactions={activeTransactions} />
-      </TabContent>
-      <TabContent
-        value="send"
-        className={TAB_CONTENT_CLASS}
-      >
-        <SendTokensPanel
-          account={account}
-          holdingsApi={tokensApi}
-          sendApi={sendApi}
-        />
       </TabContent>
     </Tabs>
   )

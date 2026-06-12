@@ -89,9 +89,9 @@ describe('HomeTabs navigation', () => {
     cleanup()
   })
 
-  it('renders Assets, Transfers, Activity, and Send tabs', () => {
-    // Scenario: token balances, incoming transfers, history, and sending each own a
-    // top-level tab. Assets is the default landing view.
+  it('renders Assets, Transfers, and Activity tabs', () => {
+    // Scenario: token balances, incoming transfers, and history each own a top-level
+    // tab. Sending now lives inside the token detail modal, so there is no Send tab.
     renderHome(
       baseVault(),
       <HomeTabs
@@ -103,13 +103,13 @@ describe('HomeTabs navigation', () => {
     assert.equal(screen.getByRole('tab', { name: 'Assets' }).getAttribute('data-state'), 'active')
     assert.ok(screen.getByRole('tab', { name: 'Transfers' }))
     assert.ok(screen.getByRole('tab', { name: 'Activity' }))
-    assert.ok(screen.getByRole('tab', { name: 'Send' }))
+    assert.equal(screen.queryByRole('tab', { name: 'Send' }), null)
   })
 
   it('opens the Assets tab with the current party holdings', async () => {
     // Scenario: token balances live in the Assets tab, separate from incoming
     // transfer requests. Opening Assets should mount the holdings panel for the
-    // active account and show the grouped balance.
+    // active account and show the token row.
     const holdingsApi: Cip56HoldingsApi = {
       listTokenHoldingSummaries: async () => [
         {
@@ -117,6 +117,7 @@ describe('HomeTabs navigation', () => {
           tokenLabel: 'Amulet',
           instrumentId: { admin: 'dso::party', id: 'Amulet' },
           totalAmount: '7',
+          utxoCount: 1,
           source: 'scan',
         },
       ],
@@ -133,7 +134,7 @@ describe('HomeTabs navigation', () => {
 
     await userEvent.click(screen.getByRole('tab', { name: 'Assets' }))
 
-    await screen.findByText('7 Amulet')
+    await screen.findByText('Amulet')
   })
 
   it('badges the Transfers tab when hidden incoming transfers require action', async () => {

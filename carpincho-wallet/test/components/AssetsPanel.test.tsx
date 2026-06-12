@@ -68,10 +68,9 @@ describe('AssetsPanel', () => {
     })
   })
 
-  it('shows token holding totals and expands UTXO details', async () => {
-    // Scenario: the active party owns two Amulet holding UTXOs, one unlocked and one locked.
-    // The panel should show a grouped total first and expose raw holding ids on demand.
-    let detailsCalls = 0
+  it('lists each token as an activity-style row without an inline expander', async () => {
+    // Scenario: the assets tab now reads like the activity feed: an icon row per
+    // token, no per-row "Show holdings" button, and the UTXO count as a subtitle.
     const api: Cip56HoldingsApi = {
       listTokenHoldingSummaries: async (partyId) => {
         assert.equal(partyId, 'alice::party')
@@ -81,10 +80,36 @@ describe('AssetsPanel', () => {
             tokenLabel: 'Amulet',
             instrumentId: { admin: 'dso::party', id: 'Amulet' },
             totalAmount: '15.75',
-            source: 'scan',
+            utxoCount: 2,
+            lockedCount: 0,
+            unlockedCount: 2,
+            source: 'utxos',
           },
         ]
       },
+    }
+
+    renderAssets(api)
+
+    await screen.findByText('Amulet')
+    assert.equal(screen.getByText('2 UTXOs').textContent, '2 UTXOs')
+    assert.equal(screen.queryByRole('button', { name: /show holdings/i }), null)
+  })
+
+  it('opens the token detail modal and fetches UTXOs on demand', async () => {
+    // Scenario: clicking a token row opens the balance-first modal, which lazily
+    // loads the raw UTXOs for the holdings list.
+    let detailsCalls = 0
+    const api: Cip56HoldingsApi = {
+      listTokenHoldingSummaries: async () => [
+        {
+          key: 'dso::party:Amulet',
+          tokenLabel: 'Amulet',
+          instrumentId: { admin: 'dso::party', id: 'Amulet' },
+          totalAmount: '15.75',
+          source: 'scan',
+        },
+      ],
       listTokenHoldings: async (partyId) => {
         detailsCalls += 1
         assert.equal(partyId, 'alice::party')
@@ -98,51 +123,23 @@ describe('AssetsPanel', () => {
               lock: null,
             },
           },
-          {
-            contractId: 'holding-cid-2',
-            interfaceViewValue: {
-              owner: 'alice::party',
-              amount: '3.2500000000',
-              instrumentId: { admin: 'dso::party', id: 'Amulet' },
-              lock: { holders: ['validator::party'], expiresAt: '2026-06-10T20:41:05.803Z' },
-            },
-          },
         ]
       },
     }
 
     renderAssets(api)
 
-    await screen.findByText('15.75 Amulet')
-    assert.equal(screen.getByText('UTXOs load on demand').textContent, 'UTXOs load on demand')
-    assert.equal(screen.queryByText('holding-cid-1'), null)
     assert.equal(detailsCalls, 0)
+    await userEvent.click(await screen.findByRole('button', { name: /Amulet/ }))
 
-    await userEvent.click(screen.getByRole('button', { name: 'Show holdings' }))
-
-    const firstHoldingCard = screen.getByText('holding-cid-1').closest('dl')
-    assert.ok(firstHoldingCard, 'holding details should be grouped in one UTXO card')
-    assert.match(
-      firstHoldingCard.getAttribute('class') ?? '',
-      /rounded-md/,
-      'each holding UTXO should read as a distinct item',
-    )
-    assert.match(
-      firstHoldingCard.getAttribute('class') ?? '',
-      /bg-surface/,
-      'each holding UTXO should be visually separated from the detail container',
-    )
-    assert.equal(screen.getByText('holding-cid-1').textContent, 'holding-cid-1')
-    assert.equal(screen.getByText('holding-cid-2').textContent, 'holding-cid-2')
-    assert.equal(screen.queryByText('owner'), null)
-    assert.equal(screen.getByText('2026-06-10 20:41 UTC').textContent, '2026-06-10 20:41 UTC')
+    await screen.findByText('15.75')
+    await screen.findByText('12.5000000000')
     assert.equal(detailsCalls, 1)
   })
 
   it('reuses fallback UTXO details from the summary response', async () => {
     // Scenario: when wallet-service falls back from Scan to UTXOs, the summary
-    // already contains raw holdings. Expanding the row must not make another
-    // UTXO request for the same token.
+    // already carries raw holdings, so opening the modal must not refetch them.
     let detailsCalls = 0
     const api: Cip56HoldingsApi = {
       listTokenHoldingSummaries: async () => [
@@ -176,10 +173,21 @@ describe('AssetsPanel', () => {
 
     renderAssets(api)
 
-    await screen.findByText('15.75 Amulet')
-    await userEvent.click(screen.getByRole('button', { name: 'Show holdings' }))
+    await userEvent.click(await screen.findByRole('button', { name: /Amulet/ }))
 
-    assert.equal(screen.getByText('cached-holding-cid').textContent, 'cached-holding-cid')
+    await screen.findByText('15.7500000000')
     assert.equal(detailsCalls, 0)
+  })
+
+  it('shows an empty state when the party owns no tokens', async () => {
+    // Scenario: a brand-new party has no holdings; the panel says so instead of
+    // rendering an empty list.
+    const api: Cip56HoldingsApi = {
+      listTokenHoldingSummaries: async () => [],
+    }
+
+    renderAssets(api)
+
+    await screen.findByText('No token holdings')
   })
 })
