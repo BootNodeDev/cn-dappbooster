@@ -61,7 +61,7 @@ export const SendTokensPanel = ({
   account,
   holdingsApi,
   sendApi = defaultSendApi,
-}: SendTokensPanelProps): JSX.Element => {
+}: SendTokensPanelProps): React.JSX.Element => {
   const vault = useVault()
   const activeAccount = account ?? vault.primary ?? vault.accounts[0]
   const { summaries, loading, error, refresh } = useTokenHoldings(activeAccount, {

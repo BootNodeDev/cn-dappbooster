@@ -6,6 +6,10 @@ import { createQueryClient } from '@/config/queryClient'
 export const createTestQueryClient = (): QueryClient => createQueryClient({ gcTime: 0 })
 
 // Wraps a test subtree in a fresh TanStack Query provider.
-export const TestQueryClientProvider = ({ children }: { children: ReactNode }): JSX.Element => (
+export const TestQueryClientProvider = ({
+  children,
+}: {
+  children: ReactNode
+}): React.JSX.Element => (
   <QueryClientProvider client={createTestQueryClient()}>{children}</QueryClientProvider>
 )

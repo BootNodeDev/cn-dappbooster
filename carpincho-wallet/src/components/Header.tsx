@@ -8,7 +8,7 @@ interface HeaderProps {
   onOpenMenu: () => void
 }
 
-export const Header = ({ onOpenMenu }: HeaderProps): JSX.Element => {
+export const Header = ({ onOpenMenu }: HeaderProps): React.JSX.Element => {
   const vault = useVault()
   return (
     <header className="flex items-center gap-3 pl-1 pr-1 pt-2 pb-3 mb-1">

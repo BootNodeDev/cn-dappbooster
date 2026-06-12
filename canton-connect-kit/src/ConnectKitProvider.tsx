@@ -67,7 +67,10 @@ export interface ConnectKitProviderProps {
   children: ReactNode
 }
 
-export const ConnectKitProvider = ({ config, children }: ConnectKitProviderProps): JSX.Element => {
+export const ConnectKitProvider = ({
+  config,
+  children,
+}: ConnectKitProviderProps): React.JSX.Element => {
   const [client, setClient] = useState<DappClient | undefined>(undefined)
   const [party, setParty] = useState<Party | undefined>(undefined)
   const [status, setStatus] = useState<ConnectionStatus>('idle')

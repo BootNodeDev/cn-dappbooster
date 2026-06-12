@@ -26,7 +26,7 @@ interface TransferDetailRowProps {
 }
 
 // Keeps long Canton identifiers readable without hiding the full value in the details area.
-const TransferDetailRow = ({ label, value }: TransferDetailRowProps): JSX.Element => (
+const TransferDetailRow = ({ label, value }: TransferDetailRowProps): React.JSX.Element => (
   <div className="grid gap-1">
     <dt className="text-[0.7rem] font-semibold uppercase text-muted-foreground">{label}</dt>
     <dd className="m-0 break-all font-mono text-[0.74rem] leading-5 text-foreground">{value}</dd>
@@ -39,7 +39,7 @@ export const IncomingTransfersSection = ({
   api,
   hideWhenEmpty = false,
   onPendingCountChange,
-}: IncomingTransfersSectionProps): JSX.Element | null => {
+}: IncomingTransfersSectionProps): React.JSX.Element | null => {
   const vault = useVault()
   const activeAccount = account ?? vault.primary ?? vault.accounts[0]
   const [acceptingCid, setAcceptingCid] = useState<string | undefined>(undefined)

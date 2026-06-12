@@ -16,7 +16,7 @@ interface WalletServiceStatus {
   }
 }
 
-export const ConnectionSettingsView = (): JSX.Element => {
+export const ConnectionSettingsView = (): React.JSX.Element => {
   const { config, saveConfig } = useRuntimeConfig()
   const [draft, setDraft] = useState<RuntimeConfig>(config)
   const [busy, setBusy] = useState(false)

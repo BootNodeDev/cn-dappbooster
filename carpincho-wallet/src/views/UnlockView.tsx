@@ -9,7 +9,7 @@ import { toast } from '@/components/ui/toast'
 import { WelcomeHero } from '@/components/WelcomeHero'
 import { useVault } from '@/vault/useVault'
 
-export const UnlockView = (): JSX.Element => {
+export const UnlockView = (): React.JSX.Element => {
   const v = useVault()
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)

@@ -61,11 +61,18 @@ export const encodeSchedule = (schedule: VestingSchedule): EncodedSchedule => {
       cliff: schedule.cliff,
     }
   }
+  const last = curve.points.length - 1
   return {
     curve: {
       tag: 'MilestoneVesting',
       value: {
-        points: curve.points.map((point) => ({ _1: point.time, _2: String(point.fraction) })),
+        // The contract checks the final cumulative fraction with an exact `== 1.0`,
+        // while the UI validator tolerates 1e-9. Snap the last point to exactly 1 so a
+        // schedule the form accepts cannot be rejected on-ledger by float drift.
+        points: curve.points.map((point, i) => ({
+          _1: point.time,
+          _2: i === last ? '1.0' : String(point.fraction),
+        })),
       },
     },
     cliff: schedule.cliff,

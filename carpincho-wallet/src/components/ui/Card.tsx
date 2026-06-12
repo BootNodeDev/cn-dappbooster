@@ -3,7 +3,10 @@ import { cn } from '@/utils/cn'
 
 export const CARD_CLASS = 'bg-surface border border-border rounded-lg p-4 animate-fade-in'
 
-export const Card = ({ className, ...rest }: ComponentPropsWithoutRef<'div'>): JSX.Element => (
+export const Card = ({
+  className,
+  ...rest
+}: ComponentPropsWithoutRef<'div'>): React.JSX.Element => (
   <div
     className={cn(CARD_CLASS, className)}
     {...rest}

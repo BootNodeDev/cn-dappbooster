@@ -52,7 +52,7 @@ const compactContractId = (contractId: string): string => {
 }
 
 // Keeps raw holding values readable in the expanded UTXO details area.
-const HoldingDetailRow = ({ label, value }: HoldingDetailRowProps): JSX.Element => (
+const HoldingDetailRow = ({ label, value }: HoldingDetailRowProps): React.JSX.Element => (
   <div className="grid gap-1">
     <dt className="text-[0.7rem] font-semibold uppercase text-muted-foreground">{label}</dt>
     <dd className="m-0 break-all font-mono text-[0.74rem] leading-5 text-foreground">{value}</dd>
@@ -60,7 +60,11 @@ const HoldingDetailRow = ({ label, value }: HoldingDetailRowProps): JSX.Element 
 )
 
 // Fetches UTXO details lazily so Scan summaries can render balances quickly.
-const TokenHoldingDetails = ({ account, api, summary }: TokenHoldingDetailsProps): JSX.Element => {
+const TokenHoldingDetails = ({
+  account,
+  api,
+  summary,
+}: TokenHoldingDetailsProps): React.JSX.Element => {
   const detailsApi =
     api?.listTokenHoldings === undefined ? undefined : { listTokenHoldings: api.listTokenHoldings }
   const { holdings, loading, error } = useTokenHoldingDetails(account, summary, {
@@ -120,7 +124,7 @@ const TokenHoldingDetails = ({ account, api, summary }: TokenHoldingDetailsProps
 }
 
 // Shows the ledger contract id as debug metadata instead of a full-width raw value.
-const ContractIdRow = ({ contractId }: ContractIdRowProps): JSX.Element => (
+const ContractIdRow = ({ contractId }: ContractIdRowProps): React.JSX.Element => (
   <div className="mt-3 flex min-w-0 items-center gap-1.5 rounded-md border border-border bg-muted px-2 py-1.5 text-[0.74rem] text-muted-foreground">
     <span className="shrink-0 font-medium">contractId:</span>
     <span className="min-w-0 font-mono text-foreground">{compactContractId(contractId)}</span>
@@ -136,7 +140,10 @@ const ContractIdRow = ({ contractId }: ContractIdRowProps): JSX.Element => (
 )
 
 // Lets the receiver opt into Amulet auto-accept without routing signing through wallet-service.
-const AmuletPreapprovalSection = ({ account, api }: AmuletPreapprovalSectionProps): JSX.Element => {
+const AmuletPreapprovalSection = ({
+  account,
+  api,
+}: AmuletPreapprovalSectionProps): React.JSX.Element => {
   const vault = useVault()
   const [pendingAction, setPendingAction] = useState<'enable' | 'disable' | undefined>(undefined)
   const preapproval = useAmuletPreapproval(account, {
@@ -221,7 +228,7 @@ export const TokensPanel = ({
   transfersApi,
   preapprovalApi,
   onPendingTransferCountChange,
-}: TokensPanelProps): JSX.Element => {
+}: TokensPanelProps): React.JSX.Element => {
   const vault = useVault()
   const activeAccount = account ?? vault.primary ?? vault.accounts[0]
   const [expandedTokenKey, setExpandedTokenKey] = useState<string | undefined>(undefined)

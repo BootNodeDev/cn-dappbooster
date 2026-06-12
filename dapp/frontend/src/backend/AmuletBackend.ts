@@ -186,8 +186,14 @@ export class AmuletBackend implements VestingBackend {
 
   // ASSUMPTION [A3]: ACS response shape from wallet-service ledgerApi is:
   // each item is AcsRow with contractEntry.JsActiveContract.createdEvent.
-  private async readAcs(party: string, templateId: string): Promise<AcsRow[]> {
-    const offset = await this.ledgerEnd()
+  // `offset` lets a caller reading several templates at once pass one shared ledger-end
+  // so the reads form a consistent snapshot and avoid a round-trip per template.
+  private async readAcs(
+    party: string,
+    templateId: string,
+    offset?: string | number,
+  ): Promise<AcsRow[]> {
+    const at = offset ?? (await this.ledgerEnd())
     const rows = await walletServiceRequest<unknown>(this.rpcUrl, 'ledgerApi', {
       requestMethod: 'post',
       resource: '/v2/state/active-contracts',
@@ -210,7 +216,7 @@ export class AmuletBackend implements VestingBackend {
             },
           },
         },
-        activeAtOffset: offset,
+        activeAtOffset: at,
         verbose: true,
       },
     })
@@ -226,10 +232,13 @@ export class AmuletBackend implements VestingBackend {
   }
 
   async viewAs(partyId: string): Promise<VestingView> {
+    // One ledger-end for all three reads: a consistent snapshot, one fewer round-trip
+    // each, and no risk of the reads landing on different offsets.
+    const offset = await this.ledgerEnd()
     const [proposalRows, contractRows, claimRows] = await Promise.all([
-      this.readAcs(partyId, this.proposalTid),
-      this.readAcs(partyId, this.contractTid),
-      this.readAcs(partyId, this.claimTid),
+      this.readAcs(partyId, this.proposalTid, offset),
+      this.readAcs(partyId, this.contractTid, offset),
+      this.readAcs(partyId, this.claimTid, offset),
     ])
 
     type RowParam = Parameters<typeof rowToProposal>[0]
@@ -275,10 +284,6 @@ export class AmuletBackend implements VestingBackend {
     // ── AmuletRules ──────────────────────────────────────────────────────────
     const rulesUpdate = rulesResponse.amulet_rules_update
     if (rulesUpdate === undefined) {
-      console.warn(
-        '[AmuletBackend] scanApi amulet-rules response missing `amulet_rules_update` key. Got:',
-        Object.keys(rulesResponse),
-      )
       throw new Error('AmuletRules not found in SCAN response — missing `amulet_rules_update`')
     }
     const rulesContract = rulesUpdate.contract
@@ -286,10 +291,6 @@ export class AmuletBackend implements VestingBackend {
     const rulesBlob = rulesContract?.created_event_blob
     const synchronizerId = rulesUpdate.domain_id
     if (rulesCid === undefined || rulesBlob === undefined || rulesBlob === '') {
-      console.warn(
-        '[AmuletBackend] AmuletRules contract missing contract_id or created_event_blob:',
-        rulesContract,
-      )
       throw new Error('AmuletRules contract_id or created_event_blob absent in SCAN response')
     }
     const rulesRef: DisclosedRef = {
@@ -301,10 +302,6 @@ export class AmuletBackend implements VestingBackend {
     // ── OpenMiningRound — pick highest round number ──────────────────────────
     const openRoundsMap = roundsResponse.open_mining_rounds
     if (openRoundsMap === undefined || Object.keys(openRoundsMap).length === 0) {
-      console.warn(
-        '[AmuletBackend] scanApi open-and-issuing-mining-rounds response missing `open_mining_rounds`. Got:',
-        Object.keys(roundsResponse),
-      )
       throw new Error('OpenMiningRound not found in SCAN response — missing `open_mining_rounds`')
     }
 
@@ -431,6 +428,11 @@ export class AmuletBackend implements VestingBackend {
   // ASSUMPTION [A5]: Amulet `amount` is a nested record `{ initialAmount: Decimal, ... }`
   // (ExpiringAmount in DAML). If the JSON-LF field is a flat Decimal, the extraction
   // falls back gracefully.
+  //
+  // LIMITATION: this reports `initialAmount`, the value at creation. An Amulet's
+  // spendable value decays by the holding fee each round (the one non-zero fee CIP-78
+  // permits), so the live balance is slightly lower. `selectAmuletCids` adds a buffer
+  // holding to absorb that gap; `availableFunds` may still overstate by the accrued fee.
   private async amuletHoldings(party: string): Promise<{ contractId: string; amount: number }[]> {
     const rows = await this.readAcs(party, this.amuletTid)
     return rows
@@ -452,7 +454,11 @@ export class AmuletBackend implements VestingBackend {
       .filter((h): h is { contractId: string; amount: number } => h !== undefined)
   }
 
-  // Greedily selects Amulet holdings (largest first) whose sum >= requiredAmount.
+  // Greedily selects Amulet holdings (largest first) whose sum >= requiredAmount. Once
+  // the target is met it pulls in one extra holding when available: the reported amounts
+  // are `initialAmount` (pre-decay), so an exact-fit set can fall short of the actual
+  // transfer total by the accrued holding fee. The buffer makes the Accept resilient
+  // without failing a funder who has only just enough.
   private async selectAmuletCids(party: string, requiredAmount: number): Promise<string[]> {
     const holdings = (await this.amuletHoldings(party)).sort((a, b) => b.amount - a.amount)
 
@@ -460,7 +466,11 @@ export class AmuletBackend implements VestingBackend {
     let accumulated = 0
 
     for (const holding of holdings) {
-      if (accumulated >= requiredAmount) {
+      const metTarget = accumulated >= requiredAmount
+      if (metTarget && selected.length > 0) {
+        // one holding of headroom past the target, then stop
+        selected.push(holding.contractId)
+        accumulated += holding.amount
         break
       }
       selected.push(holding.contractId)

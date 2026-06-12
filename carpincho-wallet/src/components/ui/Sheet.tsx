@@ -64,7 +64,7 @@ export const Sheet = ({
   onClose,
   side = 'bottom',
   children,
-}: SheetProps): JSX.Element => (
+}: SheetProps): React.JSX.Element => (
   <Dialog.Root
     open={open}
     onOpenChange={onOpenChange}

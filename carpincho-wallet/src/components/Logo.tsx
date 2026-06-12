@@ -5,7 +5,7 @@ export interface LogoProps {
   className?: string
 }
 
-export const Logo = ({ size = 120, className }: LogoProps): JSX.Element => (
+export const Logo = ({ size = 120, className }: LogoProps): React.JSX.Element => (
   <img
     alt="Carpincho Wallet"
     className={className}

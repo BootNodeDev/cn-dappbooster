@@ -31,7 +31,7 @@ export const NewPasswordFields = ({
   labelMode = 'aria',
   passwordTestId,
   confirmTestId,
-}: Props): JSX.Element => {
+}: Props): React.JSX.Element => {
   usePasswordStrengthReady()
   const passwordId = useId()
   const confirmId = useId()

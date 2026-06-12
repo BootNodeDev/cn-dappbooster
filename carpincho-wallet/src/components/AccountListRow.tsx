@@ -19,7 +19,7 @@ export const AccountListRow = ({
   canRemove,
   onSelect,
   onRequestRemove,
-}: AccountListRowProps): JSX.Element => (
+}: AccountListRowProps): React.JSX.Element => (
   <div
     className={cn(
       'group/row relative flex w-full items-center gap-1 rounded-sm transition-colors',

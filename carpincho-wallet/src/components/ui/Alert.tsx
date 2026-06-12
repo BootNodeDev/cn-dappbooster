@@ -29,7 +29,7 @@ export const Alert = ({
   dismissLabel = 'Dismiss',
   className,
   children,
-}: AlertProps): JSX.Element => {
+}: AlertProps): React.JSX.Element => {
   const base = cn(
     BASE_CLASS,
     FEEDBACK_VARIANT_CLASS[variant],

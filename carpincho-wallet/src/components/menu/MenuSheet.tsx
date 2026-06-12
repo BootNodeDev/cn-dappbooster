@@ -13,7 +13,7 @@ interface MenuSheetProps {
   onOpenChange: (open: boolean) => void
 }
 
-export const MenuSheet = ({ open, onOpenChange }: MenuSheetProps): JSX.Element => {
+export const MenuSheet = ({ open, onOpenChange }: MenuSheetProps): React.JSX.Element => {
   const v = useVault()
   const [screen, setScreen] = useState<Screen>('root')
   const [direction, setDirection] = useState<Direction>('forward')

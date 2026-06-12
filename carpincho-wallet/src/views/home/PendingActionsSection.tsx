@@ -29,7 +29,7 @@ export const PendingActionsSection = ({
   onRejectSign,
   onApproveExecute,
   onRejectExecute,
-}: PendingActionsSectionProps): JSX.Element => {
+}: PendingActionsSectionProps): React.JSX.Element => {
   // Connect always uses the active account; proposalAccount mirrors it.
   const connectAccount = accountsSorted.find((a) => a.id === proposalAccount) ?? accountsSorted[0]
 

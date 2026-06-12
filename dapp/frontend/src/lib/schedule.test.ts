@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
+  canClaim,
+  floorOk,
   MIN_GRANT_AMOUNT,
   nextMilestone,
+  remainderAfter,
   type VestingSchedule,
   validVestingSchedule,
   vestedAmount,
@@ -200,5 +203,63 @@ describe('nextMilestone', () => {
 describe('MIN_GRANT_AMOUNT', () => {
   it('matches the on-ledger floor', () => {
     expect(MIN_GRANT_AMOUNT).toBe(1.0)
+  })
+})
+
+describe('remainderAfter', () => {
+  it('is the locked backing plus the unclaimed vested slice', () => {
+    expect(remainderAfter(50, 100, 20)).toBe(70)
+  })
+
+  it('is just the locked backing when the claimable is fully drained', () => {
+    expect(remainderAfter(100, 100, 20)).toBe(20)
+  })
+
+  it('is zero when nothing stays locked and the claimable is fully drained', () => {
+    expect(remainderAfter(100, 100, 0)).toBe(0)
+  })
+
+  it('never goes negative when amount exceeds available', () => {
+    expect(remainderAfter(120, 100, 0)).toBe(0)
+  })
+})
+
+describe('floorOk', () => {
+  it('accepts an exactly-drained remainder', () => {
+    expect(floorOk(0)).toBe(true)
+  })
+
+  it('rejects a remainder between zero and the floor', () => {
+    expect(floorOk(0.5)).toBe(false)
+  })
+
+  it('accepts a remainder at or above the floor', () => {
+    expect(floorOk(1)).toBe(true)
+    expect(floorOk(5)).toBe(true)
+  })
+})
+
+describe('canClaim', () => {
+  it('allows a normal partial claim', () => {
+    expect(canClaim(50, 50)).toBe(true)
+  })
+
+  it('allows draining sub-floor dust when the grant is fully vested', () => {
+    // claimable < MIN but nothing stays locked → a full drain leaves remainder 0.
+    expect(canClaim(0.5, 0)).toBe(true)
+  })
+
+  it('allows a sub-floor claim while vesting if the backing clears the floor', () => {
+    // withdraw a slice, leaving locked 5 (>= floor).
+    expect(canClaim(0.5, 5)).toBe(true)
+  })
+
+  it('blocks when the whole backing is below the floor and still vesting', () => {
+    // any withdraw leaves 0 < remainder < MIN, which the contract rejects.
+    expect(canClaim(0.5, 0.3)).toBe(false)
+  })
+
+  it('blocks when there is nothing claimable', () => {
+    expect(canClaim(0, 100)).toBe(false)
   })
 })

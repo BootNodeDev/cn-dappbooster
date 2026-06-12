@@ -1,23 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
-import { Outlet, useLocation } from 'react-router-dom'
+import { Suspense, useEffect, useRef, useState } from 'react'
+import { Outlet } from 'react-router-dom'
+import { FullScreenSpinner } from '@/components/Spinner'
 import { useConnect, useParty, useWalletStatus } from '@/wallet/hooks'
 import { readReconnect, writeReconnect } from '@/wallet/reconnect'
 import { ConnectScreen } from './ConnectScreen'
-import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
-
-const titleFor = (pathname: string): { title: string; crumb: string } => {
-  if (pathname.startsWith('/proposals')) {
-    return { title: 'Proposals', crumb: 'Incoming offers' }
-  }
-  if (pathname.startsWith('/create')) {
-    return { title: 'Create grant', crumb: 'Funder' }
-  }
-  if (pathname.startsWith('/grants/')) {
-    return { title: 'Grant detail', crumb: 'Grant' }
-  }
-  return { title: 'Dashboard', crumb: 'Your vesting' }
-}
 
 // Full-page state card used for the locked / no-account gates.
 const GateCard = ({ title, body }: { title: string; body: string }): React.JSX.Element => (
@@ -33,7 +20,6 @@ export const AppShell = (): React.JSX.Element => {
   const { connect, isConnected } = useConnect()
   const { party } = useParty()
   const { isLocked } = useWalletStatus()
-  const location = useLocation()
 
   // Seeded before first paint so a reload with a saved session shows a spinner,
   // not a flash of the landing.
@@ -58,14 +44,7 @@ export const AppShell = (): React.JSX.Element => {
   }, [])
 
   if (reconnecting && !isConnected) {
-    return (
-      <div className="grid min-h-screen place-items-center bg-bg">
-        <div className="flex items-center gap-3 text-sm text-fg-muted">
-          <span className="size-4 animate-spin rounded-full border-2 border-border border-t-primary" />
-          Reconnecting your wallet…
-        </div>
-      </div>
-    )
+    return <FullScreenSpinner />
   }
 
   if (!isConnected) {
@@ -82,17 +61,20 @@ export const AppShell = (): React.JSX.Element => {
     )
   }
 
-  const { title, crumb } = titleFor(location.pathname)
-
   return (
-    <div className="flex min-h-screen" data-testid="workspace-ready">
-      <Sidebar />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar title={title} crumb={crumb} />
-        <main className="mx-auto w-full max-w-6xl flex-1 px-5 py-8 sm:px-8">
+    <div className="flex min-h-screen flex-col" data-testid="workspace-ready">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[90] focus:rounded-lg focus:border focus:border-primary focus:bg-surface focus:px-3 focus:py-2 focus:text-sm focus:font-semibold focus:text-fg"
+      >
+        Skip to content
+      </a>
+      <TopBar />
+      <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-5 py-8 sm:px-8">
+        <Suspense fallback={<FullScreenSpinner />}>
           <Outlet />
-        </main>
-      </div>
+        </Suspense>
+      </main>
     </div>
   )
 }

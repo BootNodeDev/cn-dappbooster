@@ -25,7 +25,7 @@ import {
   type ProposalEvent,
 } from '@/wc/client'
 
-export const HomeView = (): JSX.Element => {
+export const HomeView = (): React.JSX.Element => {
   const v = useVault()
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [disconnectConfirmOpen, setDisconnectConfirmOpen] = useState(false)

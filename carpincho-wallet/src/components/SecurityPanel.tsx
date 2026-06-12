@@ -32,7 +32,7 @@ type PasswordState = VerifyState | ChangeState
 
 const initialState = (): VerifyState => ({ phase: 'verify', current: '', error: null })
 
-export const PasswordForm = (): JSX.Element => {
+export const PasswordForm = (): React.JSX.Element => {
   const v = useVault()
   const [state, setState] = useState<PasswordState>(initialState)
 
@@ -111,7 +111,7 @@ export const PasswordForm = (): JSX.Element => {
   )
 }
 
-export const AutoLockList = (): JSX.Element => {
+export const AutoLockList = (): React.JSX.Element => {
   const v = useVault()
   return (
     <OptionList

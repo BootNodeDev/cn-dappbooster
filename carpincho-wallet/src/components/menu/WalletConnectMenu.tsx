@@ -9,7 +9,7 @@ interface WalletConnectMenuProps {
   onPaired: () => void
 }
 
-export const WalletConnectMenu = ({ onPaired }: WalletConnectMenuProps): JSX.Element => {
+export const WalletConnectMenu = ({ onPaired }: WalletConnectMenuProps): React.JSX.Element => {
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
 

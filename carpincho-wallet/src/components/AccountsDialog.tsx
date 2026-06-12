@@ -19,7 +19,7 @@ interface AccountsDialogProps {
 
 // Centered account switcher: one popup with three in-place screens (list, add form, remove confirm)
 // backed by the vault. Transient state resets on close.
-export const AccountsDialog = ({ open, onOpenChange }: AccountsDialogProps): JSX.Element => {
+export const AccountsDialog = ({ open, onOpenChange }: AccountsDialogProps): React.JSX.Element => {
   const v = useVault()
   const [screen, setScreen] = useState<'list' | 'add'>('list')
   const [query, setQuery] = useState('')

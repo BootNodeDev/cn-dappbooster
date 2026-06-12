@@ -26,7 +26,7 @@ export const CreateAccountForm = ({
   onCancel,
   submitLabel = 'Create account',
   showIntro = false,
-}: CreateAccountFormProps): JSX.Element => {
+}: CreateAccountFormProps): React.JSX.Element => {
   const v = useVault()
   const [name, setName] = useState('')
   const [busy, setBusy] = useState(false)

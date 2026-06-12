@@ -89,7 +89,7 @@ const groupByDate = (transactions: TransactionRecord[]): DateGroup[] => {
 }
 
 // Detail body shown inside the popup opened from an activity row.
-const TransactionDetails = ({ tx }: { tx: TransactionRecord }): JSX.Element => (
+const TransactionDetails = ({ tx }: { tx: TransactionRecord }): React.JSX.Element => (
   <div>
     <dl className="m-0 grid grid-cols-[minmax(96px,auto)_1fr] gap-x-3 gap-y-2 text-[0.92rem]">
       {txDetailRows(tx).map((row) => (
@@ -124,7 +124,7 @@ interface ActivityListProps {
 }
 
 // Executed transactions grouped by day; a row opens a detail popup.
-export const ActivityList = ({ transactions }: ActivityListProps): JSX.Element => {
+export const ActivityList = ({ transactions }: ActivityListProps): React.JSX.Element => {
   const [selected, setSelected] = useState<TransactionRecord | null>(null)
   const groups = useMemo(() => groupByDate(transactions), [transactions])
 

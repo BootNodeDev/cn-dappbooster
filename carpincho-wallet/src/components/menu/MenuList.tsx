@@ -9,7 +9,7 @@ interface MenuListProps {
   onLogout: () => void
 }
 
-export const MenuList = ({ rows, onNavigate, onLogout }: MenuListProps): JSX.Element => (
+export const MenuList = ({ rows, onNavigate, onLogout }: MenuListProps): React.JSX.Element => (
   <ul className={MENU_LIST_CLASS}>
     {rows.map(({ label, to, tone, icon }) => (
       <MenuRow

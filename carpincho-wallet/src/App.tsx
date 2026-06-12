@@ -30,7 +30,7 @@ export const selectShellView = (
   return 'home'
 }
 
-const Shell = (): JSX.Element => {
+const Shell = (): React.JSX.Element => {
   const v = useVault()
   const [menuOpen, setMenuOpen] = useState(false)
   const view = selectShellView(v)
@@ -68,7 +68,7 @@ const Shell = (): JSX.Element => {
   )
 }
 
-const App = (): JSX.Element => (
+const App = (): React.JSX.Element => (
   <QueryClientProvider client={queryClient}>
     <VaultProvider>
       <TooltipProvider>

@@ -25,7 +25,7 @@ export const HomeTabs = ({
   tokensApi,
   transfersApi,
   sendApi,
-}: HomeTabsProps): JSX.Element => {
+}: HomeTabsProps): React.JSX.Element => {
   const activeAccountId = account?.id
   const [pendingTransferState, setPendingTransferState] = useState<{
     accountId: string | undefined
