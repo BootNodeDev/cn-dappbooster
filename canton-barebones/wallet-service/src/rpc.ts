@@ -884,7 +884,14 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
     const instrumentId = optionalInstrumentParam(p)
     if (isAmuletInstrument(instrumentId)) {
       try {
-        return await scanAmuletHoldingSummary(partyId, instrumentId)
+        const scanSummary = await scanAmuletHoldingSummary(partyId, instrumentId)
+        // Scan only aggregates the validator operator's holdings on LocalNet, so it
+        // answers 200 with no entry for an externally-hosted party. Treat that
+        // empty-but-OK result like "unavailable" and fall through to the ledger
+        // UTXOs — otherwise the wallet shows "no token" despite real holdings.
+        if (scanSummary.length > 0) {
+          return scanSummary
+        }
       } catch (error) {
         console.warn('[wallet-service] scan holding summary fallback', errorData(error))
       }

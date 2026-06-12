@@ -929,6 +929,74 @@ describe('CIP-56 token helpers', () => {
     })
   })
 
+  it('falls back to UTXO summaries when Scan returns no entry for the party', async () => {
+    // Scenario: on LocalNet, Scan aggregates only the validator operator's holdings,
+    // so it answers 200 with no summary for an externally-hosted party. That
+    // empty-but-OK response must still fall back to the UTXO path — otherwise the
+    // wallet (e.g. Carpincho's Tokens tab) shows "no token" despite real holdings.
+    const holdingContracts = [
+      {
+        contractId: 'holding-cid-1',
+        interfaceViewValue: {
+          owner: 'receiver::party',
+          amount: '4.0000000000',
+          instrumentId: { admin: 'admin::party', id: 'Amulet' },
+          lock: null,
+        },
+      },
+    ]
+    const seen: { params?: unknown } = {}
+    const rpc = createRpc(withToken(), {
+      fetch: async () =>
+        new Response(
+          JSON.stringify({
+            summaries: [],
+            record_time: '2026-06-10T12:00:00.000Z',
+            migration_id: 0,
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        ),
+      sdkFactory: async () => ({
+        token: {
+          utxos: {
+            list: async (params: unknown) => {
+              seen.params = params
+              return holdingContracts
+            },
+          },
+        },
+      }),
+    })
+
+    const res = (await rpc.handle({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'cip56.listHoldingSummary',
+      params: { partyId: 'receiver::party', instrumentId: { id: 'Amulet' } },
+    })) as JsonRpcResponse
+
+    assert.ok('result' in res)
+    assert.deepEqual(res.result, [
+      {
+        key: 'admin::party:Amulet',
+        tokenLabel: 'Amulet',
+        instrumentId: { admin: 'admin::party', id: 'Amulet' },
+        totalAmount: '4',
+        utxoCount: 1,
+        lockedCount: 0,
+        unlockedCount: 1,
+        holdings: holdingContracts,
+        source: 'utxos',
+      },
+    ])
+    assert.deepEqual(seen.params, {
+      partyId: 'receiver::party',
+      includeLocked: true,
+      limit: 100,
+      continueUntilCompletion: true,
+    })
+  })
+
   it('summarizes non-Amulet tokens from UTXOs without calling Scan', async () => {
     // Scenario: Scan aggregates only CC/Amulet. Other CIP-56 tokens must use the
     // generic UTXO list and filter by the requested instrument.
