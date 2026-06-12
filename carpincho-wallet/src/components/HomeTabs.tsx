@@ -1,7 +1,8 @@
 import { useCallback, useMemo, useState } from 'react'
 import { ActivityList } from '@/components/ActivityList'
+import { AssetsPanel } from '@/components/AssetsPanel'
 import { type Cip56SendApi, SendTokensPanel } from '@/components/SendTokensPanel'
-import { TokensPanel } from '@/components/TokensPanel'
+import { TransfersPanel } from '@/components/TransfersPanel'
 import { TabContent, Tabs, TabsList, TabTrigger } from '@/components/ui/Tabs'
 import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
 import type { Cip56HoldingsApi } from '@/hooks/useTokenHoldings'
@@ -18,7 +19,7 @@ interface HomeTabsProps {
 // The only scrolling region between the account selector and the footer.
 const TAB_CONTENT_CLASS = 'min-h-0 flex-1 overflow-y-auto outline-none'
 
-// Tabbed home body; token-related balances and actions share the Tokens view.
+// Tabbed home body; assets, transfers, activity, and sending each own a tab.
 export const HomeTabs = ({
   account,
   transactions,
@@ -55,34 +56,43 @@ export const HomeTabs = ({
       className="flex min-h-0 flex-1 flex-col"
     >
       <TabsList>
-        <TabTrigger value="activity">Activity</TabTrigger>
-        <TabTrigger value="tokens">
-          <span>Tokens</span>
+        <TabTrigger value="assets">Assets</TabTrigger>
+        <TabTrigger value="transfers">
+          <span>Transfers</span>
           {pendingTransferCount > 0 ? (
             <span className="ml-1 inline-grid min-w-5 place-items-center rounded-full bg-danger px-1.5 text-[0.72rem] leading-5 text-primary-foreground">
               {pendingTransferCount}
             </span>
           ) : null}
         </TabTrigger>
+        <TabTrigger value="activity">Activity</TabTrigger>
         <TabTrigger value="send">Send</TabTrigger>
       </TabsList>
+      <TabContent
+        value="assets"
+        className={TAB_CONTENT_CLASS}
+      >
+        <AssetsPanel
+          account={account}
+          api={tokensApi}
+        />
+      </TabContent>
+      <TabContent
+        forceMount
+        value="transfers"
+        className={TAB_CONTENT_CLASS}
+      >
+        <TransfersPanel
+          account={account}
+          api={transfersApi}
+          onPendingCountChange={onPendingTransferCountChange}
+        />
+      </TabContent>
       <TabContent
         value="activity"
         className={TAB_CONTENT_CLASS}
       >
         <ActivityList transactions={activeTransactions} />
-      </TabContent>
-      <TabContent
-        forceMount
-        value="tokens"
-        className={TAB_CONTENT_CLASS}
-      >
-        <TokensPanel
-          account={account}
-          api={tokensApi}
-          transfersApi={transfersApi}
-          onPendingTransferCountChange={onPendingTransferCountChange}
-        />
       </TabContent>
       <TabContent
         value="send"

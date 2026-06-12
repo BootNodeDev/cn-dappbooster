@@ -2,10 +2,9 @@ import { strict as assert } from 'node:assert'
 import { afterEach, describe, it } from 'node:test'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { TokensPanel } from '@/components/TokensPanel'
+import { AssetsPanel } from '@/components/AssetsPanel'
 import { getToastEntries, toast } from '@/components/ui/toast'
 import type { AmuletPreapprovalApi } from '@/hooks/useAmuletPreapproval'
-import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
 import type { Cip56HoldingsApi } from '@/hooks/useTokenHoldings'
 import { TestQueryClientProvider } from '@/test-utils/queryClient'
 import type { AccountPublic } from '@/vault/types'
@@ -47,17 +46,12 @@ const baseVault = (): VaultContextValue =>
   }) as VaultContextValue
 
 // Mounts the panel under vault context so it can resolve the active account.
-const renderTokens = (
-  api: Cip56HoldingsApi,
-  transfersApi?: Cip56TransferApi,
-  preapprovalApi?: AmuletPreapprovalApi,
-): void => {
+const renderAssets = (api: Cip56HoldingsApi, preapprovalApi?: AmuletPreapprovalApi): void => {
   render(
     <TestQueryClientProvider>
       <VaultContext.Provider value={baseVault()}>
-        <TokensPanel
+        <AssetsPanel
           api={api}
-          transfersApi={transfersApi}
           preapprovalApi={preapprovalApi}
         />
       </VaultContext.Provider>
@@ -65,7 +59,7 @@ const renderTokens = (
   )
 }
 
-describe('TokensPanel', () => {
+describe('AssetsPanel', () => {
   const originalClipboard = globalThis.navigator?.clipboard
 
   afterEach(() => {
@@ -121,7 +115,7 @@ describe('TokensPanel', () => {
       },
     }
 
-    renderTokens(api)
+    renderAssets(api)
 
     await screen.findByText('Token holdings')
     await screen.findByText('15.75 Amulet')
@@ -185,77 +179,13 @@ describe('TokensPanel', () => {
       },
     }
 
-    renderTokens(api)
+    renderAssets(api)
 
     await screen.findByText('15.75 Amulet')
     await userEvent.click(screen.getByRole('button', { name: 'Show holdings' }))
 
     assert.equal(screen.getByText('cached-holding-cid').textContent, 'cached-holding-cid')
     assert.equal(detailsCalls, 0)
-  })
-
-  it('shows incoming transfers only when the active party has pending receipts', async () => {
-    // Scenario: Tokens combines balances with token actions. Incoming transfers
-    // should appear above holdings when pending, and disappear when the API has none.
-    const holdingsApi: Cip56HoldingsApi = {
-      listTokenHoldingSummaries: async () => [
-        {
-          key: 'dso::party:Amulet',
-          tokenLabel: 'Amulet',
-          instrumentId: { admin: 'dso::party', id: 'Amulet' },
-          totalAmount: '7',
-          source: 'scan',
-        },
-      ],
-    }
-    const transfersApi: Cip56TransferApi = {
-      listPendingIncomingTransfers: async () => [
-        {
-          contractId: 'transfer-cid-1',
-          interfaceViewValue: {
-            transfer: {
-              sender: 'sender-party-1234567890abcdef',
-              receiver: 'alice::party',
-              amount: '42',
-              instrumentId: { id: 'Amulet' },
-            },
-          },
-        },
-      ],
-      acceptTransfer: async () => ({ updateId: 'update-1' }),
-    }
-
-    renderTokens(holdingsApi, transfersApi)
-
-    await screen.findByText('Incoming transfers')
-    await screen.findByText('42 Amulet')
-    await screen.findByText('7 Amulet')
-  })
-
-  it('hides the incoming transfer section when there are no pending receipts', async () => {
-    // Scenario: an empty incoming-transfer list should not take vertical space
-    // in Tokens; holdings remain the only visible token section.
-    const holdingsApi: Cip56HoldingsApi = {
-      listTokenHoldingSummaries: async () => [
-        {
-          key: 'dso::party:Amulet',
-          tokenLabel: 'Amulet',
-          instrumentId: { admin: 'dso::party', id: 'Amulet' },
-          totalAmount: '7',
-          source: 'scan',
-        },
-      ],
-    }
-    const transfersApi: Cip56TransferApi = {
-      listPendingIncomingTransfers: async () => [],
-      acceptTransfer: async () => ({ updateId: 'update-1' }),
-    }
-
-    renderTokens(holdingsApi, transfersApi)
-
-    await screen.findByText('7 Amulet')
-    assert.equal(screen.queryByText('Incoming transfers'), null)
-    assert.equal(screen.queryByText('No pending transfers'), null)
   })
 
   it('enables Amulet auto-accept for the selected party', async () => {
@@ -285,7 +215,7 @@ describe('TokensPanel', () => {
       },
     }
 
-    renderTokens(holdingsApi, undefined, preapprovalApi)
+    renderAssets(holdingsApi, preapprovalApi)
 
     await screen.findByText('Amulet auto-accept')
     await screen.findByText('Disabled')
@@ -314,7 +244,7 @@ describe('TokensPanel', () => {
       },
     }
 
-    renderTokens(holdingsApi, undefined, preapprovalApi)
+    renderAssets(holdingsApi, preapprovalApi)
 
     await screen.findByText('Disabled')
     await userEvent.click(screen.getByRole('button', { name: 'Enable auto-accept' }))
@@ -355,7 +285,7 @@ describe('TokensPanel', () => {
       },
     }
 
-    renderTokens(holdingsApi, undefined, preapprovalApi)
+    renderAssets(holdingsApi, preapprovalApi)
 
     await screen.findByText('Enabled')
     await screen.findByText('Expires 2026-06-11 12:00 UTC')
@@ -390,7 +320,7 @@ describe('TokensPanel', () => {
       cancelAmuletPreapproval: async () => ({ updateId: 'cancel-update-1' }),
     }
 
-    renderTokens(holdingsApi, undefined, preapprovalApi)
+    renderAssets(holdingsApi, preapprovalApi)
 
     await screen.findByText('contractId:')
     await screen.findByText('0003..449c')
@@ -423,7 +353,7 @@ describe('TokensPanel', () => {
       cancelAmuletPreapproval: async () => ({ updateId: 'cancel-expired-1' }),
     }
 
-    renderTokens(holdingsApi, undefined, preapprovalApi)
+    renderAssets(holdingsApi, preapprovalApi)
 
     await screen.findByText('Expired')
     await screen.findByText('Expires 2026-06-01 12:00 UTC')

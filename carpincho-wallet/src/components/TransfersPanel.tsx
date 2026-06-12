@@ -13,7 +13,7 @@ import { shortMiddle } from '@/utils/account'
 import type { AccountPublic } from '@/vault/types'
 import { useVault } from '@/vault/useVault'
 
-export interface IncomingTransfersSectionProps {
+export interface TransfersPanelProps {
   account?: AccountPublic
   api?: Cip56TransferApi
   hideWhenEmpty?: boolean
@@ -34,12 +34,12 @@ const TransferDetailRow = ({ label, value }: TransferDetailRowProps): JSX.Elemen
 )
 
 // Renders incoming CIP-56 transfer instructions that require receiver acceptance.
-export const IncomingTransfersSection = ({
+export const TransfersPanel = ({
   account,
   api,
   hideWhenEmpty = false,
   onPendingCountChange,
-}: IncomingTransfersSectionProps): JSX.Element | null => {
+}: TransfersPanelProps): JSX.Element | null => {
   const vault = useVault()
   const activeAccount = account ?? vault.primary ?? vault.accounts[0]
   const [acceptingCid, setAcceptingCid] = useState<string | undefined>(undefined)

@@ -1,13 +1,11 @@
 import { useEffect, useState } from 'react'
 import type { TokenHoldingSummary } from '@/cip56/holdings'
 import { transferTimeLabel } from '@/cip56/transfers'
-import { IncomingTransfersSection } from '@/components/IncomingTransfersSection'
 import { PLAIN_ICON_BUTTON_CLASS, PrimaryButton, SecondaryButton } from '@/components/ui/Button'
 import { COPY_ICON } from '@/components/ui/icons'
 import { toast } from '@/components/ui/toast'
 import type { AmuletPreapprovalApi } from '@/hooks/useAmuletPreapproval'
 import { useAmuletPreapproval } from '@/hooks/useAmuletPreapproval'
-import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
 import { useTokenHoldingDetails } from '@/hooks/useTokenHoldingDetails'
 import type { Cip56HoldingsApi } from '@/hooks/useTokenHoldings'
 import { useTokenHoldings } from '@/hooks/useTokenHoldings'
@@ -15,12 +13,10 @@ import { copyText } from '@/utils/clipboard'
 import type { AccountPublic } from '@/vault/types'
 import { useVault } from '@/vault/useVault'
 
-export interface TokensPanelProps {
+export interface AssetsPanelProps {
   account?: AccountPublic
   api?: Cip56HoldingsApi
-  transfersApi?: Cip56TransferApi
   preapprovalApi?: AmuletPreapprovalApi
-  onPendingTransferCountChange?: (count: number) => void
 }
 
 interface HoldingDetailRowProps {
@@ -215,13 +211,7 @@ const AmuletPreapprovalSection = ({ account, api }: AmuletPreapprovalSectionProp
 }
 
 // Renders active CIP-56 token holding UTXOs grouped as token balances.
-export const TokensPanel = ({
-  account,
-  api,
-  transfersApi,
-  preapprovalApi,
-  onPendingTransferCountChange,
-}: TokensPanelProps): JSX.Element => {
+export const AssetsPanel = ({ account, api, preapprovalApi }: AssetsPanelProps): JSX.Element => {
   const vault = useVault()
   const activeAccount = account ?? vault.primary ?? vault.accounts[0]
   const [expandedTokenKey, setExpandedTokenKey] = useState<string | undefined>(undefined)
@@ -242,13 +232,6 @@ export const TokensPanel = ({
 
   return (
     <div className="flex min-h-full flex-col gap-3 px-1 py-2">
-      <IncomingTransfersSection
-        account={activeAccount}
-        api={transfersApi}
-        hideWhenEmpty
-        onPendingCountChange={onPendingTransferCountChange}
-      />
-
       <AmuletPreapprovalSection
         account={activeAccount}
         api={preapprovalApi}

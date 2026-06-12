@@ -69,15 +69,15 @@ const baseVault = (): VaultContextValue =>
     setAutoLockOption: () => undefined,
   }) as VaultContextValue
 
-describe('HomeTabs token navigation', () => {
+describe('HomeTabs navigation', () => {
   afterEach(() => {
     // HomeTabs child panels can own polling hooks, so unmount them between scenarios.
     cleanup()
   })
 
-  it('renders Activity, Tokens, and Send tabs without the former Assets tab', () => {
-    // Scenario: token balances and incoming token actions now live under Tokens.
-    // The top-level wallet navigation should expose token viewing and token sending separately.
+  it('renders Assets, Transfers, Activity, and Send tabs', () => {
+    // Scenario: token balances, incoming transfers, history, and sending each own a
+    // top-level tab. Activity stays the default landing view.
     render(
       <TestQueryClientProvider>
         <VaultContext.Provider value={baseVault()}>
@@ -87,14 +87,14 @@ describe('HomeTabs token navigation', () => {
     )
 
     assert.equal(screen.getByRole('tab', { name: 'Activity' }).getAttribute('data-state'), 'active')
-    assert.ok(screen.getByRole('tab', { name: 'Tokens' }))
+    assert.ok(screen.getByRole('tab', { name: 'Assets' }))
+    assert.ok(screen.getByRole('tab', { name: 'Transfers' }))
     assert.ok(screen.getByRole('tab', { name: 'Send' }))
-    assert.equal(screen.queryByRole('tab', { name: /Assets/ }), null)
   })
 
-  it('opens the Tokens tab with the current party holdings', async () => {
-    // Scenario: token balances live in their own tab, separate from incoming
-    // transfer requests. Opening Tokens should mount the holdings panel for the
+  it('opens the Assets tab with the current party holdings', async () => {
+    // Scenario: token balances live in the Assets tab, separate from incoming
+    // transfer requests. Opening Assets should mount the holdings panel for the
     // active account and show the grouped balance.
     const holdingsApi: Cip56HoldingsApi = {
       listTokenHoldingSummaries: async () => [
@@ -119,16 +119,16 @@ describe('HomeTabs token navigation', () => {
       </TestQueryClientProvider>,
     )
 
-    await userEvent.click(screen.getByRole('tab', { name: 'Tokens' }))
+    await userEvent.click(screen.getByRole('tab', { name: 'Assets' }))
 
     await screen.findByText('Token holdings')
     await screen.findByText('7 Amulet')
   })
 
-  it('badges the Tokens tab when hidden incoming transfers require action', async () => {
-    // Scenario: incoming transfer polling moved from the deleted Assets tab to
-    // Tokens. The Tokens panel must stay mounted while Activity is selected so
-    // pending receiver-acceptance work can still badge the tab.
+  it('badges the Transfers tab when hidden incoming transfers require action', async () => {
+    // Scenario: incoming transfer polling lives in the Transfers tab, which stays
+    // mounted while Activity is selected so pending receiver-acceptance work can
+    // still badge the tab.
     const transfersApi: Cip56TransferApi = {
       listPendingIncomingTransfers: async () => [
         {
@@ -162,7 +162,7 @@ describe('HomeTabs token navigation', () => {
     )
 
     assert.equal(screen.getByRole('tab', { name: 'Activity' }).getAttribute('data-state'), 'active')
-    await screen.findByRole('tab', { name: 'Tokens 1' })
+    await screen.findByRole('tab', { name: 'Transfers 1' })
   })
 
   it('shows Activity only for the selected account', () => {
