@@ -4,6 +4,8 @@ import {
   acceptPendingTransfer,
   createTokenTransfer,
   listPendingIncomingTransfers,
+  type PendingTokenTransfer,
+  transferDirection,
 } from '@/cip56/transfers'
 import type { AccountPublic } from '@/vault/types'
 
@@ -219,5 +221,40 @@ describe('CIP-56 wallet-service transfer helpers', () => {
       disclosedContracts: [{ contractId: 'transfer-context-cid', createdEventBlob: 'blob' }],
     })
     assert.equal((recorded[0] as { method?: string } | undefined)?.method, 'cip56.transfer.create')
+  })
+})
+
+describe('transferDirection', () => {
+  const transferWith = (sender?: string, receiver?: string): PendingTokenTransfer => ({
+    contractId: 'cid',
+    interfaceViewValue: { transfer: { sender, receiver } },
+  })
+
+  it('is outgoing only when the party sent it to someone else', () => {
+    assert.equal(
+      transferDirection(transferWith('alice::party', 'bob::party'), 'alice::party'),
+      'outgoing',
+    )
+  })
+
+  it('is incoming when the party is the receiver', () => {
+    assert.equal(
+      transferDirection(transferWith('bob::party', 'alice::party'), 'alice::party'),
+      'incoming',
+    )
+  })
+
+  it('is incoming for a transfer the party sent to itself', () => {
+    assert.equal(
+      transferDirection(transferWith('alice::party', 'alice::party'), 'alice::party'),
+      'incoming',
+    )
+  })
+
+  it('defaults to incoming when the party id is unknown', () => {
+    assert.equal(
+      transferDirection(transferWith('alice::party', 'bob::party'), undefined),
+      'incoming',
+    )
   })
 })

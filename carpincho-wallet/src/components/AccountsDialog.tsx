@@ -27,19 +27,14 @@ export const AccountsDialog = ({ open, onOpenChange }: AccountsDialogProps): JSX
 
   const sorted = useMemo(() => sortAccounts(v.accounts), [v.accounts])
   // The active account is omitted: switching to the account you are already on is a no-op.
-  const others = useMemo(
-    () => sorted.filter((a) => a.id !== v.primary?.id),
-    [sorted, v.primary?.id],
-  )
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (q === '') {
-      return others
-    }
-    return others.filter(
-      (a) => a.name.toLowerCase().includes(q) || a.partyId.toLowerCase().includes(q),
+    return sorted.filter(
+      (a) =>
+        a.id !== v.primary?.id &&
+        (q === '' || a.name.toLowerCase().includes(q) || a.partyId.toLowerCase().includes(q)),
     )
-  }, [others, query])
+  }, [sorted, query, v.primary?.id])
 
   const isAdd = screen === 'add' && removeTarget === null
 

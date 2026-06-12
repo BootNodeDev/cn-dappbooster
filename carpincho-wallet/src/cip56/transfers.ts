@@ -69,6 +69,19 @@ export const transferDescription = (transfer: PendingTokenTransfer): string | un
   return typeof value === 'string' && value.trim() !== '' ? value.trim() : undefined
 }
 
+// Classifies a transfer relative to a party. The ledger returns every instruction the party
+// is a stakeholder on, so a transfer is outgoing only when the party sent it to someone else;
+// a transfer to oneself stays incoming because the party is still the one who must accept it.
+export const transferDirection = (
+  transfer: PendingTokenTransfer,
+  partyId: string | undefined,
+): 'incoming' | 'outgoing' => {
+  const view = transfer.interfaceViewValue?.transfer
+  return partyId !== undefined && view?.sender === partyId && view.receiver !== partyId
+    ? 'outgoing'
+    : 'incoming'
+}
+
 // Reads the current transfer status across SDK payload variants.
 export const transferStatusLabel = (transfer: PendingTokenTransfer): string =>
   transfer.interfaceViewValue?.status?.tag ??

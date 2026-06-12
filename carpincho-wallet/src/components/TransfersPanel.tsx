@@ -4,6 +4,7 @@ import type { PendingTokenTransfer } from '@/cip56/transfers'
 import {
   tokenDisplayLabel,
   transferDescription,
+  transferDirection,
   transferStatusLabel,
   transferTimeLabel,
 } from '@/cip56/transfers'
@@ -112,7 +113,7 @@ interface TransferCardProps {
   onToggleDetails: (transferInstructionCid: string) => void
   // Acceptance only applies to incoming transfers; senders just watch theirs settle.
   isAccepting?: boolean
-  onAccept?: (transferInstructionCid: string) => void
+  onAccept?: (transferInstructionCid: string) => void | Promise<void>
 }
 
 // One active transfer instruction; receivers can accept, senders only watch it settle.
@@ -156,7 +157,7 @@ const TransferCard = ({
               className="px-3 py-1.5 text-[0.82rem]"
               disabled={isAccepting}
               onClick={() => {
-                onAccept?.(transfer.contractId)
+                void onAccept?.(transfer.contractId)
               }}
             >
               {isAccepting ? 'Accepting...' : 'Accept'}
@@ -228,18 +229,12 @@ export const TransfersPanel = ({
     recordTransaction: vault.recordTransaction,
   })
 
-  // The ledger returns every instruction the party is a stakeholder on. A transfer is
-  // outgoing only when we sent it to someone else; if we are the receiver (including a
-  // transfer to ourselves) we are the one who must accept it, so it stays actionable.
   const { incoming, outgoing } = useMemo(() => {
     const partyId = activeAccount?.partyId
     const incomingTransfers: PendingTokenTransfer[] = []
     const outgoingTransfers: PendingTokenTransfer[] = []
     for (const transfer of transfers) {
-      const view = transfer.interfaceViewValue?.transfer
-      const isOutgoing =
-        partyId !== undefined && view?.sender === partyId && view.receiver !== partyId
-      if (isOutgoing) {
+      if (transferDirection(transfer, partyId) === 'outgoing') {
         outgoingTransfers.push(transfer)
       } else {
         incomingTransfers.push(transfer)
@@ -300,14 +295,6 @@ export const TransfersPanel = ({
         </div>
       )}
 
-      {!hasActive && !loading ? (
-        <div className="flex flex-1 flex-col items-center justify-center px-4 py-10 text-center">
-          <p className="m-0 text-[0.95rem] font-medium text-muted-foreground">
-            No pending transfers
-          </p>
-        </div>
-      ) : null}
-
       {hasActive ? (
         <div className="flex flex-col gap-2">
           {incoming.map((transfer) => (
@@ -318,9 +305,7 @@ export const TransfersPanel = ({
               isExpanded={expandedCid === transfer.contractId}
               onToggleDetails={toggleDetails}
               isAccepting={acceptingCid === transfer.contractId}
-              onAccept={(cid) => {
-                void onAccept(cid)
-              }}
+              onAccept={onAccept}
             />
           ))}
           {outgoing.map((transfer) => (
@@ -333,7 +318,13 @@ export const TransfersPanel = ({
             />
           ))}
         </div>
-      ) : null}
+      ) : loading ? null : (
+        <div className="flex flex-1 flex-col items-center justify-center px-4 py-10 text-center">
+          <p className="m-0 text-[0.95rem] font-medium text-muted-foreground">
+            No pending transfers
+          </p>
+        </div>
+      )}
     </div>
   )
 }
