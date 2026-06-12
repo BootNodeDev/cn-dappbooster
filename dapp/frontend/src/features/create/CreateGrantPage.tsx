@@ -89,7 +89,7 @@ export const CreateGrantPage = (): React.JSX.Element => {
     { id: 'm2', date: addMonths(today, 9).toISOString(), pct: '60' },
     { id: 'm3', date: addMonths(today, 18).toISOString(), pct: '100' },
   ])
-  const [note, setNote] = useState('')
+  const [name, setName] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [disclosedBytes, setDisclosedBytes] = useState<number | null>(null)
   // When set, the schedule is a quick-demo preset and gets re-anchored to submit time.
@@ -147,7 +147,8 @@ export const CreateGrantPage = (): React.JSX.Element => {
   const receiverWellFormed = /.+::.+/.test(receiver.trim())
   const isSelf = party !== undefined && receiver.trim() === party.partyId
   const receiverValid = receiverWellFormed && !isSelf
-  const valid = scheduleValid && amountValid && fundsOk && receiverValid
+  const nameValid = name.trim() !== ''
+  const valid = nameValid && scheduleValid && amountValid && fundsOk && receiverValid
 
   // Any manual schedule edit drops the demo flag so the entered dates are used verbatim.
   const setMilestone = (i: number, patch: Partial<MilestoneInput>): void => {
@@ -194,11 +195,6 @@ export const CreateGrantPage = (): React.JSX.Element => {
     // Re-anchor a demo preset to NOW so its short window starts at submit, not when
     // the preset was clicked (otherwise it is mostly vested before the beneficiary accepts).
     const finalSchedule = demo === null ? schedule : buildDemoSchedule(demo, now())
-    const trimmedNote = note.trim()
-    const title =
-      trimmedNote !== ''
-        ? trimmedNote.split(/[.\n]/)[0].slice(0, 60)
-        : `Escrow to ${receiver.split('::')[0]}`
     setSubmitting(true)
     try {
       const result = await createVesting(backend, partyId, {
@@ -206,8 +202,8 @@ export const CreateGrantPage = (): React.JSX.Element => {
         receiver: receiver.trim(),
         totalAmount: amountNum,
         schedule: finalSchedule,
-        title,
-        note: trimmedNote === '' ? undefined : trimmedNote,
+        title: name.trim().slice(0, 60),
+        note: undefined,
       })
       setDisclosedBytes(result.disclosedBytes)
       toast.success(
@@ -224,8 +220,20 @@ export const CreateGrantPage = (): React.JSX.Element => {
     <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
       <div className="flex flex-col gap-5">
         <Card className="p-6">
-          <h2 className="text-sm font-extrabold text-fg">Beneficiary &amp; amount</h2>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <label htmlFor="name" className={labelClass}>
+                Name
+              </label>
+              <input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Advisor grant"
+                maxLength={60}
+                className={cn(inputClass, 'text-sm')}
+              />
+            </div>
             <div className="sm:col-span-2">
               <div className="flex items-center justify-between">
                 <label htmlFor="receiver" className={labelClass}>
@@ -452,28 +460,14 @@ export const CreateGrantPage = (): React.JSX.Element => {
           )}
         </Card>
 
-        <Card className="p-6">
-          <label htmlFor="note" className={labelClass}>
-            Note (optional)
-          </label>
-          <textarea
-            id="note"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            rows={2}
-            placeholder="What is this escrow for?"
-            className={cn(inputClass, 'h-auto resize-y py-2.5')}
-          />
-        </Card>
-
         {disclosedBytes !== null ? (
           <div className="rounded-xl border border-success/40 bg-success-soft p-4 text-center">
             <p className="text-sm font-bold text-fg">Proposal created</p>
             <p className="mt-1 font-mono text-xs text-success">
               delivered via explicit disclosure · {disclosedBytes} bytes
             </p>
-            <Button size="sm" className="mt-3" onClick={() => navigate('/proposals')}>
-              View proposals
+            <Button size="sm" className="mt-3" onClick={() => navigate('/dashboard')}>
+              View escrows
             </Button>
           </div>
         ) : (
