@@ -139,7 +139,7 @@ Developer mode enabled.
 | --- | --- | --- | --- |
 | wallet-service | Carpincho bridge for external-party onboarding | `http://localhost:3010` | Carpincho |
 | Carpincho wallet | Browser wallet UI/provider | `http://localhost:3011` | user/dApp |
-| dApp frontend | cn-darkpools dark-pool trading dApp | `http://localhost:3012` | user |
+| dApp frontend | CN Dark Pools dark-pool trading dApp | `http://localhost:3012` | user |
 | app-user Wallet UI | Official Splice wallet UI for app-user | `http://wallet.localhost:2000` | optional/manual |
 | app-user Ledger API | gRPC Ledger API | `grpc://localhost:2901` | SDK/tools |
 | app-user Admin API | gRPC Admin API | `grpc://localhost:2902` | wallet-service/tools |

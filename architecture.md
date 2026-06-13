@@ -6,7 +6,7 @@
 | `canton-barebones/` | Bash + Docker Compose + official Splice LocalNet bundle | Starts `sv + app-user`, health checks, token helper, DAR upload |
 | `canton-barebones/wallet-service/` | Node 24 + Express 5 + TypeScript + `@canton-network/wallet-sdk` | Bridge Carpincho uses for external-party onboarding and participant JSON API calls |
 | `carpincho-wallet/` | Vite 6 + React 18 + Tailwind v4 + Radix UI + WalletConnect + `@tanstack/react-query` + `@noble/ed25519` | CIP-0103 browser wallet, encrypted vault, signer, injected provider |
-| `dapp/frontend/` | Vite + React + Tailwind v4 + TanStack Router + framer-motion + zustand + `@canton-network/dapp-sdk` | cn-darkpools: private dark-pool trading dApp (mocked backend) |
+| `dapp/frontend/` | Vite + React + Tailwind v4 + Radix UI + TanStack Router + framer-motion + boring-avatars + `@canton-network/dapp-sdk` | CN Dark Pools: private dark-pool trading dApp (mocked backend) |
 | `dapp/daml/` | DAML | `quickstart-tally` DAR |
 | `dapp/e2e/` | Playwright + TypeScript | Black-box integration tests |
 | `canton-connect-kit/` | TypeScript + React | Reusable wallet connection hooks |
