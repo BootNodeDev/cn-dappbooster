@@ -8,12 +8,11 @@ import {
   MOON_ICON,
   SUN_ICON,
 } from '@/components/ui/icons'
-import { Sheet } from '@/components/ui/Sheet'
 import { toast } from '@/components/ui/toast'
 import { useTheme } from '@/theme/useTheme'
 import { copyToClipboard } from './utils/clipboard'
 import { errorMessage } from './utils/errorMessage'
-import { formatPartyId, shortenIdentifier } from './utils/formatPartyId'
+import { formatPartyId } from './utils/formatPartyId'
 
 const ICON_CHIP_CLASS =
   'inline-grid size-9 place-items-center rounded-full border border-border bg-surface ' +
@@ -40,24 +39,18 @@ const writeReconnect = (value: string | null): void => {
   }
 }
 
-// Wallet header (connect/account + theme), welcome hero, WC pairing, and lock
-// gating; renders children only when connected + unlocked behind workspace-ready.
+// Wallet header (connect/account + theme), welcome hero, and lock gating;
+// renders children only when connected + unlocked behind workspace-ready.
 export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Element => {
-  const { connect, disconnect, isConnecting, isConnected, pairingUri } = useConnect()
+  const { connect, disconnect, isConnecting, isConnected } = useConnect()
   const { party } = useParty()
   const { isLocked } = useWalletStatus()
   const { mode, setMode } = useTheme()
 
-  const [pairingCopied, setPairingCopied] = useState(false)
   const [accountOpen, setAccountOpen] = useState(false)
-  const [connectMenuOpen, setConnectMenuOpen] = useState(false)
   // Seeded before first paint so the reconnect check shows a spinner, not the hero.
   const [reconnecting, setReconnecting] = useState(() => readReconnect() === 'extension')
-  const [connectMode, setConnectMode] = useState<'extension' | 'walletconnect' | undefined>(
-    undefined,
-  )
 
-  const connectMenuRef = useRef<HTMLDivElement>(null)
   const accountMenuRef = useRef<HTMLDivElement>(null)
   // Set by a user-initiated connect; the success toast fires from the effect
   // below once `party` lands (connect() resolves before the context updates).
@@ -72,24 +65,20 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
     }
   }, [party])
 
-  // Close header menus on outside click / Escape (header backdrop-blur traps a
+  // Close the account menu on outside click / Escape (header backdrop-blur traps a
   // fixed backdrop, so use a document listener).
   useEffect(() => {
-    if (!connectMenuOpen && !accountOpen) {
+    if (!accountOpen) {
       return
     }
     const onPointerDown = (event: PointerEvent): void => {
       const target = event.target as Node
-      if (connectMenuRef.current !== null && !connectMenuRef.current.contains(target)) {
-        setConnectMenuOpen(false)
-      }
       if (accountMenuRef.current !== null && !accountMenuRef.current.contains(target)) {
         setAccountOpen(false)
       }
     }
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') {
-        setConnectMenuOpen(false)
         setAccountOpen(false)
       }
     }
@@ -99,7 +88,7 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
       document.removeEventListener('pointerdown', onPointerDown)
       document.removeEventListener('keydown', onKeyDown)
     }
-  }, [connectMenuOpen, accountOpen])
+  }, [accountOpen])
 
   // Toggle flips light/dark only; resolve `system` so the first click inverts.
   const resolvedTheme: 'light' | 'dark' =
@@ -130,23 +119,19 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
       .finally(() => setReconnecting(false))
   }, [])
 
-  const onConnect = async (connectVia: 'extension' | 'walletconnect'): Promise<void> => {
-    setConnectMode(connectVia)
+  const onConnect = async (): Promise<void> => {
     connectToastPending.current = true
     try {
-      await connect(connectVia)
-      writeReconnect(connectVia)
+      await connect('extension')
+      writeReconnect('extension')
     } catch (err) {
       connectToastPending.current = false
       toast.error(errorMessage(err))
-    } finally {
-      setConnectMode(undefined)
     }
   }
 
   const onDisconnect = async (): Promise<void> => {
     setAccountOpen(false)
-    setPairingCopied(false)
     // Drop any armed connect toast so a later party change can't fire a stale
     // "Connected as" after this disconnect.
     connectToastPending.current = false
@@ -160,16 +145,6 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
       return
     }
     await copyToClipboard(party.partyId, 'Party id copied.')
-  }
-
-  const copyPairingUri = async (): Promise<void> => {
-    if (pairingUri === undefined) {
-      return
-    }
-    await copyToClipboard(pairingUri, () => {
-      setPairingCopied(true)
-      window.setTimeout(() => setPairingCopied(false), 1400)
-    })
   }
 
   const nextTheme = resolvedTheme === 'dark' ? 'light' : 'dark'
@@ -188,55 +163,18 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
   )
 
   const connectControls = !isConnected ? (
-    <div className="relative" ref={connectMenuRef}>
-      <button
-        type="button"
-        data-testid="connect-menu"
-        onClick={() => setConnectMenuOpen((open) => !open)}
-        aria-haspopup="true"
-        aria-expanded={connectMenuOpen}
-        disabled={isConnecting}
-        className="inline-flex h-9 items-center gap-2 rounded-full border border-border-strong bg-surface pl-4 pr-3 text-sm font-semibold text-foreground transition-colors enabled:hover:border-primary enabled:hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        <span>{isConnecting ? 'Connecting…' : 'Connect wallet'}</span>
-        <span className="[&_svg]:size-4">{CHEVRON_DOWN_ICON}</span>
-      </button>
-      {connectMenuOpen && (
-        <div className="absolute right-0 z-50 mt-2 w-64 rounded-xl border border-border bg-surface p-2 shadow-popover">
-          <button
-            type="button"
-            data-testid="connect-extension"
-            onClick={() => {
-              setConnectMenuOpen(false)
-              void onConnect('extension')
-            }}
-            disabled={isConnecting}
-            className="flex w-full items-center gap-2.5 rounded-lg p-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <img
-              src="/carpincho-icon.svg"
-              alt=""
-              aria-hidden="true"
-              className="size-6 rounded-full"
-            />
-            {isConnecting && connectMode === 'extension' ? 'Connecting…' : 'Carpincho Wallet'}
-          </button>
-          <button
-            type="button"
-            data-testid="connect-walletconnect"
-            onClick={() => {
-              setConnectMenuOpen(false)
-              void onConnect('walletconnect')
-            }}
-            disabled={isConnecting}
-            className="mt-1 flex w-full items-center gap-2.5 rounded-lg p-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <img src="/walletconnect-logo.webp" alt="" aria-hidden="true" className="size-[18px]" />
-            {isConnecting && connectMode === 'walletconnect' ? 'Pairing…' : 'WalletConnect'}
-          </button>
-        </div>
-      )}
-    </div>
+    <button
+      type="button"
+      data-testid="connect-extension"
+      onClick={() => {
+        void onConnect()
+      }}
+      disabled={isConnecting}
+      className="inline-flex h-9 items-center gap-2 rounded-full border border-border-strong bg-surface pl-2.5 pr-4 text-sm font-semibold text-foreground transition-colors enabled:hover:border-primary enabled:hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      <img src="/carpincho-icon.svg" alt="" aria-hidden="true" className="size-6 rounded-full" />
+      {isConnecting ? 'Connecting…' : 'Connect'}
+    </button>
   ) : (
     <div className="relative" ref={accountMenuRef}>
       <button
@@ -325,53 +263,6 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
         </div>
       </header>
 
-      <Sheet
-        open={
-          !isConnected &&
-          connectMode === 'walletconnect' &&
-          (isConnecting || pairingUri !== undefined)
-        }
-        onOpenChange={(open) => {
-          if (!open) {
-            void disconnect()
-          }
-        }}
-        side="center"
-        title="WalletConnect"
-        description="Pair a WalletConnect-compatible wallet."
-      >
-        {pairingUri === undefined ? (
-          <div className="flex items-center gap-2.5 py-2 text-sm text-muted-foreground">
-            <span className="size-4 animate-spin rounded-full border-2 border-primary/25 border-t-primary" />
-            <span>Preparing WalletConnect…</span>
-          </div>
-        ) : (
-          <>
-            <p className="mb-3 text-sm text-muted-foreground">
-              Paste this pairing link into your WalletConnect-compatible wallet.
-            </p>
-            <code className="block break-all rounded-lg bg-muted p-3 font-mono text-xs text-foreground">
-              {shortenIdentifier(pairingUri)}
-            </code>
-            <div className="mt-4 flex justify-end">
-              <button
-                type="button"
-                className={
-                  pairingCopied
-                    ? 'inline-flex h-9 items-center rounded-full border border-success/30 bg-success-soft px-4 text-sm font-semibold text-success'
-                    : 'inline-flex h-9 items-center rounded-full border border-border-strong bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:border-primary hover:text-primary'
-                }
-                onClick={() => {
-                  void copyPairingUri()
-                }}
-              >
-                {pairingCopied ? 'Copied' : 'Copy link'}
-              </button>
-            </div>
-          </>
-        )}
-      </Sheet>
-
       <main
         id="main"
         tabIndex={-1}
@@ -393,26 +284,24 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
               alt="cn-darkpools"
               className="animate-drift mb-7 size-28 rounded-3xl"
             />
-            <h1 className="max-w-xl font-display text-4xl font-extrabold leading-[1.05] tracking-[-0.02em] text-foreground sm:text-5xl">
-              Private trading,
+            <h1 className="max-w-2xl font-display text-4xl font-extrabold leading-[1.05] tracking-[-0.02em] text-foreground sm:text-5xl">
+              Trade without
               <br />
-              on Canton
+              showing your hand
             </h1>
-            <p className="mt-4 max-w-lg text-base leading-relaxed text-muted-foreground">
-              Place private orders no one else can see. Crossing orders settle atomically at the
-              midpoint price - no public book, no front-running.
-            </p>
-            <p className="mt-8 font-display text-lg font-bold text-foreground">
-              Connect your wallet to begin
+            <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground">
+              cn-darkpools is a dark pool built on Canton. You place an order, it stays hidden until
+              the venue finds the other side, and you both settle at the price in the middle. No
+              public book for the room to read, nothing for bots to race ahead of.
             </p>
             <button
               type="button"
               data-testid="hero-connect"
               onClick={() => {
-                void onConnect('extension')
+                void onConnect()
               }}
               disabled={isConnecting}
-              className="relative isolate mt-4 inline-flex h-11 items-center gap-2 overflow-hidden rounded-full border border-primary bg-primary px-6 text-[0.95rem] font-semibold text-primary-foreground transition before:absolute before:inset-0 before:-z-10 before:bg-[image:var(--bg-gradient-brand)] before:opacity-0 before:transition-opacity enabled:hover:border-transparent enabled:hover:shadow-glow enabled:hover:before:opacity-100 disabled:cursor-not-allowed disabled:opacity-60"
+              className="relative isolate mt-9 inline-flex h-11 items-center gap-2 overflow-hidden rounded-full border border-primary bg-primary px-6 text-[0.95rem] font-semibold text-primary-foreground transition before:absolute before:inset-0 before:-z-10 before:bg-[image:var(--bg-gradient-brand)] before:opacity-0 before:transition-opacity enabled:hover:border-transparent enabled:hover:shadow-glow enabled:hover:before:opacity-100 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <img
                 src="/carpincho-icon.svg"
@@ -420,29 +309,8 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
                 aria-hidden="true"
                 className="size-6 rounded-full"
               />
-              {isConnecting && connectMode === 'extension' ? 'Connecting…' : 'Carpincho Wallet'}
+              {isConnecting ? 'Connecting…' : 'Connect'}
             </button>
-            <p className="mt-1.5 text-xs text-muted-foreground">(browser extension)</p>
-
-            <div className="mt-4 flex items-center gap-3 text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-              <span className="h-px w-8 bg-border" />
-              or
-              <span className="h-px w-8 bg-border" />
-            </div>
-
-            <button
-              type="button"
-              data-testid="hero-connect-walletconnect"
-              onClick={() => {
-                void onConnect('walletconnect')
-              }}
-              disabled={isConnecting}
-              className="mt-4 inline-flex h-11 items-center gap-2 rounded-full border border-border-strong bg-surface px-6 text-[0.95rem] font-semibold text-foreground transition-colors enabled:hover:border-primary enabled:hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <img src="/walletconnect-logo.webp" alt="" aria-hidden="true" className="size-5" />
-              {isConnecting && connectMode === 'walletconnect' ? 'Pairing…' : 'WalletConnect'}
-            </button>
-            <p className="mt-1.5 text-xs text-muted-foreground">(carpincho web app)</p>
           </section>
         ) : isLocked ? (
           <section

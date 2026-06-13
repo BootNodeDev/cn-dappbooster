@@ -8,9 +8,6 @@ import { ConnectionBar } from './ConnectionBar'
 import { routeTree } from './routeTree.gen'
 import { loadRuntimeConfig } from './runtimeConfig'
 
-const envString = (name: string): string =>
-  ((import.meta.env[name] as string | undefined) ?? '').trim()
-
 const router = createRouter({ routeTree })
 
 declare module '@tanstack/react-router' {
@@ -29,7 +26,6 @@ export const App = (): JSX.Element => {
             appName: 'cn-darkpools',
             appDescription: 'Private dark-pool trading on Canton Network',
             network: runtimeConfig.cantonNetwork,
-            walletConnectProjectId: envString('VITE_WC_PROJECT_ID'),
           }}
         >
           <ConnectionBar>
