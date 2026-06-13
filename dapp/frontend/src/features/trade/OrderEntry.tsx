@@ -3,7 +3,7 @@ import { Select } from '@/components/ui/Select'
 import { SideToggle } from '@/components/ui/SideToggle'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { toast } from '@/components/ui/toast'
-import { buyFundingTarget, quoteAmount, validateOrder } from '@/darkpool/darkpoolMath'
+import { buyFundingTarget, freeOf, quoteAmount, validateOrder } from '@/darkpool/darkpoolMath'
 import { formatNotional, formatPrice, formatQty } from '@/darkpool/format'
 import { useBalances, useDarkPoolActions, useTrades } from '@/darkpool/hooks'
 import type { Pool, Side } from '@/darkpool/types'
@@ -21,14 +21,6 @@ const EXPIRY_MS: Record<string, number | null> = {
   '5m': 5 * 60_000,
   '1h': 60 * 60_000,
   '24h': 24 * 60 * 60_000,
-}
-
-const freeOf = (
-  balances: { label: string; total: number; declared: number }[],
-  label: string,
-): number => {
-  const b = balances.find((x) => x.label === label)
-  return b ? b.total - b.declared : 0
 }
 
 export const OrderEntry = ({ pool, party }: { pool: Pool; party: string }): JSX.Element => {
@@ -61,11 +53,13 @@ export const OrderEntry = ({ pool, party }: { pool: Pool; party: string }): JSX.
   const funding = side === 'Buy' ? (qty > 0 && price > 0 ? buyFundingTarget(qty, price) : 0) : qty
 
   const setPercent = (pct: number): void => {
-    if (side === 'Sell') {
-      setQuantity(String(freeOf(balances, pool.baseLabel) * pct))
-    } else if (price > 0) {
-      setQuantity(String((freeOf(balances, pool.quoteLabel) * pct) / price))
-    }
+    const raw =
+      side === 'Sell'
+        ? freeOf(balances, pool.base.id) * pct
+        : price > 0
+          ? (freeOf(balances, pool.quote.id) * pct) / price
+          : 0
+    if (raw > 0) setQuantity(String(Math.floor(raw * 1e4) / 1e4))
   }
 
   const submit = async (): Promise<void> => {

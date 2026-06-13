@@ -25,12 +25,24 @@ export const MyFills = ({ pool, party }: { pool: Pool; party: string }): JSX.Ele
         <table className="w-full">
           <thead>
             <tr className="border-b border-border text-left text-[0.65rem] uppercase tracking-wider text-soft">
-              <th className="px-5 py-2 font-semibold">Side</th>
-              <th className="px-5 py-2 font-semibold">Clearing price</th>
-              <th className="px-5 py-2 font-semibold">Quantity</th>
-              <th className="px-5 py-2 font-semibold">Notional</th>
-              <th className="px-5 py-2 font-semibold">Counterparty</th>
-              <th className="px-5 py-2 text-right font-semibold">Settled</th>
+              <th scope="col" className="px-5 py-2 font-semibold">
+                Side
+              </th>
+              <th scope="col" className="px-5 py-2 font-semibold">
+                Clearing price
+              </th>
+              <th scope="col" className="px-5 py-2 font-semibold">
+                Quantity
+              </th>
+              <th scope="col" className="px-5 py-2 font-semibold">
+                Notional
+              </th>
+              <th scope="col" className="px-5 py-2 font-semibold">
+                Counterparty
+              </th>
+              <th scope="col" className="px-5 py-2 text-right font-semibold">
+                Settled
+              </th>
             </tr>
           </thead>
           <tbody>

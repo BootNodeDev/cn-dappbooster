@@ -96,12 +96,24 @@ export const MyOpenOrders = ({ pool, party }: { pool: Pool; party: string }): JS
         <table className="w-full">
           <thead>
             <tr className="border-b border-border text-left text-[0.65rem] uppercase tracking-wider text-soft">
-              <th className="px-5 py-2 font-semibold">Side</th>
-              <th className="px-5 py-2 font-semibold">Limit</th>
-              <th className="px-5 py-2 font-semibold">Quantity</th>
-              <th className="px-5 py-2 font-semibold">Min fill</th>
-              <th className="px-5 py-2 font-semibold">Expires</th>
-              <th className="px-5 py-2 text-right font-semibold">{''}</th>
+              <th scope="col" className="px-5 py-2 font-semibold">
+                Side
+              </th>
+              <th scope="col" className="px-5 py-2 font-semibold">
+                Limit
+              </th>
+              <th scope="col" className="px-5 py-2 font-semibold">
+                Quantity
+              </th>
+              <th scope="col" className="px-5 py-2 font-semibold">
+                Min fill
+              </th>
+              <th scope="col" className="px-5 py-2 font-semibold">
+                Expires
+              </th>
+              <th scope="col" className="px-5 py-2 text-right font-semibold">
+                {''}
+              </th>
             </tr>
           </thead>
           <tbody>

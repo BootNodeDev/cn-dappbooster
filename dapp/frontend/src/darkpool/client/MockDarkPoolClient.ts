@@ -4,6 +4,7 @@ import {
   midpointPrice,
   priceWithinLimit,
   quoteAmount,
+  remainderQuantity,
   validateOrder,
 } from '../darkpoolMath'
 import { COUNTERPARTIES, POOLS, seedBalances, seedOrders, seedTrades } from '../seed'
@@ -286,10 +287,9 @@ export class MockDarkPoolClient implements DarkPoolClient {
   }
 
   private reRest(order: Order, fillQty: number): Order | null {
-    // Use Math.round at 10 dp to avoid float subtraction drift (e.g. 0.5 - 0.45 = 0.04999...)
-    // then delegate the minFill gate to remainderQuantity with the clean value.
-    const rest = Math.round((order.quantity - fillQty) * 1e10) / 1e10
-    if (rest < order.minFill) return null
+    // Same remainder rule the venue preview shows, so they never diverge.
+    const rest = remainderQuantity(order.quantity, fillQty, order.minFill)
+    if (rest === null) return null
     return { ...order, orderId: this.id('o'), quantity: rest, submittedAt: this.clock() }
   }
 }

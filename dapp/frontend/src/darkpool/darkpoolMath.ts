@@ -17,7 +17,9 @@ export const remainderQuantity = (
   fillQty: number,
   minFill: number,
 ): number | null => {
-  const rest = floorTo10(quantity - fillQty)
+  // round (not floor) at 10 dp: the contract subtracts exact decimals, so this
+  // recovers the intended value from float drift (e.g. 0.5 - 0.45).
+  const rest = Math.round((quantity - fillQty) * 1e10) / 1e10
   return rest >= minFill ? rest : null
 }
 
@@ -30,7 +32,8 @@ export const priceWithinLimit = (side: Side, execPrice: number, limit: number): 
 
 export type ValidationResult = { ok: true } | { ok: false; reason: string }
 
-const freeOf = (balances: Balance[], instrumentId: string): number => {
+// Free (un-declared) balance of an instrument, looked up by its id.
+export const freeOf = (balances: Balance[], instrumentId: string): number => {
   const b = balances.find((x) => x.instrument.id === instrumentId)
   return b ? b.total - b.declared : 0
 }

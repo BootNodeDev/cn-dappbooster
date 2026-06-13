@@ -9,7 +9,8 @@ const useSnapshot = <T>(read: (client: DarkPoolClient) => T): T => {
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
 }
 
-export const usePools = (): Pool[] => useSnapshot((c) => c.listPools())
+export const usePools = (): Pool[] =>
+  useSnapshot(useCallback((c: DarkPoolClient) => c.listPools(), []))
 
 export const useBalances = (party: string): Balance[] =>
   useSnapshot(useCallback((c: DarkPoolClient) => c.getBalances(party), [party]))

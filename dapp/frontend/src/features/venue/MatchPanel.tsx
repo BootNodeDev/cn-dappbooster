@@ -58,16 +58,19 @@ export const MatchPanel = ({
   const buyRest = ready && fill !== null ? remainderQuantity(buy.quantity, fill, buy.minFill) : null
   const sellRest =
     ready && fill !== null ? remainderQuantity(sell.quantity, fill, sell.minFill) : null
+  const selfMatch = ready && buy.trader === sell.trader
   const belowMin = ready && fill !== null && (fill < buy.minFill || fill < sell.minFill)
-  const canMatch = ready && doesCross && !belowMin && !matching
+  const canMatch = ready && doesCross && !selfMatch && !belowMin && !matching
 
   const reason = !ready
     ? 'Select a buy and a sell'
-    : !doesCross
-      ? 'Limits do not cross'
-      : belowMin
-        ? 'Fill below a min fill'
-        : null
+    : selfMatch
+      ? 'Same trader on both sides'
+      : !doesCross
+        ? 'Limits do not cross'
+        : belowMin
+          ? 'Fill below a min fill'
+          : null
 
   const execute = async (): Promise<void> => {
     if (!buy || !sell) return

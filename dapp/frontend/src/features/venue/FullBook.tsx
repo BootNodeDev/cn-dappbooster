@@ -82,12 +82,24 @@ export const FullBook = ({
         <table className="w-full">
           <thead>
             <tr className="border-b border-border text-left text-[0.65rem] uppercase tracking-wider text-soft">
-              <th className="px-5 py-2 font-semibold">Side</th>
-              <th className="px-5 py-2 font-semibold">Limit</th>
-              <th className="px-5 py-2 font-semibold">Qty</th>
-              <th className="px-5 py-2 font-semibold">Min fill</th>
-              <th className="px-5 py-2 font-semibold">Trader</th>
-              <th className="px-5 py-2 text-right font-semibold">Submitted</th>
+              <th scope="col" className="px-5 py-2 font-semibold">
+                Side
+              </th>
+              <th scope="col" className="px-5 py-2 font-semibold">
+                Limit
+              </th>
+              <th scope="col" className="px-5 py-2 font-semibold">
+                Qty
+              </th>
+              <th scope="col" className="px-5 py-2 font-semibold">
+                Min fill
+              </th>
+              <th scope="col" className="px-5 py-2 font-semibold">
+                Trader
+              </th>
+              <th scope="col" className="px-5 py-2 text-right font-semibold">
+                Submitted
+              </th>
             </tr>
           </thead>
           <tbody>

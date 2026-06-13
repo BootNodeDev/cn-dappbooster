@@ -13,6 +13,7 @@ export const SideToggle = ({
 }): JSX.Element => (
   <ToggleGroup.Root
     type="single"
+    aria-label="Order side"
     value={value}
     onValueChange={(v) => v && onChange(v as Side)}
     className="grid grid-cols-2 gap-1 rounded-xl border border-border bg-muted p-1"
