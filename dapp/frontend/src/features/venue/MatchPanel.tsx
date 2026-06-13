@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { SideTag } from '@/components/SideTag'
+import { Spinner } from '@/components/ui/Spinner'
 import { toast } from '@/components/ui/toast'
 import { crosses, fillQuantity, midpointPrice, remainderQuantity } from '@/darkpool/darkpoolMath'
-import { formatPrice, formatQty } from '@/darkpool/format'
+import { formatPrice, formatQty, partyName } from '@/darkpool/format'
 import { useDarkPoolActions } from '@/darkpool/hooks'
 import type { Order, Pool } from '@/darkpool/types'
 import { errorMessage } from '@/utils/errorMessage'
@@ -21,9 +23,9 @@ const Leg = ({ order, pool }: { order: Order | null; pool: Pool }): JSX.Element 
         isBuy ? 'border-up/40 bg-success-soft' : 'border-down/40 bg-danger-soft'
       }`}
     >
-      <div className="flex items-center justify-between">
-        <span className={`text-xs font-semibold ${isBuy ? 'text-up' : 'text-down'}`}>
-          {isBuy ? '▲ Buy' : '▼ Sell'} · {order.trader.split('::')[0]}
+      <div className="flex items-center justify-between text-xs">
+        <span>
+          <SideTag side={order.side} /> · {partyName(order.trader)}
         </span>
         <span className="font-mono text-sm">
           {formatQty(order.quantity)} {pool.baseLabel}
@@ -137,11 +139,7 @@ export const MatchPanel = ({
         className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-55"
       >
         {matching ? (
-          <span
-            role="status"
-            aria-label="Settling match"
-            className="size-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground"
-          />
+          <Spinner tone="primary" label="Settling match" />
         ) : (
           (reason ?? 'Execute atomic match')
         )}

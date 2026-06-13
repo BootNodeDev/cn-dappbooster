@@ -7,7 +7,7 @@ import {
   remainderQuantity,
   validateOrder,
 } from '../darkpoolMath'
-import { COUNTERPARTIES, POOLS, seedBalances, seedOrders, seedTrades } from '../seed'
+import { COUNTERPARTIES, POOL_MIDS, POOLS, seedBalances, seedOrders, seedTrades } from '../seed'
 import type {
   Balance,
   DarkPoolClient,
@@ -94,6 +94,7 @@ export class MockDarkPoolClient implements DarkPoolClient {
     this.balancesOf(party)
     if (!this.demoSeed || (COUNTERPARTIES as readonly string[]).includes(party)) return
     const pool = this.pools[0]
+    const mid = POOL_MIDS[pool.poolId] ?? 1
     const now = this.clock()
     const place = (side: 'Buy' | 'Sell', quantity: number, limitPrice: number): void => {
       if (side === 'Buy') this.adjust(party, pool.quoteLabel, 0, quoteAmount(quantity, limitPrice))
@@ -110,15 +111,15 @@ export class MockDarkPoolClient implements DarkPoolClient {
         submittedAt: now - 30_000,
       })
     }
-    place('Buy', 6, 2.45)
-    place('Sell', 4, 2.65)
+    place('Buy', 6, mid - 0.05)
+    place('Sell', 4, mid + 0.15)
     this.recordFill(party, {
       fillId: this.id('f'),
       poolId: pool.poolId,
       side: 'Buy',
-      price: 2.5,
+      price: mid,
       quantity: 5,
-      notional: 12.5,
+      notional: quoteAmount(5, mid),
       counterpartyLabel: 'bob',
       settledAt: now - 300_000,
     })
@@ -126,9 +127,9 @@ export class MockDarkPoolClient implements DarkPoolClient {
       fillId: this.id('f'),
       poolId: pool.poolId,
       side: 'Sell',
-      price: 2.58,
+      price: mid + 0.08,
       quantity: 3,
-      notional: 7.74,
+      notional: quoteAmount(3, mid + 0.08),
       counterpartyLabel: 'carol',
       settledAt: now - 180_000,
     })

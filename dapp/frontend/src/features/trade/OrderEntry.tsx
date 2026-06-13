@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Select } from '@/components/ui/Select'
 import { SideToggle } from '@/components/ui/SideToggle'
+import { Spinner } from '@/components/ui/Spinner'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { toast } from '@/components/ui/toast'
-import { buyFundingTarget, freeOf, quoteAmount, validateOrder } from '@/darkpool/darkpoolMath'
+import { freeOf, quoteAmount, validateOrder } from '@/darkpool/darkpoolMath'
 import { formatNotional, formatPrice, formatQty } from '@/darkpool/format'
 import { useBalances, useDarkPoolActions, useTrades } from '@/darkpool/hooks'
 import type { Pool, Side } from '@/darkpool/types'
@@ -23,6 +24,9 @@ const EXPIRY_MS: Record<string, number | null> = {
   '24h': 24 * 60 * 60_000,
 }
 
+const INPUT_CLASS =
+  'w-full rounded-lg border border-border bg-muted px-3 py-2.5 font-mono text-sm text-foreground outline-none focus:border-primary'
+
 export const OrderEntry = ({ pool, party }: { pool: Pool; party: string }): JSX.Element => {
   const balances = useBalances(party)
   const trades = useTrades(pool.poolId)
@@ -40,17 +44,19 @@ export const OrderEntry = ({ pool, party }: { pool: Pool; party: string }): JSX.
   const min = Number(minFill)
   const mid = trades[0]?.price ?? null
 
+  const ttl = EXPIRY_MS[expiry]
   const req = {
     poolId: pool.poolId,
     side,
     limitPrice: price,
     quantity: qty,
     minFill: min,
-    expiresAt: null as number | null,
+    expiresAt: ttl === null ? null : Date.now() + ttl,
   }
   const validity = validateOrder(req, pool, balances)
-  const notional = qty > 0 && price > 0 ? quoteAmount(qty, price) : 0
-  const funding = side === 'Buy' ? (qty > 0 && price > 0 ? buyFundingTarget(qty, price) : 0) : qty
+  const priced = qty > 0 && price > 0
+  const notional = priced ? quoteAmount(qty, price) : 0
+  const funding = side === 'Buy' ? notional : qty
 
   const setPercent = (pct: number): void => {
     const raw =
@@ -64,10 +70,9 @@ export const OrderEntry = ({ pool, party }: { pool: Pool; party: string }): JSX.
 
   const submit = async (): Promise<void> => {
     if (!validity.ok) return
-    const ttl = EXPIRY_MS[expiry]
     setSubmitting(true)
     try {
-      await placeOrder(party, { ...req, expiresAt: ttl === null ? null : Date.now() + ttl })
+      await placeOrder(party, req)
       toast.success(`Private ${side.toLowerCase()} order placed`)
       setQuantity('')
     } catch (e) {
@@ -115,7 +120,7 @@ export const OrderEntry = ({ pool, party }: { pool: Pool; party: string }): JSX.
           value={limitPrice}
           onChange={(e) => setLimitPrice(e.target.value)}
           placeholder="0.00"
-          className="w-full rounded-lg border border-border bg-muted px-3 py-2.5 font-mono text-sm text-foreground outline-none focus:border-primary"
+          className={INPUT_CLASS}
         />
       </div>
 
@@ -132,7 +137,7 @@ export const OrderEntry = ({ pool, party }: { pool: Pool; party: string }): JSX.
           value={quantity}
           onChange={(e) => setQuantity(e.target.value)}
           placeholder="0.00"
-          className="w-full rounded-lg border border-border bg-muted px-3 py-2.5 font-mono text-sm text-foreground outline-none focus:border-primary"
+          className={INPUT_CLASS}
         />
         <div className="mt-2 grid grid-cols-4 gap-1.5">
           {[0.25, 0.5, 0.75, 1].map((p) => (
@@ -161,7 +166,7 @@ export const OrderEntry = ({ pool, party }: { pool: Pool; party: string }): JSX.
             inputMode="decimal"
             value={minFill}
             onChange={(e) => setMinFill(e.target.value)}
-            className="w-full rounded-lg border border-border bg-muted px-3 py-2.5 font-mono text-sm text-foreground outline-none focus:border-primary"
+            className={INPUT_CLASS}
           />
         </div>
         <div>
@@ -205,11 +210,7 @@ export const OrderEntry = ({ pool, party }: { pool: Pool; party: string }): JSX.
         className={`mt-3 flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-55 ${buttonClass}`}
       >
         {submitting ? (
-          <span
-            role="status"
-            aria-label="Placing order"
-            className="size-4 animate-spin rounded-full border-2 border-background/30 border-t-background"
-          />
+          <Spinner tone="background" label="Placing order" />
         ) : validity.ok ? (
           `Place private ${side.toLowerCase()} order`
         ) : (

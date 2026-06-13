@@ -10,6 +10,14 @@ import { MyOpenOrders } from './MyOpenOrders'
 import { OrderEntry } from './OrderEntry'
 import { ShieldedBook } from './ShieldedBook'
 
+const EASE = [0.16, 1, 0.3, 1] as const
+// Staggered entrance for each column/panel.
+const rise = (delay: number) => ({
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.45, delay, ease: EASE },
+})
+
 export const TradeView = (): JSX.Element => {
   const { party } = useParty()
   if (!party) return <div className="py-10 text-center text-muted-foreground">Loading…</div>
@@ -22,13 +30,6 @@ export const TradeWorkspace = ({ party: partyId }: { party: string }): JSX.Eleme
   const pool = pools.find((p) => p.poolId === poolId) ?? pools[0]
 
   if (!pool) return <div className="py-10 text-center text-muted-foreground">Loading…</div>
-
-  const ease = [0.16, 1, 0.3, 1] as const
-  const rise = (delay: number) => ({
-    initial: { opacity: 0, y: 12 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.45, delay, ease },
-  })
 
   return (
     <div className="flex flex-col gap-5">

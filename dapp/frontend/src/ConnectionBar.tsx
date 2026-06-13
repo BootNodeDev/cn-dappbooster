@@ -21,7 +21,7 @@ const ICON_CHIP_CLASS =
   'text-muted-foreground transition-colors hover:text-primary hover:bg-primary-soft'
 
 // Remember an extension connection so a reload can silently reconnect.
-const RECONNECT_KEY = 'bn-canton-stampbook:reconnect'
+const RECONNECT_KEY = 'cn-dark-pools:reconnect'
 const readReconnect = (): string | null => {
   try {
     return window.localStorage.getItem(RECONNECT_KEY)

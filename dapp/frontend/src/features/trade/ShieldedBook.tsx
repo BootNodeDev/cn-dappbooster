@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { useMemo, useRef } from 'react'
+import { type CSSProperties, useRef } from 'react'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { formatPrice } from '@/darkpool/format'
 import { useBook, useTrades } from '@/darkpool/hooks'
@@ -47,8 +47,6 @@ export const ShieldedBook = ({ pool }: { pool: Pool }): JSX.Element => {
   if (trades.length > prev.current) rippleKey.current += 1
   prev.current = trades.length
 
-  const particles = useMemo(() => FIELD, [])
-
   return (
     <section className="relative flex min-h-[420px] grow flex-col overflow-hidden rounded-2xl border border-border bg-surface">
       <div className="z-10 flex items-center gap-2 px-5 pt-5">
@@ -68,28 +66,25 @@ export const ShieldedBook = ({ pool }: { pool: Pool }): JSX.Element => {
         {/* central mid-price axis */}
         <div className="-translate-x-1/2 absolute top-6 bottom-10 left-1/2 w-px bg-gradient-to-b from-transparent via-primary/40 to-transparent" />
 
-        {/* drifting hidden liquidity */}
-        {particles.map((p, i) => (
-          <motion.span
+        {/* drifting hidden liquidity (GPU-friendly CSS animation) */}
+        {FIELD.map((p, i) => (
+          <span
             // biome-ignore lint/suspicious/noArrayIndexKey: stable generated field
             key={i}
-            className="absolute rounded-full"
-            style={{
-              left: `${p.x}%`,
-              top: `${p.y}%`,
-              width: p.r * 2,
-              height: p.r * 2,
-              backgroundColor: p.bid ? 'var(--color-up)' : 'var(--color-down)',
-              opacity: p.o,
-              filter: 'blur(0.5px)',
-            }}
-            animate={{ y: [0, -7, 0], opacity: [p.o, p.o * 0.55, p.o] }}
-            transition={{
-              duration: p.dur,
-              delay: p.delay,
-              repeat: Number.POSITIVE_INFINITY,
-              ease: 'easeInOut',
-            }}
+            className="dp-particle absolute rounded-full"
+            style={
+              {
+                left: `${p.x}%`,
+                top: `${p.y}%`,
+                width: p.r * 2,
+                height: p.r * 2,
+                backgroundColor: p.bid ? 'var(--color-up)' : 'var(--color-down)',
+                filter: 'blur(0.5px)',
+                '--dp-o': p.o,
+                '--dp-dur': `${p.dur}s`,
+                '--dp-delay': `${p.delay}s`,
+              } as CSSProperties
+            }
           />
         ))}
 

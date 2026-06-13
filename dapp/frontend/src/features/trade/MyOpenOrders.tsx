@@ -1,5 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useState } from 'react'
+import { SideTag } from '@/components/SideTag'
+import { Spinner } from '@/components/ui/Spinner'
 import { toast } from '@/components/ui/toast'
 import { formatPrice, formatQty } from '@/darkpool/format'
 import { useDarkPoolActions, useMyOrders } from '@/darkpool/hooks'
@@ -25,7 +27,6 @@ const OrderRow = ({
 }): JSX.Element => {
   const { cancelOrder } = useDarkPoolActions()
   const [cancelling, setCancelling] = useState(false)
-  const isBuy = order.side === 'Buy'
 
   const cancel = async (): Promise<void> => {
     setCancelling(true)
@@ -47,9 +48,7 @@ const OrderRow = ({
       className="border-border/60 border-b text-sm last:border-b-0"
     >
       <td className="px-5 py-2.5">
-        <span className={`font-semibold ${isBuy ? 'text-up' : 'text-down'}`}>
-          {isBuy ? '▲ Buy' : '▼ Sell'}
-        </span>
+        <SideTag side={order.side} />
       </td>
       <td className="px-5 py-2.5 font-mono">{formatPrice(order.limitPrice)}</td>
       <td className="px-5 py-2.5 font-mono">
@@ -64,15 +63,7 @@ const OrderRow = ({
           disabled={cancelling}
           className="inline-flex items-center gap-2 rounded-lg border border-border bg-muted px-3 py-1.5 text-xs text-foreground transition hover:border-border-strong disabled:opacity-55"
         >
-          {cancelling ? (
-            <span
-              role="status"
-              aria-label="Cancelling order"
-              className="size-3.5 animate-spin rounded-full border-2 border-foreground/30 border-t-foreground"
-            />
-          ) : (
-            'Cancel'
-          )}
+          {cancelling ? <Spinner size="sm" label="Cancelling order" /> : 'Cancel'}
         </button>
       </td>
     </motion.tr>

@@ -1,10 +1,9 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { TraderFace } from '@/components/TraderFace'
-import { formatPrice, formatQty } from '@/darkpool/format'
+import { SideTag } from '@/components/SideTag'
+import { TraderChip } from '@/components/TraderChip'
+import { formatPrice, formatQty, formatTime } from '@/darkpool/format'
 import { useBook, useTrades } from '@/darkpool/hooks'
 import type { Order, Pool } from '@/darkpool/types'
-
-const time = (ms: number): string => new Date(ms).toLocaleTimeString('en-US', { hour12: false })
 
 const Row = ({
   order,
@@ -14,41 +13,31 @@ const Row = ({
   order: Order
   selected: boolean
   onSelect: (o: Order) => void
-}): JSX.Element => {
-  const isBuy = order.side === 'Buy'
-  return (
-    <motion.tr
-      layout
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      onClick={() => onSelect(order)}
-      className={`cursor-pointer border-border/60 border-b text-sm transition last:border-b-0 ${
-        selected ? 'bg-primary/10' : 'hover:bg-muted'
-      }`}
-    >
-      <td className="px-5 py-2.5">
-        <span className={`font-semibold ${isBuy ? 'text-up' : 'text-down'}`}>
-          {isBuy ? '▲' : '▼'}
-        </span>
-      </td>
-      <td className={`px-5 py-2.5 font-mono ${selected ? 'text-primary' : ''}`}>
-        {formatPrice(order.limitPrice)}
-      </td>
-      <td className="px-5 py-2.5 font-mono">{formatQty(order.quantity)}</td>
-      <td className="px-5 py-2.5 font-mono text-soft">{formatQty(order.minFill)}</td>
-      <td className="px-5 py-2.5">
-        <span className="inline-flex items-center gap-2 font-mono text-muted-foreground">
-          <span className="overflow-hidden rounded-full">
-            <TraderFace name={order.trader} size={18} />
-          </span>
-          {order.trader.split('::')[0]}
-        </span>
-      </td>
-      <td className="px-5 py-2.5 text-right font-mono text-soft">{time(order.submittedAt)}</td>
-    </motion.tr>
-  )
-}
+}): JSX.Element => (
+  <motion.tr
+    layout
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    onClick={() => onSelect(order)}
+    className={`cursor-pointer border-border/60 border-b text-sm transition last:border-b-0 ${
+      selected ? 'bg-primary/10' : 'hover:bg-muted'
+    }`}
+  >
+    <td className="px-5 py-2.5">
+      <SideTag side={order.side} iconOnly />
+    </td>
+    <td className={`px-5 py-2.5 font-mono ${selected ? 'text-primary' : ''}`}>
+      {formatPrice(order.limitPrice)}
+    </td>
+    <td className="px-5 py-2.5 font-mono">{formatQty(order.quantity)}</td>
+    <td className="px-5 py-2.5 font-mono text-soft">{formatQty(order.minFill)}</td>
+    <td className="px-5 py-2.5">
+      <TraderChip name={order.trader} />
+    </td>
+    <td className="px-5 py-2.5 text-right font-mono text-soft">{formatTime(order.submittedAt)}</td>
+  </motion.tr>
+)
 
 export const FullBook = ({
   pool,

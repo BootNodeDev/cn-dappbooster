@@ -1,6 +1,9 @@
 import { motion, useSpring, useTransform } from 'framer-motion'
 import { useEffect } from 'react'
 
+const reduced =
+  typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+
 export const Stat = ({
   value,
   format,
@@ -10,8 +13,6 @@ export const Stat = ({
   format: (n: number) => string
   className?: string
 }): JSX.Element => {
-  const reduced =
-    typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
   const spring = useSpring(value, { stiffness: 90, damping: 18 })
   const text = useTransform(spring, (n) => format(n))
   useEffect(() => {

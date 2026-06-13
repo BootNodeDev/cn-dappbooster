@@ -1,11 +1,10 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { TraderFace } from '@/components/TraderFace'
+import { SideTag } from '@/components/SideTag'
+import { TraderChip } from '@/components/TraderChip'
 import { Tooltip } from '@/components/ui/Tooltip'
-import { formatNotional, formatPrice, formatQty } from '@/darkpool/format'
+import { formatNotional, formatPrice, formatQty, formatTime } from '@/darkpool/format'
 import { useMyFills } from '@/darkpool/hooks'
 import type { Pool } from '@/darkpool/types'
-
-const time = (ms: number): string => new Date(ms).toLocaleTimeString('en-US', { hour12: false })
 
 export const MyFills = ({ pool, party }: { pool: Pool; party: string }): JSX.Element => {
   const fills = useMyFills(party).filter((f) => f.poolId === pool.poolId)
@@ -48,7 +47,6 @@ export const MyFills = ({ pool, party }: { pool: Pool; party: string }): JSX.Ele
           <tbody>
             <AnimatePresence initial={false}>
               {fills.map((f) => {
-                const isBuy = f.side === 'Buy'
                 return (
                   <motion.tr
                     key={f.fillId}
@@ -58,23 +56,16 @@ export const MyFills = ({ pool, party }: { pool: Pool; party: string }): JSX.Ele
                     className="border-b border-border/60 text-sm last:border-b-0"
                   >
                     <td className="px-5 py-2.5">
-                      <span className={`font-semibold ${isBuy ? 'text-up' : 'text-down'}`}>
-                        {isBuy ? '▲ Buy' : '▼ Sell'}
-                      </span>
+                      <SideTag side={f.side} />
                     </td>
                     <td className="px-5 py-2.5 font-mono text-mid">{formatPrice(f.price)}</td>
                     <td className="px-5 py-2.5 font-mono">{formatQty(f.quantity)}</td>
                     <td className="px-5 py-2.5 font-mono">{formatNotional(f.notional)}</td>
                     <td className="px-5 py-2.5">
-                      <span className="inline-flex items-center gap-2 font-mono text-muted-foreground">
-                        <span className="overflow-hidden rounded-full">
-                          <TraderFace name={f.counterpartyLabel} size={18} />
-                        </span>
-                        {f.counterpartyLabel}
-                      </span>
+                      <TraderChip name={f.counterpartyLabel} />
                     </td>
                     <td className="px-5 py-2.5 text-right font-mono text-soft">
-                      {time(f.settledAt)}
+                      {formatTime(f.settledAt)}
                     </td>
                   </motion.tr>
                 )

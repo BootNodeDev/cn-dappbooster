@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { Select } from '@/components/ui/Select'
 import { formatQty } from '@/darkpool/format'
 import { useTrades } from '@/darkpool/hooks'
@@ -14,7 +15,7 @@ export const MarketBar = ({
 }): JSX.Element => {
   const trades = useTrades(pool.poolId)
   const fills = trades.length
-  const volume = trades.reduce((s, t) => s + t.quantity, 0)
+  const volume = useMemo(() => trades.reduce((s, t) => s + t.quantity, 0), [trades])
 
   return (
     <section className="flex flex-wrap items-center gap-x-8 gap-y-3 border-border border-b pb-4">

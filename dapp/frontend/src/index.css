@@ -267,6 +267,25 @@
   }
 }
 
+/* Hidden-liquidity particles in the shielded book: GPU-friendly CSS drift,
+ * per-particle duration/delay/opacity passed as custom properties. */
+.dp-particle {
+  animation: particle-drift var(--dp-dur) ease-in-out infinite;
+  animation-delay: var(--dp-delay);
+}
+
+@keyframes particle-drift {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: var(--dp-o);
+  }
+  50% {
+    transform: translateY(-7px);
+    opacity: calc(var(--dp-o) * 0.55);
+  }
+}
+
 @keyframes drift {
   0%,
   100% {

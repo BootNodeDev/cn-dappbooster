@@ -10,8 +10,10 @@ import { VenueStats } from './VenueStats'
 export const VenueView = (): JSX.Element => {
   const pools = usePools()
   const [poolId, setPoolId] = useState(pools[0]?.poolId ?? '')
-  const [selectedBuyId, setSelectedBuyId] = useState<string | null>(null)
-  const [selectedSellId, setSelectedSellId] = useState<string | null>(null)
+  const [picked, setPicked] = useState<{ buyId: string | null; sellId: string | null }>({
+    buyId: null,
+    sellId: null,
+  })
   const pool = pools.find((p) => p.poolId === poolId) ?? pools[0]
   const book = useBook(pool?.poolId ?? '')
 
@@ -19,17 +21,15 @@ export const VenueView = (): JSX.Element => {
 
   // Resolve selections against the live book so stale picks (matched/cancelled by
   // the sim) drop to null on their own.
-  const buy = book.find((o) => o.orderId === selectedBuyId && o.side === 'Buy') ?? null
-  const sell = book.find((o) => o.orderId === selectedSellId && o.side === 'Sell') ?? null
+  const buy = book.find((o) => o.orderId === picked.buyId && o.side === 'Buy') ?? null
+  const sell = book.find((o) => o.orderId === picked.sellId && o.side === 'Sell') ?? null
 
   const onSelect = (order: Order): void => {
-    if (order.side === 'Buy') setSelectedBuyId(order.orderId)
-    else setSelectedSellId(order.orderId)
+    setPicked((p) =>
+      order.side === 'Buy' ? { ...p, buyId: order.orderId } : { ...p, sellId: order.orderId },
+    )
   }
-  const clearSelection = (): void => {
-    setSelectedBuyId(null)
-    setSelectedSellId(null)
-  }
+  const clearSelection = (): void => setPicked({ buyId: null, sellId: null })
   const changePool = (id: string): void => {
     setPoolId(id)
     clearSelection()
@@ -60,8 +60,8 @@ export const VenueView = (): JSX.Element => {
       <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-[1.5fr_1fr]">
         <FullBook
           pool={pool}
-          selectedBuyId={selectedBuyId}
-          selectedSellId={selectedSellId}
+          selectedBuyId={picked.buyId}
+          selectedSellId={picked.sellId}
           onSelect={onSelect}
         />
         <MatchPanel pool={pool} buy={buy} sell={sell} onMatched={clearSelection} />

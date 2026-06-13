@@ -1,10 +1,8 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { TraderFace } from '@/components/TraderFace'
-import { formatPrice, formatQty } from '@/darkpool/format'
+import { TraderChip } from '@/components/TraderChip'
+import { formatPrice, formatQty, formatTime } from '@/darkpool/format'
 import { useTrades } from '@/darkpool/hooks'
 import type { Pool } from '@/darkpool/types'
-
-const time = (ms: number): string => new Date(ms).toLocaleTimeString('en-US', { hour12: false })
 
 export const SettledMatches = ({ pool }: { pool: Pool }): JSX.Element => {
   const trades = useTrades(pool.poolId)
@@ -55,23 +53,13 @@ export const SettledMatches = ({ pool }: { pool: Pool }): JSX.Element => {
                   <td className="px-5 py-2.5 font-mono text-mid">{formatPrice(t.price)}</td>
                   <td className="px-5 py-2.5 font-mono">{formatQty(t.quantity)}</td>
                   <td className="px-5 py-2.5">
-                    <span className="inline-flex items-center gap-2 font-mono text-muted-foreground">
-                      <span className="overflow-hidden rounded-full">
-                        <TraderFace name={t.buyer} size={18} />
-                      </span>
-                      {t.buyer.split('::')[0]}
-                    </span>
+                    <TraderChip name={t.buyer} />
                   </td>
                   <td className="px-5 py-2.5">
-                    <span className="inline-flex items-center gap-2 font-mono text-muted-foreground">
-                      <span className="overflow-hidden rounded-full">
-                        <TraderFace name={t.seller} size={18} />
-                      </span>
-                      {t.seller.split('::')[0]}
-                    </span>
+                    <TraderChip name={t.seller} />
                   </td>
                   <td className="px-5 py-2.5 text-right font-mono text-soft">
-                    {time(t.settledAt)}
+                    {formatTime(t.settledAt)}
                   </td>
                 </motion.tr>
               ))}

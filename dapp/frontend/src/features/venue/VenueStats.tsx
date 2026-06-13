@@ -4,7 +4,7 @@ import { formatNotional, formatPrice, formatQty } from '@/darkpool/format'
 import { useBook, useTrades } from '@/darkpool/hooks'
 import type { Pool } from '@/darkpool/types'
 
-const Card = ({
+const StatCard = ({
   label,
   children,
   sub,
@@ -30,21 +30,21 @@ export const VenueStats = ({ pool }: { pool: Pool }): JSX.Element => {
 
   return (
     <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
-      <Card label="Orders in book" sub={`${buys} buys · ${sells} sells`}>
+      <StatCard label="Orders in book" sub={`${buys} buys · ${sells} sells`}>
         <Stat
           value={book.length}
           format={(n) => String(Math.round(n))}
           className="font-mono text-2xl text-foreground"
         />
-      </Card>
-      <Card label="Book notional" sub={`${pool.quoteLabel}-equivalent`}>
+      </StatCard>
+      <StatCard label="Book notional" sub={`${pool.quoteLabel}-equivalent`}>
         <Stat
           value={notional}
           format={formatNotional}
           className="font-mono text-2xl text-foreground"
         />
-      </Card>
-      <Card
+      </StatCard>
+      <StatCard
         label="Last match"
         sub={last ? `${formatQty(last.quantity)} ${pool.baseLabel} · midpoint` : 'no matches yet'}
       >
@@ -53,14 +53,14 @@ export const VenueStats = ({ pool }: { pool: Pool }): JSX.Element => {
         ) : (
           <span className="font-mono text-2xl text-soft">—</span>
         )}
-      </Card>
-      <Card label="Matches settled" sub="since boot">
+      </StatCard>
+      <StatCard label="Matches settled" sub="since boot">
         <Stat
           value={trades.length}
           format={(n) => String(Math.round(n))}
           className="font-mono text-2xl text-foreground"
         />
-      </Card>
+      </StatCard>
     </div>
   )
 }

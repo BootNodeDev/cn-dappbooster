@@ -1,7 +1,7 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import { ThemeContext, type ThemeMode } from '@/theme/ThemeContext'
 
-const STORAGE_KEY = 'bn-canton-stampbook:theme'
+const STORAGE_KEY = 'cn-dark-pools:theme'
 
 const readStoredMode = (): ThemeMode | null => {
   if (typeof window === 'undefined') {
