@@ -50,6 +50,20 @@ npm run canton:health
 
 ## Auth
 
+## FiveNorth Quick Run
+
+Run only wallet-service against the hosted validator:
+
+```bash
+cp .env.fivenorth.example .env.fivenorth
+${EDITOR:-vi} .env.fivenorth
+npm run wallet-service:fivenorth
+```
+
+Set `FIVENORTH_CLIENT_SECRET`, then start Carpincho and the frontend normally.
+
+## Auth
+
 The token script reads:
 
 ```text

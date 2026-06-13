@@ -2,7 +2,7 @@ export interface RuntimeConfig {
   walletServiceRpcUrl: string
 }
 
-const STORAGE_KEY = 'carpincho.runtime-config.v1'
+const STORAGE_KEY = 'carpincho.runtime-config.v2'
 
 const DEFAULT_RUNTIME_CONFIG: RuntimeConfig = {
   walletServiceRpcUrl: 'http://localhost:3010/rpc',

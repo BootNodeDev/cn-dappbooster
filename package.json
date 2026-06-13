@@ -21,6 +21,8 @@
     "deploy-dar": "bash canton-barebones/scripts/deploy-dar.sh",
     "wallet:dev": "npm --prefix carpincho-wallet run dev",
     "wallet-service:dev": "npm --prefix canton-barebones/wallet-service run dev",
+    "wallet-service:fivenorth": "npm --prefix canton-barebones run wallet-service:fivenorth",
+    "wallet-service:fivenorth:down": "npm --prefix canton-barebones run wallet-service:fivenorth:down",
     "wallet-service:health": "curl -fsS http://localhost:3010/health",
     "carpincho:build:extension": "npm --prefix carpincho-wallet run build:extension",
     "app:dev": "npm --prefix dapp/frontend run dev -- --host localhost --port 3012 --strictPort",
