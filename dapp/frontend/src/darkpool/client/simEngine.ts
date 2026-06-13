@@ -9,6 +9,7 @@ export const startSimEngine = (client: MockDarkPoolClient): (() => void) => {
     typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
   if (reduced) return () => {}
 
+  const round2 = (x: number): number => Math.round(x * 100) / 100
   let n = 0
   const tick = (): void => {
     n += 1
@@ -16,16 +17,17 @@ export const startSimEngine = (client: MockDarkPoolClient): (() => void) => {
     const mid = POOL_MIDS[pool.poolId]
     const party = COUNTERPARTIES[n % COUNTERPARTIES.length]
     const side = n % 2 === 0 ? 'Buy' : 'Sell'
-    const drift = (Math.sin(n / 3) * mid) / 100
-    const limitPrice = Math.round(side === 'Buy' ? mid + drift + 120 : mid + drift - 120)
-    const quantity = Number((0.1 + (n % 5) * 0.08).toFixed(2))
+    const drift = Math.sin(n / 3) * mid * 0.03
+    // buys sit just above the mid, sells just below, so the matcher finds crosses
+    const limitPrice = round2(side === 'Buy' ? mid + drift + mid * 0.02 : mid + drift - mid * 0.02)
+    const quantity = 2 + (n % 6)
     client
       .placeOrder(party, {
         poolId: pool.poolId,
         side,
         limitPrice,
         quantity,
-        minFill: 0.05,
+        minFill: 1,
         expiresAt: null,
       })
       .catch(() => {})

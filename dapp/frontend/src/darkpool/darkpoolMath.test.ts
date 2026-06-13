@@ -52,16 +52,16 @@ describe('darkpoolMath', () => {
 })
 
 const pool: Pool = {
-  poolId: 'cBTC-USDCx',
-  base: { admin: 'a', id: 'cBTC' },
-  quote: { admin: 'a', id: 'USDCx' },
-  baseLabel: 'cBTC',
-  quoteLabel: 'USDCx',
+  poolId: 'TTA-TTB',
+  base: { admin: 'a', id: 'TTA' },
+  quote: { admin: 'a', id: 'TTB' },
+  baseLabel: 'TTA',
+  quoteLabel: 'TTB',
   minFillFloor: 0.01,
 }
 const balances: Balance[] = [
-  { instrument: pool.base, label: 'cBTC', total: 9.5, declared: 0 },
-  { instrument: pool.quote, label: 'USDCx', total: 478650, declared: 0 },
+  { instrument: pool.base, label: 'TTA', total: 9.5, declared: 0 },
+  { instrument: pool.quote, label: 'TTB', total: 478650, declared: 0 },
 ]
 
 describe('validateOrder', () => {
@@ -127,8 +127,8 @@ describe('validateOrder', () => {
   })
   it('rejects an underfunded buy', () => {
     const poor: Balance[] = [
-      { instrument: pool.base, label: 'cBTC', total: 9.5, declared: 0 },
-      { instrument: pool.quote, label: 'USDCx', total: 100, declared: 0 },
+      { instrument: pool.base, label: 'TTA', total: 9.5, declared: 0 },
+      { instrument: pool.quote, label: 'TTB', total: 100, declared: 0 },
     ]
     const r = validateOrder(
       {
@@ -146,8 +146,8 @@ describe('validateOrder', () => {
   })
   it('rejects an underfunded sell (needs free base >= quantity)', () => {
     const poor: Balance[] = [
-      { instrument: pool.base, label: 'cBTC', total: 0.1, declared: 0 },
-      { instrument: pool.quote, label: 'USDCx', total: 478650, declared: 0 },
+      { instrument: pool.base, label: 'TTA', total: 0.1, declared: 0 },
+      { instrument: pool.quote, label: 'TTB', total: 478650, declared: 0 },
     ]
     const r = validateOrder(
       {
