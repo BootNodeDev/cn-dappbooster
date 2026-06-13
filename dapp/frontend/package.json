@@ -12,7 +12,7 @@
     "lint": "biome check",
     "lint:fix": "biome check --write",
     "format": "biome format --write",
-    "test": "node --test --experimental-strip-types \"test/**/*.test.ts\" \"src/**/*.test.ts\" \"src/**/*.test.tsx\"",
+    "test": "node --test --experimental-strip-types --loader ./test/ts-resolver.mjs \"test/**/*.test.ts\" \"src/**/*.test.ts\" \"src/**/*.test.tsx\"",
     "preview": "vite preview"
   },
   "dependencies": {
