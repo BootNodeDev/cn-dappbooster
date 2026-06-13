@@ -14,7 +14,8 @@
       "dapp/frontend/**",
       "dapp/e2e/**",
       "canton-barebones/**",
-      "!**/api-specs"
+      "!**/api-specs",
+      "!**/routeTree.gen.ts"
     ]
   },
   "formatter": {
