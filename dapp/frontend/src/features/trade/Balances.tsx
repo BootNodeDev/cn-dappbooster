@@ -24,13 +24,15 @@ export const Balances = ({ pool, party }: { pool: Pool; party: string }): JSX.El
   )
 
   return (
-    <section className="rounded-xl border border-border bg-surface p-4">
+    <section className="flex grow flex-col rounded-2xl border border-border bg-surface p-4">
       <div className="mb-3 text-[0.7rem] font-semibold uppercase tracking-wider text-muted-foreground">
         Balances
       </div>
-      {row(pool.baseLabel, base?.total ?? 0, base?.declared ?? 0, formatQty)}
-      <div className="my-3 h-px bg-border" />
-      {row(pool.quoteLabel, quote?.total ?? 0, quote?.declared ?? 0, formatNotional)}
+      <div className="flex grow flex-col justify-center gap-3">
+        {row(pool.baseLabel, base?.total ?? 0, base?.declared ?? 0, formatQty)}
+        <div className="h-px bg-border" />
+        {row(pool.quoteLabel, quote?.total ?? 0, quote?.declared ?? 0, formatNotional)}
+      </div>
     </section>
   )
 }

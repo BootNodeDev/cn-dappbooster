@@ -1,10 +1,54 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { TraderFace } from '@/components/TraderFace'
 import { formatPrice, formatQty } from '@/darkpool/format'
-import { useBook } from '@/darkpool/hooks'
+import { useBook, useTrades } from '@/darkpool/hooks'
 import type { Order, Pool } from '@/darkpool/types'
 
 const time = (ms: number): string => new Date(ms).toLocaleTimeString('en-US', { hour12: false })
+
+const Row = ({
+  order,
+  selected,
+  onSelect,
+}: {
+  order: Order
+  selected: boolean
+  onSelect: (o: Order) => void
+}): JSX.Element => {
+  const isBuy = order.side === 'Buy'
+  return (
+    <motion.tr
+      layout
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={() => onSelect(order)}
+      className={`cursor-pointer border-border/60 border-b text-sm transition last:border-b-0 ${
+        selected ? 'bg-primary/10' : 'hover:bg-muted'
+      }`}
+    >
+      <td className="px-5 py-2.5">
+        <span className={`font-semibold ${isBuy ? 'text-up' : 'text-down'}`}>
+          {isBuy ? '▲' : '▼'}
+        </span>
+      </td>
+      <td className={`px-5 py-2.5 font-mono ${selected ? 'text-primary' : ''}`}>
+        {formatPrice(order.limitPrice)}
+      </td>
+      <td className="px-5 py-2.5 font-mono">{formatQty(order.quantity)}</td>
+      <td className="px-5 py-2.5 font-mono text-soft">{formatQty(order.minFill)}</td>
+      <td className="px-5 py-2.5">
+        <span className="inline-flex items-center gap-2 font-mono text-muted-foreground">
+          <span className="overflow-hidden rounded-full">
+            <TraderFace name={order.trader} size={18} />
+          </span>
+          {order.trader.split('::')[0]}
+        </span>
+      </td>
+      <td className="px-5 py-2.5 text-right font-mono text-soft">{time(order.submittedAt)}</td>
+    </motion.tr>
+  )
+}
 
 export const FullBook = ({
   pool,
@@ -17,21 +61,22 @@ export const FullBook = ({
   selectedSellId: string | null
   onSelect: (order: Order) => void
 }): JSX.Element => {
-  // sells high->low on top, buys high->low below, so the crossing midpoint sits together
   const book = useBook(pool.poolId)
+  const mid = useTrades(pool.poolId)[0]?.price ?? null
+  // asks (sells) high->low on top, then the gold midpoint band, then bids (buys)
   const sells = book.filter((o) => o.side === 'Sell').sort((a, b) => b.limitPrice - a.limitPrice)
   const buys = book.filter((o) => o.side === 'Buy').sort((a, b) => b.limitPrice - a.limitPrice)
-  const ordered = [...sells, ...buys]
+  const sel = (o: Order): boolean => o.orderId === selectedBuyId || o.orderId === selectedSellId
 
   return (
-    <section className="overflow-hidden rounded-xl border border-border bg-surface">
+    <section className="overflow-hidden rounded-2xl border border-border bg-surface">
       <div className="flex items-center justify-between border-b border-border px-5 py-3">
         <span className="font-display text-base font-semibold text-foreground">
           Full book · current
         </span>
         <span className="text-xs text-soft">venue sees every resting order · click to select</span>
       </div>
-      {ordered.length === 0 ? (
+      {book.length === 0 ? (
         <p className="px-5 py-8 text-center text-sm text-muted-foreground">Book is empty</p>
       ) : (
         <table className="w-full">
@@ -47,45 +92,26 @@ export const FullBook = ({
           </thead>
           <tbody>
             <AnimatePresence initial={false}>
-              {ordered.map((o) => {
-                const isBuy = o.side === 'Buy'
-                const selected = o.orderId === selectedBuyId || o.orderId === selectedSellId
-                return (
-                  <motion.tr
-                    key={o.orderId}
-                    layout
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    onClick={() => onSelect(o)}
-                    className={`cursor-pointer border-b border-border/60 text-sm transition last:border-b-0 ${
-                      selected ? 'bg-primary/10' : 'hover:bg-muted'
-                    }`}
-                  >
-                    <td className="px-5 py-2.5">
-                      <span className={`font-semibold ${isBuy ? 'text-up' : 'text-down'}`}>
-                        {isBuy ? '▲' : '▼'}
-                      </span>
-                    </td>
-                    <td className={`px-5 py-2.5 font-mono ${selected ? 'text-primary' : ''}`}>
-                      {formatPrice(o.limitPrice)}
-                    </td>
-                    <td className="px-5 py-2.5 font-mono">{formatQty(o.quantity)}</td>
-                    <td className="px-5 py-2.5 font-mono text-soft">{formatQty(o.minFill)}</td>
-                    <td className="px-5 py-2.5">
-                      <span className="inline-flex items-center gap-2 font-mono text-muted-foreground">
-                        <span className="overflow-hidden rounded-full">
-                          <TraderFace name={o.trader} size={18} />
-                        </span>
-                        {o.trader.split('::')[0]}
-                      </span>
-                    </td>
-                    <td className="px-5 py-2.5 text-right font-mono text-soft">
-                      {time(o.submittedAt)}
-                    </td>
-                  </motion.tr>
-                )
-              })}
+              {sells.map((o) => (
+                <Row key={o.orderId} order={o} selected={sel(o)} onSelect={onSelect} />
+              ))}
+            </AnimatePresence>
+            <tr>
+              <td
+                colSpan={6}
+                className="bg-gradient-to-r from-transparent via-mid-soft to-transparent px-5 py-1.5"
+              >
+                <span className="flex items-center justify-center gap-2 font-mono text-[0.7rem] text-mid">
+                  <span className="h-px flex-1 bg-mid/30" />
+                  midpoint {mid === null ? '—' : formatPrice(mid)}
+                  <span className="h-px flex-1 bg-mid/30" />
+                </span>
+              </td>
+            </tr>
+            <AnimatePresence initial={false}>
+              {buys.map((o) => (
+                <Row key={o.orderId} order={o} selected={sel(o)} onSelect={onSelect} />
+              ))}
             </AnimatePresence>
           </tbody>
         </table>

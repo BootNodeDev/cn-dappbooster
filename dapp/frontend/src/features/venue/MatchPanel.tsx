@@ -86,7 +86,7 @@ export const MatchPanel = ({
   }
 
   return (
-    <section className="rounded-xl border border-border bg-surface p-5 shadow-[0_0_40px_-12px_var(--color-primary)]">
+    <section className="rounded-2xl border border-border bg-surface p-5 shadow-[0_0_40px_-12px_var(--color-primary)]">
       <h2 className="font-display text-base font-semibold text-foreground">Match orders</h2>
       <p className="mt-1 text-xs text-muted-foreground">
         Pick one buy and one sell whose limits cross. Settlement is atomic at the midpoint.

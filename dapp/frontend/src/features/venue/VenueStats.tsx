@@ -13,7 +13,7 @@ const Card = ({
   children: JSX.Element
   sub: string
 }): JSX.Element => (
-  <div className="rounded-xl border border-border bg-surface p-4">
+  <div className="rounded-2xl border border-border bg-surface p-4">
     <div className="text-[0.7rem] uppercase tracking-wider text-muted-foreground">{label}</div>
     <div className="mt-1.5">{children}</div>
     <div className="mt-1 text-xs text-soft">{sub}</div>
