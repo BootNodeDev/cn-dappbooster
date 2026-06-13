@@ -1,0 +1,29 @@
+{
+  "name": "@canton-dappbooster/dark-pool-service",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "tsc -p .",
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "lint": "biome check",
+    "lint:fix": "biome check --write",
+    "format": "biome format --write",
+    "test": "node --test --experimental-strip-types \"test/**/*.test.ts\""
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.0.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}

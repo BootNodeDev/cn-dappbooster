@@ -10,7 +10,8 @@
     "canton-barebones/wallet-service",
     "dapp/daml",
     "dapp/e2e",
-    "dapp/frontend"
+    "dapp/frontend",
+    "canton-barebones/dark-pool-service"
   ],
   "scripts": {
     "canton:up": "npm --prefix canton-barebones run up",
@@ -32,7 +33,9 @@
     "e2e": "npm --prefix dapp/e2e test",
     "e2e:headed": "npm --prefix dapp/e2e run test:headed",
     "e2e:ui": "npm --prefix dapp/e2e run test:ui",
-    "prepare": "husky"
+    "prepare": "husky",
+    "dark-pool:dev": "npm --prefix canton-barebones/dark-pool-service run dev",
+    "dark-pool-service:test": "npm --prefix canton-barebones/dark-pool-service test"
   },
   "overrides": {
     "@canton-network/dapp-sdk": "1.1.0"
