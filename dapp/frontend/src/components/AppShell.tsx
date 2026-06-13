@@ -1,4 +1,5 @@
-import { Link, Outlet } from '@tanstack/react-router'
+import { Link, Outlet, useRouterState } from '@tanstack/react-router'
+import { motion } from 'framer-motion'
 import { loadRuntimeConfig } from '@/runtimeConfig'
 
 const navBase =
@@ -8,6 +9,7 @@ const navActive =
 
 export const AppShell = (): JSX.Element => {
   const config = loadRuntimeConfig()
+  const pathname = useRouterState({ select: (s) => s.location.pathname })
   return (
     <div className="flex flex-col gap-5">
       <nav className="flex items-center justify-between border-b border-border pb-3">
@@ -29,7 +31,14 @@ export const AppShell = (): JSX.Element => {
           {config.cantonNetwork}
         </span>
       </nav>
-      <Outlet />
+      <motion.div
+        key={pathname}
+        initial={{ opacity: 0, y: 4 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.18, ease: [0.2, 0.6, 0.2, 1] }}
+      >
+        <Outlet />
+      </motion.div>
     </div>
   )
 }
