@@ -13,6 +13,8 @@
 #   ./scripts/dev-stack.sh docker-up   # macOS only: launch Docker Desktop, wait for the daemon
 #   ./scripts/dev-stack.sh up          # start the stack (containers, DAR, dev servers, extension)
 #   ./scripts/dev-stack.sh down        # stop dev servers and tear down containers
+#   ./scripts/dev-stack.sh fivenorth-up   # wallet-service @ hosted FiveNorth validator + dev servers (no local Canton/DAR)
+#   ./scripts/dev-stack.sh fivenorth-down # stop the FiveNorth wallet-service + dev servers
 #   ./scripts/dev-stack.sh docker-down # macOS only: quit Docker Desktop
 #   ./scripts/dev-stack.sh status      # show what is currently running
 #   ./scripts/dev-stack.sh extension   # build the Chrome extension into carpincho-wallet/dist-extension
@@ -328,24 +330,118 @@ mock_down() {
   fi
 }
 
+check_fivenorth_creds() { # warn (return 1) if the OIDC client secret is missing/placeholder
+  local env_file="$1" sec
+  sec="$(grep -E '^FIVENORTH_CLIENT_SECRET=' "$env_file" 2>/dev/null | head -1 | cut -d= -f2-)"
+  if [ -z "$sec" ] || [ "$sec" = "paste-client-secret-here" ]; then
+    warn "FIVENORTH_CLIENT_SECRET in $env_file is empty or still the placeholder."
+    return 1
+  fi
+  log "FiveNorth client secret present; wallet-service will mint and refresh its own ledger token."
+  return 0
+}
+
+fivenorth_up() {
+  mkdir -p "$RUN_DIR"
+
+  # A fresh clone may have no deps yet; one root install links every workspace.
+  if [ ! -d node_modules ]; then
+    install_deps
+  fi
+
+  docker info >/dev/null 2>&1 \
+    || die "Docker daemon not reachable. Start Docker first (menu: docker-up, the Docker app, or your CLI), then run 'fivenorth-up'."
+
+  local env_file="canton-barebones/.env.fivenorth"
+  if [ ! -f "$env_file" ]; then
+    die "$env_file not found. Copy canton-barebones/.env.fivenorth.example to it and set FIVENORTH_CLIENT_SECRET (Jatin's PDF), then retry."
+  fi
+  check_fivenorth_creds "$env_file" \
+    || warn "Set FIVENORTH_CLIENT_SECRET from the FiveNorth client creds; ledger calls will fail until you do."
+
+  # 1. wallet-service against the hosted FiveNorth validator. No local Canton,
+  # no DAR deploy — the dApp uses whatever is already on the hosted ledger.
+  log "Starting wallet-service against the FiveNorth devnet validator..."
+  npm run wallet-service:fivenorth
+
+  log "Checking wallet-service health..."
+  wait_http 60 "http://localhost:3010/health" "wallet-service" && { curl -fsS http://localhost:3010/health && echo; } || true
+
+  # 2. Carpincho wallet dev server (3011)
+  if lsof -nP -iTCP:3011 -sTCP:LISTEN >/dev/null 2>&1; then
+    warn "Port 3011 already in use; skipping wallet dev server."
+  else
+    log "Starting Carpincho wallet dev server -> http://localhost:3011"
+    nohup npm run wallet:dev >"$WALLET_LOG" 2>&1 &
+    echo $! >"$WALLET_PID"
+    wait_for 60 "$WALLET_LOG" "ready in|localhost:3011" "wallet dev server" || true
+  fi
+
+  # 3. dApp frontend dev server (3012)
+  if lsof -nP -iTCP:3012 -sTCP:LISTEN >/dev/null 2>&1; then
+    warn "Port 3012 already in use; skipping dApp dev server."
+  else
+    log "Starting dApp frontend dev server -> http://localhost:3012"
+    nohup npm run app:dev >"$DAPP_LOG" 2>&1 &
+    echo $! >"$DAPP_PID"
+    wait_for 60 "$DAPP_LOG" "ready in|localhost:3012" "dApp dev server" || true
+  fi
+
+  echo
+  log "FiveNorth stack is up:"
+  cat <<EOF
+   wallet-service   http://localhost:3010   (hosted FiveNorth devnet validator)
+   carpincho wallet http://localhost:3011   (log: $WALLET_LOG)
+   dApp frontend    http://localhost:3012   (log: $DAPP_LOG)
+EOF
+  echo "   No local Canton or DAR deploy in this mode. The wallet-service mints"
+  echo "   and refreshes its own ledger token from the FiveNorth client creds."
+}
+
+fivenorth_down() {
+  # 1. Dev servers (shared pidfiles with the local stack).
+  stop_pidfile "$WALLET_PID" "wallet dev server"
+  stop_pidfile "$DAPP_PID" "dApp dev server"
+  pkill -f "carpincho-wallet run dev" 2>/dev/null || true
+  pkill -f "vite --host localhost --port 3012" 2>/dev/null || true
+
+  # 2. wallet-service container (fivenorth compose project, not the local one).
+  if docker info >/dev/null 2>&1; then
+    log "Stopping the FiveNorth wallet-service..."
+    npm run wallet-service:fivenorth:down || warn "wallet-service:fivenorth:down reported an error"
+  else
+    warn "Docker daemon not reachable; skipping wallet-service:fivenorth:down"
+  fi
+
+  echo
+  log "FiveNorth stack is down. Ports 3010-3012:"
+  if lsof -nP -iTCP:3010-3012 -sTCP:LISTEN >/dev/null 2>&1; then
+    lsof -nP -iTCP:3010-3012 -sTCP:LISTEN | awk 'NR>1{print "   "$1, $9}'
+  else
+    echo "   (all free)"
+  fi
+}
+
 menu() {
   if [ ! -t 0 ] || [ ! -t 1 ]; then
     die "The menu needs an interactive terminal. Run a subcommand directly instead."
   fi
 
   # Display label per item; `keys` is the matching action dispatched on select.
-  local keys=(install docker-up docker-down up down mock-up mock-down extension quit)
-  local labels=("Install" "Docker up" "Docker down" "Stack up" "Stack down" "Wallet up" "Wallet down" "Build extension" "Quit")
+  local keys=(install docker-up docker-down up down fivenorth-up fivenorth-down mock-up mock-down extension quit)
+  local labels=("Install" "Docker up" "Docker down" "Stack up" "Stack down" "FiveNorth up" "FiveNorth down" "Wallet up" "Wallet down" "Build extension" "Quit")
   local descs=(
     "install + link every workspace"
     "start Docker Desktop (macOS)"
     "quit Docker Desktop (macOS)"
     "start containers, dev servers, build DAR and extension"
     "stop dev servers + tear down containers"
-    "start mock wallet-service + carpincho web app (no Docker)"
-    "stop the mock wallet-service + carpincho web app"
-    "build the extension (carpincho-wallet/dist-extension)"
-    "exit"
+    "wallet-service @ hosted FiveNorth validator + dev servers"
+    "stop FiveNorth wallet-service + dev servers"
+    "mock wallet-service + carpincho web app (no Docker)"
+    "stop the mock server + web app only"
+    "build the extension + copy to ~/Desktop"
+    "exit this menu"
   )
   local n=${#keys[@]} sel=0 key rest i num choice
 
@@ -398,6 +494,8 @@ menu() {
       docker-down) ( docker_down ) || warn "docker-down did not finish cleanly" ;;
       up)          ( up ) || warn "up did not finish cleanly (see output above)" ;;
       down)        ( down ) || warn "down did not finish cleanly" ;;
+      fivenorth-up)   ( fivenorth_up ) || warn "fivenorth-up did not finish cleanly (see output above)" ;;
+      fivenorth-down) ( fivenorth_down ) || warn "fivenorth-down did not finish cleanly" ;;
       mock-up)     ( mock_up ) || warn "mock-up did not finish cleanly" ;;
       mock-down)   ( mock_down ) || warn "mock-down did not finish cleanly" ;;
       extension)   ( build_extension ) || warn "extension build failed" ;;
@@ -430,10 +528,12 @@ case "${1:-menu}" in
   docker-up)   docker_up ;;
   up)          up ;;
   down)        down ;;
+  fivenorth-up)   fivenorth_up ;;
+  fivenorth-down) fivenorth_down ;;
   docker-down) docker_down ;;
   status)      status ;;
   extension)   build_extension ;;
   mock-up)     mock_up ;;
   mock-down)   mock_down ;;
-  *)           die "Usage: $0 {menu|install|docker-up|up|down|docker-down|status|extension|mock-up|mock-down}" ;;
+  *)           die "Usage: $0 {menu|install|docker-up|up|down|fivenorth-up|fivenorth-down|docker-down|status|extension|mock-up|mock-down}" ;;
 esac
