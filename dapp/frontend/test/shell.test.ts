@@ -28,9 +28,9 @@ describe('dapp shell', () => {
     assert.doesNotMatch(app, /useExecute|useLedger/)
   })
 
-  it('uses the cn-darkpools product name, not stale branding', () => {
+  it('uses the CN Dark Pools product name, not stale branding', () => {
     const app = readText('src/App.tsx')
-    assert.match(app, /appName: 'cn-darkpools'/)
+    assert.match(app, /appName: 'CN Dark Pools'/)
     assert.doesNotMatch(app, /Stampbook|Counter dApp/)
   })
 

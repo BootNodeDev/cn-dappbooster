@@ -1,4 +1,4 @@
-# cn-darkpools
+# CN Dark Pools
 
 A dark pool for trading on the Canton Network. You place an order, it stays
 private until the venue finds the other side, and the two of you settle at the

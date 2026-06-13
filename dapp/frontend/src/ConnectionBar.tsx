@@ -248,10 +248,10 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
       </a>
       <header className="sticky top-0 z-30 border-b border-border bg-surface/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
-          <a href="/" className="flex items-center gap-2.5" aria-label="cn-darkpools home">
-            <img src="/logo.svg" alt="cn-darkpools" className="size-8 rounded-lg" />
+          <a href="/" className="flex items-center gap-2.5" aria-label="CN Dark Pools home">
+            <img src="/logo.svg" alt="CN Dark Pools" className="size-8 rounded-lg" />
             <span className="font-display text-base font-extrabold tracking-[-0.01em] text-foreground">
-              cn·darkpools
+              CN Dark Pools
             </span>
           </a>
           <div className="flex items-center gap-2">
@@ -288,7 +288,7 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
           <section className="flex flex-col items-center pt-10 pb-6 text-center sm:pt-20">
             <img
               src="/logo.svg"
-              alt="cn-darkpools"
+              alt="CN Dark Pools"
               className="animate-drift mb-7 size-28 rounded-3xl"
             />
             <h1 className="max-w-2xl font-display text-4xl font-extrabold leading-[1.05] tracking-[-0.02em] text-foreground sm:text-5xl">
@@ -297,9 +297,9 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
               showing your hand
             </h1>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground">
-              cn-darkpools is a dark pool built on Canton. You place an order, it stays hidden until
-              the venue finds the other side, and you both settle at the price in the middle. No
-              public book for the room to read, nothing for bots to race ahead of.
+              CN Dark Pools is a dark pool built on Canton. You place an order, it stays hidden
+              until the venue finds the other side, and you both settle at the price in the middle.
+              No public book for the room to read, nothing for bots to race ahead of.
             </p>
             <button
               type="button"

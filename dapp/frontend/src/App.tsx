@@ -23,7 +23,7 @@ export const App = (): JSX.Element => {
       <ToastProvider>
         <ConnectKitProvider
           config={{
-            appName: 'cn-darkpools',
+            appName: 'CN Dark Pools',
             appDescription: 'Private dark-pool trading on Canton Network',
             network: runtimeConfig.cantonNetwork,
           }}
