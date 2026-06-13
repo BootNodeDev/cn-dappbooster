@@ -1,0 +1,16 @@
+{
+  "jsonApiUrl": "http://localhost:2975",
+  "userId": "ledger-api-user",
+  "parties": {
+    "venue": "darkpool-venue::mock",
+    "admin": "darkpool-admin::mock",
+    "traders": { "alice": "darkpool-alice::mock", "bob": "darkpool-bob::mock" }
+  },
+  "poolId": "TTA-TTB",
+  "instruments": {
+    "base": { "admin": "darkpool-admin::mock", "id": "TTA" },
+    "quote": { "admin": "darkpool-admin::mock", "id": "TTB" }
+  },
+  "factoryCid": "mock-registry-rules-cid",
+  "poolCid": "mock-pool-cid"
+}
