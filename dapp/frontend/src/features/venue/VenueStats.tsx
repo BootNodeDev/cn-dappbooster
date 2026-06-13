@@ -49,11 +49,7 @@ export const VenueStats = ({ pool }: { pool: Pool }): JSX.Element => {
         sub={last ? `${formatQty(last.quantity)} ${pool.baseLabel} · midpoint` : 'no matches yet'}
       >
         {last ? (
-          <Stat
-            value={last.price}
-            format={formatPrice}
-            className="font-mono text-2xl text-primary"
-          />
+          <Stat value={last.price} format={formatPrice} className="font-mono text-2xl text-mid" />
         ) : (
           <span className="font-mono text-2xl text-soft">—</span>
         )}

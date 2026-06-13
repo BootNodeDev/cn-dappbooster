@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
+import { TraderFace } from '@/components/TraderFace'
 import { formatPrice, formatQty } from '@/darkpool/format'
 import { useTrades } from '@/darkpool/hooks'
 import type { Pool } from '@/darkpool/types'
@@ -41,13 +42,23 @@ export const SettledMatches = ({ pool }: { pool: Pool }): JSX.Element => {
                   animate={{ opacity: 1 }}
                   className="border-b border-border/60 text-sm last:border-b-0"
                 >
-                  <td className="px-5 py-2.5 font-mono text-primary">{formatPrice(t.price)}</td>
+                  <td className="px-5 py-2.5 font-mono text-mid">{formatPrice(t.price)}</td>
                   <td className="px-5 py-2.5 font-mono">{formatQty(t.quantity)}</td>
-                  <td className="px-5 py-2.5 font-mono text-muted-foreground">
-                    {t.buyer.split('::')[0]}
+                  <td className="px-5 py-2.5">
+                    <span className="inline-flex items-center gap-2 font-mono text-muted-foreground">
+                      <span className="overflow-hidden rounded-full">
+                        <TraderFace name={t.buyer} size={18} />
+                      </span>
+                      {t.buyer.split('::')[0]}
+                    </span>
                   </td>
-                  <td className="px-5 py-2.5 font-mono text-muted-foreground">
-                    {t.seller.split('::')[0]}
+                  <td className="px-5 py-2.5">
+                    <span className="inline-flex items-center gap-2 font-mono text-muted-foreground">
+                      <span className="overflow-hidden rounded-full">
+                        <TraderFace name={t.seller} size={18} />
+                      </span>
+                      {t.seller.split('::')[0]}
+                    </span>
                   </td>
                   <td className="px-5 py-2.5 text-right font-mono text-soft">
                     {time(t.settledAt)}

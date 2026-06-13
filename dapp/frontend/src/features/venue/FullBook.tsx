@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
+import { TraderFace } from '@/components/TraderFace'
 import { formatPrice, formatQty } from '@/darkpool/format'
 import { useBook } from '@/darkpool/hooks'
 import type { Order, Pool } from '@/darkpool/types'
@@ -71,8 +72,13 @@ export const FullBook = ({
                     </td>
                     <td className="px-5 py-2.5 font-mono">{formatQty(o.quantity)}</td>
                     <td className="px-5 py-2.5 font-mono text-soft">{formatQty(o.minFill)}</td>
-                    <td className="px-5 py-2.5 font-mono text-muted-foreground">
-                      {o.trader.split('::')[0]}
+                    <td className="px-5 py-2.5">
+                      <span className="inline-flex items-center gap-2 font-mono text-muted-foreground">
+                        <span className="overflow-hidden rounded-full">
+                          <TraderFace name={o.trader} size={18} />
+                        </span>
+                        {o.trader.split('::')[0]}
+                      </span>
                     </td>
                     <td className="px-5 py-2.5 text-right font-mono text-soft">
                       {time(o.submittedAt)}

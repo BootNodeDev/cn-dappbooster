@@ -1,4 +1,5 @@
 import { useParty } from 'canton-connect-kit'
+import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { usePools } from '@/darkpool/hooks'
 import { Balances } from './Balances'
@@ -22,25 +23,36 @@ export const TradeWorkspace = ({ party: partyId }: { party: string }): JSX.Eleme
 
   if (!pool) return <div className="py-10 text-center text-muted-foreground">Loading…</div>
 
+  const ease = [0.16, 1, 0.3, 1] as const
+  const rise = (delay: number) => ({
+    initial: { opacity: 0, y: 12 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.45, delay, ease },
+  })
+
   return (
-    <div className="flex flex-col gap-3.5">
+    <div className="flex flex-col gap-5">
       <MarketBar pool={pool} pools={pools} onPoolChange={setPoolId} />
 
-      <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-[330px_1fr_300px]">
-        <OrderEntry pool={pool} party={partyId} />
+      <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-[340px_1fr]">
+        <motion.div className="flex flex-col gap-4" {...rise(0)}>
+          <OrderEntry pool={pool} party={partyId} />
+          <Balances pool={pool} party={partyId} />
+        </motion.div>
 
-        <div className="flex flex-col gap-3.5">
+        <motion.div className="flex flex-col gap-4" {...rise(0.1)}>
           <ShieldedBook pool={pool} />
           <ClearingChart pool={pool} />
-        </div>
-
-        <div className="flex flex-col gap-3.5">
-          <Balances pool={pool} party={partyId} />
-          <MyOpenOrders pool={pool} party={partyId} />
-        </div>
+        </motion.div>
       </div>
 
-      <MyFills pool={pool} party={partyId} />
+      <motion.div {...rise(0.2)}>
+        <MyOpenOrders pool={pool} party={partyId} />
+      </motion.div>
+
+      <motion.div {...rise(0.3)}>
+        <MyFills pool={pool} party={partyId} />
+      </motion.div>
     </div>
   )
 }

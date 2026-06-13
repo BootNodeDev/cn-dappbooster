@@ -1,110 +1,128 @@
 @import "tailwindcss";
-@import "@fontsource-variable/geist";
+@import "@fontsource-variable/bricolage-grotesque";
+@import "@fontsource-variable/dm-sans";
 @import "@fontsource-variable/geist-mono";
 
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 /*
- * Typography: font-display / font-sans (Geist) for headings and UI; font-mono
- * (Geist Mono) for party IDs, hashes, RPC URLs, JSON, amounts.
+ * Typography: font-display (Bricolage Grotesque, a characterful display sans)
+ * for the brand, section titles and headline numbers; font-sans (DM Sans) for
+ * UI labels and body; font-mono (Geist Mono) for all tabular data.
+ * The clearing/midpoint price gets the gold --color-mid: the one warm note in a
+ * cold abyssal palette, marking the moment that matters.
  */
 
 :root {
   color-scheme: light;
 
-  --color-background: #f4f7fa;
+  --color-background: #eef1f7;
   --color-surface: #ffffff;
-  --color-muted: #edf1f6;
+  --color-muted: #e7ecf5;
 
-  --color-border: #dce4ee;
-  --color-border-strong: #ccccd6;
+  --color-border: #d7deea;
+  --color-border-strong: #c2ccdd;
 
-  --color-foreground: #0e1a26;
-  --color-muted-foreground: #5a6b7f;
-  --color-soft: #8595a8;
+  --color-foreground: #0c1626;
+  --color-muted-foreground: #51607a;
+  --color-soft: #8493a8;
 
-  --color-primary: #0892c0;
-  --color-primary-hover: #0aa3d6;
-  --color-primary-soft: #e2f4fa;
-  --color-primary-ink: #064b63;
+  --color-primary: #2563ff;
+  --color-primary-hover: #1d54e0;
+  --color-primary-soft: #e7eeff;
+  --color-primary-ink: #15307a;
   --color-primary-foreground: #ffffff;
 
-  --logo-shadow-color: rgba(44, 45, 64, 0.5);
+  --logo-shadow-color: rgba(20, 30, 60, 0.4);
 
-  --color-accent: #0892c0;
+  --color-accent: #6c3fff;
+
+  --color-mid: #9a7b32;
+  --color-mid-soft: #f4ecd6;
 
   --color-success: #0f9d6b;
   --color-success-soft: #e2f3ea;
 
-  --color-danger: #e0455a;
-  --color-danger-soft: #f6dede;
+  --color-danger: #d83a4f;
+  --color-danger-soft: #f8dfe2;
 
   --color-warning: #8a6400;
   --color-warning-soft: #f6ecd2;
 
   --color-form-placeholder: #6f7185;
 
-  --color-scrim: rgba(20, 21, 43, 0.42);
+  --color-scrim: rgba(12, 22, 38, 0.42);
 
-  --shadow-card: 0 12px 28px -16px rgba(28, 29, 46, 0.18);
-  --shadow-popover: 0 18px 36px -12px rgba(28, 29, 46, 0.22);
-  --shadow-focus: 0 0 0 3px rgba(8, 146, 192, 0.32);
-  --shadow-focus-danger: 0 0 0 3px rgba(224, 69, 90, 0.32);
-  --shadow-glow: 0 10px 26px rgba(8, 146, 192, 0.4);
+  --shadow-card: 0 12px 28px -18px rgba(20, 30, 60, 0.2);
+  --shadow-popover: 0 18px 40px -14px rgba(20, 30, 60, 0.26);
+  --shadow-focus: 0 0 0 3px rgba(37, 99, 255, 0.3);
+  --shadow-focus-danger: 0 0 0 3px rgba(216, 58, 79, 0.3);
+  --shadow-glow: 0 12px 30px -8px rgba(37, 99, 255, 0.35);
 
-  --bg-gradient-brand: linear-gradient(135deg, #a948c4, #dd1a6e);
+  --bg-gradient-brand: linear-gradient(135deg, #2563ff, #6c3fff);
 
-  --bg-radial: radial-gradient(900px 500px at 78% -8%, rgba(8, 146, 192, 0.08), transparent 60%);
+  --bg-radial:
+    radial-gradient(ellipse 70% 50% at 8% 108%, rgba(37, 99, 255, 0.08), transparent 60%),
+    radial-gradient(900px 500px at 88% -10%, rgba(108, 63, 255, 0.06), transparent 60%);
 }
 
 [data-theme="dark"] {
   color-scheme: dark;
 
-  --color-background: #070a0f;
-  --color-surface: #0e141d;
-  --color-muted: #121a25;
+  /* three abyssal depth layers: base -> surface -> raised */
+  --color-background: #050810;
+  --color-surface: #0a0f1e;
+  --color-muted: #0f1628;
 
-  --color-border: #1b2532;
-  --color-border-strong: #26344680;
+  --color-border: #1a2540;
+  --color-border-strong: #2a3a5e;
 
-  --color-foreground: #e6edf5;
-  --color-muted-foreground: #8595a8;
-  --color-soft: #5a6b7f;
+  --color-foreground: #e8edf7;
+  --color-muted-foreground: #8090aa;
+  --color-soft: #56688a;
 
-  --color-primary: #36e0ff;
-  --color-primary-hover: #5be8ff;
-  --color-primary-soft: #0e2530;
-  --color-primary-ink: #bdf3ff;
-  --color-primary-foreground: #04161f;
+  /* bioluminescent blue, not crypto-cyan */
+  --color-primary: #3d7fff;
+  --color-primary-hover: #5b94ff;
+  --color-primary-soft: #0e1a36;
+  --color-primary-ink: #bcd3ff;
+  --color-primary-foreground: #04122e;
 
   --logo-shadow-color: rgba(0, 0, 0, 0.6);
 
-  --color-accent: #36e0ff;
+  /* violet-indigo depth shimmer */
+  --color-accent: #6c3fff;
 
-  --color-success: #34d9a8;
-  --color-success-soft: #34d9a818;
+  /* warm gold: the clearing/midpoint price, the one warm note */
+  --color-mid: #d8b878;
+  --color-mid-soft: #2a2113;
 
-  --color-danger: #ff6b7a;
-  --color-danger-soft: #ff6b7a16;
+  --color-success: #2ecc8f;
+  --color-success-soft: #0f2a20;
 
-  --color-warning: #d4a85a;
-  --color-warning-soft: #332a16;
+  --color-danger: #f0556a;
+  --color-danger-soft: #2a131a;
 
-  --color-form-placeholder: #7a7c92;
+  --color-warning: #d8b878;
+  --color-warning-soft: #2a2113;
 
-  --color-scrim: rgba(8, 8, 18, 0.65);
+  --color-form-placeholder: #56688a;
 
-  --shadow-card: 0 14px 32px -16px rgba(0, 0, 0, 0.55);
-  --shadow-popover: 0 22px 44px -16px rgba(0, 0, 0, 0.7);
-  --shadow-focus: 0 0 0 3px rgba(54, 224, 255, 0.4);
-  --shadow-focus-danger: 0 0 0 3px rgba(255, 107, 122, 0.4);
-  --shadow-glow: 0 10px 26px rgba(54, 224, 255, 0.4);
+  --color-scrim: rgba(3, 5, 12, 0.7);
 
-  --bg-gradient-brand: linear-gradient(135deg, #a948c4, #dd1a6e);
+  --shadow-card: 0 18px 40px -22px rgba(0, 0, 0, 0.8);
+  --shadow-popover: 0 24px 50px -18px rgba(0, 0, 0, 0.85);
+  --shadow-focus: 0 0 0 3px rgba(61, 127, 255, 0.45);
+  --shadow-focus-danger: 0 0 0 3px rgba(240, 85, 106, 0.4);
+  --shadow-glow: 0 0 40px -6px rgba(61, 127, 255, 0.5);
 
+  --bg-gradient-brand: linear-gradient(135deg, #3d7fff, #6c3fff);
+
+  /* abyssal light from far below, faint surface glow above */
   --bg-radial:
-    radial-gradient(1200px 600px at 78% -8%, rgba(54, 224, 255, 0.1), transparent 60%),
-    radial-gradient(900px 500px at 8% 4%, rgba(54, 224, 255, 0.06), transparent 55%);
+    radial-gradient(ellipse 90% 55% at -8% 112%, rgba(20, 45, 110, 0.55), transparent 60%),
+    radial-gradient(1100px 520px at 88% -12%, rgba(61, 127, 255, 0.1), transparent 60%),
+    radial-gradient(700px 700px at 50% 50%, rgba(108, 63, 255, 0.04), transparent 70%);
 }
 
 @theme inline {
@@ -132,6 +150,8 @@
   --color-scrim: var(--color-scrim);
   --color-up: var(--color-success);
   --color-down: var(--color-danger);
+  --color-mid: var(--color-mid);
+  --color-mid-soft: var(--color-mid-soft);
 
   --radius-sm: 4px;
   --radius-md: 6px;
@@ -140,8 +160,8 @@
 
   --tracking-eyebrow: 0.1em;
 
-  --font-display: "Geist Variable", system-ui, -apple-system, sans-serif;
-  --font-sans: "Geist Variable", system-ui, -apple-system, sans-serif;
+  --font-display: "Bricolage Grotesque Variable", "DM Sans Variable", system-ui, sans-serif;
+  --font-sans: "DM Sans Variable", system-ui, -apple-system, sans-serif;
   --font-mono: "Geist Mono Variable", ui-monospace, SFMono-Regular, monospace;
 
   --shadow-card: var(--shadow-card);

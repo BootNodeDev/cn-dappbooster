@@ -83,14 +83,13 @@ export const OrderEntry = ({ pool, party }: { pool: Pool; party: string }): JSX.
     }
   }
 
-  const accent = side === 'Buy' ? 'text-up' : 'text-down'
   const buttonClass =
     side === 'Buy'
       ? 'bg-up text-background hover:brightness-110'
       : 'bg-down text-background hover:brightness-110'
 
   return (
-    <section className="rounded-xl border border-border bg-surface p-5">
+    <section className="rounded-2xl border border-border border-l-2 border-l-primary bg-surface p-5">
       <div className="mb-4 flex items-center gap-2">
         <h2 className="font-display text-base font-semibold text-foreground">
           Place private order
@@ -201,7 +200,7 @@ export const OrderEntry = ({ pool, party }: { pool: Pool; party: string }): JSX.
         </div>
         <div className="flex justify-between py-0.5">
           <dt className="text-muted-foreground">Est. clearing</dt>
-          <dd className={`font-mono ${accent}`}>{mid === null ? '—' : `~${formatPrice(mid)}`}</dd>
+          <dd className="font-mono text-mid">{mid === null ? '—' : `~${formatPrice(mid)}`}</dd>
         </div>
       </dl>
 

@@ -1,6 +1,7 @@
 import { useConnect, useParty, useWalletStatus } from 'canton-connect-kit'
 import type { ReactNode } from 'react'
 import { useEffect, useRef, useState } from 'react'
+import { TraderFace } from '@/components/TraderFace'
 import {
   CHEVRON_DOWN_ICON,
   COPY_ICON,
@@ -190,10 +191,9 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
         aria-expanded={accountOpen}
         className="inline-flex h-9 max-w-[220px] items-center gap-2 rounded-full border border-border bg-surface pl-1.5 pr-3 text-sm font-semibold text-foreground transition-colors hover:border-primary"
       >
-        <span
-          aria-hidden="true"
-          className="size-6 shrink-0 rounded-full bg-[image:var(--bg-gradient-brand)]"
-        />
+        <span aria-hidden="true" className="shrink-0 overflow-hidden rounded-full">
+          <TraderFace name={party?.partyId ?? ''} size={22} />
+        </span>
         <span className="truncate">{(party?.partyId ?? '').split('::')[0]}</span>
         <span className="text-muted-foreground">{CHEVRON_DOWN_ICON}</span>
       </button>

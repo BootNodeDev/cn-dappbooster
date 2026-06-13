@@ -107,7 +107,7 @@ export const MatchPanel = ({
         </div>
         <div className="flex justify-between py-0.5">
           <dt className="text-muted-foreground">Midpoint price</dt>
-          <dd className="font-mono text-primary">{exec === null ? '—' : formatPrice(exec)}</dd>
+          <dd className="font-mono text-mid">{exec === null ? '—' : formatPrice(exec)}</dd>
         </div>
         <div className="flex justify-between py-0.5">
           <dt className="text-muted-foreground">Fill quantity</dt>

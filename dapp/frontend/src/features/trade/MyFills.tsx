@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
+import { TraderFace } from '@/components/TraderFace'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { formatNotional, formatPrice, formatQty } from '@/darkpool/format'
 import { useMyFills } from '@/darkpool/hooks'
@@ -49,11 +50,16 @@ export const MyFills = ({ pool, party }: { pool: Pool; party: string }): JSX.Ele
                         {isBuy ? '▲ Buy' : '▼ Sell'}
                       </span>
                     </td>
-                    <td className="px-5 py-2.5 font-mono">{formatPrice(f.price)}</td>
+                    <td className="px-5 py-2.5 font-mono text-mid">{formatPrice(f.price)}</td>
                     <td className="px-5 py-2.5 font-mono">{formatQty(f.quantity)}</td>
                     <td className="px-5 py-2.5 font-mono">{formatNotional(f.notional)}</td>
-                    <td className="px-5 py-2.5 font-mono text-muted-foreground">
-                      {f.counterpartyLabel}
+                    <td className="px-5 py-2.5">
+                      <span className="inline-flex items-center gap-2 font-mono text-muted-foreground">
+                        <span className="overflow-hidden rounded-full">
+                          <TraderFace name={f.counterpartyLabel} size={18} />
+                        </span>
+                        {f.counterpartyLabel}
+                      </span>
                     </td>
                     <td className="px-5 py-2.5 text-right font-mono text-soft">
                       {time(f.settledAt)}
