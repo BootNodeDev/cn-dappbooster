@@ -28,10 +28,10 @@ describe('dapp shell', () => {
     assert.doesNotMatch(app, /useExecute|useLedger/)
   })
 
-  it('uses the Stampbook product name, not stale counter branding', () => {
+  it('uses the cn-darkpools product name, not stale branding', () => {
     const app = readText('src/App.tsx')
-    assert.match(app, /appName: 'dAppBooster Canton Stampbook'/)
-    assert.doesNotMatch(app, /Counter dApp/)
+    assert.match(app, /appName: 'cn-darkpools'/)
+    assert.doesNotMatch(app, /Stampbook|Counter dApp/)
   })
 
   it('ConnectionBar uses the shared toast system, not sonner', () => {
