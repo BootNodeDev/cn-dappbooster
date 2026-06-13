@@ -7,6 +7,9 @@ const readText = (path: string): string => readFileSync(path, 'utf8')
 
 describe('extension packaging', () => {
   it('defines a local Manifest V3 extension popup', () => {
+    // Scenario: the browser extension package should be a Manifest V3 popup wallet that can
+    // observe any dApp origin. The content script match pattern and host permissions must stay
+    // broad enough for local and deployed dApps while the popup assets remain local extension files.
     const manifest = readJson<{
       manifest_version?: number
       name?: string
@@ -24,8 +27,7 @@ describe('extension packaging', () => {
     assert.equal(manifest.icons?.['128'], 'icons/carpincho-128.png')
     assert.ok(manifest.permissions?.includes('storage'))
     assert.ok(manifest.permissions?.includes('activeTab'))
-    assert.ok(manifest.host_permissions?.includes('http://localhost/*'))
-    assert.ok(manifest.host_permissions?.includes('http://127.0.0.1/*'))
+    assert.ok(manifest.host_permissions?.includes('<all_urls>'))
   })
 
   it('sources the built manifest version from the monorepo root package.json', () => {
