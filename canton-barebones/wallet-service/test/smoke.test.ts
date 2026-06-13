@@ -3,11 +3,13 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 import { loadConfig } from '../src/config.ts'
 
 const CANTON_VARS = [
-  'CANTON_BACKEND_TOKEN',
   'CANTON_AUTH_AUDIENCE',
   'CANTON_AUTH_SECRET',
+  'FIVENORTH_AUTH_URL',
+  'FIVENORTH_CLIENT_ID',
+  'FIVENORTH_CLIENT_SECRET',
+  'FIVENORTH_SCOPE',
   'SPLICE_VALIDATOR_URL',
-  'SPLICE_SCAN_API_URL',
   'SPLICE_REGISTRY_API_URL',
   'WALLET_SERVICE_MOCK',
 ] as const
@@ -39,80 +41,96 @@ describe('config loader', () => {
     restore(saved)
   })
 
-  it('fails clearly when real mode starts without CANTON_BACKEND_TOKEN', () => {
-    // Scenario: real wallet-service mode must not mint a bearer token from the
-    // local auth recipe. The operator should generate a token explicitly and
-    // paste it into CANTON_BACKEND_TOKEN so every runtime token is visible.
+  it('fails clearly when real mode starts without the FiveNorth client secret', () => {
+    // Scenario: FiveNorth mode refreshes OAuth tokens at runtime. A missing
+    // machine-to-machine secret would make every Canton call fail later, so boot
+    // should stop with the exact env var the operator must set.
     assert.throws(
       () => loadConfig(),
-      /CANTON_BACKEND_TOKEN is required\. Generate one with: npm run canton:token -- ledger-api-user/,
+      /FIVENORTH_CLIENT_SECRET is required for FiveNorth token refresh/,
     )
   })
 
-  it('does not use the local signing recipe to mint a wallet-service token', () => {
-    // Scenario: the local signing recipe is only for scripts.
-    // The runtime service must still fail until CANTON_BACKEND_TOKEN is set.
+  it('does not use the local signing recipe as runtime auth', () => {
+    // Scenario: old LocalNet signing inputs are still script-only. Runtime auth
+    // must come from FiveNorth client credentials so tokens can be refreshed.
     process.env.CANTON_AUTH_AUDIENCE = 'https://canton.network.global'
     process.env.CANTON_AUTH_SECRET = 'unsafe'
 
     assert.throws(
       () => loadConfig(),
-      /CANTON_BACKEND_TOKEN is required\. Generate one with: npm run canton:token -- ledger-api-user/,
+      /FIVENORTH_CLIENT_SECRET is required for FiveNorth token refresh/,
     )
   })
 
-  it('tokenSource is "env" when CANTON_BACKEND_TOKEN is set', () => {
-    // Scenario: the explicit backend token is the only accepted real-mode
-    // credential source, and it is passed through unchanged to SDK calls.
-    process.env.CANTON_BACKEND_TOKEN = 'explicit.jwt.value'
-    process.env.CANTON_AUTH_AUDIENCE = 'https://canton.network.global'
-    process.env.CANTON_AUTH_SECRET = 'unsafe'
-    const config = loadConfig()
-    assert.equal(config.canton.tokenSource, 'env')
-    assert.equal(config.canton.backendToken, 'explicit.jwt.value')
-  })
-
-  it('defaults Splice service URLs for token and Amulet SDK helpers', () => {
-    // Scenario: wallet-service owns SDK helper configuration so Carpincho can
-    // keep a single wallet-service URL. LocalNet defaults should match the
-    // Splice services exposed by canton-barebones.
-    process.env.CANTON_BACKEND_TOKEN = 'explicit.jwt.value'
+  it('loads FiveNorth client credentials for runtime token refresh', () => {
+    // Scenario: the operator stores only the long-lived OAuth client secret.
+    // wallet-service derives short-lived bearer tokens from these settings.
+    process.env.FIVENORTH_CLIENT_SECRET = 'client-secret'
 
     const config = loadConfig()
 
-    assert.deepEqual(config.splice, {
-      validatorUrl: 'http://localhost:2000/api/validator',
-      scanApiUrl: 'http://scan.localhost:4000/api/scan',
-      registryApiUrl: 'http://localhost:2000/api/validator/v0/scan-proxy',
+    assert.equal(config.canton.tokenSource, 'fivenorth')
+    assert.deepEqual(config.canton.auth, {
+      tokenUrl: 'https://auth.sandbox.fivenorth.io/application/o/token/',
+      clientId: 'validator-devnet-m2m',
+      clientSecret: 'client-secret',
+      scope: 'daml_ledger_api',
+      refreshSkewMs: 60_000,
     })
   })
 
-  it('allows Splice service URLs to be overridden by environment', () => {
-    // Scenario: non-default LocalNet layouts can move Splice endpoints without
-    // changing Carpincho runtime config. wallet-service reads these values once
-    // at startup and passes them to the SDK namespaces.
-    process.env.CANTON_BACKEND_TOKEN = 'explicit.jwt.value'
+  it('defaults service URLs to the hosted FiveNorth validator', () => {
+    // Scenario: this branch runs without the local Splice stack. Defaults should
+    // point wallet-service at the hosted ledger API and validator scan-proxy.
+    process.env.FIVENORTH_CLIENT_SECRET = 'client-secret'
+
+    const config = loadConfig()
+
+    assert.equal(
+      config.canton.jsonApiUrl,
+      'https://ledger-api.validator.devnet.sandbox.fivenorth.io',
+    )
+    assert.deepEqual(config.splice, {
+      validatorUrl: 'https://wallet.validator.devnet.sandbox.fivenorth.io/api/validator',
+      registryApiUrl:
+        'https://wallet.validator.devnet.sandbox.fivenorth.io/api/validator/v0/scan-proxy',
+    })
+  })
+
+  it('allows FiveNorth endpoints to be overridden by environment', () => {
+    // Scenario: sandbox hostnames can change. Operators should be able to point
+    // wallet-service at a different validator without code changes.
+    process.env.FIVENORTH_CLIENT_SECRET = 'client-secret'
+    process.env.FIVENORTH_AUTH_URL = 'https://auth.example/token'
+    process.env.FIVENORTH_CLIENT_ID = 'client-id'
+    process.env.FIVENORTH_SCOPE = 'custom_scope'
     process.env.SPLICE_VALIDATOR_URL = 'http://validator.example/api/validator'
-    process.env.SPLICE_SCAN_API_URL = 'http://scan.example/api/scan'
     process.env.SPLICE_REGISTRY_API_URL = 'http://registry.example/api/registry'
 
     const config = loadConfig()
 
+    assert.deepEqual(config.canton.auth, {
+      tokenUrl: 'https://auth.example/token',
+      clientId: 'client-id',
+      clientSecret: 'client-secret',
+      scope: 'custom_scope',
+      refreshSkewMs: 60_000,
+    })
     assert.deepEqual(config.splice, {
       validatorUrl: 'http://validator.example/api/validator',
-      scanApiUrl: 'http://scan.example/api/scan',
       registryApiUrl: 'http://registry.example/api/registry',
     })
   })
 
-  it('mock mode skips minting and leaves backendToken undefined', () => {
+  it('mock mode skips runtime auth', () => {
     // Scenario: mock mode is used for wallet-only UI iteration and must not
-    // require any LocalNet token because all Canton calls are short-circuited.
+    // require FiveNorth credentials because all Canton calls are short-circuited.
     process.env.WALLET_SERVICE_MOCK = '1'
     process.env.CANTON_AUTH_AUDIENCE = 'https://canton.network.global'
     process.env.CANTON_AUTH_SECRET = 'unsafe'
     const config = loadConfig()
     assert.equal(config.canton.tokenSource, 'none')
-    assert.equal(config.canton.backendToken, undefined)
+    assert.equal(config.canton.auth, undefined)
   })
 })

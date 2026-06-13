@@ -1,5 +1,6 @@
 import { SDK } from '@canton-network/wallet-sdk'
 import type { WalletServiceConfig } from './config.ts'
+import { type CantonTokenProvider, createFiveNorthTokenProvider } from './fivenorthToken.ts'
 import type {
   ConnectResult,
   JsonRpcError,
@@ -92,6 +93,7 @@ type RpcDependencies = {
   fetch?: typeof fetch
   now?: () => Date
   sleep?: (ms: number) => Promise<void>
+  tokenProvider?: CantonTokenProvider
 }
 
 type ActiveJsContractReader = {
@@ -232,16 +234,7 @@ type TokenHoldingSummary = {
   lockedCount?: number
   unlockedCount?: number
   holdings?: TokenHolding[]
-  source: 'scan' | 'utxos'
-  scan?: {
-    totalUnlockedCoin: string
-    totalLockedCoin: string
-    totalCoinHoldings: string
-    accumulatedHoldingFeesUnlocked: string
-    accumulatedHoldingFeesLocked: string
-    accumulatedHoldingFeesTotal: string
-    totalAvailableCoin: string
-  }
+  source: 'utxos'
 }
 
 type AmuletPreapprovalStatus = {
@@ -391,14 +384,6 @@ const optionalInstrumentParam = (p: Record<string, unknown>): TokenInstrumentId 
   }
 }
 
-// Identifies CC/Amulet requests, the only token family Scan can summarize.
-const isAmuletInstrument = (instrumentId?: TokenInstrumentId): boolean =>
-  instrumentId === undefined ||
-  instrumentId.id === undefined ||
-  ['amulet', 'amt', 'cantoncoin', 'canton coin', 'cc'].includes(
-    instrumentId.id.trim().toLowerCase(),
-  )
-
 // Creates the same grouping key Carpincho uses for token rows.
 const instrumentKey = (instrumentId?: TokenInstrumentId): string =>
   `${instrumentId?.admin ?? 'unknown-admin'}:${instrumentId?.id ?? 'unknown-token'}`
@@ -527,6 +512,11 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
       return await SDK.create(options as never)
     })
   const fetchImpl = deps.fetch ?? fetch
+  const cantonTokenProvider =
+    deps.tokenProvider ??
+    (config.canton.auth === undefined
+      ? undefined
+      : createFiveNorthTokenProvider(config.canton.auth, { fetch: fetchImpl }))
   const now = deps.now ?? (() => new Date())
   const sleep =
     deps.sleep ??
@@ -536,29 +526,44 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
       }))
   let sdkPromise: Promise<WalletSdk> | undefined
   let tokenSdkPromise: Promise<Cip56TokenSdk> | undefined
+  let sdkToken: string | undefined
+  let tokenSdkToken: string | undefined
+
+  // Centralizes bearer lookup so every request can refresh before Canton calls.
+  const getCantonToken = async (): Promise<string> => {
+    if (cantonTokenProvider === undefined) {
+      throw new Error('FIVENORTH_CLIENT_SECRET is required for FiveNorth token refresh')
+    }
+    return await cantonTokenProvider.getToken()
+  }
 
   const getSdk = async (): Promise<WalletSdk> => {
-    if (config.canton.backendToken === undefined) {
-      throw new Error('CANTON_BACKEND_TOKEN is required for Canton JSON API calls')
+    const token = await getCantonToken()
+    if (sdkToken !== token) {
+      sdkPromise = undefined
+      sdkToken = token
     }
     sdkPromise ??= sdkFactory({
-      auth: { method: 'static', token: config.canton.backendToken },
+      auth: { method: 'static', token },
       ledgerClientUrl: config.canton.jsonApiUrl,
       logAdapter: 'console',
     })
       .then((sdk) => sdk as WalletSdk)
       .catch((cause: unknown) => {
         sdkPromise = undefined
+        sdkToken = undefined
         throw new Error('Canton wallet SDK failed to initialize', { cause })
       })
     return await sdkPromise
   }
 
   const getTokenSdk = async (): Promise<Cip56TokenSdk> => {
-    if (config.canton.backendToken === undefined) {
-      throw new Error('CANTON_BACKEND_TOKEN is required for CIP-56 token helper calls')
+    const token = await getCantonToken()
+    if (tokenSdkToken !== token) {
+      tokenSdkPromise = undefined
+      tokenSdkToken = token
     }
-    const auth = { method: 'static', token: config.canton.backendToken }
+    const auth = { method: 'static', token }
     tokenSdkPromise ??= sdkFactory({
       auth,
       ledgerClientUrl: config.canton.jsonApiUrl,
@@ -570,7 +575,6 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
       },
       amulet: {
         validatorUrl: config.splice.validatorUrl,
-        scanApiUrl: config.splice.scanApiUrl,
         registryUrl: config.splice.registryApiUrl,
         auth,
       },
@@ -578,6 +582,7 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
       .then((sdk) => sdk as Cip56TokenSdk)
       .catch((cause: unknown) => {
         tokenSdkPromise = undefined
+        tokenSdkToken = undefined
         throw new Error('CIP-56 wallet SDK failed to initialize', { cause })
       })
     return await tokenSdkPromise
@@ -687,9 +692,7 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
       throw new InvalidParams('requestMethod is required')
     }
     const method = p.requestMethod.toUpperCase()
-    if (config.canton.backendToken === undefined) {
-      throw new Error('CANTON_BACKEND_TOKEN is required for Canton JSON API calls')
-    }
+    const token = await getCantonToken()
     const url = new URL(p.resource, config.canton.jsonApiUrl)
     for (const [key, value] of Object.entries(p.query ?? {})) {
       url.searchParams.set(key, String(value))
@@ -698,7 +701,7 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
       method,
       headers: {
         'content-type': 'application/json',
-        authorization: `Bearer ${config.canton.backendToken}`,
+        authorization: `Bearer ${token}`,
       },
       signal: AbortSignal.timeout(15_000),
     }
@@ -738,7 +741,7 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
     })
   }
 
-  // Keeps the generic SDK UTXO list behind one helper so Scan fallback cannot diverge.
+  // Keeps summary reads on the token SDK UTXO path so FiveNorth does not need direct Scan.
   const listHoldingUtxos = async (partyId: string): Promise<TokenHolding[]> => {
     const sdk = await getTokenSdk()
     return (await sdk.token.utxos.list({
@@ -749,82 +752,11 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
     })) as TokenHolding[]
   }
 
-  // Uses Scan's Amulet aggregate endpoint for fast CC balances.
-  const scanAmuletHoldingSummary = async (
-    partyId: string,
-    instrumentId?: TokenInstrumentId,
-  ): Promise<TokenHoldingSummary[]> => {
-    const url = `${config.splice.scanApiUrl.replace(/\/$/, '')}/v0/holdings/summary`
-    const response = await fetchImpl(url, {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        ...(config.canton.backendToken === undefined
-          ? {}
-          : { authorization: `Bearer ${config.canton.backendToken}` }),
-      },
-      body: JSON.stringify({
-        migration_id: 0,
-        record_time: now().toISOString(),
-        record_time_match: 'at_or_before',
-        owner_party_ids: [partyId],
-      }),
-    })
-    if (!response.ok) {
-      throw new Error(`Scan holdings summary failed with HTTP ${response.status}`)
-    }
-    const parsed = (await response.json()) as {
-      summaries?: Array<{
-        party_id: string
-        total_unlocked_coin: string
-        total_locked_coin: string
-        total_coin_holdings: string
-        accumulated_holding_fees_unlocked: string
-        accumulated_holding_fees_locked: string
-        accumulated_holding_fees_total: string
-        total_available_coin: string
-      }>
-    }
-    const summary = parsed.summaries?.find((item) => item.party_id === partyId)
-    if (summary === undefined) {
-      return []
-    }
-    const normalizedInstrument = {
-      ...(instrumentId?.admin === undefined ? {} : { admin: instrumentId.admin }),
-      id: instrumentId?.id ?? 'Amulet',
-    }
-    return [
-      {
-        key: instrumentKey(normalizedInstrument),
-        tokenLabel: instrumentLabel(normalizedInstrument),
-        instrumentId: normalizedInstrument,
-        totalAmount: summary.total_available_coin,
-        source: 'scan',
-        scan: {
-          totalUnlockedCoin: summary.total_unlocked_coin,
-          totalLockedCoin: summary.total_locked_coin,
-          totalCoinHoldings: summary.total_coin_holdings,
-          accumulatedHoldingFeesUnlocked: summary.accumulated_holding_fees_unlocked,
-          accumulatedHoldingFeesLocked: summary.accumulated_holding_fees_locked,
-          accumulatedHoldingFeesTotal: summary.accumulated_holding_fees_total,
-          totalAvailableCoin: summary.total_available_coin,
-        },
-      },
-    ]
-  }
-
-  // Routes Amulet summaries through Scan and falls back to UTXOs when Scan is unavailable.
+  // Summarizes every token family from UTXOs because FiveNorth exposes registry via scan-proxy only.
   const cip56ListHoldingSummary = async (params: unknown): Promise<TokenHoldingSummary[]> => {
     const p = objectParam<Record<string, unknown>>(params, 'cip56.listHoldingSummary')
     const partyId = requiredStringParam(p, 'partyId')
     const instrumentId = optionalInstrumentParam(p)
-    if (isAmuletInstrument(instrumentId)) {
-      try {
-        return await scanAmuletHoldingSummary(partyId, instrumentId)
-      } catch (error) {
-        console.warn('[wallet-service] scan holding summary fallback', errorData(error))
-      }
-    }
     return summarizeHoldingUtxos(await listHoldingUtxos(partyId), instrumentId)
   }
 
@@ -1149,7 +1081,7 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
       jsonApiUrl: config.canton.jsonApiUrl,
       ledgerApiUrl: config.canton.ledgerApiUrl,
       adminApiUrl: config.canton.adminApiUrl,
-      hasBackendToken: config.canton.backendToken !== undefined,
+      tokenSource: config.canton.tokenSource,
     },
   })
 

@@ -52,15 +52,17 @@ npm run canton:health
 
 ## FiveNorth Quick Run
 
-Run only wallet-service against the hosted validator:
+Run only the hosted-validator stack:
 
 ```bash
 cp .env.fivenorth.example .env.fivenorth
 ${EDITOR:-vi} .env.fivenorth
 npm run wallet-service:fivenorth
+npm run carpincho:build:extension
+npm run app:dev
 ```
 
-Set `FIVENORTH_CLIENT_SECRET`, then start Carpincho and the frontend normally.
+Set `FIVENORTH_CLIENT_SECRET`, then load `carpincho-wallet/dist-extension` in Chrome.
 
 ## Auth
 

@@ -17,24 +17,34 @@ const baseConfig = () => ({
     jsonApiUrl: 'http://localhost:3013',
     ledgerApiUrl: 'grpc://localhost:3014',
     adminApiUrl: 'grpc://localhost:3015',
-    backendToken: undefined as string | undefined,
     tokenSource: 'none' as const,
   },
   splice: {
     validatorUrl: 'http://localhost:2000/api/validator',
-    scanApiUrl: 'http://scan.localhost:4000/api/scan',
     registryApiUrl: 'http://localhost:2000/api/validator/v0/scan-proxy',
   },
 })
 
-const withToken = () => ({
+const withAuth = () => ({
   ...baseConfig(),
   canton: {
     ...baseConfig().canton,
-    backendToken: 'backend.jwt',
-    tokenSource: 'env' as const,
+    auth: {
+      tokenUrl: 'https://auth.example/token',
+      clientId: 'client-id',
+      clientSecret: 'client-secret',
+      scope: 'daml_ledger_api',
+      refreshSkewMs: 60_000,
+    },
+    tokenSource: 'fivenorth' as const,
   },
 })
+
+const createRpcWithToken = (deps: Record<string, unknown> = {}) =>
+  createRpc(withAuth(), {
+    tokenProvider: { getToken: async () => 'backend.jwt' },
+    ...deps,
+  })
 
 describe('rpc dispatcher', () => {
   it('returns -32600 when jsonrpc is not "2.0"', async () => {
@@ -211,7 +221,7 @@ describe('CIP-56 token helpers', () => {
       },
     ]
     const seen: { partyId?: string; tokenConfig?: unknown; amuletConfig?: unknown } = {}
-    const rpc = createRpc(withToken(), {
+    const rpc = createRpcWithToken({
       sdkFactory: async (options) => {
         seen.tokenConfig = (options as { token?: unknown }).token
         seen.amuletConfig = (options as { amulet?: unknown }).amulet
@@ -245,7 +255,6 @@ describe('CIP-56 token helpers', () => {
     })
     assert.deepEqual(seen.amuletConfig, {
       validatorUrl: 'http://localhost:2000/api/validator',
-      scanApiUrl: 'http://scan.localhost:4000/api/scan',
       registryUrl: 'http://localhost:2000/api/validator/v0/scan-proxy',
       auth: { method: 'static', token: 'backend.jwt' },
     })
@@ -257,7 +266,7 @@ describe('CIP-56 token helpers', () => {
     // wallet-service returns the SDK command and disclosed contracts only.
     const disclosedContracts = [{ contractId: 'registry-context-cid', createdEventBlob: 'blob' }]
     const seen: { transferInstructionCid?: string; registryUrl?: string } = {}
-    const rpc = createRpc(withToken(), {
+    const rpc = createRpcWithToken({
       sdkFactory: async () => ({
         token: {
           transfer: {
@@ -294,7 +303,7 @@ describe('CIP-56 token helpers', () => {
     const disclosedContracts = [{ contractId: 'transfer-context-cid', createdEventBlob: 'blob' }]
     const expirationDate = '2026-06-10T15:00:00.000Z'
     const seen: { params?: Record<string, unknown> } = {}
-    const rpc = createRpc(withToken(), {
+    const rpc = createRpcWithToken({
       sdkFactory: async () => ({
         token: {
           transfer: {
@@ -353,7 +362,7 @@ describe('CIP-56 token helpers', () => {
       },
     }
     const seen: { receiver?: string } = {}
-    const rpc = createRpc(withToken(), {
+    const rpc = createRpcWithToken({
       now: () => new Date('2026-06-11T00:00:00.000Z'),
       sdkFactory: async () => ({
         amulet: {
@@ -389,7 +398,7 @@ describe('CIP-56 token helpers', () => {
     // Scenario: the Tokens tab polls this method every few seconds. Missing
     // preapproval must resolve immediately instead of using the SDK wait helper.
     const seen: { receiver?: string } = {}
-    const rpc = createRpc(withToken(), {
+    const rpc = createRpcWithToken({
       sdkFactory: async () => ({
         amulet: {
           preapproval: {
@@ -417,7 +426,7 @@ describe('CIP-56 token helpers', () => {
   it('prepares an Amulet transfer preapproval proposal create command for the receiver party', async () => {
     // Scenario: the external receiver can only sign the proposal creation. The
     // validator provider accepts that proposal in a separate local-party submit.
-    const rpc = createRpc(withToken(), {
+    const rpc = createRpcWithToken({
       sdkFactory: async () => ({
         amulet: {
           preapproval: {
@@ -469,7 +478,7 @@ describe('CIP-56 token helpers', () => {
     // Scenario: after Carpincho creates the receiver-signed proposal, the local
     // validator provider must accept it with a normal participant submit.
     const seen: { acs?: unknown; submit?: unknown; inputOwner?: string } = {}
-    const rpc = createRpc(withToken(), {
+    const rpc = createRpcWithToken({
       now: () => new Date('2026-06-10T00:00:00.000Z'),
       sdkFactory: async () => ({
         amulet: {
@@ -593,7 +602,7 @@ describe('CIP-56 token helpers', () => {
     // immediately after interactive submission execute returns, so acceptance retries briefly.
     let readCount = 0
     const slept: number[] = []
-    const rpc = createRpc(withToken(), {
+    const rpc = createRpcWithToken({
       now: () => new Date('2026-06-10T00:00:00.000Z'),
       sleep: async (ms) => {
         slept.push(ms)
@@ -671,7 +680,7 @@ describe('CIP-56 token helpers', () => {
     // return any disclosed contracts required by interactive submission.
     const disclosedContracts = [{ contractId: 'preapproval-context-cid', createdEventBlob: 'blob' }]
     const seen: { parties?: unknown } = {}
-    const rpc = createRpc(withToken(), {
+    const rpc = createRpcWithToken({
       sdkFactory: async () => ({
         amulet: {
           preapproval: {
@@ -709,7 +718,7 @@ describe('CIP-56 token helpers', () => {
     // Scenario: Scan and the ledger can disagree briefly after cancel archives
     // a TransferPreapproval. A repeated disable must finish as an idempotent no-op.
     let cancelCalled = false
-    const rpc = createRpc(withToken(), {
+    const rpc = createRpcWithToken({
       sdkFactory: async () => ({
         amulet: {
           preapproval: {
@@ -752,7 +761,7 @@ describe('CIP-56 token helpers', () => {
       },
     ]
     const seen: { params?: unknown; tokenConfig?: unknown } = {}
-    const rpc = createRpc(withToken(), {
+    const rpc = createRpcWithToken({
       sdkFactory: async (options) => {
         seen.tokenConfig = (options as { token?: unknown }).token
         return {
@@ -790,87 +799,16 @@ describe('CIP-56 token helpers', () => {
     })
   })
 
-  it('lists Amulet holding summaries through Scan without listing UTXOs', async () => {
-    // Scenario: CC/Amulet balances should use Scan's aggregate endpoint so the
-    // wallet can show a balance without walking every Holding UTXO.
-    const calls: { url: string; body?: unknown }[] = []
-    const rpc = createRpc(withToken(), {
-      now: () => new Date('2026-06-10T12:00:00.000Z'),
-      sdkFactory: async () => {
-        throw new Error('SDK should not list UTXOs for Amulet summary')
-      },
-      fetch: async (url, init) => {
-        calls.push({
-          url: String(url),
-          body: init?.body === undefined ? undefined : JSON.parse(String(init.body)),
-        })
-        return new Response(
-          JSON.stringify({
-            summaries: [
-              {
-                party_id: 'receiver::party',
-                total_unlocked_coin: '7.0000000000',
-                total_locked_coin: '2.0000000000',
-                total_coin_holdings: '9.0000000000',
-                accumulated_holding_fees_unlocked: '0.1000000000',
-                accumulated_holding_fees_locked: '0.2000000000',
-                accumulated_holding_fees_total: '0.3000000000',
-                total_available_coin: '8.7000000000',
-              },
-            ],
-            record_time: '2026-06-10T12:00:00.000Z',
-            migration_id: 0,
-          }),
-          { status: 200, headers: { 'content-type': 'application/json' } },
-        )
-      },
-    })
-
-    const res = (await rpc.handle({
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'cip56.listHoldingSummary',
-      params: { partyId: 'receiver::party', instrumentId: { id: 'Amulet' } },
-    })) as JsonRpcResponse
-
-    assert.ok('result' in res)
-    assert.deepEqual(res.result, [
-      {
-        key: 'unknown-admin:Amulet',
-        tokenLabel: 'Amulet',
-        instrumentId: { id: 'Amulet' },
-        totalAmount: '8.7000000000',
-        source: 'scan',
-        scan: {
-          totalUnlockedCoin: '7.0000000000',
-          totalLockedCoin: '2.0000000000',
-          totalCoinHoldings: '9.0000000000',
-          accumulatedHoldingFeesUnlocked: '0.1000000000',
-          accumulatedHoldingFeesLocked: '0.2000000000',
-          accumulatedHoldingFeesTotal: '0.3000000000',
-          totalAvailableCoin: '8.7000000000',
-        },
-      },
-    ])
-    assert.equal(calls.length, 1)
-    assert.equal(calls[0]?.url, 'http://scan.localhost:4000/api/scan/v0/holdings/summary')
-    assert.deepEqual(calls[0]?.body, {
-      migration_id: 0,
-      record_time: '2026-06-10T12:00:00.000Z',
-      record_time_match: 'at_or_before',
-      owner_party_ids: ['receiver::party'],
-    })
-  })
-
-  it('falls back to UTXO summaries when Scan cannot summarize Amulet', async () => {
-    // Scenario: local Scan may be unavailable or lagging. The summary RPC must still
-    // return a correct balance by falling back to the existing SDK UTXO path.
+  it('summarizes Amulet holdings from UTXOs without calling Scan', async () => {
+    // Scenario: FiveNorth exposes the token registry through validator scan-proxy,
+    // but not a direct Scan summary API. Amulet balances should therefore use the
+    // same UTXO path as every other CIP-56 token.
     const holdingContracts = [
       {
         contractId: 'holding-cid-1',
         interfaceViewValue: {
           owner: 'receiver::party',
-          amount: '4.0000000000',
+          amount: '7.0000000000',
           instrumentId: { admin: 'admin::party', id: 'Amulet' },
           lock: null,
         },
@@ -879,27 +817,38 @@ describe('CIP-56 token helpers', () => {
         contractId: 'holding-cid-2',
         interfaceViewValue: {
           owner: 'receiver::party',
-          amount: '3.0000000000',
+          amount: '2.0000000000',
           instrumentId: { admin: 'admin::party', id: 'Amulet' },
           lock: { holders: ['validator::party'] },
         },
       },
     ]
     const seen: { params?: unknown } = {}
-    const rpc = createRpc(withToken(), {
-      fetch: async () => new Response('scan unavailable', { status: 503 }),
-      sdkFactory: async () => ({
-        token: {
-          utxos: {
-            list: async (params: unknown) => {
-              seen.params = params
-              return holdingContracts
+    let scanCalled = false
+    const rpc = createRpcWithToken({
+      fetch: async () => {
+        // Scan must stay unused for this endpoint so missing Scan deployment cannot
+        // delay or fail balance rendering.
+        scanCalled = true
+        return new Response('{}')
+      },
+      sdkFactory: async () => {
+        // The SDK UTXO call supplies both locked and unlocked holdings so the
+        // summary can preserve the existing count fields Carpincho renders.
+        return {
+          token: {
+            utxos: {
+              list: async (params: unknown) => {
+                seen.params = params
+                return holdingContracts
+              },
             },
           },
-        },
-      }),
+        }
+      },
     })
 
+    // Action: request an Amulet summary for one party through the public JSON-RPC surface.
     const res = (await rpc.handle({
       jsonrpc: '2.0',
       id: 1,
@@ -907,13 +856,16 @@ describe('CIP-56 token helpers', () => {
       params: { partyId: 'receiver::party', instrumentId: { id: 'Amulet' } },
     })) as JsonRpcResponse
 
+    // Expectation: no Scan request is made, and the response is derived only from
+    // the two UTXOs returned by the SDK helper.
     assert.ok('result' in res)
+    assert.equal(scanCalled, false)
     assert.deepEqual(res.result, [
       {
         key: 'admin::party:Amulet',
         tokenLabel: 'Amulet',
         instrumentId: { admin: 'admin::party', id: 'Amulet' },
-        totalAmount: '7',
+        totalAmount: '9',
         utxoCount: 2,
         lockedCount: 1,
         unlockedCount: 1,
@@ -933,7 +885,7 @@ describe('CIP-56 token helpers', () => {
     // Scenario: Scan aggregates only CC/Amulet. Other CIP-56 tokens must use the
     // generic UTXO list and filter by the requested instrument.
     let scanCalled = false
-    const rpc = createRpc(withToken(), {
+    const rpc = createRpcWithToken({
       fetch: async () => {
         scanCalled = true
         return new Response('{}')
@@ -999,7 +951,7 @@ describe('CIP-56 token helpers', () => {
   it('rejects CIP-56 helper calls without required params', async () => {
     // Scenario: malformed Carpincho calls should fail as JSON-RPC invalid
     // params before the SDK is initialized or any Splice service is contacted.
-    const rpc = createRpc(withToken(), {
+    const rpc = createRpcWithToken({
       sdkFactory: async () => {
         throw new Error('SDK should not be initialized')
       },
