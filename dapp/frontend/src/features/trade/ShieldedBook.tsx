@@ -26,7 +26,7 @@ export const ShieldedBook = ({ pool }: { pool: Pool }): JSX.Element => {
         <h2 className="font-display text-base font-semibold text-foreground">Shielded book</h2>
         <Tooltip
           label="About the shielded book"
-          content="Private by design — no public depth is shown. You can't be front-run, and counterparties can't see your size."
+          content="This book is private. There's no public depth to read, you can't be front-run, and no one sees your size."
         />
       </div>
       <p className="mt-1.5 text-xs text-muted-foreground">
@@ -36,13 +36,13 @@ export const ShieldedBook = ({ pool }: { pool: Pool }): JSX.Element => {
       <div className="mt-3 grid grid-cols-2 gap-6">
         <div>
           <span className="text-[0.7rem] font-semibold uppercase tracking-wider text-up">
-            Bids — hidden
+            Bids · hidden
           </span>
           <Bars widths={BIDS} align="left" />
         </div>
         <div>
           <span className="block text-right text-[0.7rem] font-semibold uppercase tracking-wider text-down">
-            Asks — hidden
+            Asks · hidden
           </span>
           <Bars widths={ASKS} align="right" />
         </div>

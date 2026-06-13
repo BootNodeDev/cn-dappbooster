@@ -116,7 +116,7 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
     }
     reconnectStarted.current = true
     void connect('extension')
-      // Wallet no longer authorized / not present — stay on the welcome screen.
+      // Wallet no longer authorized or not present, so stay on the welcome screen.
       .catch(() => writeReconnect(null))
       .finally(() => setReconnecting(false))
   }, [])
@@ -126,6 +126,8 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
     try {
       await connect('extension')
       writeReconnect('extension')
+      // Land on the trade view on connect; the router reads this when it mounts.
+      window.history.replaceState({}, '', '/')
     } catch (err) {
       connectToastPending.current = false
       toast.error(errorMessage(err))
@@ -216,7 +218,7 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
               {COPY_ICON}
             </button>
           </div>
-          <div className="mt-2 flex items-center gap-2 px-1 text-xs text-muted-foreground">
+          <div className="mt-3 flex items-center gap-2 border-t border-border pt-3 text-xs text-muted-foreground">
             <span className="size-1.5 rounded-full bg-primary" />
             {network}
           </div>
@@ -246,12 +248,12 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
       </a>
       <header className="sticky top-0 z-30 border-b border-border bg-surface/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
-          <div className="flex items-center gap-2.5">
+          <a href="/" className="flex items-center gap-2.5" aria-label="cn-darkpools home">
             <img src="/logo.svg" alt="cn-darkpools" className="size-8 rounded-lg" />
             <span className="font-display text-base font-extrabold tracking-[-0.01em] text-foreground">
               cn·darkpools
             </span>
-          </div>
+          </a>
           <div className="flex items-center gap-2">
             {themeToggle}
             {reconnecting && !isConnected ? (
@@ -281,7 +283,6 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
               aria-label="Checking wallet"
               className="size-8 animate-spin rounded-full border-2 border-primary/25 border-t-primary"
             />
-            <p className="text-sm font-semibold">Checking your wallet…</p>
           </section>
         ) : !isConnected ? (
           <section className="flex flex-col items-center pt-10 pb-6 text-center sm:pt-20">
@@ -330,8 +331,8 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
               Unlock Carpincho to continue
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Your wallet is locked. Open Carpincho and enter your password — this dApp will resume
-              automatically.
+              Your wallet is locked. Open Carpincho and enter your password, and this dApp picks up
+              where it left off.
             </p>
           </section>
         ) : party === undefined ? (

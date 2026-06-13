@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Select } from '@/components/ui/Select'
 import { SideToggle } from '@/components/ui/SideToggle'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { toast } from '@/components/ui/toast'
 import { buyFundingTarget, quoteAmount, validateOrder } from '@/darkpool/darkpoolMath'
 import { formatNotional, formatPrice, formatQty } from '@/darkpool/format'
@@ -90,19 +91,31 @@ export const OrderEntry = ({ pool, party }: { pool: Pool; party: string }): JSX.
 
   return (
     <section className="rounded-xl border border-border bg-surface p-5">
-      <h2 className="mb-4 font-display text-base font-semibold text-foreground">
-        Place private order
-      </h2>
+      <div className="mb-4 flex items-center gap-2">
+        <h2 className="font-display text-base font-semibold text-foreground">
+          Place private order
+        </h2>
+        <Tooltip
+          label="About private orders"
+          content="Funding is declared now but only locked when a match is found. No one sees this order but you and the venue."
+        />
+      </div>
 
       <SideToggle value={side} onChange={setSide} baseLabel={pool.baseLabel} />
 
       <div className="mt-4">
-        <label
-          htmlFor="oe-price"
-          className="!mb-1.5 text-[0.7rem] uppercase tracking-wider text-muted-foreground"
-        >
-          Limit price · {pool.quoteLabel} per {pool.baseLabel}
-        </label>
+        <div className="mb-1.5 flex items-center gap-1.5">
+          <label
+            htmlFor="oe-price"
+            className="!mb-0 text-[0.7rem] uppercase tracking-wider text-muted-foreground"
+          >
+            Limit price · {pool.quoteLabel} per {pool.baseLabel}
+          </label>
+          <Tooltip
+            label="About the limit price"
+            content="You'll never cross this. Fills clear at the midpoint."
+          />
+        </div>
         <input
           id="oe-price"
           inputMode="decimal"
@@ -111,9 +124,6 @@ export const OrderEntry = ({ pool, party }: { pool: Pool; party: string }): JSX.
           placeholder="0.00"
           className="w-full rounded-lg border border-border bg-muted px-3 py-2.5 font-mono text-sm text-foreground outline-none focus:border-primary"
         />
-        <p className="mt-1 text-xs text-soft">
-          You'll never cross this. Fills clear at the midpoint.
-        </p>
       </div>
 
       <div className="mt-3">
@@ -201,21 +211,18 @@ export const OrderEntry = ({ pool, party }: { pool: Pool; party: string }): JSX.
         disabled={!validity.ok || submitting}
         className={`mt-3 flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-55 ${buttonClass}`}
       >
-        {submitting && (
-          <span className="size-4 animate-spin rounded-full border-2 border-background/30 border-t-background" />
+        {submitting ? (
+          <span
+            role="status"
+            aria-label="Placing order"
+            className="size-4 animate-spin rounded-full border-2 border-background/30 border-t-background"
+          />
+        ) : validity.ok ? (
+          `Place private ${side.toLowerCase()} order`
+        ) : (
+          validity.reason
         )}
-        {submitting
-          ? 'Placing…'
-          : validity.ok
-            ? `Place private ${side.toLowerCase()} order`
-            : validity.reason}
       </button>
-
-      <p className="mt-3 flex items-start gap-1.5 text-xs text-soft">
-        <span className="text-primary">🛡</span>
-        Funding is declared now but only locked when a match is found. No one sees this order but
-        you and the venue.
-      </p>
     </section>
   )
 }

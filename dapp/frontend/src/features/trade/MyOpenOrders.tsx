@@ -80,10 +80,15 @@ const OrderRow = ({
         disabled={cancelling}
         className="mt-2.5 flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-muted py-2 text-sm text-foreground transition hover:border-border-strong disabled:opacity-55"
       >
-        {cancelling && (
-          <span className="size-3.5 animate-spin rounded-full border-2 border-foreground/30 border-t-foreground" />
+        {cancelling ? (
+          <span
+            role="status"
+            aria-label="Cancelling order"
+            className="size-3.5 animate-spin rounded-full border-2 border-foreground/30 border-t-foreground"
+          />
+        ) : (
+          'Cancel order'
         )}
-        {cancelling ? 'Cancelling…' : 'Cancel order'}
       </button>
     </motion.li>
   )

@@ -133,10 +133,15 @@ export const MatchPanel = ({
         disabled={!canMatch}
         className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-55"
       >
-        {matching && (
-          <span className="size-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground" />
+        {matching ? (
+          <span
+            role="status"
+            aria-label="Settling match"
+            className="size-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground"
+          />
+        ) : (
+          (reason ?? 'Execute atomic match')
         )}
-        {matching ? 'Settling…' : (reason ?? 'Execute atomic match')}
       </button>
       <p className="mt-2.5 text-center text-xs text-soft">
         Both legs settle in one transaction or neither does.

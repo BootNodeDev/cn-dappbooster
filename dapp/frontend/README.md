@@ -50,14 +50,14 @@ the frontend, see the scripts in `scripts/dev-stack.sh` at the repo root.
 
 ## The two views
 
-- **`/`** — the trader. Pick a pair, check your balances, place a private order
-  (side, limit price, quantity, minimum fill, optional expiry), and watch your
-  open orders and fills. The "shielded book" panel is intentionally blurred:
+- **`/`** is the trader's view. Pick a pair, check your balances, place a private
+  order (side, limit price, quantity, minimum fill, optional expiry), and watch
+  your open orders and fills. The "shielded book" panel is intentionally blurred:
   there is no public depth to show.
-- **`/venue`** — the operator. The full resting book, plus a panel to pick a
-  crossing buy and sell and settle them at the midpoint. It isn't linked from
-  the nav on purpose; reach it by typing the URL. On the real ledger only the
-  venue's own wallet can see this data.
+- **`/venue`** is the operator's view. The full resting book, plus a panel to
+  pick a crossing buy and sell and settle them at the midpoint. It isn't linked
+  from the nav on purpose; reach it by typing the URL. On the real ledger only
+  the venue's own wallet can see this data.
 
 ## Working on it
 
