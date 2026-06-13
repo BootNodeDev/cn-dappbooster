@@ -6,7 +6,7 @@ import {
   quoteAmount,
   validateOrder,
 } from '../darkpoolMath'
-import { POOLS, seedBalances, seedOrders, seedTrades } from '../seed'
+import { COUNTERPARTIES, POOLS, seedBalances, seedOrders, seedTrades } from '../seed'
 import type {
   Balance,
   DarkPoolClient,
@@ -31,6 +31,10 @@ export class MockDarkPoolClient implements DarkPoolClient {
   // version and a fresh one after any mutation (avoids both stale reads and render loops).
   private version = 0
   private snapshots = new Map<string, { version: number; value: unknown }>()
+  // Off in deterministic test mode (start=0); on in the app so a freshly
+  // connected trader sees populated open-orders and fills instead of empty panels.
+  private demoSeed: boolean
+  private demoSeeded = new Set<string>()
 
   constructor(start = 0) {
     let t = start
@@ -48,6 +52,7 @@ export class MockDarkPoolClient implements DarkPoolClient {
     // Start past the seed's numeric suffixes (s1/s2/b1/b2/t1/t2) so generated
     // ids never collide with seeded ones (which would dupe React keys).
     this.seq = 100
+    this.demoSeed = start !== 0
   }
 
   private id(prefix: string): string {
@@ -79,6 +84,55 @@ export class MockDarkPoolClient implements DarkPoolClient {
     return this.balances.get(party) as Balance[]
   }
 
+  // First time we see a human trader (not a sim counterparty), give them a
+  // couple of resting orders and past fills so the trade view isn't empty.
+  // Runs in the same render before the relevant memo computes; no notify needed.
+  private ensureParty(party: string): void {
+    if (this.demoSeeded.has(party)) return
+    this.demoSeeded.add(party)
+    this.balancesOf(party)
+    if (!this.demoSeed || (COUNTERPARTIES as readonly string[]).includes(party)) return
+    const pool = this.pools[0]
+    const now = this.clock()
+    const place = (side: 'Buy' | 'Sell', quantity: number, limitPrice: number): void => {
+      if (side === 'Buy') this.adjust(party, pool.quoteLabel, 0, quoteAmount(quantity, limitPrice))
+      else this.adjust(party, pool.baseLabel, 0, quantity)
+      this.orders.push({
+        orderId: this.id('o'),
+        poolId: pool.poolId,
+        trader: party,
+        side,
+        quantity,
+        limitPrice,
+        minFill: 1,
+        expiresAt: now + 60 * 60_000,
+        submittedAt: now - 30_000,
+      })
+    }
+    place('Buy', 6, 2.45)
+    place('Sell', 4, 2.65)
+    this.recordFill(party, {
+      fillId: this.id('f'),
+      poolId: pool.poolId,
+      side: 'Buy',
+      price: 2.5,
+      quantity: 5,
+      notional: 12.5,
+      counterpartyLabel: 'bob',
+      settledAt: now - 300_000,
+    })
+    this.recordFill(party, {
+      fillId: this.id('f'),
+      poolId: pool.poolId,
+      side: 'Sell',
+      price: 2.58,
+      quantity: 3,
+      notional: 7.74,
+      counterpartyLabel: 'carol',
+      settledAt: now - 180_000,
+    })
+  }
+
   private adjust(party: string, label: string, dTotal: number, dDeclared: number): void {
     const b = this.balancesOf(party).find((x) => x.label === label)
     if (!b) return
@@ -91,14 +145,17 @@ export class MockDarkPoolClient implements DarkPoolClient {
   }
 
   getBalances(party: string): Balance[] {
+    this.ensureParty(party)
     return this.memo(`bal:${party}`, () => this.balancesOf(party).map((b) => ({ ...b })))
   }
 
   listMyOrders(party: string): Order[] {
+    this.ensureParty(party)
     return this.memo(`orders:${party}`, () => this.orders.filter((o) => o.trader === party))
   }
 
   listMyFills(party: string): Fill[] {
+    this.ensureParty(party)
     return this.memo(`fills:${party}`, () => [...(this.fills.get(party) ?? [])])
   }
 
@@ -116,6 +173,7 @@ export class MockDarkPoolClient implements DarkPoolClient {
   }
 
   placeOrder(party: string, req: PlaceOrderRequest): Promise<Order> {
+    this.ensureParty(party)
     const pool = this.poolOf(req.poolId)
     const v = validateOrder(req, pool, this.balancesOf(party))
     if (!v.ok) return Promise.reject(new Error(v.reason))
