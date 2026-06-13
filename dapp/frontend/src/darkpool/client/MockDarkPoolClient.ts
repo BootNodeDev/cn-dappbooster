@@ -187,6 +187,10 @@ export class MockDarkPoolClient implements DarkPoolClient {
       seller: sell.trader,
       settledAt: now,
     })
+    // Settlement transfers between the two parties, so each side learns its
+    // counterparty (the contract's Order_Fill carries counterparty + the
+    // transfer leg sender/receiver). Mirror that here.
+    const label = (party: string): string => party.split('::')[0]
     this.recordFill(buy.trader, {
       fillId: this.id('f'),
       poolId: pool.poolId,
@@ -194,7 +198,7 @@ export class MockDarkPoolClient implements DarkPoolClient {
       price: execPrice,
       quantity: fillQty,
       notional,
-      counterpartyLabel: 'venue-matched',
+      counterpartyLabel: label(sell.trader),
       settledAt: now,
     })
     this.recordFill(sell.trader, {
@@ -204,7 +208,7 @@ export class MockDarkPoolClient implements DarkPoolClient {
       price: execPrice,
       quantity: fillQty,
       notional,
-      counterpartyLabel: 'venue-matched',
+      counterpartyLabel: label(buy.trader),
       settledAt: now,
     })
 
