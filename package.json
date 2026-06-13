@@ -44,9 +44,5 @@
     "@mermaid-js/mermaid-cli": "^11.15.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.4"
-  },
-  "dependencies": {
-    "@fontsource-variable/bricolage-grotesque": "^5.2.10",
-    "@fontsource-variable/dm-sans": "^5.2.8"
   }
 }

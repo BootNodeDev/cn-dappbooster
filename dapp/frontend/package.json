@@ -17,10 +17,9 @@
   },
   "dependencies": {
     "@canton-network/dapp-sdk": "^1.1.0",
-    "@fontsource-variable/geist": "^5.2.9",
+    "@fontsource-variable/bricolage-grotesque": "^5.2.10",
+    "@fontsource-variable/dm-sans": "^5.2.8",
     "@fontsource-variable/geist-mono": "^5.2.8",
-    "@fontsource-variable/jetbrains-mono": "^5.2.8",
-    "@fontsource-variable/manrope": "^5.2.8",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-select": "^2.3.0",
     "@radix-ui/react-toast": "^1.2.15",
