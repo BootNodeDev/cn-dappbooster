@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/icons'
 import { toast } from '@/components/ui/toast'
 import { useTheme } from '@/theme/useTheme'
+import { loadRuntimeConfig } from './runtimeConfig'
 import { copyToClipboard } from './utils/clipboard'
 import { errorMessage } from './utils/errorMessage'
 import { formatPartyId } from './utils/formatPartyId'
@@ -46,6 +47,7 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
   const { party } = useParty()
   const { isLocked } = useWalletStatus()
   const { mode, setMode } = useTheme()
+  const network = loadRuntimeConfig().cantonNetwork
 
   const [accountOpen, setAccountOpen] = useState(false)
   // Seeded before first paint so the reconnect check shows a spinner, not the hero.
@@ -198,21 +200,27 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
           <span className="text-[0.65rem] font-bold uppercase tracking-[0.08em] text-muted-foreground">
             Connected party
           </span>
-          <div className="mt-1 flex items-stretch gap-2">
-            <code className="min-w-0 flex-1 truncate rounded-lg bg-muted p-2 font-mono text-xs text-foreground">
-              {formatPartyId(party?.partyId ?? '')}
-            </code>
-            <button
-              type="button"
-              aria-label="Copy party id"
-              title="Copy party id"
-              onClick={() => {
-                void copyPartyId()
-              }}
-              className="inline-grid size-9 shrink-0 place-items-center rounded-lg border border-border bg-surface text-muted-foreground transition-colors hover:border-primary hover:text-primary [&_svg]:size-4"
-            >
-              {COPY_ICON}
-            </button>
+          <div className="mt-1 rounded-lg bg-muted p-2">
+            <div className="flex items-center gap-2">
+              <code className="min-w-0 flex-1 truncate font-mono text-xs text-foreground">
+                {formatPartyId(party?.partyId ?? '')}
+              </code>
+              <button
+                type="button"
+                aria-label="Copy party id"
+                title="Copy party id"
+                onClick={() => {
+                  void copyPartyId()
+                }}
+                className="inline-grid size-6 shrink-0 place-items-center text-muted-foreground transition-colors hover:text-primary [&_svg]:size-4"
+              >
+                {COPY_ICON}
+              </button>
+            </div>
+            <div className="mt-2 flex items-center gap-2 border-t border-border/60 pt-2 text-xs text-muted-foreground">
+              <span className="size-1.5 rounded-full bg-primary" />
+              {network}
+            </div>
           </div>
           <button
             type="button"
