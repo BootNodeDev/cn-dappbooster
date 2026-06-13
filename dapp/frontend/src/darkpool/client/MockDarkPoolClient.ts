@@ -45,6 +45,9 @@ export class MockDarkPoolClient implements DarkPoolClient {
     this.orders = seedOrders(now)
     this.trades = seedTrades(now)
     this.balances.set('alice', seedBalances())
+    // Start past the seed's numeric suffixes (s1/s2/b1/b2/t1/t2) so generated
+    // ids never collide with seeded ones (which would dupe React keys).
+    this.seq = 100
   }
 
   private id(prefix: string): string {

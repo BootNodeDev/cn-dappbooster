@@ -10,14 +10,17 @@ import { OrderEntry } from './OrderEntry'
 import { ShieldedBook } from './ShieldedBook'
 
 export const TradeView = (): JSX.Element => {
-  const pools = usePools()
   const { party } = useParty()
+  if (!party) return <div className="py-10 text-center text-muted-foreground">Loading…</div>
+  return <TradeWorkspace party={party.partyId} />
+}
+
+export const TradeWorkspace = ({ party: partyId }: { party: string }): JSX.Element => {
+  const pools = usePools()
   const [poolId, setPoolId] = useState(pools[0]?.poolId ?? '')
   const pool = pools.find((p) => p.poolId === poolId) ?? pools[0]
 
-  if (!pool || !party)
-    return <div className="py-10 text-center text-muted-foreground">Loading…</div>
-  const partyId = party.partyId
+  if (!pool) return <div className="py-10 text-center text-muted-foreground">Loading…</div>
 
   return (
     <div className="flex flex-col gap-3.5">
