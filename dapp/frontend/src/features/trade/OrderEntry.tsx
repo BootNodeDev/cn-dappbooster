@@ -128,7 +128,7 @@ export const OrderEntry = ({ pool, party }: { pool: Pool; party: string }): JSX.
           inputMode="decimal"
           value={quantity}
           onChange={(e) => setQuantity(e.target.value)}
-          placeholder="0.0000"
+          placeholder="0.00"
           className="w-full rounded-lg border border-border bg-muted px-3 py-2.5 font-mono text-sm text-foreground outline-none focus:border-primary"
         />
         <div className="mt-2 grid grid-cols-4 gap-1.5">

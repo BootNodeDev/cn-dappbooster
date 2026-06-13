@@ -1,3 +1,4 @@
+import { Tooltip } from '@/components/ui/Tooltip'
 import { useBook } from '@/darkpool/hooks'
 import type { Pool } from '@/darkpool/types'
 
@@ -21,11 +22,12 @@ export const ShieldedBook = ({ pool }: { pool: Pool }): JSX.Element => {
   const resting = useBook(pool.poolId).length
   return (
     <section className="rounded-xl border border-border bg-surface p-5">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2">
         <h2 className="font-display text-base font-semibold text-foreground">Shielded book</h2>
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted px-2.5 py-1 text-[0.7rem] font-semibold text-muted-foreground">
-          🛡 private · no public depth
-        </span>
+        <Tooltip
+          label="About the shielded book"
+          content="Private by design — no public depth is shown. You can't be front-run, and counterparties can't see your size."
+        />
       </div>
       <p className="mt-1.5 text-xs text-muted-foreground">
         Resting liquidity exists but stays hidden. You can't be front-run; counterparties can't see

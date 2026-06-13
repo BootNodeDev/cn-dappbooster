@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { formatNotional, formatPrice, formatQty } from '@/darkpool/format'
 import { useMyFills } from '@/darkpool/hooks'
 import type { Pool } from '@/darkpool/types'
@@ -10,11 +11,12 @@ export const MyFills = ({ pool, party }: { pool: Pool; party: string }): JSX.Ele
 
   return (
     <section className="overflow-hidden rounded-xl border border-border bg-surface">
-      <div className="flex items-center justify-between border-b border-border px-5 py-3">
+      <div className="flex items-center gap-2 border-b border-border px-5 py-3">
         <span className="font-display text-base font-semibold text-foreground">My fills</span>
-        <span className="text-xs text-soft">
-          visible only to you, your counterparty and the venue
-        </span>
+        <Tooltip
+          label="Who can see your fills"
+          content="Visible only to you, your counterparty and the venue."
+        />
       </div>
       {fills.length === 0 ? (
         <p className="px-5 py-8 text-center text-sm text-muted-foreground">No fills yet</p>

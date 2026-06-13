@@ -64,12 +64,12 @@ export const ClearingChart = ({ pool }: { pool: Pool }): JSX.Element => {
 
   return (
     <section className="rounded-xl border border-border bg-surface p-5">
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="font-display text-base font-semibold text-foreground">
-          Clearing price · recent fills
-        </h2>
+      <div className="mb-3">
+        <h2 className="font-display text-base font-semibold text-foreground">Clearing price</h2>
         <span className="text-xs text-soft">
-          {series.length > 0 ? `last ${series.length} · midpoint` : 'midpoint settlement'}
+          {series.length > 0
+            ? `recent fills · last ${series.length} · midpoint`
+            : 'midpoint settlement'}
         </span>
       </div>
       {body}
