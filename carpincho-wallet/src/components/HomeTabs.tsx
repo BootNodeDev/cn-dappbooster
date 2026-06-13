@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { ActivityList } from '@/components/ActivityList'
 import { AssetsPanel } from '@/components/AssetsPanel'
-import { DarUploadPanel } from '@/components/DarUploadPanel'
+import { LedgerToolsPanel } from '@/components/LedgerToolsPanel'
 import type { Cip56SendApi } from '@/components/SendTokenForm'
 import { TransfersPanel } from '@/components/TransfersPanel'
 import { TabContent, Tabs, TabsList, TabTrigger } from '@/components/ui/Tabs'
@@ -104,7 +104,7 @@ export const HomeTabs = ({
         value="utils"
         className={TAB_CONTENT_CLASS}
       >
-        <DarUploadPanel />
+        <LedgerToolsPanel account={account} />
       </TabContent>
     </Tabs>
   )
