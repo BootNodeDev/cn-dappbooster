@@ -9,7 +9,9 @@ import {
   priceWithinLimit,
   quoteAmount,
   remainderQuantity,
+  validateOrder,
 } from './darkpoolMath.ts'
+import type { Balance, Pool } from './types.ts'
 
 describe('darkpoolMath', () => {
   it('floorTo10 truncates to 10 dp, never rounds up', () => {
@@ -46,5 +48,119 @@ describe('darkpoolMath', () => {
     assert.equal(priceWithinLimit('Buy', 50001, 50000), false)
     assert.equal(priceWithinLimit('Sell', 49500, 49000), true)
     assert.equal(priceWithinLimit('Sell', 48999, 49000), false)
+  })
+})
+
+const pool: Pool = {
+  poolId: 'cBTC-USDCx',
+  base: { admin: 'a', id: 'cBTC' },
+  quote: { admin: 'a', id: 'USDCx' },
+  baseLabel: 'cBTC',
+  quoteLabel: 'USDCx',
+  minFillFloor: 0.01,
+}
+const balances: Balance[] = [
+  { instrument: pool.base, label: 'cBTC', total: 9.5, declared: 0 },
+  { instrument: pool.quote, label: 'USDCx', total: 478650, declared: 0 },
+]
+
+describe('validateOrder', () => {
+  it('accepts a funded buy order', () => {
+    const r = validateOrder(
+      {
+        poolId: pool.poolId,
+        side: 'Buy',
+        limitPrice: 50000,
+        quantity: 0.5,
+        minFill: 0.05,
+        expiresAt: null,
+      },
+      pool,
+      balances,
+    )
+    assert.deepEqual(r, { ok: true })
+  })
+  it('rejects zero quantity', () => {
+    const r = validateOrder(
+      {
+        poolId: pool.poolId,
+        side: 'Buy',
+        limitPrice: 50000,
+        quantity: 0,
+        minFill: 0.05,
+        expiresAt: null,
+      },
+      pool,
+      balances,
+    )
+    assert.equal(r.ok, false)
+  })
+  it('rejects minFill below the pool floor', () => {
+    const r = validateOrder(
+      {
+        poolId: pool.poolId,
+        side: 'Buy',
+        limitPrice: 50000,
+        quantity: 0.5,
+        minFill: 0.001,
+        expiresAt: null,
+      },
+      pool,
+      balances,
+    )
+    assert.equal(r.ok, false)
+  })
+  it('rejects minFill greater than quantity', () => {
+    const r = validateOrder(
+      {
+        poolId: pool.poolId,
+        side: 'Buy',
+        limitPrice: 50000,
+        quantity: 0.5,
+        minFill: 0.6,
+        expiresAt: null,
+      },
+      pool,
+      balances,
+    )
+    assert.equal(r.ok, false)
+  })
+  it('rejects an underfunded buy', () => {
+    const poor: Balance[] = [
+      { instrument: pool.base, label: 'cBTC', total: 9.5, declared: 0 },
+      { instrument: pool.quote, label: 'USDCx', total: 100, declared: 0 },
+    ]
+    const r = validateOrder(
+      {
+        poolId: pool.poolId,
+        side: 'Buy',
+        limitPrice: 50000,
+        quantity: 0.5,
+        minFill: 0.05,
+        expiresAt: null,
+      },
+      pool,
+      poor,
+    )
+    assert.equal(r.ok, false)
+  })
+  it('rejects an underfunded sell (needs free base >= quantity)', () => {
+    const poor: Balance[] = [
+      { instrument: pool.base, label: 'cBTC', total: 0.1, declared: 0 },
+      { instrument: pool.quote, label: 'USDCx', total: 478650, declared: 0 },
+    ]
+    const r = validateOrder(
+      {
+        poolId: pool.poolId,
+        side: 'Sell',
+        limitPrice: 50000,
+        quantity: 0.5,
+        minFill: 0.05,
+        expiresAt: null,
+      },
+      pool,
+      poor,
+    )
+    assert.equal(r.ok, false)
   })
 })

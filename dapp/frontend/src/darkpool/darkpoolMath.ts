@@ -1,4 +1,4 @@
-import type { Side } from './types'
+import type { Balance, PlaceOrderRequest, Pool, Side } from './types'
 
 export const floorTo10 = (x: number): number => {
   const factor = 1e10
@@ -27,3 +27,31 @@ export const buyFundingTarget = (qty: number, limit: number): number => quoteAmo
 
 export const priceWithinLimit = (side: Side, execPrice: number, limit: number): boolean =>
   side === 'Buy' ? execPrice <= limit : execPrice >= limit
+
+export type ValidationResult = { ok: true } | { ok: false; reason: string }
+
+const freeOf = (balances: Balance[], instrumentId: string): number => {
+  const b = balances.find((x) => x.instrument.id === instrumentId)
+  return b ? b.total - b.declared : 0
+}
+
+export const validateOrder = (
+  req: PlaceOrderRequest,
+  pool: Pool,
+  balances: Balance[],
+): ValidationResult => {
+  if (!(req.quantity > 0)) return { ok: false, reason: 'Enter a quantity' }
+  if (!(req.limitPrice > 0)) return { ok: false, reason: 'Enter a limit price' }
+  if (!(req.minFill > 0)) return { ok: false, reason: 'Enter a minimum fill' }
+  if (req.minFill < pool.minFillFloor)
+    return { ok: false, reason: `Min fill below pool floor (${pool.minFillFloor})` }
+  if (req.minFill > req.quantity) return { ok: false, reason: 'Min fill exceeds quantity' }
+  if (req.side === 'Sell') {
+    if (freeOf(balances, pool.base.id) < req.quantity)
+      return { ok: false, reason: `Insufficient ${pool.baseLabel}` }
+  } else {
+    if (freeOf(balances, pool.quote.id) < buyFundingTarget(req.quantity, req.limitPrice))
+      return { ok: false, reason: `Insufficient ${pool.quoteLabel}` }
+  }
+  return { ok: true }
+}
