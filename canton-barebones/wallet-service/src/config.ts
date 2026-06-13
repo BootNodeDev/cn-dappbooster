@@ -86,7 +86,7 @@ export const loadConfig = (): WalletServiceConfig => {
       .split(',')
       .map((origin) => origin.trim())
       .filter((origin) => origin.length > 0),
-    network: optional('NETWORK') ?? 'canton:local',
+    network: optional('NETWORK') ?? 'canton:fivenorth-devnet',
     provider: {
       id: optional('WALLET_PROVIDER_ID') ?? 'wallet-service',
       version: optional('WALLET_PROVIDER_VERSION') ?? '0.1.0',

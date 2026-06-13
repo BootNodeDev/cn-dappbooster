@@ -106,6 +106,35 @@ type ActiveJsContractReader = {
 }
 
 type Cip56TokenSdk = {
+  token: {
+    transfer: {
+      pending: (partyId: string) => Promise<unknown>
+      accept: (params: {
+        transferInstructionCid: string
+        registryUrl: URL
+      }) => Promise<[unknown, unknown[]]>
+      create: (params: {
+        sender: string
+        recipient: string
+        amount: string
+        instrumentId: string
+        registryUrl: URL
+        memo?: string
+        expirationDate?: Date
+      }) => Promise<[unknown, unknown[]]>
+    }
+    utxos: {
+      list: (params: {
+        partyId: string
+        includeLocked: boolean
+        limit: number
+        continueUntilCompletion: boolean
+      }) => Promise<unknown>
+    }
+  }
+}
+
+type AmuletSdk = {
   amulet?: {
     preapproval: {
       ctx?: {
@@ -150,32 +179,6 @@ type Cip56TokenSdk = {
         disclosedContracts?: unknown[]
         synchronizerId?: string
         actAs: string[]
-      }) => Promise<unknown>
-    }
-  }
-  token: {
-    transfer: {
-      pending: (partyId: string) => Promise<unknown>
-      accept: (params: {
-        transferInstructionCid: string
-        registryUrl: URL
-      }) => Promise<[unknown, unknown[]]>
-      create: (params: {
-        sender: string
-        recipient: string
-        amount: string
-        instrumentId: string
-        registryUrl: URL
-        memo?: string
-        expirationDate?: Date
-      }) => Promise<[unknown, unknown[]]>
-    }
-    utxos: {
-      list: (params: {
-        partyId: string
-        includeLocked: boolean
-        limit: number
-        continueUntilCompletion: boolean
       }) => Promise<unknown>
     }
   }
@@ -526,8 +529,10 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
       }))
   let sdkPromise: Promise<WalletSdk> | undefined
   let tokenSdkPromise: Promise<Cip56TokenSdk> | undefined
+  let amuletSdkPromise: Promise<AmuletSdk> | undefined
   let sdkToken: string | undefined
   let tokenSdkToken: string | undefined
+  let amuletSdkToken: string | undefined
 
   // Centralizes bearer lookup so every request can refresh before Canton calls.
   const getCantonToken = async (): Promise<string> => {
@@ -573,11 +578,6 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
         auth,
         registries: [config.splice.registryApiUrl],
       },
-      amulet: {
-        validatorUrl: config.splice.validatorUrl,
-        registryUrl: config.splice.registryApiUrl,
-        auth,
-      },
     })
       .then((sdk) => sdk as Cip56TokenSdk)
       .catch((cause: unknown) => {
@@ -586,6 +586,33 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
         throw new Error('CIP-56 wallet SDK failed to initialize', { cause })
       })
     return await tokenSdkPromise
+  }
+
+  const getAmuletSdk = async (): Promise<AmuletSdk> => {
+    const token = await getCantonToken()
+    if (amuletSdkToken !== token) {
+      amuletSdkPromise = undefined
+      amuletSdkToken = token
+    }
+    const auth = { method: 'static', token }
+    amuletSdkPromise ??= sdkFactory({
+      auth,
+      ledgerClientUrl: config.canton.jsonApiUrl,
+      logAdapter: 'console',
+      amulet: {
+        validatorUrl: config.splice.validatorUrl,
+        scanApiUrl: config.splice.validatorUrl,
+        registryUrl: config.splice.registryApiUrl,
+        auth,
+      },
+    })
+      .then((sdk) => sdk as AmuletSdk)
+      .catch((cause: unknown) => {
+        amuletSdkPromise = undefined
+        amuletSdkToken = undefined
+        throw new Error('Amulet wallet SDK failed to initialize', { cause })
+      })
+    return await amuletSdkPromise
   }
 
   const ledgerJsonApiVersion = async (): Promise<{ connected: boolean; reason?: string }> => {
@@ -737,7 +764,7 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
       partyId,
       includeLocked: true,
       limit: 100,
-      continueUntilCompletion: true,
+      continueUntilCompletion: false,
     })
   }
 
@@ -748,7 +775,7 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
       partyId,
       includeLocked: true,
       limit: 100,
-      continueUntilCompletion: true,
+      continueUntilCompletion: false,
     })) as TokenHolding[]
   }
 
@@ -795,7 +822,7 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
   const amuletPreapprovalStatus = async (params: unknown): Promise<AmuletPreapprovalStatus> => {
     const p = objectParam<Record<string, unknown>>(params, 'amulet.preapproval.status')
     const receiver = requiredStringParam(p, 'receiver')
-    const sdk = await getTokenSdk()
+    const sdk = await getAmuletSdk()
     const status = await sdk.amulet?.preapproval.fetchQuick(receiver)
     if (status?.contract == null) {
       return { active: false, expired: false }
@@ -818,7 +845,7 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
   ): Promise<{ commands: unknown; disclosedContracts: unknown[] }> => {
     const p = objectParam<Record<string, unknown>>(params, 'amulet.preapproval.create')
     const receiver = requiredStringParam(p, 'receiver')
-    const sdk = await getTokenSdk()
+    const sdk = await getAmuletSdk()
     const ctx = sdk.amulet?.preapproval.ctx
     const provider = ctx?.validatorParty
     const scanProxyClient = ctx?.amuletService?.scanProxyClient
@@ -883,7 +910,7 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
   const amuletPreapprovalAcceptProposal = async (params: unknown): Promise<unknown> => {
     const p = objectParam<Record<string, unknown>>(params, 'amulet.preapproval.acceptProposal')
     const receiver = requiredStringParam(p, 'receiver')
-    const sdk = await getTokenSdk()
+    const sdk = await getAmuletSdk()
     const ctx = sdk.amulet?.preapproval.ctx
     const provider = ctx?.validatorParty
     const synchronizerId = ctx?.commonCtx?.defaultSynchronizerId
@@ -961,7 +988,7 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
   ): Promise<{ commands: unknown; disclosedContracts: unknown[] }> => {
     const p = objectParam<Record<string, unknown>>(params, 'amulet.preapproval.cancel')
     const receiver = requiredStringParam(p, 'receiver')
-    const sdk = await getTokenSdk()
+    const sdk = await getAmuletSdk()
     const status = await sdk.amulet?.preapproval.fetchQuick(receiver)
     if (status?.contract == null) {
       return { commands: [], disclosedContracts: [] }

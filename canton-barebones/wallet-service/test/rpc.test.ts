@@ -253,11 +253,7 @@ describe('CIP-56 token helpers', () => {
       auth: { method: 'static', token: 'backend.jwt' },
       registries: ['http://localhost:2000/api/validator/v0/scan-proxy'],
     })
-    assert.deepEqual(seen.amuletConfig, {
-      validatorUrl: 'http://localhost:2000/api/validator',
-      registryUrl: 'http://localhost:2000/api/validator/v0/scan-proxy',
-      auth: { method: 'static', token: 'backend.jwt' },
-    })
+    assert.equal(seen.amuletConfig, undefined)
   })
 
   it('prepares an accept-transfer command through the SDK token namespace', async () => {
@@ -361,19 +357,23 @@ describe('CIP-56 token helpers', () => {
         },
       },
     }
-    const seen: { receiver?: string } = {}
+    const seen: { receiver?: string; tokenConfig?: unknown; amuletConfig?: unknown } = {}
     const rpc = createRpcWithToken({
       now: () => new Date('2026-06-11T00:00:00.000Z'),
-      sdkFactory: async () => ({
-        amulet: {
-          preapproval: {
-            fetchQuick: async (receiver: string) => {
-              seen.receiver = receiver
-              return preapproval
+      sdkFactory: async (options) => {
+        seen.tokenConfig = (options as { token?: unknown }).token
+        seen.amuletConfig = (options as { amulet?: unknown }).amulet
+        return {
+          amulet: {
+            preapproval: {
+              fetchQuick: async (receiver: string) => {
+                seen.receiver = receiver
+                return preapproval
+              },
             },
           },
-        },
-      }),
+        }
+      },
     })
 
     const res = (await rpc.handle({
@@ -392,6 +392,13 @@ describe('CIP-56 token helpers', () => {
       expired: false,
     })
     assert.equal(seen.receiver, 'receiver::party')
+    assert.equal(seen.tokenConfig, undefined)
+    assert.deepEqual(seen.amuletConfig, {
+      validatorUrl: 'http://localhost:2000/api/validator',
+      scanApiUrl: 'http://localhost:2000/api/validator',
+      registryUrl: 'http://localhost:2000/api/validator/v0/scan-proxy',
+      auth: { method: 'static', token: 'backend.jwt' },
+    })
   })
 
   it('returns inactive Amulet preapproval status without waiting when none exists', async () => {
@@ -790,7 +797,7 @@ describe('CIP-56 token helpers', () => {
       partyId: 'receiver::party',
       includeLocked: true,
       limit: 100,
-      continueUntilCompletion: true,
+      continueUntilCompletion: false,
     })
     assert.deepEqual(seen.tokenConfig, {
       validatorUrl: 'http://localhost:2000/api/validator',
@@ -877,7 +884,7 @@ describe('CIP-56 token helpers', () => {
       partyId: 'receiver::party',
       includeLocked: true,
       limit: 100,
-      continueUntilCompletion: true,
+      continueUntilCompletion: false,
     })
   })
 
