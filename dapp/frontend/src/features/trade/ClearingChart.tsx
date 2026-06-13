@@ -1,3 +1,4 @@
+import { useReducedMotion } from 'framer-motion'
 import { formatPrice } from '@/darkpool/format'
 import { useTrades } from '@/darkpool/hooks'
 import type { Pool } from '@/darkpool/types'
@@ -6,6 +7,7 @@ const W = 760
 const H = 200
 
 export const ClearingChart = ({ pool }: { pool: Pool }): JSX.Element => {
+  const prefersReducedMotion = useReducedMotion()
   // oldest -> newest, capped to the most recent 30 fills
   const series = useTrades(pool.poolId)
     .slice(0, 30)
@@ -56,7 +58,9 @@ export const ClearingChart = ({ pool }: { pool: Pool }): JSX.Element => {
           strokeLinejoin="round"
         />
         <circle cx={lastX} cy={lastY} r="3.5" fill="var(--color-primary)">
-          <animate attributeName="r" values="3.5;6;3.5" dur="1.8s" repeatCount="indefinite" />
+          {!prefersReducedMotion && (
+            <animate attributeName="r" values="3.5;6;3.5" dur="1.8s" repeatCount="indefinite" />
+          )}
         </circle>
       </svg>
     )

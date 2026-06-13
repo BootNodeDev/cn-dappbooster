@@ -65,26 +65,28 @@ export const ShieldedBook = ({ pool }: { pool: Pool }): JSX.Element => {
         <div className="-translate-x-1/2 absolute top-6 bottom-10 left-1/2 w-px bg-gradient-to-b from-transparent via-primary/40 to-transparent" />
 
         {/* drifting hidden liquidity (GPU-friendly CSS animation) */}
-        {FIELD.map((p, i) => (
-          <span
-            // biome-ignore lint/suspicious/noArrayIndexKey: stable generated field
-            key={i}
-            className="dp-particle absolute rounded-full"
-            style={
-              {
-                left: `${p.x}%`,
-                top: `${p.y}%`,
-                width: p.r * 2,
-                height: p.r * 2,
-                backgroundColor: p.bid ? 'var(--color-up)' : 'var(--color-down)',
-                filter: 'blur(0.5px)',
-                '--dp-o': p.o,
-                '--dp-dur': `${p.dur}s`,
-                '--dp-delay': `${p.delay}s`,
-              } as CSSProperties
-            }
-          />
-        ))}
+        <div aria-hidden="true">
+          {FIELD.map((p, i) => (
+            <span
+              // biome-ignore lint/suspicious/noArrayIndexKey: stable generated field
+              key={i}
+              className="dp-particle absolute rounded-full"
+              style={
+                {
+                  left: `${p.x}%`,
+                  top: `${p.y}%`,
+                  width: p.r * 2,
+                  height: p.r * 2,
+                  backgroundColor: p.bid ? 'var(--color-up)' : 'var(--color-down)',
+                  filter: 'blur(0.5px)',
+                  '--dp-o': p.o,
+                  '--dp-dur': `${p.dur}s`,
+                  '--dp-delay': `${p.delay}s`,
+                } as CSSProperties
+              }
+            />
+          ))}
+        </div>
 
         {/* bloom + the gold midpoint at the heart of the book */}
         <div className="-translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-1/2 flex flex-col items-center">

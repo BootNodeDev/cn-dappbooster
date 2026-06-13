@@ -33,6 +33,7 @@ export const TradeWorkspace = ({ party: partyId }: { party: string }): JSX.Eleme
 
   return (
     <div className="flex flex-col gap-5">
+      <h1 className="sr-only">Trade - CN Dark Pools</h1>
       <MarketBar pool={pool} pools={pools} onPoolChange={setPoolId} />
 
       <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-[340px_1fr]">

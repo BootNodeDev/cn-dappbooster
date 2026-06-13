@@ -103,7 +103,7 @@ export const MyOpenOrders = ({ pool, party }: { pool: Pool; party: string }): JS
                 Expires
               </th>
               <th scope="col" className="px-5 py-2 text-right font-semibold">
-                {''}
+                <span className="sr-only">Actions</span>
               </th>
             </tr>
           </thead>

@@ -19,8 +19,16 @@ const Row = ({
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
     exit={{ opacity: 0 }}
+    tabIndex={0}
+    aria-selected={selected}
     onClick={() => onSelect(order)}
-    className={`cursor-pointer border-border/60 border-b text-sm transition last:border-b-0 ${
+    onKeyDown={(e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        onSelect(order)
+      }
+    }}
+    className={`cursor-pointer border-border/60 border-b text-sm transition last:border-b-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
       selected ? 'bg-primary/10' : 'hover:bg-muted'
     }`}
   >

@@ -37,6 +37,7 @@ export const VenueView = (): JSX.Element => {
 
   return (
     <div className="flex flex-col gap-3.5">
+      <h1 className="sr-only">Venue - CN Dark Pools</h1>
       <div className="flex items-center justify-between">
         <div className="min-w-44">
           <Select

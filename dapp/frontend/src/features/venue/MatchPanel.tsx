@@ -99,7 +99,9 @@ export const MatchPanel = ({
 
       <div className="mt-4 space-y-2">
         <Leg order={buy} pool={pool} />
-        <div className="text-center text-soft">⇅</div>
+        <div aria-hidden="true" className="text-center text-soft">
+          ⇅
+        </div>
         <Leg order={sell} pool={pool} />
       </div>
 

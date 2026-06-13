@@ -1,5 +1,6 @@
 import { createRouter, RouterProvider } from '@tanstack/react-router'
 import { ConnectKitProvider } from 'canton-connect-kit'
+import { MotionConfig } from 'framer-motion'
 import { useState } from 'react'
 import { ToastProvider } from '@/components/ui/ToastProvider'
 import { TooltipProvider } from '@/components/ui/Tooltip'
@@ -19,22 +20,24 @@ declare module '@tanstack/react-router' {
 export const App = (): JSX.Element => {
   const [runtimeConfig] = useState(() => loadRuntimeConfig())
   return (
-    <TooltipProvider>
-      <ToastProvider>
-        <ConnectKitProvider
-          config={{
-            appName: 'CN Dark Pools',
-            appDescription: 'Private dark-pool trading on Canton Network',
-            network: runtimeConfig.cantonNetwork,
-          }}
-        >
-          <ConnectionBar>
-            <DarkPoolProvider>
-              <RouterProvider router={router} />
-            </DarkPoolProvider>
-          </ConnectionBar>
-        </ConnectKitProvider>
-      </ToastProvider>
-    </TooltipProvider>
+    <MotionConfig reducedMotion="user">
+      <TooltipProvider>
+        <ToastProvider>
+          <ConnectKitProvider
+            config={{
+              appName: 'CN Dark Pools',
+              appDescription: 'Private dark-pool trading on Canton Network',
+              network: runtimeConfig.cantonNetwork,
+            }}
+          >
+            <ConnectionBar>
+              <DarkPoolProvider>
+                <RouterProvider router={router} />
+              </DarkPoolProvider>
+            </ConnectionBar>
+          </ConnectKitProvider>
+        </ToastProvider>
+      </TooltipProvider>
+    </MotionConfig>
   )
 }

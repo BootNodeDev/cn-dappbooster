@@ -11,8 +11,8 @@ export const SideTag = ({
   const isBuy = side === 'Buy'
   return (
     <span className={`font-semibold ${isBuy ? 'text-up' : 'text-down'}`}>
-      {isBuy ? '▲' : '▼'}
-      {iconOnly ? '' : ` ${side}`}
+      <span aria-hidden="true">{isBuy ? '▲' : '▼'}</span>
+      {iconOnly ? <span className="sr-only">{side}</span> : ` ${side}`}
     </span>
   )
 }
