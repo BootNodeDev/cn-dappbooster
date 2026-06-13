@@ -1,6 +1,5 @@
-// Truncate (never round up) to `dp` decimals, then group with thousands separators.
-// Truncation matches the contracts' floor-everything philosophy: a displayed 1,000.98
-// is never inflated to 1,000.99.
+// Truncate to `dp` decimals (never rounds up, matching the contracts' floor rule),
+// then group with thousands separators.
 const truncateTo = (n: number, dp: number): number => {
   const factor = 10 ** dp
   return Math.trunc(n * factor) / factor

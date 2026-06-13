@@ -2,9 +2,8 @@ import type { Balance, Order, Pool, Trade } from './types'
 
 export const COUNTERPARTIES = ['bob', 'carol', 'dan'] as const
 
-// Instruments mirror the contract test setup: Canton Coin (CC) is issued by the
-// DSO/Amulet registry; the test tokens (TUSD, TTA, TTB) by a TestToken registry.
-// No invented tickers — these are the instruments the contracts actually exercise.
+// Instruments the contracts actually exercise: Canton Coin (CC) from the
+// Amulet/DSO registry, and the TUSD/TTA/TTB test tokens from a TestToken registry.
 const DSO = 'dso'
 const REG = 'registry'
 

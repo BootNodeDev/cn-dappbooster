@@ -61,9 +61,7 @@ export const ShieldedBook = ({ pool }: { pool: Pool }): JSX.Element => {
         </span>
       </div>
 
-      {/* depth field */}
       <div className="relative grow">
-        {/* central mid-price axis */}
         <div className="-translate-x-1/2 absolute top-6 bottom-10 left-1/2 w-px bg-gradient-to-b from-transparent via-primary/40 to-transparent" />
 
         {/* drifting hidden liquidity (GPU-friendly CSS animation) */}
