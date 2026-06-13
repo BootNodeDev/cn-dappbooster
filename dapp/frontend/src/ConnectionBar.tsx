@@ -309,7 +309,7 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
                 aria-hidden="true"
                 className="size-6 rounded-full"
               />
-              {isConnecting ? 'Connecting…' : 'Connect'}
+              {isConnecting ? 'Connecting…' : 'Connect Carpincho'}
             </button>
           </section>
         ) : isLocked ? (
