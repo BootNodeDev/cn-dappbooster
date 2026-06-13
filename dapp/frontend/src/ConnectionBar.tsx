@@ -40,17 +40,6 @@ const writeReconnect = (value: string | null): void => {
   }
 }
 
-// App brand mark (stamp on the brand gradient); carpincho's logo marks the wallet.
-const StarMark = ({ className }: { className: string }): JSX.Element => (
-  <span
-    className={`grid place-items-center bg-[image:var(--bg-gradient-brand)] text-white ${className}`}
-  >
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="size-1/2">
-      <path d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l7.1-1.01L12 2z" />
-    </svg>
-  </span>
-)
-
 // Wallet header (connect/account + theme), welcome hero, WC pairing, and lock
 // gating; renders children only when connected + unlocked behind workspace-ready.
 export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Element => {
@@ -314,9 +303,9 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
       <header className="sticky top-0 z-30 border-b border-border bg-surface/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
           <div className="flex items-center gap-2.5">
-            <StarMark className="size-8 rounded-lg" />
+            <img src="/logo.svg" alt="cn-darkpools" className="size-8 rounded-lg" />
             <span className="font-display text-base font-extrabold tracking-[-0.01em] text-foreground">
-              Stampbook
+              cn·darkpools
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -399,16 +388,19 @@ export const ConnectionBar = ({ children }: { children: ReactNode }): JSX.Elemen
           </section>
         ) : !isConnected ? (
           <section className="flex flex-col items-center pt-10 pb-6 text-center sm:pt-20">
-            <StarMark className="animate-drift mb-7 size-28 rounded-3xl" />
+            <img
+              src="/logo.svg"
+              alt="cn-darkpools"
+              className="animate-drift mb-7 size-28 rounded-3xl"
+            />
             <h1 className="max-w-xl font-display text-4xl font-extrabold leading-[1.05] tracking-[-0.02em] text-foreground sm:text-5xl">
-              Loyalty stamp cards,
+              Private trading,
               <br />
-              on-ledger
+              on Canton
             </h1>
             <p className="mt-4 max-w-lg text-base leading-relaxed text-muted-foreground">
-              Stampbook demo: a merchant issues a stamp card, delegates stamping to staff, and
-              cardholders watch their stamps add up toward a reward. Every stamp is a real Canton
-              transaction.
+              Place private orders no one else can see. Crossing orders settle atomically at the
+              midpoint price - no public book, no front-running.
             </p>
             <p className="mt-8 font-display text-lg font-bold text-foreground">
               Connect your wallet to begin
