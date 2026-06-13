@@ -3,6 +3,7 @@ import { test } from 'node:test'
 import {
   crosses,
   fillQuantity,
+  midpointPrice,
   parseDec,
   quoteAmount,
   remainderQuantity,
@@ -39,6 +40,12 @@ test('quoteAmount floors the exact product down to 10dp', () => {
     '0.0000000000',
   )
   assert.equal(toDec(quoteAmount(parseDec('10'), parseDec('2.0'))), '20.0000000000')
+})
+
+test('midpointPrice floors the half-tick down', () => {
+  assert.equal(toDec(midpointPrice(parseDec('2.0'), parseDec('1.0'))), '1.5000000000')
+  // (1.0000000001 + 1.0000000000) / 2 = 1.00000000005 -> floor10 = 1.0000000000
+  assert.equal(toDec(midpointPrice(parseDec('1.0000000001'), parseDec('1.0'))), '1.0000000000')
 })
 
 test('remainderQuantity: re-rest iff rest >= minFill', () => {
