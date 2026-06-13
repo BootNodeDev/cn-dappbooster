@@ -52,6 +52,12 @@ export interface WalletServiceStatusResponse {
   }
 }
 
+export interface DarUploadResponse {
+  ok: true
+  vetAllPackages: true
+  response: unknown
+}
+
 const rpcUrl = (options?: WalletServiceRequestOptions): string =>
   options?.rpcUrl?.trim() === undefined || options.rpcUrl.trim() === ''
     ? loadRuntimeConfig().walletServiceRpcUrl
@@ -110,6 +116,7 @@ export const getWalletServiceNetworkId = async (
 
 type AdminRequestOptions = WalletServiceRequestOptions
 
+// Reuses the configured JSON-RPC base so admin utilities follow the same wallet-service target.
 const adminUrl = (path: string, options?: AdminRequestOptions): string => {
   const base = rpcUrl(options).replace(/\/rpc\/?$/, '')
   return `${base}${path}`
@@ -130,6 +137,23 @@ export const walletServiceAdminPost = async <TResult>(
     throw new Error(`wallet-service HTTP ${response.status}${text === '' ? '' : `: ${text}`}`)
   }
   return (await response.json()) as TResult
+}
+
+// Sends compiled DAML archives as raw bytes so wallet-service can keep the ledger token boundary.
+export const uploadDarFile = async (
+  file: File,
+  options?: AdminRequestOptions,
+): Promise<DarUploadResponse> => {
+  const response = await fetch(adminUrl('/admin/dars', options), {
+    method: 'POST',
+    headers: { 'content-type': 'application/octet-stream' },
+    body: file,
+  })
+  if (!response.ok) {
+    const text = await response.text().catch(() => '')
+    throw new Error(`wallet-service HTTP ${response.status}${text === '' ? '' : `: ${text}`}`)
+  }
+  return (await response.json()) as DarUploadResponse
 }
 
 export const prepareCreateParty = async (

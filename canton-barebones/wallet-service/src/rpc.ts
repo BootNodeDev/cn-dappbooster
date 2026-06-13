@@ -1101,7 +1101,7 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
       'amulet.preapproval.cancel',
     ],
     reservedMethods: ['prepareExecute', 'prepareExecuteAndWait', 'signMessage'],
-    adminEndpoints: ['POST /admin/party/prepare', 'POST /admin/party/complete'],
+    adminEndpoints: ['POST /admin/party/prepare', 'POST /admin/party/complete', 'POST /admin/dars'],
     network: config.network,
     provider: provider(),
     canton: {
