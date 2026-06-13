@@ -27,6 +27,10 @@ export class MockDarkPoolClient implements DarkPoolClient {
   private listeners = new Set<() => void>()
   private seq = 0
   private clock: () => number
+  // Snapshot versioning so useSyncExternalStore gets a stable reference within a
+  // version and a fresh one after any mutation (avoids both stale reads and render loops).
+  private version = 0
+  private snapshots = new Map<string, { version: number; value: unknown }>()
 
   constructor(start = 0) {
     let t = start
@@ -49,7 +53,16 @@ export class MockDarkPoolClient implements DarkPoolClient {
   }
 
   private notify(): void {
+    this.version += 1
     for (const l of this.listeners) l()
+  }
+
+  private memo<T>(key: string, compute: () => T): T {
+    const hit = this.snapshots.get(key)
+    if (hit && hit.version === this.version) return hit.value as T
+    const value = compute()
+    this.snapshots.set(key, { version: this.version, value })
+    return value
   }
 
   private poolOf(poolId: string): Pool {
@@ -75,23 +88,23 @@ export class MockDarkPoolClient implements DarkPoolClient {
   }
 
   getBalances(party: string): Balance[] {
-    return this.balancesOf(party)
+    return this.memo(`bal:${party}`, () => this.balancesOf(party).map((b) => ({ ...b })))
   }
 
   listMyOrders(party: string): Order[] {
-    return this.orders.filter((o) => o.trader === party)
+    return this.memo(`orders:${party}`, () => this.orders.filter((o) => o.trader === party))
   }
 
   listMyFills(party: string): Fill[] {
-    return this.fills.get(party) ?? []
+    return this.memo(`fills:${party}`, () => [...(this.fills.get(party) ?? [])])
   }
 
   listBook(poolId: string): Order[] {
-    return this.orders.filter((o) => o.poolId === poolId)
+    return this.memo(`book:${poolId}`, () => this.orders.filter((o) => o.poolId === poolId))
   }
 
   listTrades(poolId: string): Trade[] {
-    return this.trades.filter((t) => t.poolId === poolId)
+    return this.memo(`trades:${poolId}`, () => this.trades.filter((t) => t.poolId === poolId))
   }
 
   subscribe(listener: () => void): () => void {

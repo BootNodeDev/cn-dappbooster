@@ -79,6 +79,23 @@ describe('MockDarkPoolClient', () => {
     await assert.rejects(() => c.matchOrders(buyLow.orderId, 's1'))
   })
 
+  it('returns a stable snapshot reference until a mutation, then a fresh one', async () => {
+    const c = new MockDarkPoolClient(0)
+    const a = c.listBook('cBTC-USDCx')
+    const b = c.listBook('cBTC-USDCx')
+    assert.equal(a, b)
+    await c.placeOrder(LOCAL, {
+      poolId: 'cBTC-USDCx',
+      side: 'Buy',
+      limitPrice: 50000,
+      quantity: 0.5,
+      minFill: 0.05,
+      expiresAt: null,
+    })
+    const d = c.listBook('cBTC-USDCx')
+    assert.notEqual(a, d)
+  })
+
   it('notifies subscribers on mutation', async () => {
     const c = new MockDarkPoolClient(0)
     let calls = 0
