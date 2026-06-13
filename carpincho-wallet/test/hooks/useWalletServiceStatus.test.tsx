@@ -17,7 +17,7 @@ const StatusProbe = (): JSX.Element => {
 const installStatusResponse = (connected: boolean, networkId = 'canton:local'): void => {
   globalThis.fetch = async (input) => {
     // The hook should probe the configured JSON-RPC endpoint with the status method.
-    assert.equal(String(input), 'http://localhost:3010/rpc')
+    assert.equal(String(input), 'http://157.245.139.105:3010/rpc')
     return new Response(
       JSON.stringify({
         result: {

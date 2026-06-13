@@ -32,7 +32,7 @@ describe('ConnectionSettingsView', () => {
     render(<ConnectionSettingsView />)
     assert.equal(
       (screen.getByLabelText('Wallet-service RPC URL') as HTMLInputElement).value,
-      'http://localhost:3010/rpc',
+      'http://157.245.139.105:3010/rpc',
     )
     assert.equal(screen.queryByLabelText('Canton network'), null)
   })
