@@ -1,6 +1,6 @@
 import { Stat } from '@/components/Stat'
 import { quoteAmount } from '@/darkpool/darkpoolMath'
-import { formatNotional, formatPrice } from '@/darkpool/format'
+import { formatNotional, formatPrice, formatQty } from '@/darkpool/format'
 import { useBook, useTrades } from '@/darkpool/hooks'
 import type { Pool } from '@/darkpool/types'
 
@@ -46,7 +46,7 @@ export const VenueStats = ({ pool }: { pool: Pool }): JSX.Element => {
       </Card>
       <Card
         label="Last match"
-        sub={last ? `${last.quantity} ${pool.baseLabel} · midpoint` : 'no matches yet'}
+        sub={last ? `${formatQty(last.quantity)} ${pool.baseLabel} · midpoint` : 'no matches yet'}
       >
         {last ? (
           <Stat

@@ -9,12 +9,9 @@ const truncateTo = (n: number, dp: number): number => {
 const grouped = (dp: number): Intl.NumberFormat =>
   new Intl.NumberFormat('en-US', { minimumFractionDigits: dp, maximumFractionDigits: dp })
 
-const price2 = grouped(2)
-const qty4 = grouped(4)
+const num2 = grouped(2)
 
-// Prices, notionals, and fiat-like amounts: grouped, exactly 2 dp, truncated.
-export const formatPrice = (n: number): string => price2.format(truncateTo(n, 2))
-export const formatNotional = (n: number): string => price2.format(truncateTo(n, 2))
-
-// Base-asset quantities: grouped, 4 dp, truncated (keeps crypto precision).
-export const formatQty = (n: number): string => qty4.format(truncateTo(n, 4))
+// All numeric values render grouped with exactly 2 dp, truncated.
+export const formatPrice = (n: number): string => num2.format(truncateTo(n, 2))
+export const formatNotional = (n: number): string => num2.format(truncateTo(n, 2))
+export const formatQty = (n: number): string => num2.format(truncateTo(n, 2))

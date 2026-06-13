@@ -12,10 +12,10 @@ describe('format', () => {
     assert.equal(formatPrice(1000.9893912312), '1,000.98')
     assert.equal(formatPrice(0.999), '0.99')
   })
-  it('formatQty uses 4 dp with grouping', () => {
-    assert.equal(formatQty(0.5), '0.5000')
-    assert.equal(formatQty(0.45), '0.4500')
-    assert.equal(formatQty(1234.5), '1,234.5000')
+  it('formatQty uses 2 dp with grouping', () => {
+    assert.equal(formatQty(0.5), '0.50')
+    assert.equal(formatQty(0.45), '0.45')
+    assert.equal(formatQty(1234.5), '1,234.50')
   })
   it('formatNotional groups thousands with 2 dp, truncated', () => {
     assert.equal(formatNotional(25000), '25,000.00')
