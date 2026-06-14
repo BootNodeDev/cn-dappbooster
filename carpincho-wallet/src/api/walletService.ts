@@ -1,4 +1,4 @@
-import { loadRuntimeConfig } from '@/config/runtimeConfig'
+import { loadRuntimeConfigAsync } from '@/config/runtimeConfig'
 
 export interface JsonRpcErrorObject {
   code: number
@@ -58,9 +58,9 @@ export interface DarUploadResponse {
   response: unknown
 }
 
-const rpcUrl = (options?: WalletServiceRequestOptions): string =>
+const rpcUrl = async (options?: WalletServiceRequestOptions): Promise<string> =>
   options?.rpcUrl?.trim() === undefined || options.rpcUrl.trim() === ''
-    ? loadRuntimeConfig().walletServiceRpcUrl
+    ? (await loadRuntimeConfigAsync()).walletServiceRpcUrl
     : options.rpcUrl.trim()
 
 export const walletServiceRequest = async <T>(
@@ -68,7 +68,7 @@ export const walletServiceRequest = async <T>(
   params?: unknown,
   options?: WalletServiceRequestOptions,
 ): Promise<T> => {
-  const response = await fetch(rpcUrl(options), {
+  const response = await fetch(await rpcUrl(options), {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
@@ -117,9 +117,12 @@ export const getWalletServiceNetworkId = async (
 type AdminRequestOptions = WalletServiceRequestOptions
 
 // Reuses the configured JSON-RPC base so admin utilities follow the same wallet-service target.
-const adminUrl = (path: string, options?: AdminRequestOptions): string => {
-  const base = rpcUrl(options).replace(/\/rpc\/?$/, '')
-  return `${base}${path}`
+const adminUrl = async (path: string, options?: AdminRequestOptions): Promise<string> => {
+  const base =
+    options?.rpcUrl?.trim() === undefined || options.rpcUrl.trim() === ''
+      ? (await loadRuntimeConfigAsync()).walletServiceRpcUrl
+      : options.rpcUrl.trim()
+  return `${base.replace(/\/rpc\/?$/, '')}${path}`
 }
 
 export const walletServiceAdminPost = async <TResult>(
@@ -127,7 +130,7 @@ export const walletServiceAdminPost = async <TResult>(
   body: Record<string, unknown>,
   options?: AdminRequestOptions,
 ): Promise<TResult> => {
-  const response = await fetch(adminUrl(path, options), {
+  const response = await fetch(await adminUrl(path, options), {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
@@ -144,7 +147,7 @@ export const uploadDarFile = async (
   file: File,
   options?: AdminRequestOptions,
 ): Promise<DarUploadResponse> => {
-  const response = await fetch(adminUrl('/admin/dars', options), {
+  const response = await fetch(await adminUrl('/admin/dars', options), {
     method: 'POST',
     headers: { 'content-type': 'application/octet-stream' },
     body: file,
