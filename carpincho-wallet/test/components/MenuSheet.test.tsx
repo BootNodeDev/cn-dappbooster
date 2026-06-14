@@ -29,6 +29,7 @@ const baseVault = (overrides: Partial<VaultContextValue> = {}): VaultContextValu
     createdAt: 0,
   }),
   removeAccount: async () => undefined,
+  exportPrivateKey: () => '',
   signMessage: async () => '',
   recordTransaction: async () => ({}) as unknown as import('@/vault/types').TransactionRecord,
   changePassword: async () => undefined,
@@ -92,6 +93,27 @@ describe('MenuSheet', () => {
     assert.ok(screen.getByRole('button', { name: /security & password/i }))
     await user.click(screen.getByRole('button', { name: /back/i }))
     assert.ok(screen.getByRole('button', { name: /log out/i }))
+  })
+
+  it('shows private-key import and export entries inside Settings', async () => {
+    // Scenario: key import/export are Settings-level actions, not account-switcher actions.
+    const user = userEvent.setup()
+    render(
+      wrap(
+        baseVault(),
+        <MenuSheet
+          open={true}
+          onOpenChange={() => undefined}
+        />,
+      ),
+    )
+
+    // Action: open the Settings screen from the root drawer.
+    await user.click(screen.getByRole('button', { name: /^settings$/i }))
+
+    // Expected result: both private-key actions are available from Settings.
+    assert.ok(screen.getByRole('button', { name: /^import private key$/i }))
+    assert.ok(screen.getByRole('button', { name: /^export private key$/i }))
   })
 
   it('navigates settings to security and back', async () => {

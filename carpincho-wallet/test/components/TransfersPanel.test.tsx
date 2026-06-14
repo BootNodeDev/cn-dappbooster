@@ -37,6 +37,7 @@ const baseVault = (): VaultContextValue =>
     setPrimary: async () => undefined,
     addAccount: async () => ACCOUNT,
     removeAccount: async () => undefined,
+    exportPrivateKey: () => '',
     signMessage: async () => 'signature',
     recordTransaction: async (tx) => ({ ...tx, id: 'tx-1', createdAt: 1 }),
     changePassword: async () => undefined,

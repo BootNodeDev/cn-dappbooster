@@ -49,6 +49,7 @@ const baseVault = (overrides: Partial<VaultContextValue> = {}): VaultContextValu
       createdAt: 0,
     }),
     removeAccount: async () => undefined,
+    exportPrivateKey: () => '',
     signMessage: async () => '',
     recordTransaction: async () => ({}) as unknown as import('@/vault/types').TransactionRecord,
     changePassword: async () => undefined,
