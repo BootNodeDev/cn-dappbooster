@@ -2,7 +2,17 @@ import { zxcvbn, zxcvbnOptions } from '@zxcvbn-ts/core'
 import { useEffect, useState } from 'react'
 
 export const MIN_PASSWORD_LENGTH = 9
-export const MIN_PASSWORD_SCORE = 3
+
+const FALLBACK_PASSWORD_SCORE = 1
+
+// zxcvbn scores run 0-4; anything missing, blank, or out of range falls back.
+export const parsePasswordScore = (raw: unknown): number => {
+  if (typeof raw !== 'string' || raw.trim() === '') return FALLBACK_PASSWORD_SCORE
+  const score = Number(raw)
+  return Number.isInteger(score) && score >= 0 && score <= 4 ? score : FALLBACK_PASSWORD_SCORE
+}
+
+export const MIN_PASSWORD_SCORE = parsePasswordScore(import.meta.env?.VITE_MIN_PASSWORD_SCORE)
 
 let ready = false
 let loadPromise: Promise<void> | null = null
