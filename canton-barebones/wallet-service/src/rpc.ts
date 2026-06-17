@@ -604,7 +604,7 @@ export const createRpc = (config: WalletServiceConfig, deps: RpcDependencies = {
       amulet: {
         validatorUrl: config.splice.validatorUrl,
         scanApiUrl: config.splice.validatorUrl,
-        registryUrl: config.splice.registryApiUrl,
+        registryUrl: new URL(config.splice.registryApiUrl),
         auth,
       },
     })
