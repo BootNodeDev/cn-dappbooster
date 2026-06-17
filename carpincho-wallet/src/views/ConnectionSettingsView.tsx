@@ -76,18 +76,6 @@ export const ConnectionSettingsView = (): JSX.Element => {
         />
       </div>
 
-      <div>
-        <label htmlFor="canton-network">Canton network</label>
-        <TextInput
-          id="canton-network"
-          type="text"
-          className="font-mono"
-          value={draft.cantonNetwork}
-          onChange={(e) => setDraft((prev) => ({ ...prev, cantonNetwork: e.target.value }))}
-          placeholder="canton:local"
-        />
-      </div>
-
       <PrimaryButton
         className="w-full mt-1"
         onClick={onSave}

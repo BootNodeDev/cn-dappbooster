@@ -49,6 +49,7 @@
   --shadow-focus: 0 0 0 3px rgba(105, 37, 129, 0.32);
   --shadow-focus-danger: 0 0 0 3px rgba(163, 38, 38, 0.32);
   --shadow-glow: 0 10px 26px rgba(198, 112, 229, 0.4);
+  --shadow-toggle-on: 0 0 10px rgba(105, 37, 129, 0.35);
 
   --bg-gradient-brand: linear-gradient(135deg, #c670e5, #e71d73);
 
@@ -102,6 +103,7 @@
   --shadow-focus: 0 0 0 3px rgba(198, 112, 229, 0.4);
   --shadow-focus-danger: 0 0 0 3px rgba(229, 115, 115, 0.4);
   --shadow-glow: 0 10px 26px rgba(198, 112, 229, 0.4);
+  --shadow-toggle-on: 0 0 10px rgba(157, 84, 184, 0.55);
 
   --bg-gradient-brand: linear-gradient(135deg, #c670e5, #e71d73);
 

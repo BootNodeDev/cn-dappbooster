@@ -151,7 +151,10 @@ export const HomeView = (): JSX.Element => {
         <AccountCard primary={primary} />
       </div>
 
-      <HomeTabs transactions={v.transactions} />
+      <HomeTabs
+        account={primary}
+        transactions={v.transactions}
+      />
 
       {/* Approval requests are modal: explicit approve/reject only, no dismiss affordance. */}
       <Sheet
