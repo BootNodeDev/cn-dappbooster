@@ -1,8 +1,6 @@
 import { zxcvbn, zxcvbnOptions } from '@zxcvbn-ts/core'
 import { useEffect, useState } from 'react'
 
-export const MIN_PASSWORD_LENGTH = 9
-
 const FALLBACK_PASSWORD_SCORE = 1
 
 // zxcvbn scores run 0-4; anything missing, blank, or out of range falls back.
@@ -53,7 +51,7 @@ export const scorePassword = (password: string): number => {
 }
 
 export const isPasswordAcceptable = (password: string): boolean =>
-  password.length >= MIN_PASSWORD_LENGTH && scorePassword(password) >= MIN_PASSWORD_SCORE
+  scorePassword(password) >= MIN_PASSWORD_SCORE
 
 export const isConfirmMismatch = (password: string, confirm: string): boolean =>
   confirm.length > 0 && password !== confirm
