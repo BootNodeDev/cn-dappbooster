@@ -5,7 +5,7 @@ import { COPY_ICON } from '@/components/ui/icons'
 import { PasswordInput } from '@/components/ui/PasswordInput'
 import { TextInput } from '@/components/ui/TextInput'
 import { toast } from '@/components/ui/toast'
-import { copyText } from '@/utils/clipboard'
+import { copySecret } from '@/utils/clipboard'
 import { derivePublicKeyBase64 } from '@/vault/keypair'
 import { useVault } from '@/vault/useVault'
 
@@ -133,15 +133,76 @@ export const ImportPrivateKeyForm = ({ onImported }: ImportPrivateKeyFormProps):
   )
 }
 
-// Reveals the selected party secret only through the explicit Settings export action.
+// Reveals the selected party secret only after a fresh password re-check, even though
+// the vault is already unlocked, so an unattended popup cannot leak the raw key.
 export const ExportPrivateKeyView = (): JSX.Element => {
   const v = useVault()
   const account = v.primary
+  const [revealed, setRevealed] = useState(false)
+  const [current, setCurrent] = useState('')
+  const [error, setError] = useState<string | null>(null)
+
   if (account === null) {
     return (
       <p className="rounded-md border border-border bg-muted p-3 text-[0.92rem] text-muted-foreground">
         No selected account.
       </p>
+    )
+  }
+
+  const onVerify = (event: FormEvent<HTMLFormElement>): void => {
+    event.preventDefault()
+    if (!v.verifyPassword(current)) {
+      setError('Incorrect password.')
+      return
+    }
+    setError(null)
+    setCurrent('')
+    setRevealed(true)
+  }
+
+  const accountSummary = (
+    <div className="rounded-md border border-border bg-muted p-3">
+      <p className="font-semibold text-foreground">{account.name}</p>
+      <p className="mt-1 break-all font-mono text-[0.82rem] text-muted-foreground">
+        {account.partyId}
+      </p>
+    </div>
+  )
+
+  if (!revealed) {
+    const hasError = error !== null
+    return (
+      <form
+        onSubmit={onVerify}
+        className="flex flex-col gap-4"
+      >
+        {accountSummary}
+        <p className="text-[0.85rem] text-muted-foreground">
+          Confirm your password to reveal this account's private key.
+        </p>
+        <PasswordInput
+          aria-label="Confirm password"
+          aria-errormessage={hasError ? 'export-private-key-error' : undefined}
+          placeholder="Current password"
+          autoComplete="current-password"
+          error={hasError}
+          value={current}
+          onChange={(event) => {
+            setCurrent(event.target.value)
+            setError(null)
+          }}
+        />
+        {hasError && (
+          <p
+            id="export-private-key-error"
+            className="text-[0.85rem] text-danger"
+          >
+            {error}
+          </p>
+        )}
+        <PrimaryButton type="submit">Reveal private key</PrimaryButton>
+      </form>
     )
   }
 
@@ -155,19 +216,16 @@ export const ExportPrivateKeyView = (): JSX.Element => {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-md border border-border bg-muted p-3">
-        <p className="font-semibold text-foreground">{account.name}</p>
-        <p className="mt-1 break-all font-mono text-[0.82rem] text-muted-foreground">
-          {account.partyId}
-        </p>
-      </div>
+      {accountSummary}
       <div>
         <p className="mb-2 text-[0.85rem] font-semibold text-muted-foreground">Private key</p>
         <p className="max-h-40 overflow-y-auto break-all rounded-md border border-border-strong bg-surface p-3 font-mono text-[0.82rem] text-foreground">
           {privateKey}
         </p>
       </div>
-      <SecondaryButton onClick={() => copyText(privateKey, 'Private key copied.')}>
+      <SecondaryButton
+        onClick={() => copySecret(privateKey, 'Private key copied. Clipboard clears in 60s.')}
+      >
         {COPY_ICON}
         Copy private key
       </SecondaryButton>

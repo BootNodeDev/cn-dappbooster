@@ -160,8 +160,9 @@ describe('ExportPrivateKeyView', () => {
     })
   })
 
-  it('shows and copies the selected account private key', async () => {
-    // Scenario: the user exports the currently selected party without a password re-check.
+  it('reveals and copies the private key only after a password re-check', async () => {
+    // Scenario: the secret is gated behind a fresh password confirmation even though
+    // the vault is already unlocked.
     const user = userEvent.setup()
     const copied: string[] = []
     Object.defineProperty(navigator, 'clipboard', {
@@ -170,11 +171,13 @@ describe('ExportPrivateKeyView', () => {
         writeText: async (value: string) => {
           copied.push(value)
         },
+        readText: async () => '',
       },
     })
     const privateKey = 'aa'.repeat(32)
     renderWithVault(
       {
+        verifyPassword: (password) => password === 'correct-horse-battery',
         exportPrivateKey: (accountId) => {
           assert.equal(accountId, PRIMARY_ACCOUNT.id)
           return privateKey
@@ -183,12 +186,23 @@ describe('ExportPrivateKeyView', () => {
       <ExportPrivateKeyView />,
     )
 
-    // Expected setup state: account context and secret key are visible in the export screen.
+    // Expected setup state: account context is shown, but the secret stays hidden.
     assert.ok(screen.getByText(PRIMARY_ACCOUNT.name))
     assert.ok(screen.getByText(PRIMARY_ACCOUNT.partyId))
+    assert.equal(screen.queryByText(privateKey), null)
+
+    // Action: a wrong password keeps the key hidden.
+    await user.type(screen.getByLabelText(/confirm password/i), 'wrong')
+    await user.click(screen.getByRole('button', { name: /^reveal private key$/i }))
+    assert.ok(screen.getByText(/incorrect password/i))
+    assert.equal(screen.queryByText(privateKey), null)
+
+    // Action: the correct password reveals the secret, then it can be copied.
+    await user.clear(screen.getByLabelText(/confirm password/i))
+    await user.type(screen.getByLabelText(/confirm password/i), 'correct-horse-battery')
+    await user.click(screen.getByRole('button', { name: /^reveal private key$/i }))
     assert.ok(screen.getByText(privateKey))
 
-    // Action: copy the visible private key through the explicit copy control.
     await user.click(screen.getByRole('button', { name: /^copy private key$/i }))
 
     // Expected result: the copied value is exactly the selected party private key.
