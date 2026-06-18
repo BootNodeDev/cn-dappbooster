@@ -5,7 +5,7 @@ export interface RuntimeConfig {
 const STORAGE_KEY = 'carpincho.runtime-config.v2'
 
 const DEFAULT_RUNTIME_CONFIG: RuntimeConfig = {
-  walletServiceRpcUrl: 'http://157.245.139.105:3010/rpc',
+  walletServiceRpcUrl: 'http://localhost:3010/rpc',
 }
 
 type ChromeLocalStorage = {

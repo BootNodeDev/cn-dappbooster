@@ -72,7 +72,7 @@ export const ConnectionSettingsView = (): JSX.Element => {
           className="font-mono"
           value={draft.walletServiceRpcUrl}
           onChange={(e) => setDraft((prev) => ({ ...prev, walletServiceRpcUrl: e.target.value }))}
-          placeholder="http://157.245.139.105:3010/rpc"
+          placeholder="http://localhost:3010/rpc"
         />
       </div>
 
