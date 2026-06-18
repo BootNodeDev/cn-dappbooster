@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import * as Avatar from '@radix-ui/react-avatar'
 import { CHEVRON_DOWN_ICON, DISCONNECT_ICON, GLOBE_ICON } from '@/components/ui/icons'
 import { cn } from '@/utils/cn'
 
@@ -19,30 +19,30 @@ interface ConnectionFooterProps {
   onOpenSettings: () => void
 }
 
-// dApp favicon with a monogram fallback; the globe stands in when there is no site context.
-const DappIcon = ({ host, icon }: { host?: string; icon?: string }): JSX.Element => {
-  const [failed, setFailed] = useState(false)
-  const tile = 'flex size-[26px] shrink-0 items-center justify-center rounded-[7px]'
+const TILE = 'flex size-[26px] shrink-0 items-center justify-center overflow-hidden rounded-[7px]'
 
+// dApp favicon via Radix Avatar (image with monogram fallback); the globe stands in
+// when there is no site context to identify.
+const DappIcon = ({ host, icon }: { host?: string; icon?: string }): JSX.Element => {
   if (host === undefined) {
-    return <span className={cn(tile, 'bg-muted text-soft [&>svg]:size-[15px]')}>{GLOBE_ICON}</span>
-  }
-  if (icon !== undefined && !failed) {
-    return (
-      <img
-        src={icon}
-        alt=""
-        className="size-[26px] shrink-0 rounded-[7px] object-cover"
-        onError={() => setFailed(true)}
-      />
-    )
+    return <span className={cn(TILE, 'bg-muted text-soft [&>svg]:size-[15px]')}>{GLOBE_ICON}</span>
   }
   return (
-    <span
-      className={cn(tile, 'bg-[image:var(--bg-gradient-brand)] text-[0.8rem] font-bold text-white')}
-    >
-      {host.charAt(0).toUpperCase()}
-    </span>
+    <Avatar.Root className={cn(TILE, 'bg-[image:var(--bg-gradient-brand)]')}>
+      {icon !== undefined && (
+        <Avatar.Image
+          src={icon}
+          alt=""
+          className="size-full object-cover"
+        />
+      )}
+      <Avatar.Fallback
+        delayMs={icon === undefined ? 0 : 200}
+        className="text-[0.8rem] font-bold text-white"
+      >
+        {host.charAt(0).toUpperCase()}
+      </Avatar.Fallback>
+    </Avatar.Root>
   )
 }
 
