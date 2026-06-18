@@ -37,7 +37,7 @@ const DappIcon = ({ host, icon }: { host?: string; icon?: string }): JSX.Element
         />
       )}
       <Avatar.Fallback
-        delayMs={icon === undefined ? 0 : 200}
+        delayMs={icon === undefined ? undefined : 200}
         className="text-[0.8rem] font-bold text-white"
       >
         {host.charAt(0).toUpperCase()}

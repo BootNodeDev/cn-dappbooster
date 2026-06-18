@@ -137,4 +137,31 @@ describe('ConnectionFooter', () => {
     await user.click(screen.getByRole('button', { name: /disconnect/i }))
     assert.equal(disconnects, 1)
   })
+
+  it('falls back to a host monogram when the dApp has no favicon', () => {
+    // Scenario: connected dApp without an icon, so the avatar shows the first host letter.
+    render(
+      <ConnectionFooter
+        walletService={connectedService}
+        dapp={connectedDapp}
+        onOpenSettings={() => undefined}
+      />,
+    )
+
+    assert.ok(screen.getByText('L'))
+  })
+
+  it('keeps dApp connection and wallet-service health independent', () => {
+    // Scenario: a connected dApp coexists with an unreachable wallet-service.
+    render(
+      <ConnectionFooter
+        walletService={offlineService}
+        dapp={connectedDapp}
+        onOpenSettings={() => undefined}
+      />,
+    )
+
+    assert.ok(screen.getByText('Connected'))
+    assert.ok(screen.getByText('Offline'))
+  })
 })
