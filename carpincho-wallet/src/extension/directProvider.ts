@@ -5,16 +5,7 @@ import {
   jsonRpcResult,
 } from '@/extension/messages'
 import { dispatchProviderRequest } from '@/provider/dispatch'
-import {
-  CANTON_METHOD_CONNECT,
-  CANTON_METHOD_DISCONNECT,
-  CANTON_METHOD_GET_ACTIVE_NETWORK,
-  CANTON_METHOD_GET_PRIMARY_ACCOUNT,
-  CANTON_METHOD_IS_CONNECTED,
-  CANTON_METHOD_LIST_ACCOUNTS,
-  CANTON_METHOD_STATUS,
-  normalizeMethod,
-} from '@/provider/methods'
+import { ACCESS_TIER, accessTier } from '@/provider/methods'
 import type { AccountPublic } from '@/vault/types'
 
 export interface DirectProviderSnapshot {
@@ -26,15 +17,6 @@ export interface DirectProviderContext {
   // Whether the requesting origin has been granted access via an approved connect.
   isConnected: boolean
 }
-
-// Account-disclosing queries that may run for an unapproved origin only against an
-// empty snapshot, so they report a disconnected state without leaking party data.
-const NON_CONNECTED_QUERY_METHODS = new Set<string>([
-  CANTON_METHOD_LIST_ACCOUNTS,
-  CANTON_METHOD_GET_PRIMARY_ACCOUNT,
-  CANTON_METHOD_STATUS,
-  CANTON_METHOD_IS_CONNECTED,
-])
 
 const EMPTY_SNAPSHOT: DirectProviderSnapshot = { accounts: [], primary: null }
 
@@ -79,28 +61,24 @@ export const createDirectProviderResponse = async (
     return undefined
   }
 
-  const method = normalizeMethod(request.method)
+  const tier = accessTier(request.method)
 
-  // A connected origin is allowed everything; network discovery and disconnect never
-  // disclose account identity, so they are allowed regardless of connection state.
-  if (
-    context.isConnected ||
-    method === CANTON_METHOD_GET_ACTIVE_NETWORK ||
-    method === CANTON_METHOD_DISCONNECT
-  ) {
+  // A connected origin is allowed everything; PUBLIC methods disclose no account
+  // identity, so they are allowed regardless of connection state.
+  if (context.isConnected || tier === ACCESS_TIER.PUBLIC) {
     return runDispatch(request, snapshot)
   }
 
   // Origin has not been granted access by the user yet.
-  if (method === CANTON_METHOD_CONNECT) {
+  if (tier === ACCESS_TIER.CONNECT) {
     // Queue: the popup prompts the user to approve this origin before any accounts leave the wallet.
     return undefined
   }
-  if (NON_CONNECTED_QUERY_METHODS.has(method)) {
+  if (tier === ACCESS_TIER.IDENTITY) {
     // Answer from an empty snapshot: reports isConnected:false / empty accounts, leaks nothing.
     return runDispatch(request, EMPTY_SNAPSHOT)
   }
-  // signMessage / prepareExecute / ledgerApi / unknown: refuse without prompting.
+  // RESTRICTED (signMessage / prepareExecute / ledgerApi / unknown): refuse without prompting.
   return jsonRpcError(
     request.id,
     -32000,
