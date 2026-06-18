@@ -107,7 +107,7 @@ describe('OnboardingFlow', () => {
     renderFlow({ hasVault: true, accounts: [] })
 
     // The existing footer should report the configured wallet-service status on this step.
-    await waitFor(() => assert.ok(screen.getByText('network:local')))
+    await waitFor(() => assert.ok(screen.getByText('local')))
 
     // Opening the footer settings should show the same wallet-service URL field used after setup.
     await user.click(screen.getByRole('button', { name: 'Connection settings' }))

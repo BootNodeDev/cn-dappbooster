@@ -8,7 +8,7 @@ import { toast } from '@/components/ui/toast'
 import { useExtensionDappConnection } from '@/extension/dappConnection'
 import { forgetConnectedOrigin, isExtensionRuntime } from '@/extension/runtimeClient'
 import { useWalletServiceStatus } from '@/hooks/useWalletServiceStatus'
-import { shortMiddle, sortAccounts } from '@/utils/account'
+import { sortAccounts } from '@/utils/account'
 import { useVault } from '@/vault/useVault'
 import { ConnectionSettingsView } from '@/views/ConnectionSettingsView'
 import { PendingActionsSection } from '@/views/home/PendingActionsSection'
@@ -121,19 +121,6 @@ export const HomeView = (): JSX.Element => {
     sessions,
   })
   const connectedSession = sessions[0]
-  // Connected account address: the WC session's account on web, the active account in extension mode.
-  const footerDappAccountAddress = ((): string | undefined => {
-    if (extensionMode) {
-      return primary === undefined ? undefined : shortMiddle(primary.partyId, 12, 7)
-    }
-    if (connectedSession === undefined) {
-      return undefined
-    }
-    const partyId =
-      v.accounts.find((a) => connectedSession.accounts.includes(a.partyId))?.partyId ??
-      connectedSession.accounts[0]
-    return partyId === undefined ? undefined : shortMiddle(partyId, 12, 7)
-  })()
   // Disconnect, run only after the confirmation dialog is accepted.
   const performDisconnect = ((): (() => void) | undefined => {
     if (extensionMode) {
@@ -224,7 +211,6 @@ export const HomeView = (): JSX.Element => {
       <ConnectionFooter
         walletService={walletService}
         dapp={dapp}
-        dappAccountAddress={footerDappAccountAddress}
         onDisconnectDapp={
           performDisconnect === undefined ? undefined : () => setDisconnectConfirmOpen(true)
         }
