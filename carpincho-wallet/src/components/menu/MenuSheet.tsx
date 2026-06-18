@@ -3,6 +3,7 @@ import { MenuList } from '@/components/menu/MenuList'
 import { type Direction, MENU_LISTS, SCREENS, type Screen } from '@/components/menu/screens'
 import { ThemeMenu } from '@/components/menu/ThemeMenu'
 import { WalletConnectMenu } from '@/components/menu/WalletConnectMenu'
+import { ExportPrivateKeyView, ImportPrivateKeyForm } from '@/components/PrivateKeyPanel'
 import { AutoLockList, PasswordForm } from '@/components/SecurityPanel'
 import { Sheet } from '@/components/ui/Sheet'
 import { isExtensionRuntime } from '@/extension/runtimeClient'
@@ -94,6 +95,10 @@ export const MenuSheet = ({ open, onOpenChange }: MenuSheetProps): JSX.Element =
         {screen === 'wallet-connect' && (
           <WalletConnectMenu onPaired={() => handleOpenChange(false)} />
         )}
+        {screen === 'import-private-key' && (
+          <ImportPrivateKeyForm onImported={() => handleOpenChange(false)} />
+        )}
+        {screen === 'export-private-key' && <ExportPrivateKeyView />}
         {screen === 'theme' && <ThemeMenu />}
         {screen === 'password' && <PasswordForm />}
         {screen === 'auto-lock' && <AutoLockList />}

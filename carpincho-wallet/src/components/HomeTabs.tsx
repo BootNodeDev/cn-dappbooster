@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { ActivityList } from '@/components/ActivityList'
 import { AssetsPanel } from '@/components/AssetsPanel'
+import { LedgerToolsPanel } from '@/components/LedgerToolsPanel'
 import type { Cip56SendApi } from '@/components/SendTokenForm'
 import { TransfersPanel } from '@/components/TransfersPanel'
 import { TabContent, Tabs, TabsList, TabTrigger } from '@/components/ui/Tabs'
@@ -69,6 +70,7 @@ export const HomeTabs = ({
           ) : null}
         </TabTrigger>
         <TabTrigger value="activity">Activity</TabTrigger>
+        <TabTrigger value="utils">Utils</TabTrigger>
       </TabsList>
       <TabContent
         value="assets"
@@ -97,6 +99,12 @@ export const HomeTabs = ({
         className={TAB_CONTENT_CLASS}
       >
         <ActivityList transactions={activeTransactions} />
+      </TabContent>
+      <TabContent
+        value="utils"
+        className={TAB_CONTENT_CLASS}
+      >
+        <LedgerToolsPanel account={account} />
       </TabContent>
     </Tabs>
   )

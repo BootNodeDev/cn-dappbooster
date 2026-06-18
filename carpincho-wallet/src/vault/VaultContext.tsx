@@ -104,6 +104,7 @@ export interface VaultContextValue {
     publicKeyBase64: string
   }) => Promise<AccountPublic>
   removeAccount: (id: string) => Promise<void>
+  exportPrivateKey: (accountId: string) => string
   signMessage: (accountId: string, messageBase64: string) => Promise<string>
   recordTransaction: (
     args: Omit<TransactionRecord, 'id' | 'createdAt'>,
@@ -345,6 +346,18 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
     [],
   )
 
+  // Gives export UI the selected account secret without leaking keys into public account state.
+  const exportPrivateKey = useCallback((accountId: string): string => {
+    if (unlockedPlaintext === null) {
+      throw new Error('vault locked')
+    }
+    const acct = unlockedPlaintext.accounts.find((a) => a.id === accountId)
+    if (acct === undefined) {
+      throw new Error(`unknown account: ${accountId}`)
+    }
+    return acct.privateKeyHex
+  }, [])
+
   const verifyPassword = useCallback(
     (password: string): boolean => cachedPassword !== null && cachedPassword === password,
     [],
@@ -489,6 +502,7 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
       setPrimary,
       addAccount,
       removeAccount,
+      exportPrivateKey,
       signMessage,
       recordTransaction,
       changePassword,
@@ -508,6 +522,7 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
     setPrimary,
     addAccount,
     removeAccount,
+    exportPrivateKey,
     signMessage,
     recordTransaction,
     changePassword,

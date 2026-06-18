@@ -5,6 +5,8 @@ export type Screen =
   | 'root'
   | 'wallet-connect'
   | 'settings'
+  | 'import-private-key'
+  | 'export-private-key'
   | 'theme'
   | 'security'
   | 'password'
@@ -30,8 +32,18 @@ export const SCREENS: Record<Screen, ScreenConfig> = {
   },
   settings: {
     title: 'Settings',
-    description: 'Theme and security preferences.',
+    description: 'Theme, security, and account key preferences.',
     parent: 'root',
+  },
+  'import-private-key': {
+    title: 'Import private key',
+    description: 'Import an existing Canton party into this vault.',
+    parent: 'settings',
+  },
+  'export-private-key': {
+    title: 'Export private key',
+    description: 'Reveal the selected party private key.',
+    parent: 'settings',
   },
   theme: {
     title: 'Theme',
@@ -72,6 +84,8 @@ export const MENU_LISTS: Partial<Record<Screen, MenuListRow[]>> = {
   settings: [
     { label: 'Theme', to: 'theme' },
     { label: 'Security & Password', to: 'security' },
+    { label: 'Import private key', to: 'import-private-key' },
+    { label: 'Export private key', to: 'export-private-key' },
   ],
   security: [
     { label: 'Password', to: 'password' },

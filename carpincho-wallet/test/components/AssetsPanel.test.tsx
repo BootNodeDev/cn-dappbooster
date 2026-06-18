@@ -2,6 +2,7 @@ import { strict as assert } from 'node:assert'
 import { afterEach, describe, it } from 'node:test'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import type { AmuletTapApi } from '@/cip56/amuletPreapproval'
 import { AssetsPanel } from '@/components/AssetsPanel'
 import { toast } from '@/components/ui/toast'
 import type { Cip56HoldingsApi } from '@/hooks/useTokenHoldings'
@@ -36,6 +37,7 @@ const baseVault = (): VaultContextValue =>
     setPrimary: async () => undefined,
     addAccount: async () => ACCOUNT,
     removeAccount: async () => undefined,
+    exportPrivateKey: () => '',
     signMessage: async () => 'signature',
     recordTransaction: async (tx) => ({ ...tx, id: 'tx-1', createdAt: 1 }),
     changePassword: async () => undefined,
@@ -45,14 +47,25 @@ const baseVault = (): VaultContextValue =>
   }) as VaultContextValue
 
 // Mounts the panel under vault context so it can resolve the active account.
-const renderAssets = (api: Cip56HoldingsApi): void => {
+const renderAssets = (api: Cip56HoldingsApi, tapApi?: AmuletTapApi): void => {
   render(
     <TestQueryClientProvider>
       <VaultContext.Provider value={baseVault()}>
-        <AssetsPanel api={api} />
+        <AssetsPanel
+          api={api}
+          tapApi={tapApi}
+        />
       </VaultContext.Provider>
     </TestQueryClientProvider>,
   )
+}
+
+// Clicks the token row by its visible label so the faucet button is not selected by accident.
+const clickTokenRow = async (label: string): Promise<void> => {
+  const tokenLabel = await screen.findByText(label)
+  const row = tokenLabel.closest('button')
+  assert.ok(row)
+  await userEvent.click(row)
 }
 
 describe('AssetsPanel', () => {
@@ -96,6 +109,46 @@ describe('AssetsPanel', () => {
     assert.equal(screen.queryByRole('button', { name: /show holdings/i }), null)
   })
 
+  it('taps a fixed 100 AMT amount for the selected party and refreshes balances', async () => {
+    // Scenario: the faucet button belongs in the Assets tab because it changes
+    // balances. A successful tap should request the active account and reload holdings.
+    let listCalls = 0
+    const tappedAccounts: string[] = []
+    const api: Cip56HoldingsApi = {
+      listTokenHoldingSummaries: async () => {
+        listCalls += 1
+        return []
+      },
+    }
+    const tapApi: AmuletTapApi = {
+      tapAmulet: async ({ account, signMessage, recordTransaction }) => {
+        tappedAccounts.push(account.partyId)
+        assert.equal(await signMessage(account.id, 'tap-hash'), 'signature')
+        await recordTransaction?.({
+          accountId: account.id,
+          accountName: account.name,
+          partyId: account.partyId,
+          network: account.network,
+          method: 'amulet.tap',
+          status: 'executed',
+          preparedTransaction: 'tap-tx',
+          preparedTransactionHash: 'tap-hash',
+          commands: [],
+          summary: 'Tap 100 AMT',
+          commandCount: 1,
+        })
+        return { updateId: 'tap-update-1' }
+      },
+    }
+
+    renderAssets(api, tapApi)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Tap Amulet' }))
+
+    assert.deepEqual(tappedAccounts, ['alice::party'])
+    assert.ok(listCalls >= 2)
+  })
+
   it('opens the token detail modal and fetches UTXOs on demand', async () => {
     // Scenario: clicking a token row opens the balance-first modal, which lazily
     // loads the raw UTXOs for the holdings list.
@@ -130,7 +183,7 @@ describe('AssetsPanel', () => {
     renderAssets(api)
 
     assert.equal(detailsCalls, 0)
-    await userEvent.click(await screen.findByRole('button', { name: /Amulet/ }))
+    await clickTokenRow('Amulet')
 
     await screen.findByText('15.75')
     await screen.findByText('12.50')
@@ -173,7 +226,7 @@ describe('AssetsPanel', () => {
 
     renderAssets(api)
 
-    await userEvent.click(await screen.findByRole('button', { name: /Amulet/ }))
+    await clickTokenRow('Amulet')
 
     // Both the balance and the lone cached holding format to 15.75; two matches with
     // no detail fetch proves the cached UTXO rendered without a round trip.

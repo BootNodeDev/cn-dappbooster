@@ -1,5 +1,5 @@
 import { Tooltip } from '@/components/ui/Tooltip'
-import { MIN_PASSWORD_LENGTH, scorePassword } from '@/vault/passwordStrength'
+import { MIN_PASSWORD_SCORE, scorePassword } from '@/vault/passwordStrength'
 
 type Tier = { segmentColor: string; labelColor: string; label: string }
 
@@ -13,6 +13,8 @@ const EXCELLENT: Tier = {
 }
 
 const TIERS: readonly Tier[] = [TOO_WEAK, TOO_WEAK, FAIR, STRONG, EXCELLENT]
+
+const REQUIRED_LABEL = (TIERS[MIN_PASSWORD_SCORE] ?? STRONG).label
 
 type Props = {
   password: string
@@ -47,7 +49,7 @@ export const PasswordStrengthIndicator = ({ password, id }: Props): JSX.Element 
       </div>
 
       <p className="flex items-center gap-1 text-[0.8rem] text-soft">
-        {MIN_PASSWORD_LENGTH} characters minimum, <b>"Strong"</b> or better
+        <b>"{REQUIRED_LABEL}"</b> or better
         <Tooltip
           label="Password recommendations"
           content={

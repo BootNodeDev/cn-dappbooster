@@ -64,6 +64,7 @@ const baseVault = (): VaultContextValue =>
     setPrimary: async () => undefined,
     addAccount: async () => ACCOUNT,
     removeAccount: async () => undefined,
+    exportPrivateKey: () => '',
     signMessage: async () => 'signature',
     recordTransaction: async (tx) => ({ ...tx, id: 'tx-1', createdAt: 1 }),
     changePassword: async () => undefined,
@@ -89,7 +90,7 @@ describe('HomeTabs navigation', () => {
     cleanup()
   })
 
-  it('renders Assets, Transfers, and Activity tabs', () => {
+  it('renders Assets, Transfers, Activity, and Utils tabs', () => {
     // Scenario: token balances, incoming transfers, and history each own a top-level
     // tab. Sending now lives inside the token detail modal, so there is no Send tab.
     renderHome(
@@ -103,6 +104,7 @@ describe('HomeTabs navigation', () => {
     assert.equal(screen.getByRole('tab', { name: 'Assets' }).getAttribute('data-state'), 'active')
     assert.ok(screen.getByRole('tab', { name: 'Transfers' }))
     assert.ok(screen.getByRole('tab', { name: 'Activity' }))
+    assert.ok(screen.getByRole('tab', { name: 'Utils' }))
     assert.equal(screen.queryByRole('tab', { name: 'Send' }), null)
   })
 
