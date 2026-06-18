@@ -8,20 +8,16 @@ test('parsePasswordScore accepts in-range integer scores', () => {
   assert.equal(parsePasswordScore('4'), 4)
 })
 
-test('parsePasswordScore fails closed to 3 for missing, empty, or invalid values', () => {
-  assert.equal(parsePasswordScore(undefined), 3)
-  assert.equal(parsePasswordScore(''), 3)
-  assert.equal(parsePasswordScore('   '), 3)
-  assert.equal(parsePasswordScore('abc'), 3)
-  assert.equal(parsePasswordScore('-1'), 3)
-  assert.equal(parsePasswordScore('5'), 3)
-  assert.equal(parsePasswordScore('2.5'), 3)
+test('parsePasswordScore falls back to 1 for missing, empty, or invalid values', () => {
+  assert.equal(parsePasswordScore(undefined), 1)
+  assert.equal(parsePasswordScore(''), 1)
+  assert.equal(parsePasswordScore('   '), 1)
+  assert.equal(parsePasswordScore('abc'), 1)
+  assert.equal(parsePasswordScore('-1'), 1)
+  assert.equal(parsePasswordScore('5'), 1)
+  assert.equal(parsePasswordScore('2.5'), 1)
 })
 
-test('parsePasswordScore still honors an explicit in-range override', () => {
-  assert.equal(parsePasswordScore('1'), 1)
-})
-
-test('MIN_PASSWORD_SCORE defaults to 3 when VITE_MIN_PASSWORD_SCORE is unset', () => {
-  assert.equal(MIN_PASSWORD_SCORE, 3)
+test('MIN_PASSWORD_SCORE defaults to 1 when VITE_MIN_PASSWORD_SCORE is unset', () => {
+  assert.equal(MIN_PASSWORD_SCORE, 1)
 })

@@ -1,10 +1,10 @@
 import { zxcvbn, zxcvbnOptions } from '@zxcvbn-ts/core'
 import { useEffect, useState } from 'react'
 
-// Fail closed: a missing or invalid VITE_MIN_PASSWORD_SCORE requires a strong
-// password (zxcvbn 3, "safely unguessable"). An explicit env value may still
-// lower the bar for local development.
-const FALLBACK_PASSWORD_SCORE = 3
+// Intentionally low default: this is a developer wallet, so a missing or invalid
+// VITE_MIN_PASSWORD_SCORE accepts "very guessable" passwords (zxcvbn 1). Set the
+// env var higher for a security-conscious build.
+const FALLBACK_PASSWORD_SCORE = 1
 
 // zxcvbn scores run 0-4; anything missing, blank, or out of range falls back.
 export const parsePasswordScore = (raw: unknown): number => {
