@@ -81,12 +81,13 @@ export const createDirectProviderResponse = async (
 
   const method = normalizeMethod(request.method)
 
-  // Network discovery and disconnect never disclose account identity.
-  if (method === CANTON_METHOD_GET_ACTIVE_NETWORK || method === CANTON_METHOD_DISCONNECT) {
-    return runDispatch(request, snapshot)
-  }
-
-  if (context.isConnected) {
+  // A connected origin is allowed everything; network discovery and disconnect never
+  // disclose account identity, so they are allowed regardless of connection state.
+  if (
+    context.isConnected ||
+    method === CANTON_METHOD_GET_ACTIVE_NETWORK ||
+    method === CANTON_METHOD_DISCONNECT
+  ) {
     return runDispatch(request, snapshot)
   }
 

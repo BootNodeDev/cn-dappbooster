@@ -192,11 +192,13 @@ const handleProviderRequest = async (
   message: RuntimeProviderRequest,
   sendResponse: (response?: unknown) => void,
 ): Promise<void> => {
-  const directResponse = await createDirectProviderResponse(
-    message.request,
-    await readWalletSnapshot().catch(() => null),
-    { isConnected: await isOriginConnected(message.origin) },
-  )
+  const [snapshot, isConnected] = await Promise.all([
+    readWalletSnapshot().catch(() => null),
+    isOriginConnected(message.origin),
+  ])
+  const directResponse = await createDirectProviderResponse(message.request, snapshot, {
+    isConnected,
+  })
   if (directResponse !== undefined) {
     await applyDirectConnectionUpdate(
       { origin: message.origin, request: message.request },

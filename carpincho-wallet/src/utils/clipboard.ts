@@ -4,10 +4,14 @@ import { toast } from '@/components/ui/toast'
 const SECRET_CLIPBOARD_CLEAR_MS = 60_000
 
 // Copies arbitrary wallet text while keeping success and failure feedback consistent.
-export const copyText = (value: string, successMessage: string): void => {
+// onSuccess runs only after a successful copy (used to schedule a secret wipe).
+export const copyText = (value: string, successMessage: string, onSuccess?: () => void): void => {
   void navigator.clipboard
     .writeText(value)
-    .then(() => toast.success(successMessage))
+    .then(() => {
+      toast.success(successMessage)
+      onSuccess?.()
+    })
     .catch((err: Error) => toast.error(`Copy failed: ${err.message}`))
 }
 
@@ -32,13 +36,7 @@ const scheduleSecretClear = (secret: string): void => {
 
 // Copies a sensitive value (e.g. a private key) and schedules a best-effort clipboard wipe.
 export const copySecret = (value: string, successMessage: string): void => {
-  void navigator.clipboard
-    .writeText(value)
-    .then(() => {
-      toast.success(successMessage)
-      scheduleSecretClear(value)
-    })
-    .catch((err: Error) => toast.error(`Copy failed: ${err.message}`))
+  copyText(value, successMessage, () => scheduleSecretClear(value))
 }
 
 // Copies a party id from account surfaces with a domain-specific confirmation.
