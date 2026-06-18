@@ -105,7 +105,8 @@ describe('AssetsPanel', () => {
     renderAssets(api)
 
     await screen.findByText('Amulet')
-    assert.equal(screen.getByText('2 UTXOs').textContent, '2 UTXOs')
+    assert.equal(screen.getByText('15.75').textContent, '15.75')
+    assert.equal(screen.queryByText(/UTXO/i), null)
     assert.equal(screen.queryByRole('button', { name: /show holdings/i }), null)
   })
 
@@ -185,7 +186,7 @@ describe('AssetsPanel', () => {
     assert.equal(detailsCalls, 0)
     await clickTokenRow('Amulet')
 
-    await screen.findByText('15.75')
+    await screen.findAllByText('15.75')
     await screen.findByText('12.50')
     assert.equal(detailsCalls, 1)
   })
