@@ -246,7 +246,7 @@ describe('CIP-56 token helpers', () => {
     assert.deepEqual(seen.amuletConfig, {
       validatorUrl: 'http://localhost:2000/api/validator',
       scanApiUrl: 'http://scan.localhost:4000/api/scan',
-      registryUrl: 'http://localhost:2000/api/validator/v0/scan-proxy',
+      registryUrl: new URL('http://localhost:2000/api/validator/v0/scan-proxy'),
       auth: { method: 'static', token: 'backend.jwt' },
     })
   })
