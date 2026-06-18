@@ -1,7 +1,10 @@
 import { zxcvbn, zxcvbnOptions } from '@zxcvbn-ts/core'
 import { useEffect, useState } from 'react'
 
-const FALLBACK_PASSWORD_SCORE = 1
+// Fail closed: a missing or invalid VITE_MIN_PASSWORD_SCORE requires a strong
+// password (zxcvbn 3, "safely unguessable"). An explicit env value may still
+// lower the bar for local development.
+const FALLBACK_PASSWORD_SCORE = 3
 
 // zxcvbn scores run 0-4; anything missing, blank, or out of range falls back.
 export const parsePasswordScore = (raw: unknown): number => {
@@ -38,6 +41,10 @@ const ensureLoaded = (): Promise<void> => {
   }
   return loadPromise
 }
+
+// Lets non-UI callers (e.g. vault setup) await the zxcvbn language packs before
+// scoring, so strength enforcement at the boundary cannot pass on a stale score.
+export const ensurePasswordStrengthReady = (): Promise<void> => ensureLoaded()
 
 let lastScoredPassword: string | null = null
 let lastScore = 0

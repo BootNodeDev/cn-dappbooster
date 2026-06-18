@@ -16,6 +16,7 @@ import { persistWalletSnapshot } from '@/extension/walletSnapshot'
 import { accountToCip103Wallet } from '@/provider/accounts'
 import { assertSecureContext, decryptVault, encryptVault } from '@/vault/crypto'
 import { signMessageBase64 } from '@/vault/keypair'
+import { ensurePasswordStrengthReady, isPasswordAcceptable } from '@/vault/passwordStrength'
 import {
   clearLockAt,
   clearSessionPassword,
@@ -167,6 +168,10 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
       }
       if (password.length < 8) {
         throw new Error('password must be at least 8 characters')
+      }
+      await ensurePasswordStrengthReady()
+      if (!isPasswordAcceptable(password)) {
+        throw new Error('password is too weak')
       }
       const plaintext: VaultPlaintext = {
         v: 1,
@@ -378,6 +383,10 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
       }
       if (newPassword.length < 8) {
         throw new Error('new password must be at least 8 characters')
+      }
+      await ensurePasswordStrengthReady()
+      if (!isPasswordAcceptable(newPassword)) {
+        throw new Error('new password is too weak')
       }
       const blob = await encryptVault(newPassword, JSON.stringify(unlockedPlaintext))
       rotateVault(blob)

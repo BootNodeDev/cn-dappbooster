@@ -11,9 +11,11 @@ afterEach(() => {
   cleanup()
 })
 
-test('accepts a short password once it meets the strength score', async () => {
+test('rejects weak passwords and accepts strong ones at the default score', async () => {
   const { getByTestId } = render(<Probe />)
   await waitFor(() => assert.equal(getByTestId('ready').textContent, 'ready'))
-  // 8 chars (under the former 9-char floor) but scores 1, the default minimum.
-  assert.equal(isPasswordAcceptable('monkey99'), true)
+  // Default minimum is now zxcvbn 3 (fail closed): a guessable password is rejected.
+  assert.equal(isPasswordAcceptable('monkey99'), false)
+  // A strong passphrase clears the bar regardless of length.
+  assert.equal(isPasswordAcceptable('correct-horse-battery'), true)
 })
