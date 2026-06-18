@@ -7,9 +7,10 @@ const readText = (path: string): string => readFileSync(path, 'utf8')
 
 describe('extension packaging', () => {
   it('defines a local Manifest V3 extension popup', () => {
-    // Scenario: the browser extension package should be a Manifest V3 popup wallet that can
-    // observe any dApp origin. The content script match pattern and host permissions must stay
-    // broad enough for local and deployed dApps while the popup assets remain local extension files.
+    // Scenario: the browser extension is a Manifest V3 popup wallet injected on every origin
+    // so it can reach local and deployed dApps. Broad <all_urls> injection is only safe because
+    // account identity and signing are gated at runtime on an approved per-origin connection
+    // (see extensionDirectProvider.test.ts); the manifest scope alone grants no account access.
     const manifest = readJson<{
       manifest_version?: number
       name?: string

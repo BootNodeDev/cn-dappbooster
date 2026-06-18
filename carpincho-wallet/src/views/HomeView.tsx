@@ -12,7 +12,11 @@ import { shortMiddle, sortAccounts } from '@/utils/account'
 import { useVault } from '@/vault/useVault'
 import { ConnectionSettingsView } from '@/views/ConnectionSettingsView'
 import { PendingActionsSection } from '@/views/home/PendingActionsSection'
-import type { PendingExecuteRequest, PendingSignRequest } from '@/views/home/types'
+import type {
+  PendingConnectRequest,
+  PendingExecuteRequest,
+  PendingSignRequest,
+} from '@/views/home/types'
 import { useExtensionRequests } from '@/views/home/useExtensionRequests'
 import { usePendingActions } from '@/views/home/usePendingActions'
 import { useProviderRequestHandler } from '@/views/home/useProviderRequestHandler'
@@ -31,6 +35,7 @@ export const HomeView = (): JSX.Element => {
   const [disconnectConfirmOpen, setDisconnectConfirmOpen] = useState(false)
   const [sessions, setSessions] = useState<ConnectedDappSession[]>([])
   const [proposal, setProposal] = useState<ProposalEvent | undefined>(undefined)
+  const [pendingConnect, setPendingConnect] = useState<PendingConnectRequest | undefined>(undefined)
   const [pendingSign, setPendingSign] = useState<PendingSignRequest | undefined>(undefined)
   const [pendingExecute, setPendingExecute] = useState<PendingExecuteRequest | undefined>(undefined)
   const [busy, setBusy] = useState(false)
@@ -67,6 +72,7 @@ export const HomeView = (): JSX.Element => {
 
   const handleProviderRequest = useProviderRequestHandler(
     resolveAccounts,
+    setPendingConnect,
     setPendingSign,
     setPendingExecute,
   )
@@ -78,9 +84,11 @@ export const HomeView = (): JSX.Element => {
     vault: v,
     proposal,
     proposalAccount,
+    pendingConnect,
     pendingSign,
     pendingExecute,
     setProposal,
+    setPendingConnect,
     setPendingSign,
     setPendingExecute,
     setBusy,
@@ -104,7 +112,10 @@ export const HomeView = (): JSX.Element => {
   // HomeView only renders when an account exists, so a primary is always available.
   const primary = v.primary ?? accountsSorted[0]
   const hasPending =
-    proposal !== undefined || pendingSign !== undefined || pendingExecute !== undefined
+    proposal !== undefined ||
+    pendingConnect !== undefined ||
+    pendingSign !== undefined ||
+    pendingExecute !== undefined
   const dapp = useExtensionDappConnection({
     extensionMode,
     sessions,
@@ -167,6 +178,7 @@ export const HomeView = (): JSX.Element => {
       >
         <PendingActionsSection
           proposal={proposal}
+          pendingConnect={pendingConnect}
           pendingSign={pendingSign}
           pendingExecute={pendingExecute}
           proposalAccount={proposalAccount}
