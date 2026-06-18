@@ -1,5 +1,6 @@
 import { type FormEvent, useState } from 'react'
 import { getWalletServiceNetworkId } from '@/api/walletService'
+import { ConfirmPasswordForm } from '@/components/ConfirmPasswordForm'
 import { PrimaryButton, SecondaryButton } from '@/components/ui/Button'
 import { COPY_ICON } from '@/components/ui/icons'
 import { PasswordInput } from '@/components/ui/PasswordInput'
@@ -139,8 +140,6 @@ export const ExportPrivateKeyView = (): JSX.Element => {
   const v = useVault()
   const account = v.primary
   const [revealed, setRevealed] = useState(false)
-  const [current, setCurrent] = useState('')
-  const [error, setError] = useState<string | null>(null)
 
   if (account === null) {
     return (
@@ -148,17 +147,6 @@ export const ExportPrivateKeyView = (): JSX.Element => {
         No selected account.
       </p>
     )
-  }
-
-  const onVerify = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault()
-    if (!v.verifyPassword(current)) {
-      setError('Incorrect password.')
-      return
-    }
-    setError(null)
-    setCurrent('')
-    setRevealed(true)
   }
 
   const accountSummary = (
@@ -171,38 +159,17 @@ export const ExportPrivateKeyView = (): JSX.Element => {
   )
 
   if (!revealed) {
-    const hasError = error !== null
     return (
-      <form
-        onSubmit={onVerify}
-        className="flex flex-col gap-4"
+      <ConfirmPasswordForm
+        label="Confirm password"
+        submitLabel="Reveal private key"
+        onVerified={() => setRevealed(true)}
       >
         {accountSummary}
         <p className="text-[0.85rem] text-muted-foreground">
           Confirm your password to reveal this account's private key.
         </p>
-        <PasswordInput
-          aria-label="Confirm password"
-          aria-errormessage={hasError ? 'export-private-key-error' : undefined}
-          placeholder="Current password"
-          autoComplete="current-password"
-          error={hasError}
-          value={current}
-          onChange={(event) => {
-            setCurrent(event.target.value)
-            setError(null)
-          }}
-        />
-        {hasError && (
-          <p
-            id="export-private-key-error"
-            className="text-[0.85rem] text-danger"
-          >
-            {error}
-          </p>
-        )}
-        <PrimaryButton type="submit">Reveal private key</PrimaryButton>
-      </form>
+      </ConfirmPasswordForm>
     )
   }
 
