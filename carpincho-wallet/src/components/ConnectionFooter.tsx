@@ -1,4 +1,5 @@
 import * as Avatar from '@radix-ui/react-avatar'
+import { PLAIN_ICON_BUTTON_CLASS } from '@/components/ui/Button'
 import { CHEVRON_DOWN_ICON, DISCONNECT_ICON, GLOBE_ICON } from '@/components/ui/icons'
 import { cn } from '@/utils/cn'
 
@@ -104,7 +105,10 @@ export const ConnectionFooter = ({
                   onClick={onDisconnectDapp}
                   aria-label="Disconnect"
                   title="Disconnect"
-                  className="ml-0.5 inline-flex size-[18px] items-center justify-center rounded-sm text-soft hover:bg-danger/10 hover:text-danger [&>svg]:size-[13px]"
+                  className={cn(
+                    PLAIN_ICON_BUTTON_CLASS,
+                    'ml-0.5 size-[18px] text-soft hover:bg-danger/10 hover:text-danger [&>svg]:size-[13px]',
+                  )}
                 >
                   {DISCONNECT_ICON}
                 </button>
@@ -121,7 +125,8 @@ export const ConnectionFooter = ({
         title={walletService.reason ?? 'Connection settings'}
         className={cn(
           'flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-muted px-2.5 py-1.5',
-          'text-[0.74rem] font-semibold hover:border-border-strong',
+          'text-[0.74rem] font-semibold transition-colors hover:border-border-strong',
+          'focus-visible:outline-none focus-visible:shadow-focus',
         )}
       >
         <span
