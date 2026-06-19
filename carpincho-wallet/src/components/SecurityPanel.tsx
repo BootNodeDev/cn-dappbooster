@@ -1,8 +1,8 @@
 import { type FormEvent, useState } from 'react'
-import { ConfirmPasswordForm } from '@/components/ConfirmPasswordForm'
 import { NewPasswordFields } from '@/components/NewPasswordFields'
 import { PrimaryButton } from '@/components/ui/Button'
 import { OptionList } from '@/components/ui/OptionList'
+import { PasswordInput } from '@/components/ui/PasswordInput'
 import { toast } from '@/components/ui/toast'
 import type { AutoLockOption } from '@/vault/storage'
 import { useVault } from '@/vault/useVault'
@@ -14,57 +14,72 @@ const AUTO_LOCK_LABELS: Array<{ value: AutoLockOption; label: string }> = [
   { value: '1h', label: '1 hour' },
 ]
 
-type PasswordState =
-  | { phase: 'verify'; error: string | null }
-  | { phase: 'change'; current: string; next: string; confirm: string; valid: boolean }
+interface PasswordState {
+  current: string
+  next: string
+  confirm: string
+  valid: boolean
+  error: string | null
+}
 
-const initialState = (): PasswordState => ({ phase: 'verify', error: null })
+const initialState = (): PasswordState => ({
+  current: '',
+  next: '',
+  confirm: '',
+  valid: false,
+  error: null,
+})
 
 export const PasswordForm = (): JSX.Element => {
   const v = useVault()
   const [state, setState] = useState<PasswordState>(initialState)
 
-  const onSubmitChange = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
+  const canSubmit = state.current.trim() !== '' && state.valid
+
+  const onSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault()
-    if (state.phase !== 'change') return
-    if (!state.valid) return
+    if (!canSubmit) return
     try {
       await v.changePassword(state.current, state.next)
       setState(initialState())
       toast.success('Password updated.')
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Could not change password.'
-      setState({ phase: 'verify', error: msg })
+      setState((s) => ({ ...s, error: msg }))
     }
-  }
-
-  if (state.phase === 'verify') {
-    return (
-      <ConfirmPasswordForm
-        label="Current password"
-        submitLabel="Continue"
-        initialError={state.error}
-        onVerified={(current) =>
-          setState({ phase: 'change', current, next: '', confirm: '', valid: false })
-        }
-      />
-    )
   }
 
   return (
     <form
-      onSubmit={onSubmitChange}
+      onSubmit={onSubmit}
       className="flex flex-col gap-3"
     >
+      <PasswordInput
+        aria-label="Current password"
+        aria-errormessage={state.error !== null ? 'change-password-error' : undefined}
+        autoComplete="current-password"
+        placeholder="Current password"
+        error={state.error !== null}
+        value={state.current}
+        onChange={(e) => setState((s) => ({ ...s, current: e.target.value, error: null }))}
+      />
       <NewPasswordFields
         confirm={state.confirm}
-        onConfirmChange={(value) => setState({ ...state, confirm: value })}
-        onPasswordChange={(value) => setState({ ...state, next: value })}
-        onValidityChange={(valid) => setState((s) => (s.phase === 'change' ? { ...s, valid } : s))}
+        onConfirmChange={(value) => setState((s) => ({ ...s, confirm: value }))}
+        onPasswordChange={(value) => setState((s) => ({ ...s, next: value }))}
+        onValidityChange={(valid) => setState((s) => ({ ...s, valid }))}
         password={state.next}
       />
+      {state.error !== null && (
+        <p
+          id="change-password-error"
+          className="text-[0.85rem] text-danger"
+        >
+          {state.error}
+        </p>
+      )}
       <PrimaryButton
-        disabled={!state.valid}
+        disabled={!canSubmit}
         type="submit"
       >
         Change password

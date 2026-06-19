@@ -4,6 +4,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { type ReactNode, useState } from 'react'
 import { MenuSheet } from '@/components/menu/MenuSheet'
+import { TooltipProvider } from '@/components/ui/Tooltip'
 import { ThemeProvider } from '@/theme/ThemeProvider'
 import { VaultContext, type VaultContextValue } from '@/vault/VaultContext'
 
@@ -43,7 +44,9 @@ const baseVault = (overrides: Partial<VaultContextValue> = {}): VaultContextValu
 
 const wrap = (value: VaultContextValue, ui: ReactNode): JSX.Element => (
   <ThemeProvider>
-    <VaultContext.Provider value={value}>{ui}</VaultContext.Provider>
+    <TooltipProvider>
+      <VaultContext.Provider value={value}>{ui}</VaultContext.Provider>
+    </TooltipProvider>
   </ThemeProvider>
 )
 
