@@ -87,7 +87,7 @@ describe('UtilsPanel', () => {
     fireEvent.change(screen.getByLabelText('Create arguments JSON'), {
       target: { value: JSON.stringify({ admin: 'alice::party' }) },
     })
-    await userEvent.click(screen.getByRole('button', { name: 'Create contract' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
     await waitFor(() => assert.equal(createCalls.length, 1))
 
     await userEvent.click(screen.getByRole('button', { name: 'Close' }))

@@ -75,7 +75,7 @@ describe('CreateContractUtil', () => {
     fireEvent.change(screen.getByLabelText('Create arguments JSON'), {
       target: { value: JSON.stringify({ admin: 'alice::party' }) },
     })
-    await userEvent.click(screen.getByRole('button', { name: 'Create contract' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Create' }))
 
     await waitFor(() => assert.equal(calls.length, 1))
     assert.equal(calls[0]?.account.partyId, 'alice::party')
@@ -92,7 +92,7 @@ describe('CreateContractUtil', () => {
       target: { value: '{ broken' },
     })
     assert.equal(
-      (screen.getByRole('button', { name: 'Create contract' }) as HTMLButtonElement).disabled,
+      (screen.getByRole('button', { name: 'Create' }) as HTMLButtonElement).disabled,
       true,
     )
   })

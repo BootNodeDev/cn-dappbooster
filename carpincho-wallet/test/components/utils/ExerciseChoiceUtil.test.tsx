@@ -77,7 +77,7 @@ describe('ExerciseChoiceUtil', () => {
     fireEvent.change(screen.getByLabelText('Choice argument JSON'), {
       target: { value: JSON.stringify({ receiver: 'bob::party', amount: '5.0' }) },
     })
-    await userEvent.click(screen.getByRole('button', { name: 'Exercise choice' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Exercise' }))
 
     await waitFor(() => assert.equal(calls.length, 1))
     assert.equal(calls[0]?.account.partyId, 'alice::party')
@@ -96,7 +96,7 @@ describe('ExerciseChoiceUtil', () => {
       target: { value: '{ broken' },
     })
     assert.equal(
-      (screen.getByRole('button', { name: 'Exercise choice' }) as HTMLButtonElement).disabled,
+      (screen.getByRole('button', { name: 'Exercise' }) as HTMLButtonElement).disabled,
       true,
     )
   })

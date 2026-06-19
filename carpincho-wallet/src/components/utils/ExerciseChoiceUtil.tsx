@@ -118,7 +118,7 @@ export const ExerciseChoiceUtil = ({
         className="w-full"
         disabled={!canSubmit}
       >
-        {busy ? 'Exercising...' : 'Exercise choice'}
+        {busy ? 'Exercising...' : 'Exercise'}
       </PrimaryButton>
     </form>
   )

@@ -83,7 +83,7 @@ export const CreateContractUtil = ({
         className="w-full"
         disabled={!canSubmit}
       >
-        {busy ? 'Creating...' : 'Create contract'}
+        {busy ? 'Creating...' : 'Create'}
       </PrimaryButton>
     </form>
   )
