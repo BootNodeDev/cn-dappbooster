@@ -3,6 +3,7 @@ import { afterEach, describe, it } from 'node:test'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ActivityPanel } from '@/components/ActivityPanel'
+import { TooltipProvider } from '@/components/ui/Tooltip'
 import { getToastEntries, toast } from '@/components/ui/toast'
 import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
 import { TestQueryClientProvider } from '@/test-utils/queryClient'
@@ -62,16 +63,18 @@ const renderPanel = (
   onPendingCountChange?: (count: number) => void,
 ): void => {
   render(
-    <TestQueryClientProvider>
-      <VaultContext.Provider value={baseVault()}>
-        <ActivityPanel
-          account={ACCOUNT}
-          transactions={transactions}
-          api={api}
-          onPendingCountChange={onPendingCountChange}
-        />
-      </VaultContext.Provider>
-    </TestQueryClientProvider>,
+    <TooltipProvider>
+      <TestQueryClientProvider>
+        <VaultContext.Provider value={baseVault()}>
+          <ActivityPanel
+            account={ACCOUNT}
+            transactions={transactions}
+            api={api}
+            onPendingCountChange={onPendingCountChange}
+          />
+        </VaultContext.Provider>
+      </TestQueryClientProvider>
+    </TooltipProvider>,
   )
 }
 

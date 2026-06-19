@@ -41,14 +41,17 @@ export const TransferDetailsSheet = ({
           <DetailRow
             label="sender"
             value={view?.sender ?? 'unknown'}
+            copyLabel="sender"
           />
           <DetailRow
             label="receiver"
             value={view?.receiver ?? 'unknown'}
+            copyLabel="receiver"
           />
           <DetailRow
             label="contract id"
             value={transfer.contractId}
+            copyLabel="contract ID"
           />
         </dl>
       )}

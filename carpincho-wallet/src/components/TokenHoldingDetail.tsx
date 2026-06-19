@@ -26,6 +26,7 @@ export const TokenHoldingDetail = ({ holding }: { holding: TokenHolding }): JSX.
       <DetailRow
         label="contract id"
         value={holding.contractId}
+        copyLabel="contract ID"
       />
     </dl>
   )

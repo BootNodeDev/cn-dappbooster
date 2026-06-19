@@ -4,6 +4,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { PendingTokenTransfer } from '@/cip56/transfers'
 import { TransferDetailsSheet } from '@/components/TransferDetailsSheet'
+import { TooltipProvider } from '@/components/ui/Tooltip'
 
 const TRANSFER: PendingTokenTransfer = {
   contractId: 'transfer-cid-1',
@@ -28,10 +29,12 @@ describe('TransferDetailsSheet', () => {
   it('shows full transfer metadata when a transfer is selected', () => {
     // Scenario: the eye button opens this sheet with parties, status, timestamps, and id.
     render(
-      <TransferDetailsSheet
-        transfer={TRANSFER}
-        onClose={() => undefined}
-      />,
+      <TooltipProvider>
+        <TransferDetailsSheet
+          transfer={TRANSFER}
+          onClose={() => undefined}
+        />
+      </TooltipProvider>,
     )
 
     assert.equal(
@@ -46,15 +49,18 @@ describe('TransferDetailsSheet', () => {
     assert.equal(screen.getByText('2026-06-09 20:41 UTC').textContent, '2026-06-09 20:41 UTC')
     assert.equal(screen.getByText('2026-06-10 20:41 UTC').textContent, '2026-06-10 20:41 UTC')
     assert.equal(screen.getByText('transfer-cid-1').textContent, 'transfer-cid-1')
+    assert.ok(screen.getByRole('button', { name: 'Copy contract ID' }))
   })
 
   it('is closed when no transfer is selected', () => {
     // Scenario: a null selection renders nothing visible.
     render(
-      <TransferDetailsSheet
-        transfer={null}
-        onClose={() => undefined}
-      />,
+      <TooltipProvider>
+        <TransferDetailsSheet
+          transfer={null}
+          onClose={() => undefined}
+        />
+      </TooltipProvider>,
     )
 
     assert.equal(screen.queryByText('transfer-cid-1'), null)
@@ -64,12 +70,14 @@ describe('TransferDetailsSheet', () => {
     // Scenario: the sheet close button dismisses the details view.
     let closes = 0
     render(
-      <TransferDetailsSheet
-        transfer={TRANSFER}
-        onClose={() => {
-          closes += 1
-        }}
-      />,
+      <TooltipProvider>
+        <TransferDetailsSheet
+          transfer={TRANSFER}
+          onClose={() => {
+            closes += 1
+          }}
+        />
+      </TooltipProvider>,
     )
 
     await userEvent.click(screen.getByRole('button', { name: 'Close' }))
