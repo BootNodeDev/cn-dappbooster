@@ -205,4 +205,66 @@ describe('VaultContext.importEncryptedVault', () => {
       /unsupported vault envelope/i,
     )
   })
+
+  it('counts dedupe-skip and malformed-partyId reject independently', async () => {
+    const alice = await generateKeypair()
+    const dupe = await generateKeypair()
+    const bob = await generateKeypair()
+    const backup = await makeBackup(SOURCE_PW, [
+      {
+        name: 'alice',
+        partyId: 'alice::ns',
+        publicKeyBase64: alice.publicKeyBase64,
+        privateKeyHex: alice.privateKeyHex,
+        network: 'devnet',
+      },
+      {
+        name: 'alice-dupe',
+        partyId: 'alice::ns',
+        publicKeyBase64: dupe.publicKeyBase64,
+        privateKeyHex: dupe.privateKeyHex,
+        network: 'devnet',
+      },
+      {
+        name: 'bob',
+        partyId: 'bob',
+        publicKeyBase64: bob.publicKeyBase64,
+        privateKeyHex: bob.privateKeyHex,
+        network: 'devnet',
+      },
+    ])
+    const { ref } = captureVault()
+    await act(async () => {
+      await ref.current?.setup(DEST_PW)
+    })
+    let result: ImportVaultResult | undefined
+    await act(async () => {
+      result = await ref.current?.importEncryptedVault(backup, SOURCE_PW)
+    })
+    assert.deepEqual(result, { imported: 1, skipped: 1, rejected: 1 })
+  })
+
+  it('rejects import when the destination vault is locked', async () => {
+    const kp = await generateKeypair()
+    const backup = await makeBackup(SOURCE_PW, [
+      {
+        name: 'alice',
+        partyId: 'alice::ns',
+        publicKeyBase64: kp.publicKeyBase64,
+        privateKeyHex: kp.privateKeyHex,
+        network: 'devnet',
+      },
+    ])
+    const { ref } = captureVault()
+    await act(async () => {
+      await ref.current?.setup(DEST_PW)
+    })
+    await act(async () => {
+      ref.current?.lock()
+    })
+    await assert.rejects(
+      () => ref.current?.importEncryptedVault(backup, SOURCE_PW) ?? Promise.resolve(),
+      /vault locked/i,
+    )
+  })
 })
