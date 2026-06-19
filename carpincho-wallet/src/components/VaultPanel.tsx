@@ -67,6 +67,7 @@ export const PasswordForm = (): JSX.Element => {
         value={state.current}
         onChange={(e) => setState((s) => ({ ...s, current: e.target.value, error: null }))}
       />
+      <hr className="border-border" />
       <NewPasswordFields
         confirm={state.confirm}
         onConfirmChange={(value) => setState((s) => ({ ...s, confirm: value }))}
