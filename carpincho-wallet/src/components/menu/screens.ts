@@ -51,12 +51,12 @@ export const SCREENS: Record<Screen, ScreenConfig> = {
   },
   'export-vault': {
     title: 'Export Vault',
-    description: 'Reveal a JSON backup of every account in this vault.',
+    description: 'Download an encrypted backup of every account in this vault.',
     parent: 'vault',
   },
   'import-vault': {
     title: 'Import Vault',
-    description: 'Restore accounts from a vault JSON backup.',
+    description: 'Restore accounts from an encrypted backup file.',
     parent: 'vault',
   },
 }

@@ -1,13 +1,23 @@
 import { strict as assert } from 'node:assert'
 import { afterEach, describe, it } from 'node:test'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ReactNode } from 'react'
 import { TooltipProvider } from '@/components/ui/Tooltip'
 import { getToastEntries, toast } from '@/components/ui/toast'
 import { ExportVaultView, ImportVaultForm } from '@/components/VaultBackupPanel'
-import type { VaultEnvelope } from '@/vault/types'
+import type { CarpinchoBackup } from '@/vault/types'
 import { VaultContext, type VaultContextValue } from '@/vault/VaultContext'
+
+const sampleBackup: CarpinchoBackup = {
+  kind: 'carpincho-backup',
+  version: 1,
+  vault: {
+    v: 1,
+    kdf: { name: 'PBKDF2', hash: 'SHA-256', iterations: 600_000, salt: 'c2FsdA==' },
+    cipher: { name: 'AES-GCM', iv: 'aXY=', data: 'ZGF0YQ==' },
+  },
+}
 
 const baseVault = (overrides: Partial<VaultContextValue> = {}): VaultContextValue =>
   ({
@@ -32,8 +42,8 @@ const baseVault = (overrides: Partial<VaultContextValue> = {}): VaultContextValu
       createdAt: 0,
     }),
     removeAccount: async () => undefined,
-    exportVault: () => ({ v: 1, accounts: [] }) as VaultEnvelope,
-    importVault: async () => ({ imported: 0, skipped: 0, rejected: 0 }),
+    exportEncryptedVault: async () => sampleBackup,
+    importEncryptedVault: async () => ({ imported: 0, skipped: 0, rejected: 0 }),
     signMessage: async () => '',
     recordTransaction: async () => ({}) as unknown as import('@/vault/types').TransactionRecord,
     changePassword: async () => undefined,
@@ -57,29 +67,50 @@ describe('ExportVaultView', () => {
     cleanup()
   })
 
-  it('reveals the envelope JSON only after a correct password', async () => {
+  it('encrypts then downloads a backup after a correct password; no copy/plaintext reveal', async () => {
     const user = userEvent.setup()
-    const envelope: VaultEnvelope = {
-      v: 1,
-      accounts: [
-        {
-          name: 'alice',
-          partyId: 'alice::ns',
-          publicKeyBase64: 'pub',
-          privateKeyHex: 'aa',
-          network: 'localnet',
-        },
-      ],
-    }
+    let askedPassword: string | null = null
     renderWithVault(
-      { verifyPassword: () => true, exportVault: () => envelope },
+      {
+        verifyPassword: () => true,
+        exportEncryptedVault: async (pw) => {
+          askedPassword = pw
+          return sampleBackup
+        },
+      },
       <ExportVaultView />,
     )
+
+    // Before verifying: no download, and never a Copy-JSON control.
+    assert.equal(screen.queryByRole('button', { name: /download backup/i }), null)
     assert.equal(screen.queryByRole('button', { name: /copy json/i }), null)
-    await user.type(screen.getByLabelText(/confirm password/i), 'right-right-1')
-    await user.click(screen.getByRole('button', { name: /accept/i }))
-    // The reveal view (JsonView + Copy/Download) only mounts after a correct password.
-    await waitFor(() => assert.ok(screen.getByRole('button', { name: /copy json/i })))
+
+    await user.type(screen.getByLabelText(/confirm password/i), 'correct-horse-battery')
+    await user.click(screen.getByRole('button', { name: /encrypt backup/i }))
+    await waitFor(() => assert.ok(screen.getByRole('button', { name: /download backup/i })))
+    assert.equal(askedPassword, 'correct-horse-battery')
+    assert.equal(screen.queryByRole('button', { name: /copy json/i }), null)
+
+    // Stub the download surface and assert the encrypted file is written with the right name.
+    const clicks: Array<{ download: string }> = []
+    Object.defineProperty(window, 'isSecureContext', { value: true, configurable: true })
+    const originalCreate = URL.createObjectURL
+    const originalRevoke = URL.revokeObjectURL
+    const originalClick = HTMLAnchorElement.prototype.click
+    URL.createObjectURL = () => 'blob:fake'
+    URL.revokeObjectURL = () => undefined
+    HTMLAnchorElement.prototype.click = function click(this: HTMLAnchorElement): void {
+      clicks.push({ download: this.download })
+    }
+    try {
+      await user.click(screen.getByRole('button', { name: /download backup/i }))
+      assert.equal(clicks.length, 1)
+      assert.match(clicks[0]?.download ?? '', /^carpincho-backup-.*\.json$/)
+    } finally {
+      URL.createObjectURL = originalCreate
+      URL.revokeObjectURL = originalRevoke
+      HTMLAnchorElement.prototype.click = originalClick
+    }
   })
 })
 
@@ -89,61 +120,96 @@ describe('ImportVaultForm', () => {
     cleanup()
   })
 
-  it('parses pasted JSON, calls importVault, and toasts the counts', async () => {
+  it('uploads a file, imports with the typed password, and toasts the counts', async () => {
     const user = userEvent.setup()
-    const calls: VaultEnvelope[] = []
+    const calls: Array<{ file: unknown; password: string }> = []
+    let imported = false
     renderWithVault(
       {
-        importVault: async (env) => {
-          calls.push(env)
+        importEncryptedVault: async (file, password) => {
+          calls.push({ file, password })
           return { imported: 2, skipped: 1, rejected: 0 }
         },
       },
-      <ImportVaultForm />,
+      <ImportVaultForm
+        onImported={() => {
+          imported = true
+        }}
+      />,
     )
-    const envelope: VaultEnvelope = {
-      v: 1,
-      accounts: [
-        {
-          name: 'a',
-          partyId: 'a::ns',
-          publicKeyBase64: 'p',
-          privateKeyHex: 'aa',
-          network: 'localnet',
-        },
-      ],
-    }
-    // userEvent escapes braces; use fireEvent.change to drive the controlled textarea value.
-    const textarea = screen.getByLabelText(/vault json/i) as HTMLTextAreaElement
-    fireEvent.change(textarea, { target: { value: JSON.stringify(envelope) } })
-    await user.click(screen.getByRole('button', { name: /^import vault$/i }))
+
+    const file = new File([JSON.stringify(sampleBackup)], 'backup.json', {
+      type: 'application/json',
+    })
+    await user.upload(screen.getByLabelText(/backup file/i), file)
+    await user.type(screen.getByLabelText(/backup password/i), 'correct-horse-battery')
+    await user.click(screen.getByRole('button', { name: /^import backup$/i }))
+
     await waitFor(() => assert.equal(calls.length, 1))
-    assert.deepEqual(calls[0], envelope)
-    const entries = getToastEntries()
-    assert.ok(entries.some((e) => typeof e.message === 'string' && /imported 2/i.test(e.message)))
+    assert.deepEqual(calls[0]?.file, sampleBackup)
+    assert.equal(calls[0]?.password, 'correct-horse-battery')
+    assert.equal(imported, true)
+    assert.ok(
+      getToastEntries().some((e) => typeof e.message === 'string' && /imported 2/i.test(e.message)),
+    )
   })
 
-  it('toasts an error for invalid JSON and does not call importVault', async () => {
+  it('surfaces a wrong-password error as a toast and does not navigate', async () => {
+    const user = userEvent.setup()
+    let imported = false
+    renderWithVault(
+      {
+        importEncryptedVault: async () => {
+          throw new Error('Wrong password for this file.')
+        },
+      },
+      <ImportVaultForm
+        onImported={() => {
+          imported = true
+        }}
+      />,
+    )
+    const file = new File([JSON.stringify(sampleBackup)], 'backup.json', {
+      type: 'application/json',
+    })
+    await user.upload(screen.getByLabelText(/backup file/i), file)
+    await user.type(screen.getByLabelText(/backup password/i), 'wrong-pw-typed')
+    await user.click(screen.getByRole('button', { name: /^import backup$/i }))
+
+    await waitFor(() =>
+      assert.ok(
+        getToastEntries().some(
+          (e) => typeof e.message === 'string' && /wrong password for this file/i.test(e.message),
+        ),
+      ),
+    )
+    assert.equal(imported, false)
+  })
+
+  it('rejects an unparseable file before calling import', async () => {
     const user = userEvent.setup()
     let called = 0
     renderWithVault(
       {
-        importVault: async () => {
+        importEncryptedVault: async () => {
           called += 1
           return { imported: 0, skipped: 0, rejected: 0 }
         },
       },
       <ImportVaultForm />,
     )
-    const textarea = screen.getByLabelText(/vault json/i) as HTMLTextAreaElement
-    // Native input event does not drive React's controlled onChange; use fireEvent.change.
-    fireEvent.change(textarea, { target: { value: 'not json' } })
-    await user.click(screen.getByRole('button', { name: /^import vault$/i }))
-    assert.equal(called, 0)
-    assert.ok(
-      getToastEntries().some(
-        (e) => typeof e.message === 'string' && /invalid json/i.test(e.message),
+    const file = new File(['not json'], 'backup.json', { type: 'application/json' })
+    await user.upload(screen.getByLabelText(/backup file/i), file)
+    await user.type(screen.getByLabelText(/backup password/i), 'whatever-pw')
+    await user.click(screen.getByRole('button', { name: /^import backup$/i }))
+
+    await waitFor(() =>
+      assert.ok(
+        getToastEntries().some(
+          (e) => typeof e.message === 'string' && /invalid file/i.test(e.message),
+        ),
       ),
     )
+    assert.equal(called, 0)
   })
 })

@@ -32,6 +32,17 @@ const baseVault = (overrides: Partial<VaultContextValue> = {}): VaultContextValu
   removeAccount: async () => undefined,
   exportVault: () => ({ v: 1, accounts: [] }) as import('@/vault/types').VaultEnvelope,
   importVault: async () => ({ imported: 0, skipped: 0, rejected: 0 }),
+  exportEncryptedVault: async () =>
+    ({
+      kind: 'carpincho-backup',
+      version: 1,
+      vault: {
+        v: 1,
+        kdf: { name: 'PBKDF2', hash: 'SHA-256', iterations: 600_000, salt: '' },
+        cipher: { name: 'AES-GCM', iv: '', data: '' },
+      },
+    }) as import('@/vault/types').CarpinchoBackup,
+  importEncryptedVault: async () => ({ imported: 0, skipped: 0, rejected: 0 }),
   signMessage: async () => '',
   recordTransaction: async () => ({}) as unknown as import('@/vault/types').TransactionRecord,
   changePassword: async () => undefined,
@@ -134,7 +145,7 @@ describe('MenuSheet', () => {
     assert.ok(screen.getByRole('button', { name: /^export vault$/i }))
   })
 
-  it('drills into Import Vault and shows the paste/upload tabs', async () => {
+  it('drills into Import Vault and shows the file and password fields', async () => {
     const user = userEvent.setup()
     render(
       wrap(
@@ -147,8 +158,8 @@ describe('MenuSheet', () => {
     )
     await user.click(screen.getByRole('button', { name: /^vault$/i }))
     await user.click(screen.getByRole('button', { name: /^import vault$/i }))
-    assert.ok(screen.getByRole('tab', { name: /paste/i }))
-    assert.ok(screen.getByRole('tab', { name: /upload file/i }))
+    assert.ok(screen.getByLabelText(/backup file/i))
+    assert.ok(screen.getByLabelText(/backup password/i))
   })
 
   it('log out calls vault.lock and closes the sheet', async () => {
