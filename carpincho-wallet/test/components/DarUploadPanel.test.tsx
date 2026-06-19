@@ -30,7 +30,7 @@ describe('DarUploadPanel', () => {
     )
 
     await userEvent.upload(screen.getByLabelText('DAR file'), selectedFile)
-    await userEvent.click(screen.getByRole('button', { name: 'Upload DAR' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Upload' }))
 
     // The exact selected file object is passed through, preserving binary contents and filename.
     assert.equal(uploaded, selectedFile)

@@ -41,22 +41,17 @@ export const DarUploadPanel = ({ api = defaultApi }: DarUploadPanelProps): JSX.E
 
   return (
     <section className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <span className="text-[0.82rem] font-semibold uppercase tracking-wider text-muted-foreground">
-          DAR file
-        </span>
-        <FileDropInput
-          id="dar-file"
-          accept=".dar,application/octet-stream"
-          ariaLabel="DAR file"
-          prompt="Drop a .dar file or click to choose."
-          fileName={file?.name ?? null}
-          onSelect={(selected) => {
-            setUploadedFileName(undefined)
-            setFile(selected ?? undefined)
-          }}
-        />
-      </div>
+      <FileDropInput
+        id="dar-file"
+        accept=".dar,application/octet-stream"
+        ariaLabel="DAR file"
+        prompt="Drop a .dar file or click to choose."
+        fileName={file?.name ?? null}
+        onSelect={(selected) => {
+          setUploadedFileName(undefined)
+          setFile(selected ?? undefined)
+        }}
+      />
       <PrimaryButton
         className="w-full"
         disabled={file === undefined || uploading}
@@ -64,7 +59,7 @@ export const DarUploadPanel = ({ api = defaultApi }: DarUploadPanelProps): JSX.E
           void onUpload()
         }}
       >
-        {uploading ? 'Uploading...' : 'Upload DAR'}
+        {uploading ? 'Uploading...' : 'Upload'}
       </PrimaryButton>
       {uploadedFileName === undefined ? null : (
         <p
