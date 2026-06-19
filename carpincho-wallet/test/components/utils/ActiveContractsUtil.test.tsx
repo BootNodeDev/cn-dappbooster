@@ -67,17 +67,17 @@ describe('ActiveContractsUtil', () => {
     await screen.findByText('cid-other')
 
     // Template suffix match keeps only the contract whose template ends with the typed name.
-    await userEvent.type(screen.getByLabelText('Filter'), 'Other')
+    await userEvent.type(screen.getByLabelText('Filter contracts'), 'Other')
     assert.equal(screen.queryByText('cid-1'), null)
     assert.ok(screen.getByText('cid-other'))
 
     // A contract-id substring narrows it the other way.
-    await userEvent.clear(screen.getByLabelText('Filter'))
-    await userEvent.type(screen.getByLabelText('Filter'), '-1')
+    await userEvent.clear(screen.getByLabelText('Filter contracts'))
+    await userEvent.type(screen.getByLabelText('Filter contracts'), '-1')
     assert.ok(screen.getByText('cid-1'))
     assert.equal(screen.queryByText('cid-other'), null)
 
-    await userEvent.clear(screen.getByLabelText('Filter'))
+    await userEvent.clear(screen.getByLabelText('Filter contracts'))
     assert.ok(screen.getByText('cid-1'))
     assert.ok(screen.getByText('cid-other'))
   })
@@ -92,7 +92,11 @@ describe('ActiveContractsUtil', () => {
 
     await screen.findByText('cid-1')
     await waitFor(() => assert.equal(calls, 1))
-    await userEvent.click(screen.getByRole('button', { name: 'Refresh contracts' }))
+
+    const button = screen.getByRole('button', { name: 'Refresh contracts' })
+    await userEvent.click(button)
+    // The icon spins on click, independent of how fast the fetch resolves.
+    assert.ok(button.querySelector('.animate-spin'))
     await waitFor(() => assert.equal(calls, 2))
   })
 
@@ -110,7 +114,7 @@ describe('ActiveContractsUtil', () => {
     const one = (async () => [CONTRACT]) as typeof ListFn
     renderUtil(one)
     await screen.findByText('cid-1')
-    await userEvent.type(screen.getByLabelText('Filter'), 'Nope')
+    await userEvent.type(screen.getByLabelText('Filter contracts'), 'Nope')
     assert.ok(screen.getByText(/no contracts match/i))
   })
 })

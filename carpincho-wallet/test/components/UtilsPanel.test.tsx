@@ -101,7 +101,7 @@ describe('UtilsPanel', () => {
     await waitFor(() => assert.equal(screen.queryByLabelText('Template ID'), null))
   })
 
-  it('drills into Active contracts, filters locally, and refreshes from the header', async () => {
+  it('drills into Active contracts, filters locally, and refreshes the snapshot', async () => {
     const listCalls: Parameters<UtilsApi['listActiveContracts']>[0][] = []
     const api: UtilsApi = {
       createContract: async () => ({ updateId: 'unused' }),
@@ -122,12 +122,12 @@ describe('UtilsPanel', () => {
     assert.deepEqual(listCalls.at(-1), { partyId: 'alice::party' })
 
     // Typing narrows the already-fetched set client-side, no extra request.
-    await userEvent.type(screen.getByLabelText('Filter'), 'Other')
+    await userEvent.type(screen.getByLabelText('Filter contracts'), 'Other')
     assert.equal(screen.queryByText('cid-1'), null)
     assert.ok(screen.getByText('cid-other'))
     assert.equal(listCalls.length, 1)
 
-    // The header refresh icon re-fetches the snapshot.
+    // The refresh icon re-fetches the snapshot.
     await userEvent.click(screen.getByRole('button', { name: 'Refresh contracts' }))
     await waitFor(() => assert.equal(listCalls.length, 2))
     assert.deepEqual(listCalls.at(-1), { partyId: 'alice::party' })

@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Alert } from '@/components/ui/Alert'
-import { ICON_BUTTON_CLASS } from '@/components/ui/Button'
+import { ICON_BUTTON_CLASS, PLAIN_ICON_BUTTON_CLASS } from '@/components/ui/Button'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/Collapsible'
 import { CopyableLabel } from '@/components/ui/CopyableLabel'
 import { DetailRow } from '@/components/ui/DetailRow'
-import { CHEVRON_DOWN_ICON, REFRESH_ICON } from '@/components/ui/icons'
+import { CHEVRON_DOWN_ICON, REFRESH_ICON, SEARCH_ICON, X_ICON } from '@/components/ui/icons'
 import { JsonView } from '@/components/ui/JsonView'
 import { TextInput } from '@/components/ui/TextInput'
 import { toast } from '@/components/ui/toast'
@@ -68,7 +68,7 @@ const ContractCard = ({ contract }: { contract: ActiveContract }): JSX.Element =
   </Collapsible>
 )
 
-// Browses the active contract set, narrowing it live by template id as you type.
+// Browses the active contract set, narrowing it live by template or contract id as you type.
 export const ActiveContractsUtil = ({
   account,
   listActiveContracts = defaultList,
@@ -76,6 +76,7 @@ export const ActiveContractsUtil = ({
   const [filterQuery, setFilterQuery] = useState('')
   const [contracts, setContracts] = useState<ActiveContract[]>([])
   const [busy, setBusy] = useState(false)
+  const [spinning, setSpinning] = useState(false)
   const [error, setError] = useState<string | undefined>()
   const [loaded, setLoaded] = useState(false)
 
@@ -107,19 +108,36 @@ export const ActiveContractsUtil = ({
 
   return (
     <section className="flex flex-col gap-4">
-      <label
-        htmlFor="contract-filter"
-        className="flex flex-col gap-2 text-[0.82rem] font-semibold uppercase tracking-wider text-muted-foreground"
-      >
-        Filter
+      <div className="relative">
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+        >
+          {SEARCH_ICON}
+        </span>
         <TextInput
           id="contract-filter"
+          type="text"
           value={filterQuery}
           onChange={(event) => setFilterQuery(event.currentTarget.value)}
           placeholder="Template or contract id"
-          className="font-mono text-[0.9rem] normal-case tracking-normal"
+          aria-label="Filter contracts"
+          className="pl-9 pr-9 font-mono text-[0.9rem]"
         />
-      </label>
+        {filterQuery !== '' && (
+          <button
+            type="button"
+            onClick={() => setFilterQuery('')}
+            aria-label="Clear filter"
+            className={cn(
+              PLAIN_ICON_BUTTON_CLASS,
+              'absolute right-2 top-1/2 size-6 -translate-y-1/2',
+            )}
+          >
+            {X_ICON}
+          </button>
+        )}
+      </div>
       {error === undefined ? null : <Alert variant="error">{error}</Alert>}
       <div className="flex items-center justify-end">
         <button
@@ -128,11 +146,18 @@ export const ActiveContractsUtil = ({
           title="Refresh contracts"
           disabled={busy}
           onClick={() => {
+            setSpinning(true)
             void refresh()
           }}
           className={cn(ICON_BUTTON_CLASS, 'size-8 rounded-md [&_svg]:size-[1.05rem]')}
         >
-          <span className={cn('inline-grid place-items-center', busy && 'animate-spin')}>
+          {/* Spin at least one full turn per click, and keep going while a fetch is in flight. */}
+          <span
+            className={cn('inline-grid place-items-center', spinning && 'animate-spin')}
+            onAnimationIteration={() => {
+              if (!busy) setSpinning(false)
+            }}
+          >
             {REFRESH_ICON}
           </span>
         </button>
