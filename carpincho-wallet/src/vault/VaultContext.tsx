@@ -14,6 +14,7 @@ import { clearDirectConnectedOrigins } from '@/extension/directConnections'
 import { broadcastWalletEvent } from '@/extension/eventBroadcast'
 import { persistWalletSnapshot } from '@/extension/walletSnapshot'
 import { accountToCip103Wallet } from '@/provider/accounts'
+import { parseBackupContainer, wrapBackup } from '@/vault/backup'
 import { assertSecureContext, decryptVault, encryptVault } from '@/vault/crypto'
 import { derivePublicKeyBase64, signMessageBase64 } from '@/vault/keypair'
 import { ensurePasswordStrengthReady, isPasswordAcceptable } from '@/vault/passwordStrength'
@@ -39,6 +40,7 @@ import {
 import type {
   AccountPublic,
   AccountSecret,
+  CarpinchoBackup,
   ImportVaultResult,
   TransactionRecord,
   VaultEnvelope,
@@ -114,6 +116,8 @@ export interface VaultContextValue {
   removeAccount: (id: string) => Promise<void>
   exportVault: () => VaultEnvelope
   importVault: (envelope: VaultEnvelope) => Promise<ImportVaultResult>
+  exportEncryptedVault: (password: string) => Promise<CarpinchoBackup>
+  importEncryptedVault: (file: unknown, password: string) => Promise<ImportVaultResult>
   signMessage: (accountId: string, messageBase64: string) => Promise<string>
   recordTransaction: (
     args: Omit<TransactionRecord, 'id' | 'createdAt'>,
@@ -431,6 +435,40 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
     [addAccount],
   )
 
+  const exportEncryptedVault = useCallback(
+    async (password: string): Promise<CarpinchoBackup> => {
+      if (unlockedPlaintext === null) {
+        throw new Error('vault locked')
+      }
+      // Enforces file-password == vault-password and re-authenticates the user.
+      if (cachedPassword !== password) {
+        throw new Error('invalid password')
+      }
+      const envelope = exportVault()
+      const vault = await encryptVault(password, JSON.stringify(envelope))
+      return wrapBackup(vault)
+    },
+    [exportVault],
+  )
+
+  const importEncryptedVault = useCallback(
+    async (file: unknown, password: string): Promise<ImportVaultResult> => {
+      if (unlockedPlaintext === null) {
+        throw new Error('vault locked')
+      }
+      const encrypted = parseBackupContainer(file)
+      let plaintext: string
+      try {
+        plaintext = await decryptVault(password, encrypted)
+      } catch {
+        throw new Error('Wrong password for this file.')
+      }
+      const envelope = JSON.parse(plaintext) as VaultEnvelope
+      return await importVault(envelope)
+    },
+    [importVault],
+  )
+
   const verifyPassword = useCallback(
     (password: string): boolean => cachedPassword !== null && cachedPassword === password,
     [],
@@ -581,6 +619,8 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
       removeAccount,
       exportVault,
       importVault,
+      exportEncryptedVault,
+      importEncryptedVault,
       signMessage,
       recordTransaction,
       changePassword,
@@ -602,6 +642,8 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
     removeAccount,
     exportVault,
     importVault,
+    exportEncryptedVault,
+    importEncryptedVault,
     signMessage,
     recordTransaction,
     changePassword,

@@ -1,8 +1,10 @@
 import { strict as assert } from 'node:assert'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 import { act, cleanup, render } from '@testing-library/react'
+import { wrapBackup } from '@/vault/backup'
+import { encryptVault } from '@/vault/crypto'
 import { generateKeypair } from '@/vault/keypair'
-import type { VaultEnvelope } from '@/vault/types'
+import type { CarpinchoBackup, ImportVaultResult, VaultEnvelope } from '@/vault/types'
 import { useVault } from '@/vault/useVault'
 import { type VaultContextValue, VaultProvider } from '@/vault/VaultContext'
 
@@ -20,145 +22,186 @@ const captureVault = (): { ref: { current: VaultContextValue | null } } => {
   return { ref }
 }
 
-const envelopeOf = (accounts: VaultEnvelope['accounts']): VaultEnvelope => ({ v: 1, accounts })
+const SOURCE_PW = 'staple-galaxy-printer'
+const DEST_PW = 'correct-horse-battery'
 
-describe('VaultContext.importVault', () => {
+const makeBackup = async (
+  password: string,
+  accounts: VaultEnvelope['accounts'],
+): Promise<CarpinchoBackup> =>
+  wrapBackup(await encryptVault(password, JSON.stringify({ v: 1, accounts })))
+
+describe('VaultContext.importEncryptedVault', () => {
   beforeEach(() => localStorage.clear())
   afterEach(() => {
     cleanup()
     localStorage.clear()
   })
 
-  it('imports valid entries and reports counts, using the envelope network', async () => {
+  it('decrypts with the file password and merges, re-persisting under the destination vault password', async () => {
     const kp = await generateKeypair()
-    const { ref } = captureVault()
-    await act(async () => {
-      await ref.current?.setup('correct-horse-battery')
-    })
-
-    let result: { imported: number; skipped: number; rejected: number } | undefined
-    await act(async () => {
-      result = await ref.current?.importVault(
-        envelopeOf([
-          {
-            name: 'alice',
-            partyId: 'alice::ns',
-            publicKeyBase64: kp.publicKeyBase64,
-            privateKeyHex: kp.privateKeyHex,
-            network: 'devnet',
-          },
-        ]),
-      )
-    })
-
-    assert.deepEqual(result, { imported: 1, skipped: 0, rejected: 0 })
-    const alice = ref.current?.accounts.find((a) => a.name === 'alice')
-    assert.equal(alice?.network, 'devnet')
-    assert.equal(alice?.partyId, 'alice::ns')
-  })
-
-  it('rejects entries whose key does not derive the stored public key', async () => {
-    const kp = await generateKeypair()
-    const { ref } = captureVault()
-    await act(async () => {
-      await ref.current?.setup('correct-horse-battery')
-    })
-
-    let result: { imported: number; skipped: number; rejected: number } | undefined
-    await act(async () => {
-      result = await ref.current?.importVault(
-        envelopeOf([
-          {
-            name: 'eve',
-            partyId: 'eve::ns',
-            publicKeyBase64: 'not-the-matching-key',
-            privateKeyHex: kp.privateKeyHex,
-            network: 'localnet',
-          },
-        ]),
-      )
-    })
-
-    assert.deepEqual(result, { imported: 0, skipped: 0, rejected: 1 })
-    assert.equal(ref.current?.accounts.length, 0)
-  })
-
-  it('rejects malformed partyIds and skips duplicates', async () => {
-    const good = await generateKeypair()
-    const bad = await generateKeypair()
-    const { ref } = captureVault()
-    await act(async () => {
-      await ref.current?.setup('correct-horse-battery')
-      await ref.current?.addAccount({
+    const backup = await makeBackup(SOURCE_PW, [
+      {
         name: 'alice',
         partyId: 'alice::ns',
-        network: 'localnet',
-        privateKeyHex: good.privateKeyHex,
-        publicKeyBase64: good.publicKeyBase64,
-      })
-    })
-
-    let result: { imported: number; skipped: number; rejected: number } | undefined
-    await act(async () => {
-      result = await ref.current?.importVault(
-        envelopeOf([
-          {
-            name: 'alice',
-            partyId: 'alice::ns',
-            publicKeyBase64: good.publicKeyBase64,
-            privateKeyHex: good.privateKeyHex,
-            network: 'localnet',
-          },
-          {
-            name: 'nocolons',
-            partyId: 'nocolons',
-            publicKeyBase64: bad.publicKeyBase64,
-            privateKeyHex: bad.privateKeyHex,
-            network: 'localnet',
-          },
-        ]),
-      )
-    })
-
-    assert.deepEqual(result, { imported: 0, skipped: 1, rejected: 1 })
-  })
-
-  it('rejects entries whose required fields are not strings', async () => {
-    const good = await generateKeypair()
+        publicKeyBase64: kp.publicKeyBase64,
+        privateKeyHex: kp.privateKeyHex,
+        network: 'devnet',
+      },
+    ])
     const { ref } = captureVault()
     await act(async () => {
-      await ref.current?.setup('correct-horse-battery')
+      await ref.current?.setup(DEST_PW)
     })
 
-    let result: { imported: number; skipped: number; rejected: number } | undefined
+    let result: ImportVaultResult | undefined
     await act(async () => {
-      result = await ref.current?.importVault(
-        envelopeOf([
-          null as unknown as never,
-          {
-            name: 42 as unknown as string,
-            partyId: 'alice::ns',
-            publicKeyBase64: good.publicKeyBase64,
-            privateKeyHex: good.privateKeyHex,
-            network: 'localnet',
-          },
-        ]),
-      )
+      result = await ref.current?.importEncryptedVault(backup, SOURCE_PW)
     })
+    assert.deepEqual(result, { imported: 1, skipped: 0, rejected: 0 })
 
-    assert.deepEqual(result, { imported: 0, skipped: 0, rejected: 2 })
-    assert.equal(ref.current?.accounts.length, 0)
+    // Proves re-encryption under the destination password: lock, then unlock with it.
+    await act(async () => {
+      ref.current?.lock()
+    })
+    await act(async () => {
+      await ref.current?.unlock(DEST_PW)
+    })
+    assert.equal(ref.current?.accounts.find((a) => a.name === 'alice')?.partyId, 'alice::ns')
   })
 
-  it('throws on a malformed envelope', async () => {
+  it('rejects a wrong file password', async () => {
+    const kp = await generateKeypair()
+    const backup = await makeBackup(SOURCE_PW, [
+      {
+        name: 'alice',
+        partyId: 'alice::ns',
+        publicKeyBase64: kp.publicKeyBase64,
+        privateKeyHex: kp.privateKeyHex,
+        network: 'devnet',
+      },
+    ])
     const { ref } = captureVault()
     await act(async () => {
-      await ref.current?.setup('correct-horse-battery')
+      await ref.current?.setup(DEST_PW)
+    })
+    await assert.rejects(
+      () => ref.current?.importEncryptedVault(backup, 'totally-wrong-pw') ?? Promise.resolve(),
+      /wrong password for this file/i,
+    )
+  })
+
+  it('rejects a tampered ciphertext as a wrong password', async () => {
+    const kp = await generateKeypair()
+    const backup = await makeBackup(SOURCE_PW, [
+      {
+        name: 'alice',
+        partyId: 'alice::ns',
+        publicKeyBase64: kp.publicKeyBase64,
+        privateKeyHex: kp.privateKeyHex,
+        network: 'devnet',
+      },
+    ])
+    const head = backup.vault.cipher.data[0] === 'A' ? 'B' : 'A'
+    const tampered: CarpinchoBackup = {
+      ...backup,
+      vault: {
+        ...backup.vault,
+        cipher: { ...backup.vault.cipher, data: head + backup.vault.cipher.data.slice(1) },
+      },
+    }
+    const { ref } = captureVault()
+    await act(async () => {
+      await ref.current?.setup(DEST_PW)
+    })
+    await assert.rejects(
+      () => ref.current?.importEncryptedVault(tampered, SOURCE_PW) ?? Promise.resolve(),
+      /wrong password for this file/i,
+    )
+  })
+
+  it('rejects a raw EncryptedVault (no backup marker)', async () => {
+    const kp = await generateKeypair()
+    const backup = await makeBackup(SOURCE_PW, [
+      {
+        name: 'alice',
+        partyId: 'alice::ns',
+        publicKeyBase64: kp.publicKeyBase64,
+        privateKeyHex: kp.privateKeyHex,
+        network: 'devnet',
+      },
+    ])
+    const { ref } = captureVault()
+    await act(async () => {
+      await ref.current?.setup(DEST_PW)
+    })
+    await assert.rejects(
+      () => ref.current?.importEncryptedVault(backup.vault, SOURCE_PW) ?? Promise.resolve(),
+      /isn't a Carpincho backup/i,
+    )
+  })
+
+  it('rejects an unsupported container version', async () => {
+    const kp = await generateKeypair()
+    const backup = await makeBackup(SOURCE_PW, [
+      {
+        name: 'alice',
+        partyId: 'alice::ns',
+        publicKeyBase64: kp.publicKeyBase64,
+        privateKeyHex: kp.privateKeyHex,
+        network: 'devnet',
+      },
+    ])
+    const { ref } = captureVault()
+    await act(async () => {
+      await ref.current?.setup(DEST_PW)
     })
     await assert.rejects(
       () =>
-        ref.current?.importVault({ v: 2, accounts: [] } as unknown as VaultEnvelope) ??
+        ref.current?.importEncryptedVault({ ...backup, version: 2 }, SOURCE_PW) ??
         Promise.resolve(),
+      /isn't a Carpincho backup/i,
+    )
+  })
+
+  it('still applies per-entry validation after decryption', async () => {
+    const good = await generateKeypair()
+    const bad = await generateKeypair()
+    const backup = await makeBackup(SOURCE_PW, [
+      {
+        name: 'alice',
+        partyId: 'alice::ns',
+        publicKeyBase64: good.publicKeyBase64,
+        privateKeyHex: good.privateKeyHex,
+        network: 'devnet',
+      },
+      {
+        name: 'eve',
+        partyId: 'eve::ns',
+        publicKeyBase64: 'not-the-matching-key',
+        privateKeyHex: bad.privateKeyHex,
+        network: 'devnet',
+      },
+    ])
+    const { ref } = captureVault()
+    await act(async () => {
+      await ref.current?.setup(DEST_PW)
+    })
+    let result: ImportVaultResult | undefined
+    await act(async () => {
+      result = await ref.current?.importEncryptedVault(backup, SOURCE_PW)
+    })
+    assert.deepEqual(result, { imported: 1, skipped: 0, rejected: 1 })
+  })
+
+  it('propagates an unsupported inner envelope version', async () => {
+    const backup = wrapBackup(await encryptVault(SOURCE_PW, JSON.stringify({ v: 2, accounts: [] })))
+    const { ref } = captureVault()
+    await act(async () => {
+      await ref.current?.setup(DEST_PW)
+    })
+    await assert.rejects(
+      () => ref.current?.importEncryptedVault(backup, SOURCE_PW) ?? Promise.resolve(),
       /unsupported vault envelope/i,
     )
   })

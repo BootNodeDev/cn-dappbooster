@@ -1,6 +1,8 @@
 import { strict as assert } from 'node:assert'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 import { act, cleanup, render } from '@testing-library/react'
+import { decryptVault } from '@/vault/crypto'
+import type { CarpinchoBackup, VaultEnvelope } from '@/vault/types'
 import { useVault } from '@/vault/useVault'
 import { type VaultContextValue, VaultProvider } from '@/vault/VaultContext'
 
@@ -18,14 +20,14 @@ const captureVault = (): { ref: { current: VaultContextValue | null } } => {
   return { ref }
 }
 
-describe('VaultContext.exportVault', () => {
+describe('VaultContext.exportEncryptedVault', () => {
   beforeEach(() => localStorage.clear())
   afterEach(() => {
     cleanup()
     localStorage.clear()
   })
 
-  it('builds a v1 envelope of every account, omitting id and createdAt', async () => {
+  it('produces a carpincho-backup whose ciphertext decrypts to the account envelope', async () => {
     const { ref } = captureVault()
     await act(async () => {
       await ref.current?.setup('correct-horse-battery')
@@ -36,27 +38,35 @@ describe('VaultContext.exportVault', () => {
         privateKeyHex: 'aa'.repeat(32),
         publicKeyBase64: 'alice-pub',
       })
-      await ref.current?.addAccount({
-        name: 'bob',
-        partyId: 'bob::ns',
-        network: 'devnet',
-        privateKeyHex: 'bb'.repeat(32),
-        publicKeyBase64: 'bob-pub',
-      })
     })
 
-    const envelope = ref.current?.exportVault()
-    assert.equal(envelope?.v, 1)
-    assert.equal(envelope?.accounts.length, 2)
-    assert.deepEqual(envelope?.accounts[0], {
-      name: 'alice',
-      partyId: 'alice::ns',
-      publicKeyBase64: 'alice-pub',
-      privateKeyHex: 'aa'.repeat(32),
-      network: 'localnet',
+    let backup: CarpinchoBackup | null = null
+    await act(async () => {
+      backup = (await ref.current?.exportEncryptedVault('correct-horse-battery')) ?? null
     })
-    assert.equal(Object.hasOwn(envelope?.accounts[0] ?? {}, 'id'), false)
-    assert.equal(Object.hasOwn(envelope?.accounts[0] ?? {}, 'createdAt'), false)
+    if (backup === null) {
+      throw new Error('no backup produced')
+    }
+    assert.equal(backup.kind, 'carpincho-backup')
+    assert.equal(backup.version, 1)
+
+    const plaintext = await decryptVault('correct-horse-battery', backup.vault)
+    const envelope = JSON.parse(plaintext) as VaultEnvelope
+    assert.equal(envelope.v, 1)
+    assert.equal(envelope.accounts.length, 1)
+    assert.equal(envelope.accounts[0]?.partyId, 'alice::ns')
+    assert.equal(envelope.accounts[0]?.privateKeyHex, 'aa'.repeat(32))
+  })
+
+  it('throws when the typed password is not the current vault password', async () => {
+    const { ref } = captureVault()
+    await act(async () => {
+      await ref.current?.setup('correct-horse-battery')
+    })
+    await assert.rejects(
+      () => ref.current?.exportEncryptedVault('wrong-password-here') ?? Promise.resolve(),
+      /invalid password/i,
+    )
   })
 
   it('throws when the vault is locked', async () => {
@@ -65,6 +75,9 @@ describe('VaultContext.exportVault', () => {
       await ref.current?.setup('correct-horse-battery')
       ref.current?.lock()
     })
-    assert.throws(() => ref.current?.exportVault(), /vault locked/i)
+    await assert.rejects(
+      () => ref.current?.exportEncryptedVault('correct-horse-battery') ?? Promise.resolve(),
+      /vault locked/i,
+    )
   })
 })
