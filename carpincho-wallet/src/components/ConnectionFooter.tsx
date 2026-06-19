@@ -2,6 +2,7 @@ import * as Avatar from '@radix-ui/react-avatar'
 import { PLAIN_ICON_BUTTON_CLASS } from '@/components/ui/Button'
 import { CHEVRON_DOWN_ICON, DISCONNECT_ICON, GLOBE_ICON } from '@/components/ui/icons'
 import { cn } from '@/utils/cn'
+import { displayNetworkId } from '@/utils/network'
 
 export interface WalletServiceFooterStatus {
   connected: boolean
@@ -55,7 +56,7 @@ export const ConnectionFooter = ({
   onOpenSettings,
 }: ConnectionFooterProps): JSX.Element => {
   const networkLabel = walletService.connected
-    ? (walletService.networkId?.replace(/^canton:/, '') ?? 'unknown')
+    ? (displayNetworkId(walletService.networkId) ?? 'unknown')
     : 'Offline'
   const site = dapp.kind === 'none' ? undefined : dapp
   const connected = dapp.kind === 'connected'

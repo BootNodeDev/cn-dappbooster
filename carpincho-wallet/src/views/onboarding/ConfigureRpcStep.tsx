@@ -6,9 +6,17 @@ import { TextInput } from '@/components/ui/TextInput'
 import { useRuntimeConfig } from '@/config/useRuntimeConfig'
 import { useWalletServiceTest } from '@/hooks/useWalletServiceTest'
 import { cn } from '@/utils/cn'
+import { displayNetworkId } from '@/utils/network'
 
 const DEBOUNCE_MS = 450
 const RETRY_MS = 3000
+
+// idle/testing collapse to one "pending" tone for the status band.
+const STATUS_BAND_CLASS = {
+  connected: 'items-center bg-success-soft text-success',
+  unreachable: 'items-start bg-danger-soft text-danger',
+  pending: 'items-center bg-muted text-soft',
+} as const
 
 export interface ConfigureRpcStepProps {
   onConfirmed: () => void
@@ -40,7 +48,9 @@ export const ConfigureRpcStep = ({ onConfirmed }: ConfigureRpcStepProps): JSX.El
   }, [state, url, test])
 
   const canContinue = state === 'connected' && testedUrl === url
-  const network = networkId?.replace(/^canton:/, '')
+  const network = displayNetworkId(networkId)
+  const tone =
+    state === 'connected' ? 'connected' : state === 'unreachable' ? 'unreachable' : 'pending'
 
   const onContinue = (): void => {
     saveConfig({ ...config, walletServiceRpcUrl: url })
@@ -63,13 +73,10 @@ export const ConfigureRpcStep = ({ onConfirmed }: ConfigureRpcStepProps): JSX.El
         role="status"
         className={cn(
           'mt-3 flex gap-2.5 rounded-md px-3 py-2.5 text-[0.85rem] font-semibold',
-          state === 'unreachable' ? 'items-start' : 'items-center',
-          state === 'connected' && 'bg-success-soft text-success',
-          state === 'unreachable' && 'bg-danger-soft text-danger',
-          state !== 'connected' && state !== 'unreachable' && 'bg-muted text-soft',
+          STATUS_BAND_CLASS[tone],
         )}
       >
-        {state === 'connected' && (
+        {tone === 'connected' && (
           <>
             <span
               aria-hidden="true"
@@ -83,7 +90,7 @@ export const ConfigureRpcStep = ({ onConfirmed }: ConfigureRpcStepProps): JSX.El
             )}
           </>
         )}
-        {state === 'unreachable' && (
+        {tone === 'unreachable' && (
           <>
             <span className="shrink-0 [&>svg]:size-4">{ALERT_CIRCLE_ICON}</span>
             <span className="flex flex-col gap-0.5">
@@ -96,7 +103,7 @@ export const ConfigureRpcStep = ({ onConfirmed }: ConfigureRpcStepProps): JSX.El
             </span>
           </>
         )}
-        {state !== 'connected' && state !== 'unreachable' && (
+        {tone === 'pending' && (
           <>
             <span className="shrink-0 [&>svg]:size-4">{SPINNER_ICON}</span>
             <span>Checking connection…</span>

@@ -8,6 +8,24 @@ import {
   usePasswordStrengthReady,
 } from '@/vault/passwordStrength'
 
+const PASSWORD_RECOMMENDATIONS = (
+  <div className="flex flex-col gap-2">
+    <p>
+      Aim for <strong>12+ characters</strong>. Length is the biggest factor.
+    </p>
+    <p>
+      A string of unrelated words (e.g.{' '}
+      <span className="font-mono">correctly-growing-a-horse-battery</span>) is easier to remember
+      and <strong>harder to crack</strong> than short complex passwords.
+    </p>
+    <p>Avoid names, dates, dictionary words, and common substitutions (pa$$word, p@ssw0rd).</p>
+    <p>
+      The vault is encrypted locally: a stolen vault file can be attacked offline without rate
+      limits. Password strength is important.
+    </p>
+  </div>
+)
+
 type Props = {
   password: string
   confirm: string
@@ -61,27 +79,7 @@ export const NewPasswordFields = ({
               </label>
               <Tooltip
                 label="Password recommendations"
-                content={
-                  <div className="flex flex-col gap-2">
-                    <p>
-                      Aim for <strong>12+ characters</strong>. Length is the biggest factor.
-                    </p>
-                    <p>
-                      A string of unrelated words (e.g.{' '}
-                      <span className="font-mono">correctly-growing-a-horse-battery</span>) is
-                      easier to remember and <strong>harder to crack</strong> than short complex
-                      passwords.
-                    </p>
-                    <p>
-                      Avoid names, dates, dictionary words, and common substitutions (pa$$word,
-                      p@ssw0rd).
-                    </p>
-                    <p>
-                      The vault is encrypted locally: a stolen vault file can be attacked offline
-                      without rate limits. Password strength is important.
-                    </p>
-                  </div>
-                }
+                content={PASSWORD_RECOMMENDATIONS}
               />
             </div>
           )}
