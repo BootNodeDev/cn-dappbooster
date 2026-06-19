@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { INPUT_CLASS } from '@/components/ui/TextInput'
 import { cn } from '@/utils/cn'
 import { formatJsonInput, parseJsonObject } from '@/utils/json'
@@ -34,7 +34,7 @@ export const JsonField = ({
   onValidityChange,
   placeholder,
 }: JsonFieldProps): JSX.Element => {
-  const errorMessage = validate(value, label)
+  const errorMessage = useMemo(() => validate(value, label), [value, label])
 
   useEffect(() => {
     onValidityChange?.(errorMessage === undefined)

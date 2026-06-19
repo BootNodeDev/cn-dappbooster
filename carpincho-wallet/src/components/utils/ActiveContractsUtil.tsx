@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Alert } from '@/components/ui/Alert'
 import { PrimaryButton } from '@/components/ui/Button'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/Collapsible'
-import { Copyable } from '@/components/ui/Copyable'
+import { CopyableLabel } from '@/components/ui/CopyableLabel'
 import { DetailRow } from '@/components/ui/DetailRow'
 import { CHEVRON_DOWN_ICON } from '@/components/ui/icons'
 import { JsonView } from '@/components/ui/JsonView'
@@ -22,15 +22,12 @@ const ContractCard = ({ contract }: { contract: ActiveContract }): JSX.Element =
   <Collapsible className="group rounded-md border border-border bg-surface p-3">
     <div className="flex items-start gap-2">
       <div className="min-w-0 flex-1">
-        <div className="mb-1 flex items-center gap-1.5">
-          <span className="text-[0.7rem] font-semibold uppercase text-muted-foreground">
-            Contract ID
-          </span>
-          <Copyable
-            value={contract.contractId}
-            label="contract ID"
-          />
-        </div>
+        <CopyableLabel
+          className="mb-1"
+          label="Contract ID"
+          value={contract.contractId}
+          copyLabel="contract ID"
+        />
         <div className="break-all rounded-md border border-border bg-muted px-3 py-2 font-mono text-[0.74rem] leading-5 text-foreground">
           <span className="block truncate group-data-[state=open]:hidden">
             {shortMiddle(contract.contractId, 10, 8)}
@@ -59,15 +56,12 @@ const ContractCard = ({ contract }: { contract: ActiveContract }): JSX.Element =
         />
       )}
       <div>
-        <div className="mb-1.5 flex items-center gap-1.5">
-          <span className="text-[0.7rem] font-semibold uppercase text-muted-foreground">
-            Create arguments
-          </span>
-          <Copyable
-            value={JSON.stringify(contract.createArgument, null, 2)}
-            label="create arguments"
-          />
-        </div>
+        <CopyableLabel
+          className="mb-1.5"
+          label="Create arguments"
+          value={JSON.stringify(contract.createArgument, null, 2)}
+          copyLabel="create arguments"
+        />
         <JsonView value={contract.createArgument} />
       </div>
     </CollapsibleContent>

@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import type { AmuletTapApi } from '@/cip56/amuletPreapproval'
 import { DarUploadPanel } from '@/components/DarUploadPanel'
 import { Alert } from '@/components/ui/Alert'
 import { Sheet } from '@/components/ui/Sheet'
@@ -28,11 +27,10 @@ const UTIL_TITLES: Record<UtilKey, string> = {
 interface UtilsPanelProps {
   account?: AccountPublic
   api?: UtilsApi
-  tapApi?: AmuletTapApi
 }
 
 // Dev tools: a util list where selecting a util opens it in a modal.
-export const UtilsPanel = ({ account, api = defaultApi, tapApi }: UtilsPanelProps): JSX.Element => {
+export const UtilsPanel = ({ account, api = defaultApi }: UtilsPanelProps): JSX.Element => {
   const [selected, setSelected] = useState<UtilKey | null>(null)
 
   if (account === undefined) {
@@ -47,7 +45,6 @@ export const UtilsPanel = ({ account, api = defaultApi, tapApi }: UtilsPanelProp
     <>
       <UtilsList
         account={account}
-        tapApi={tapApi}
         onSelect={setSelected}
       />
       <Sheet

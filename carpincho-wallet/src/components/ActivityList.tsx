@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Copyable } from '@/components/ui/Copyable'
+import { CopyableLabel } from '@/components/ui/CopyableLabel'
 import { DetailRow } from '@/components/ui/DetailRow'
 import { EYE_ICON, RECEIPT_ICON } from '@/components/ui/icons'
 import { JsonView } from '@/components/ui/JsonView'
@@ -102,15 +102,12 @@ const TransactionDetails = ({ tx }: { tx: TransactionRecord }): JSX.Element => (
     </dl>
     {hasCommandPayload(tx) && (
       <div className="mt-3">
-        <div className="mb-1.5 flex items-center gap-1.5">
-          <span className="text-[0.7rem] font-semibold uppercase text-muted-foreground">
-            Command payload
-          </span>
-          <Copyable
-            value={JSON.stringify(tx.commands, null, 2)}
-            label="command payload"
-          />
-        </div>
+        <CopyableLabel
+          className="mb-1.5"
+          label="Command payload"
+          value={JSON.stringify(tx.commands, null, 2)}
+          copyLabel="command payload"
+        />
         <JsonView value={tx.commands} />
       </div>
     )}

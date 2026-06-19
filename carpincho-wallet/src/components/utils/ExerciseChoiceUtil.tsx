@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { PrimaryButton } from '@/components/ui/Button'
-import { Copyable } from '@/components/ui/Copyable'
 import { TextInput } from '@/components/ui/TextInput'
 import { toast } from '@/components/ui/toast'
 import { JsonField } from '@/components/utils/JsonField'
+import { UpdateIdResult } from '@/components/utils/UpdateIdResult'
 import { exerciseContract as defaultExerciseContract } from '@/ledger/contracts'
 import { parseJsonObject } from '@/utils/json'
 import type { AccountPublic } from '@/vault/types'
@@ -112,20 +112,7 @@ export const ExerciseChoiceUtil = ({
         onChange={setJson}
         onValidityChange={setJsonValid}
       />
-      {updateId === undefined ? null : (
-        <div className="flex items-center justify-between gap-2 rounded-md border border-success/40 bg-success-soft px-3 py-2">
-          <div className="min-w-0">
-            <div className="text-[0.72rem] font-semibold uppercase tracking-wider text-muted-foreground">
-              Update ID
-            </div>
-            <div className="break-all font-mono text-[0.82rem] text-foreground">{updateId}</div>
-          </div>
-          <Copyable
-            value={updateId}
-            label="update ID"
-          />
-        </div>
-      )}
+      {updateId === undefined ? null : <UpdateIdResult updateId={updateId} />}
       <PrimaryButton
         type="submit"
         className="w-full"
