@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useState } from 'react'
 import { ActivityPanel } from '@/components/ActivityPanel'
 import { AssetsPanel } from '@/components/AssetsPanel'
-import { LedgerToolsPanel } from '@/components/LedgerToolsPanel'
 import type { Cip56SendApi } from '@/components/SendTokenForm'
+import { UtilsPanel } from '@/components/UtilsPanel'
 import { TabContent, Tabs, TabsList, TabTrigger } from '@/components/ui/Tabs'
 import type { AmuletPreapprovalApi } from '@/hooks/useAmuletPreapproval'
 import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
@@ -99,7 +99,7 @@ export const HomeTabs = ({
         value="utils"
         className={TAB_CONTENT_CLASS}
       >
-        <LedgerToolsPanel account={account} />
+        <UtilsPanel account={account} />
       </TabContent>
     </Tabs>
   )
