@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { type DarUploadResponse, uploadDarFile } from '@/api/walletService'
 import { PrimaryButton } from '@/components/ui/Button'
+import { FileDropInput } from '@/components/ui/FileDropInput'
 import { toast } from '@/components/ui/toast'
 
 export interface DarUploadApi {
@@ -44,31 +45,17 @@ export const DarUploadPanel = ({ api = defaultApi }: DarUploadPanelProps): JSX.E
         <span className="text-[0.82rem] font-semibold uppercase tracking-wider text-muted-foreground">
           DAR file
         </span>
-        <input
+        <FileDropInput
           id="dar-file"
-          type="file"
           accept=".dar,application/octet-stream"
-          aria-label="DAR file"
-          className="sr-only"
-          onChange={(event) => {
+          ariaLabel="DAR file"
+          prompt="Drop a .dar file or click to choose."
+          fileName={file?.name ?? null}
+          onSelect={(selected) => {
             setUploadedFileName(undefined)
-            setFile(event.currentTarget.files?.[0])
+            setFile(selected ?? undefined)
           }}
         />
-        <label
-          htmlFor="dar-file"
-          className="cursor-pointer rounded-md border border-dashed border-border bg-surface px-4 py-6 text-center hover:border-primary/60"
-        >
-          {file === undefined ? (
-            <span className="text-[0.82rem] font-medium text-muted-foreground">
-              Drop a .dar file or click to choose.
-            </span>
-          ) : (
-            <span className="rounded-sm bg-muted px-2 py-1">
-              <span className="font-mono text-[0.82rem] text-foreground">{file.name}</span>
-            </span>
-          )}
-        </label>
       </div>
       <PrimaryButton
         className="w-full"

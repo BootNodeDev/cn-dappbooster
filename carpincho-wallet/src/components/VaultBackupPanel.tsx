@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from 'react'
 import { ConfirmPasswordForm } from '@/components/ConfirmPasswordForm'
 import { PrimaryButton, SecondaryButton } from '@/components/ui/Button'
+import { FileDropInput } from '@/components/ui/FileDropInput'
 import { COPY_ICON } from '@/components/ui/icons'
 import { JsonView } from '@/components/ui/JsonView'
 import { TabContent, Tabs, TabsList, TabTrigger } from '@/components/ui/Tabs'
@@ -166,28 +167,14 @@ export const ImportVaultForm = ({ onImported }: ImportVaultFormProps): JSX.Eleme
           onSubmit={onUploadSubmit}
           className="flex flex-col gap-4"
         >
-          <input
+          <FileDropInput
             id="import-vault-file"
-            type="file"
             accept=".json,application/json"
-            aria-label="Vault JSON file"
-            className="sr-only"
-            onChange={(e) => setFile(e.currentTarget.files?.[0] ?? null)}
+            ariaLabel="Vault JSON file"
+            prompt="Drop a .json file or click to choose."
+            fileName={file?.name ?? null}
+            onSelect={setFile}
           />
-          <label
-            htmlFor="import-vault-file"
-            className="cursor-pointer rounded-md border border-dashed border-border bg-surface px-4 py-6 text-center hover:border-primary/60"
-          >
-            {file === null ? (
-              <span className="text-[0.82rem] font-medium text-muted-foreground">
-                Drop a .json file or click to choose.
-              </span>
-            ) : (
-              <span className="rounded-sm bg-muted px-2 py-1 font-mono text-[0.82rem] text-foreground">
-                {file.name}
-              </span>
-            )}
-          </label>
           <PrimaryButton
             type="submit"
             disabled={busy || file === null}
