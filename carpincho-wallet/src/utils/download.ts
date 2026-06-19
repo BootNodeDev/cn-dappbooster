@@ -10,7 +10,10 @@ export const downloadJson = (filename: string, data: unknown): void => {
   anchor.href = url
   anchor.download = filename
   document.body.appendChild(anchor)
-  anchor.click()
-  anchor.remove()
-  URL.revokeObjectURL(url)
+  try {
+    anchor.click()
+  } finally {
+    anchor.remove()
+    URL.revokeObjectURL(url)
+  }
 }

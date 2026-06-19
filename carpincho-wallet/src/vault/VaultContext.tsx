@@ -391,29 +391,39 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
       let imported = 0
       let skipped = 0
       let rejected = 0
-      for (const entry of envelope.accounts) {
+      for (const raw of envelope.accounts as unknown[]) {
+        const entry = raw as Record<string, unknown>
+        // Import is the only ungated, externally-supplied path, so reject any entry
+        // whose required fields are not strings before they reach the encrypted store.
+        if (
+          raw === null ||
+          typeof raw !== 'object' ||
+          typeof entry.name !== 'string' ||
+          typeof entry.partyId !== 'string' ||
+          typeof entry.publicKeyBase64 !== 'string' ||
+          typeof entry.privateKeyHex !== 'string' ||
+          typeof entry.network !== 'string'
+        ) {
+          rejected += 1
+          continue
+        }
+        const { name, partyId, publicKeyBase64, privateKeyHex, network } = entry
         let derived: string
         try {
-          derived = await derivePublicKeyBase64(entry.privateKeyHex)
+          derived = await derivePublicKeyBase64(privateKeyHex)
         } catch {
           rejected += 1
           continue
         }
-        if (derived !== entry.publicKeyBase64 || !/^.+::.+$/.test(entry.partyId)) {
+        if (derived !== publicKeyBase64 || !/^.+::.+$/.test(partyId)) {
           rejected += 1
           continue
         }
-        if (unlockedPlaintext.accounts.some((a) => a.partyId === entry.partyId)) {
+        if (unlockedPlaintext.accounts.some((a) => a.partyId === partyId)) {
           skipped += 1
           continue
         }
-        await addAccount({
-          name: entry.name,
-          partyId: entry.partyId,
-          network: entry.network,
-          privateKeyHex: entry.privateKeyHex,
-          publicKeyBase64: entry.publicKeyBase64,
-        })
+        await addAccount({ name, partyId, network, privateKeyHex, publicKeyBase64 })
         imported += 1
       }
       return { imported, skipped, rejected }

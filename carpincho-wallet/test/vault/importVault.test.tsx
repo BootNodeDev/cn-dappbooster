@@ -123,6 +123,33 @@ describe('VaultContext.importVault', () => {
     assert.deepEqual(result, { imported: 0, skipped: 1, rejected: 1 })
   })
 
+  it('rejects entries whose required fields are not strings', async () => {
+    const good = await generateKeypair()
+    const { ref } = captureVault()
+    await act(async () => {
+      await ref.current?.setup('correct-horse-battery')
+    })
+
+    let result: { imported: number; skipped: number; rejected: number } | undefined
+    await act(async () => {
+      result = await ref.current?.importVault(
+        envelopeOf([
+          null as unknown as never,
+          {
+            name: 42 as unknown as string,
+            partyId: 'alice::ns',
+            publicKeyBase64: good.publicKeyBase64,
+            privateKeyHex: good.privateKeyHex,
+            network: 'localnet',
+          },
+        ]),
+      )
+    })
+
+    assert.deepEqual(result, { imported: 0, skipped: 0, rejected: 2 })
+    assert.equal(ref.current?.accounts.length, 0)
+  })
+
   it('throws on a malformed envelope', async () => {
     const { ref } = captureVault()
     await act(async () => {

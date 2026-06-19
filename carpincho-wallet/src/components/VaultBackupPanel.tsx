@@ -6,7 +6,7 @@ import { JsonView } from '@/components/ui/JsonView'
 import { TabContent, Tabs, TabsList, TabTrigger } from '@/components/ui/Tabs'
 import { INPUT_CLASS } from '@/components/ui/TextInput'
 import { toast } from '@/components/ui/toast'
-import { copyText } from '@/utils/clipboard'
+import { copySecret } from '@/utils/clipboard'
 import { cn } from '@/utils/cn'
 import { downloadJson } from '@/utils/download'
 import type { VaultEnvelope } from '@/vault/types'
@@ -15,7 +15,7 @@ import { useVault } from '@/vault/useVault'
 const backupFilename = (): string => {
   const d = new Date()
   const p = (n: number): string => String(n).padStart(2, '0')
-  const stamp = `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`
+  const stamp = `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`
   return `carpincho-vault-${stamp}.json`
 }
 
@@ -54,7 +54,12 @@ export const ExportVaultView = (): JSX.Element => {
       <div className="flex gap-3">
         <SecondaryButton
           className="flex-1"
-          onClick={() => copyText(JSON.stringify(envelope, null, 2), 'Vault backup copied.')}
+          onClick={() =>
+            copySecret(
+              JSON.stringify(envelope, null, 2),
+              'Vault backup copied. Clipboard clears in 60s.',
+            )
+          }
         >
           {COPY_ICON}
           Copy JSON
@@ -94,7 +99,11 @@ export const ImportVaultForm = ({ onImported }: ImportVaultFormProps): JSX.Eleme
     try {
       const r = await v.importVault(envelope)
       toast.success(`Imported ${r.imported}, skipped ${r.skipped}, rejected ${r.rejected}.`)
-      onImported?.()
+      // Only leave the screen when something landed; otherwise stay so the counts
+      // (all skipped/rejected) remain readable and the user can retry.
+      if (r.imported > 0) {
+        onImported?.()
+      }
     } catch (err) {
       toast.error(`Import vault failed: ${err instanceof Error ? err.message : String(err)}`)
     } finally {

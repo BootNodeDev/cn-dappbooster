@@ -118,6 +118,7 @@ describe('ImportVaultForm', () => {
     fireEvent.change(textarea, { target: { value: JSON.stringify(envelope) } })
     await user.click(screen.getByRole('button', { name: /^import vault$/i }))
     await waitFor(() => assert.equal(calls.length, 1))
+    assert.deepEqual(calls[0], envelope)
     const entries = getToastEntries()
     assert.ok(entries.some((e) => typeof e.message === 'string' && /imported 2/i.test(e.message)))
   })
