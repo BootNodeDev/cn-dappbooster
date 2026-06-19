@@ -73,4 +73,27 @@ describe('ConfigureRpcStep', () => {
     await userEvent.type(screen.getByLabelText(/wallet-service rpc url/i), 'x')
     assert.equal(continueButton().disabled, true)
   })
+
+  it('auto-recovers and enables Continue once wallet-service comes up', async () => {
+    let reachable = false
+    globalThis.fetch = async () => {
+      if (!reachable) throw new Error('Failed to fetch')
+      return new Response(
+        JSON.stringify({
+          result: {
+            connection: { isNetworkConnected: true },
+            network: { networkId: 'canton:local' },
+          },
+        }),
+        { status: 200 },
+      )
+    }
+    render(<ConfigureRpcStep onConfirmed={() => undefined} />)
+    await waitFor(() => assert.ok(screen.getByText(/can.t reach wallet-service/i)), {
+      timeout: 2000,
+    })
+    assert.equal(continueButton().disabled, true)
+    reachable = true
+    await waitFor(() => assert.equal(continueButton().disabled, false), { timeout: 5000 })
+  })
 })

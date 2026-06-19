@@ -13,7 +13,8 @@ afterEach(() => {
 
 test('accepts a short password once it meets the strength score', async () => {
   const { getByTestId } = render(<Probe />)
-  await waitFor(() => assert.equal(getByTestId('ready').textContent, 'ready'))
+  // Lazy zxcvbn dictionary load can exceed waitFor's 1s default under full-suite load.
+  await waitFor(() => assert.equal(getByTestId('ready').textContent, 'ready'), { timeout: 5000 })
   // 8 chars (under the former 9-char floor) but scores 1, the default minimum.
   assert.equal(isPasswordAcceptable('monkey99'), true)
 })
