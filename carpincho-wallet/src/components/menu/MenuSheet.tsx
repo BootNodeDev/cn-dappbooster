@@ -98,7 +98,9 @@ export const MenuSheet = ({ open, onOpenChange }: MenuSheetProps): JSX.Element =
         {screen === 'theme' && <ThemeMenu />}
         {screen === 'password' && <PasswordForm />}
         {screen === 'auto-lock' && <AutoLockList />}
-        {screen === 'export-vault' && <ExportVaultView />}
+        {screen === 'export-vault' && (
+          <ExportVaultView onExported={() => handleOpenChange(false)} />
+        )}
         {screen === 'import-vault' && (
           <ImportVaultForm onImported={() => handleOpenChange(false)} />
         )}

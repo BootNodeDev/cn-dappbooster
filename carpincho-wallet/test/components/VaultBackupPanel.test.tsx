@@ -67,9 +67,10 @@ describe('ExportVaultView', () => {
     cleanup()
   })
 
-  it('encrypts then downloads a backup after a correct password; no copy/plaintext reveal', async () => {
+  it('downloads the encrypted backup, toasts, and closes the menu after a correct password', async () => {
     const user = userEvent.setup()
     let askedPassword: string | null = null
+    let closed = false
     renderWithVault(
       {
         verifyPassword: () => true,
@@ -78,20 +79,17 @@ describe('ExportVaultView', () => {
           return sampleBackup
         },
       },
-      <ExportVaultView />,
+      <ExportVaultView
+        onExported={() => {
+          closed = true
+        }}
+      />,
     )
 
-    // Before verifying: no download, and never a Copy-JSON control.
-    assert.equal(screen.queryByRole('button', { name: /download backup/i }), null)
+    // Never a Copy-JSON control, and no intermediate reveal step.
     assert.equal(screen.queryByRole('button', { name: /copy json/i }), null)
 
-    await user.type(screen.getByLabelText(/confirm password/i), 'correct-horse-battery')
-    await user.click(screen.getByRole('button', { name: /encrypt backup/i }))
-    await waitFor(() => assert.ok(screen.getByRole('button', { name: /download backup/i })))
-    assert.equal(askedPassword, 'correct-horse-battery')
-    assert.equal(screen.queryByRole('button', { name: /copy json/i }), null)
-
-    // Stub the download surface and assert the encrypted file is written with the right name.
+    // Export is a single action: verifying the password downloads immediately.
     const clicks: Array<{ download: string }> = []
     Object.defineProperty(window, 'isSecureContext', { value: true, configurable: true })
     const originalCreate = URL.createObjectURL
@@ -103,9 +101,17 @@ describe('ExportVaultView', () => {
       clicks.push({ download: this.download })
     }
     try {
-      await user.click(screen.getByRole('button', { name: /download backup/i }))
-      assert.equal(clicks.length, 1)
+      await user.type(screen.getByLabelText(/confirm password/i), 'correct-horse-battery')
+      await user.click(screen.getByRole('button', { name: /^export$/i }))
+      await waitFor(() => assert.equal(clicks.length, 1))
       assert.match(clicks[0]?.download ?? '', /^carpincho-backup-.*\.json$/)
+      assert.equal(askedPassword, 'correct-horse-battery')
+      assert.equal(closed, true)
+      assert.ok(
+        getToastEntries().some(
+          (e) => typeof e.message === 'string' && /backup downloaded/i.test(e.message),
+        ),
+      )
     } finally {
       URL.createObjectURL = originalCreate
       URL.revokeObjectURL = originalRevoke
@@ -143,7 +149,7 @@ describe('ImportVaultForm', () => {
     })
     await user.upload(screen.getByLabelText(/backup file/i), file)
     await user.type(screen.getByLabelText(/backup password/i), 'correct-horse-battery')
-    await user.click(screen.getByRole('button', { name: /^import backup$/i }))
+    await user.click(screen.getByRole('button', { name: /^import$/i }))
 
     await waitFor(() => assert.equal(calls.length, 1))
     assert.deepEqual(calls[0]?.file, sampleBackup)
@@ -174,7 +180,7 @@ describe('ImportVaultForm', () => {
     })
     await user.upload(screen.getByLabelText(/backup file/i), file)
     await user.type(screen.getByLabelText(/backup password/i), 'wrong-pw-typed')
-    await user.click(screen.getByRole('button', { name: /^import backup$/i }))
+    await user.click(screen.getByRole('button', { name: /^import$/i }))
 
     await waitFor(() =>
       assert.ok(
@@ -201,7 +207,7 @@ describe('ImportVaultForm', () => {
     const file = new File(['not json'], 'backup.json', { type: 'application/json' })
     await user.upload(screen.getByLabelText(/backup file/i), file)
     await user.type(screen.getByLabelText(/backup password/i), 'whatever-pw')
-    await user.click(screen.getByRole('button', { name: /^import backup$/i }))
+    await user.click(screen.getByRole('button', { name: /^import$/i }))
 
     await waitFor(() =>
       assert.ok(

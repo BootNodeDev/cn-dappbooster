@@ -1,16 +1,11 @@
 import { type FormEvent, useState } from 'react'
 import { ConfirmPasswordForm } from '@/components/ConfirmPasswordForm'
-import { Alert } from '@/components/ui/Alert'
-import { PrimaryButton, SecondaryButton } from '@/components/ui/Button'
+import { PrimaryButton } from '@/components/ui/Button'
 import { FileDropInput } from '@/components/ui/FileDropInput'
 import { PasswordInput } from '@/components/ui/PasswordInput'
 import { toast } from '@/components/ui/toast'
 import { downloadJson } from '@/utils/download'
-import type { CarpinchoBackup } from '@/vault/types'
 import { useVault } from '@/vault/useVault'
-
-const ENCRYPTED_BANNER =
-  'This file is encrypted with the password of the vault it was exported from.'
 
 const backupFilename = (): string => {
   const d = new Date()
@@ -19,50 +14,39 @@ const backupFilename = (): string => {
   return `carpincho-backup-${stamp}.json`
 }
 
-// Confirms the vault password, encrypts a backup of every account under it, then offers
-// a single download. The encrypted container is safe to hold in state (no plaintext keys).
-export const ExportVaultView = (): JSX.Element => {
+interface ExportVaultViewProps {
+  onExported?: () => void
+}
+
+// Confirms the vault password, encrypts a backup of every account under it, and downloads
+// the file directly. The encrypted container never lands in React state and is never logged.
+export const ExportVaultView = ({ onExported }: ExportVaultViewProps): JSX.Element => {
   const v = useVault()
-  const [backup, setBackup] = useState<CarpinchoBackup | null>(null)
 
   const onVerified = (password: string): void => {
     void (async () => {
       try {
-        setBackup(await v.exportEncryptedVault(password))
+        const backup = await v.exportEncryptedVault(password)
+        downloadJson(backupFilename(), backup)
+        toast.success('Encrypted backup downloaded.')
+        onExported?.()
       } catch (err) {
         toast.error(err instanceof Error ? err.message : 'Export failed.')
       }
     })()
   }
 
-  if (backup === null) {
-    return (
-      <ConfirmPasswordForm
-        label="Confirm password"
-        submitLabel="Encrypt backup"
-        onVerified={onVerified}
-      >
-        <Alert variant="info">{ENCRYPTED_BANNER}</Alert>
-        <p className="text-[0.85rem] text-muted-foreground">
-          This is the password used to encrypt your file. You'll need it to import.
-        </p>
-      </ConfirmPasswordForm>
-    )
-  }
-
-  const onDownload = (): void => {
-    try {
-      downloadJson(backupFilename(), backup)
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Download failed.')
-    }
-  }
-
   return (
-    <div className="flex flex-col gap-4">
-      <Alert variant="success">Encrypted backup ready.</Alert>
-      <SecondaryButton onClick={onDownload}>Download backup</SecondaryButton>
-    </div>
+    <ConfirmPasswordForm
+      label="Confirm password"
+      submitLabel="Export"
+      onVerified={onVerified}
+    >
+      <p className="text-[0.85rem] text-muted-foreground">
+        The current vault's password will be used to encrypt the exported file. You'll need it to
+        import the accounts, so make sure not to lose or forget it.
+      </p>
+    </ConfirmPasswordForm>
   )
 }
 
@@ -111,7 +95,6 @@ export const ImportVaultForm = ({ onImported }: ImportVaultFormProps): JSX.Eleme
       onSubmit={onSubmit}
       className="flex flex-col gap-4"
     >
-      <Alert variant="info">{ENCRYPTED_BANNER}</Alert>
       <FileDropInput
         id="import-vault-file"
         accept=".json,application/json"
@@ -137,7 +120,7 @@ export const ImportVaultForm = ({ onImported }: ImportVaultFormProps): JSX.Eleme
         type="submit"
         disabled={busy || file === null || password === ''}
       >
-        {busy ? 'Importing...' : 'Import backup'}
+        {busy ? 'Importing...' : 'Import'}
       </PrimaryButton>
     </form>
   )
