@@ -153,21 +153,23 @@ export const ActivityList = ({ transactions }: ActivityListProps): JSX.Element =
                   {RECEIPT_ICON}
                 </span>
                 <span className="min-w-0">
-                  <span className="flex items-baseline gap-2">
-                    <span className="truncate text-[0.94rem] font-semibold text-foreground">
-                      {txTitle(tx)}
-                    </span>
-                    <span className="shrink-0 whitespace-nowrap text-[0.72rem] font-normal italic text-muted-foreground">
-                      {TIME_FMT.format(tx.createdAt)}
-                    </span>
+                  <span className="block truncate text-[0.94rem] font-semibold text-foreground">
+                    {txTitle(tx)}
                   </span>
-                  <span className="block text-[0.84rem] font-medium text-success">Confirmed</span>
+                  <span className="mt-0.5 block text-[0.76rem] text-muted-foreground">
+                    {TIME_FMT.format(tx.createdAt)}
+                  </span>
                 </span>
-                <span
-                  aria-hidden="true"
-                  className="grid size-8 place-items-center justify-self-end text-muted-foreground [&_svg]:size-4"
-                >
-                  {EYE_ICON}
+                <span className="flex items-center gap-2 justify-self-end">
+                  <span className="shrink-0 rounded-full border border-success/40 bg-success-soft px-2.5 py-1 text-[0.72rem] font-semibold text-success">
+                    Confirmed
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className="grid size-8 place-items-center text-muted-foreground [&_svg]:size-4"
+                  >
+                    {EYE_ICON}
+                  </span>
                 </span>
               </button>
             ))}
