@@ -96,6 +96,11 @@ describe('TransferCard', () => {
       />,
     )
 
-    assert.ok(screen.getByRole('button', { name: 'Accepting...' }))
+    const acceptingButton = screen.getByRole('button', { name: 'Accepting...' })
+    assert.ok(acceptingButton)
+    assert.ok(
+      acceptingButton.hasAttribute('disabled'),
+      'Accept button must be disabled while accepting',
+    )
   })
 })
