@@ -77,7 +77,7 @@ describe('ExportVaultView', () => {
     )
     assert.equal(screen.queryByRole('button', { name: /copy json/i }), null)
     await user.type(screen.getByLabelText(/confirm password/i), 'right-right-1')
-    await user.click(screen.getByRole('button', { name: /reveal/i }))
+    await user.click(screen.getByRole('button', { name: /accept/i }))
     // The reveal view (JsonView + Copy/Download) only mounts after a correct password.
     await waitFor(() => assert.ok(screen.getByRole('button', { name: /copy json/i })))
   })

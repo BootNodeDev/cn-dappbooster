@@ -30,7 +30,7 @@ export const ExportVaultView = (): JSX.Element => {
     return (
       <ConfirmPasswordForm
         label="Confirm password"
-        submitLabel="Reveal vault backup"
+        submitLabel="Accept"
         onVerified={() => setEnvelope(v.exportVault())}
       >
         <p className="text-[0.85rem] text-muted-foreground">
