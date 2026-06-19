@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { PendingTokenTransfer } from '@/cip56/transfers'
 import { transferDirection } from '@/cip56/transfers'
 import { ActivityList } from '@/components/ActivityList'
@@ -49,14 +49,22 @@ export const ActivityPanel = ({
     return { incoming: incomingTransfers, outgoing: outgoingTransfers }
   }, [transfers, activeAccount?.partyId])
 
+  // Hold the latest callback in a ref so the count effects don't depend on its identity;
+  // a parent that re-creates the callback must not trigger a spurious reset mid-session.
+  const onPendingCountChangeRef = useRef(onPendingCountChange)
+  useEffect(() => {
+    onPendingCountChangeRef.current = onPendingCountChange
+  })
+
   // Only incoming transfers need receiver action, so the badge counts those alone.
   useEffect(() => {
-    onPendingCountChange?.(incoming.length)
-  }, [onPendingCountChange, incoming.length])
+    onPendingCountChangeRef.current?.(incoming.length)
+  }, [incoming.length])
 
+  // Reset the parent's count when this panel unmounts (e.g. account teardown).
   useEffect(() => {
-    return () => onPendingCountChange?.(0)
-  }, [onPendingCountChange])
+    return () => onPendingCountChangeRef.current?.(0)
+  }, [])
 
   // Runs the receiver-acceptance flow while keeping the button state scoped to one transfer.
   const onAccept = async (transferInstructionCid: string): Promise<void> => {

@@ -241,4 +241,32 @@ describe('ActivityPanel', () => {
     await screen.findByText('Send 25 AMT')
     await screen.findByText('Confirmed')
   })
+
+  it('resets the pending count to zero when unmounted', async () => {
+    // Scenario: when the panel tears down (e.g. account switch), the parent badge must clear.
+    const counts: number[] = []
+    const api: Cip56TransferApi = {
+      listPendingIncomingTransfers: async () => [
+        {
+          contractId: 'incoming-cid-1',
+          interfaceViewValue: {
+            transfer: {
+              sender: 'sender-party-1234567890abcdef',
+              receiver: 'alice::party',
+              amount: '3',
+              instrumentId: { id: 'Amulet' },
+            },
+          },
+        },
+      ],
+      acceptTransfer: async () => ({ updateId: 'update-1' }),
+    }
+
+    renderPanel(api, [], (count) => counts.push(count))
+
+    await screen.findByText('Needs action')
+    await waitFor(() => assert.equal(counts.at(-1), 1))
+    cleanup()
+    assert.equal(counts.at(-1), 0)
+  })
 })
