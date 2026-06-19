@@ -1,19 +1,7 @@
 import type { PendingTokenTransfer } from '@/cip56/transfers'
 import { transferStatusLabel, transferTimeLabel } from '@/cip56/transfers'
+import { DetailRow } from '@/components/ui/DetailRow'
 import { Sheet } from '@/components/ui/Sheet'
-
-interface TransferDetailRowProps {
-  label: string
-  value: string
-}
-
-// Keeps long Canton identifiers readable inside the details sheet.
-const TransferDetailRow = ({ label, value }: TransferDetailRowProps): JSX.Element => (
-  <div className="grid gap-1">
-    <dt className="text-[0.7rem] font-semibold uppercase text-muted-foreground">{label}</dt>
-    <dd className="m-0 break-all font-mono text-[0.74rem] leading-5 text-foreground">{value}</dd>
-  </div>
-)
 
 interface TransferDetailsSheetProps {
   transfer: PendingTokenTransfer | null
@@ -38,27 +26,27 @@ export const TransferDetailsSheet = ({
     >
       {transfer === null ? null : (
         <dl className="grid gap-3">
-          <TransferDetailRow
+          <DetailRow
             label="status"
             value={transferStatusLabel(transfer)}
           />
-          <TransferDetailRow
+          <DetailRow
             label="requested"
             value={transferTimeLabel(view?.requestedAt)}
           />
-          <TransferDetailRow
+          <DetailRow
             label="expires"
             value={transferTimeLabel(view?.executeBefore)}
           />
-          <TransferDetailRow
+          <DetailRow
             label="sender"
             value={view?.sender ?? 'unknown'}
           />
-          <TransferDetailRow
+          <DetailRow
             label="receiver"
             value={view?.receiver ?? 'unknown'}
           />
-          <TransferDetailRow
+          <DetailRow
             label="contract id"
             value={transfer.contractId}
           />

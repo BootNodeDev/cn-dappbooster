@@ -94,6 +94,10 @@ export const ActivityPanel = ({
   // Hide the in-flight transfer from the actionable list as soon as Accept is clicked.
   const visibleIncoming = incoming.filter((transfer) => transfer.contractId !== acceptingCid)
   const hasPending = incoming.length > 0 || outgoing.length > 0
+  const showLoading = loading && !hasPending && transactions.length === 0
+  // ActivityList owns the "No activity yet" empty state, so render it only when there is real
+  // history or nothing is pending; otherwise that text reads as empty beneath the pending cards.
+  const showHistory = !showLoading && (transactions.length > 0 || !hasPending)
 
   return (
     <div className="flex min-h-full flex-col gap-3 px-1 pt-3 pb-2">
@@ -136,13 +140,8 @@ export const ActivityPanel = ({
         </section>
       ) : null}
 
-      {loading && !hasPending && transactions.length === 0 ? (
-        <LoadingState label="Loading transfers" />
-      ) : transactions.length > 0 || !hasPending ? (
-        // Only the settled-history list owns the "No activity yet" empty state, so suppress it
-        // while transfers are pending — otherwise it reads as empty beneath the pending cards.
-        <ActivityList transactions={transactions} />
-      ) : null}
+      {showLoading ? <LoadingState label="Loading transfers" /> : null}
+      {showHistory ? <ActivityList transactions={transactions} /> : null}
 
       <TransferDetailsSheet
         transfer={detailsTransfer}
