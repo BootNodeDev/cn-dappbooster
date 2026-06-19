@@ -1,7 +1,6 @@
 import { strict as assert } from 'node:assert'
 import { afterEach, describe, it } from 'node:test'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { cleanup, render, screen } from '@testing-library/react'
 import { TooltipProvider } from '@/components/ui/Tooltip'
 import { VaultContext, type VaultContextValue } from '@/vault/VaultContext'
 import { OnboardingFlow } from '@/views/onboarding/OnboardingFlow'
@@ -98,20 +97,13 @@ describe('OnboardingFlow', () => {
     assert.equal(screen.queryByTestId('add-account-cancel'), null)
   })
 
-  it('opens wallet-service settings from the account step footer', async () => {
-    // Scenario: after the password step creates the vault, the user may still need to point
-    // Carpincho at a different wallet-service before creating the first Canton party.
+  it('does not render the connection footer on the account step', () => {
+    // Connection config moved to its own onboarding step, so the account step is just the form.
     installWalletServiceStatus()
 
-    // Render onboarding directly at step 2: the vault exists, but no account has been created yet.
-    const user = userEvent.setup()
     renderFlow({ hasVault: true, accounts: [] })
 
-    // The existing footer should report the configured wallet-service status on this step.
-    await waitFor(() => assert.ok(screen.getByText('local')))
-
-    // Opening the footer settings should show the same wallet-service URL field used after setup.
-    await user.click(screen.getByRole('button', { name: 'Connection settings' }))
-    assert.ok(screen.getByLabelText('Wallet-service RPC URL'))
+    // The "Connection settings" button should not be present since the footer is gone.
+    assert.equal(screen.queryByRole('button', { name: 'Connection settings' }), null)
   })
 })
