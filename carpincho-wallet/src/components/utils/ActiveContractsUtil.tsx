@@ -117,7 +117,6 @@ export const ActiveContractsUtil = ({
         </span>
         <TextInput
           id="contract-filter"
-          type="text"
           value={filterQuery}
           onChange={(event) => setFilterQuery(event.currentTarget.value)}
           placeholder="Template or contract id"
