@@ -57,8 +57,8 @@ src/
   extension/        Chrome extension scripts: background, content script, provider injection
   provider/         CIP-0103 wallet provider — request dispatcher and method handlers
   vault/            Encrypted local vault: PBKDF2 key derivation, AES-GCM storage, React context
-  utils/            Pure helpers (account formatting, clipboard, classnames cn, JSON pretty-print, file download)
-  views/            Top-level UI views (onboarding/* two-step wizard, Unlock, Home,
+  utils/            Pure helpers (account formatting, clipboard, classnames cn, JSON pretty-print, file download, network-id display)
+  views/            Top-level UI views (onboarding/* three-step wizard (vault → RPC → first account), Unlock, Home,
                     ConnectionSettings) plus home/* — the extracted HomeView logic
                     (pending-actions state, extension/provider request handling,
                     WalletConnect lifecycle, transaction summarising)
@@ -212,7 +212,7 @@ Three providers wrap the app. `ThemeProvider` is mounted outermost (in `src/main
       </TooltipProvider>
 ```
 
-There is no router. `Shell` picks one view from `useVault()` via the pure `selectShellView` helper in `src/App.tsx`, branching on `hasVault`, `isLocked`, and `accounts.length`: no vault → `OnboardingFlow` (step 1, create vault); unlocked vault with no account yet → `OnboardingFlow` (step 2, create first account); locked vault → `UnlockView`; unlocked vault with at least one account → `HomeView`. While `useVault()` reports `isLoading`, `Shell` renders a centred spinner instead of any view so the session-restore decision lands in one paint and the Unlock screen never flashes.
+There is no router. `Shell` picks one view from `useVault()` via the pure `selectShellView` helper in `src/App.tsx`, branching on `hasVault`, `isLocked`, and `accounts.length`: no vault → `OnboardingFlow` starting at the create-vault step; unlocked vault with no account yet → `OnboardingFlow` which runs the Configure RPC step (gated on a wallet-service probe) then the create-first-account step; locked vault → `UnlockView`; unlocked vault with at least one account → `HomeView`. While `useVault()` reports `isLoading`, `Shell` renders a centred spinner instead of any view so the session-restore decision lands in one paint and the Unlock screen never flashes.
 
 The Menu drawer lives in `src/components/menu/`: `MenuSheet.tsx` is the navigation orchestrator (wraps the shared `Sheet` primitive with `side="right"`, opening as a 400px-wide top-aligned panel clamped by `100vw` that slides in via `animate-sheet-slide-right`), `screens.ts` holds the `Screen` union plus the `SCREENS` metadata map and the `MENU_LISTS` row data for the navigation-list screens, `MenuList.tsx` renders those rows, and `ThemeMenu.tsx` is the Theme leaf. It manages internal screen state (`root` → `theme` | `vault`; `vault` → `password` | `auto-lock` | `export-vault` | `import-vault`); each in-drawer transition uses `animate-slide-in-right` (forward) or `animate-slide-in-left` (back). Navigation-list screens are data-driven via `MENU_LISTS`; leaf screens (`theme`, `password`, `auto-lock`, `export-vault`, `import-vault`) render a component. Every new option must be added as another `Screen` with an entry in the `SCREENS` map (`title`, `description`, `parent`); accordion-style expansion inside a screen is disallowed.
 
