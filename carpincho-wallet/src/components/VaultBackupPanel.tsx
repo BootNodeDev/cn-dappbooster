@@ -23,24 +23,22 @@ interface ExportVaultViewProps {
 export const ExportVaultView = ({ onExported }: ExportVaultViewProps): JSX.Element => {
   const v = useVault()
 
-  const onVerified = (password: string): void => {
-    void (async () => {
-      try {
-        const backup = await v.exportEncryptedVault(password)
-        downloadJson(backupFilename(), backup)
-        toast.success('Encrypted backup downloaded.')
-        onExported?.()
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Export failed.')
-      }
-    })()
+  const exportBackup = async (password: string): Promise<void> => {
+    try {
+      const backup = await v.exportEncryptedVault(password)
+      downloadJson(backupFilename(), backup)
+      toast.success('Encrypted backup downloaded.')
+      onExported?.()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Export failed.')
+    }
   }
 
   return (
     <ConfirmPasswordForm
       label="Confirm password"
       submitLabel="Export"
-      onVerified={onVerified}
+      onVerified={(password) => void exportBackup(password)}
     >
       <p className="text-[0.85rem] text-muted-foreground">
         The current vault's password will be used to encrypt the exported file. You'll need it to
