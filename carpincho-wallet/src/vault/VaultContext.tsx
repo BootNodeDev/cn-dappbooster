@@ -56,6 +56,14 @@ const AUTO_LOCK_MS: Record<AutoLockOption, number | null> = {
 }
 const MAX_TRANSACTION_HISTORY = 50
 
+interface NewAccountArgs {
+  name: string
+  partyId: string
+  network: string
+  privateKeyHex: string
+  publicKeyBase64: string
+}
+
 let unlockedPlaintext: VaultPlaintext | null = null
 let cachedPassword: string | null = null
 
@@ -106,13 +114,7 @@ export interface VaultContextValue {
   primary: AccountPublic | null
   transactions: TransactionRecord[]
   setPrimary: (id: string) => Promise<void>
-  addAccount: (args: {
-    name: string
-    partyId: string
-    network: string
-    privateKeyHex: string
-    publicKeyBase64: string
-  }) => Promise<AccountPublic>
+  addAccount: (args: NewAccountArgs) => Promise<AccountPublic>
   removeAccount: (id: string) => Promise<void>
   exportEncryptedVault: (password: string) => Promise<CarpinchoBackup>
   importEncryptedVault: (file: unknown, password: string) => Promise<ImportVaultResult>
@@ -272,39 +274,40 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
     [persist, bump, accountsChangedPayload],
   )
 
+  // In-memory insert shared by addAccount and the import merge: pushes the secret
+  // and seeds primary if unset. Caller owns persist()/bump()/broadcast so a batch
+  // import re-encrypts once instead of once per account. Assumes an unlocked vault.
+  const insertAccount = useCallback((args: NewAccountArgs): AccountSecret => {
+    if (unlockedPlaintext === null) {
+      throw new Error('vault locked')
+    }
+    const secret: AccountSecret = {
+      id: generateId(),
+      name: args.name,
+      partyId: args.partyId,
+      privateKeyHex: args.privateKeyHex,
+      publicKeyBase64: args.publicKeyBase64,
+      network: args.network,
+      createdAt: Date.now(),
+    }
+    unlockedPlaintext.accounts.push(secret)
+    if (unlockedPlaintext.primaryAccountId === null) {
+      unlockedPlaintext.primaryAccountId = secret.id
+    }
+    return secret
+  }, [])
+
   // Caller supplies the keypair (already used to create the Canton party);
   // generating one here would desync the vault entry from the account.
   const addAccount = useCallback(
-    async (args: {
-      name: string
-      partyId: string
-      network: string
-      privateKeyHex: string
-      publicKeyBase64: string
-    }): Promise<AccountPublic> => {
-      if (unlockedPlaintext === null) {
-        throw new Error('vault locked')
-      }
-      const id = generateId()
-      const secret: AccountSecret = {
-        id,
-        name: args.name,
-        partyId: args.partyId,
-        privateKeyHex: args.privateKeyHex,
-        publicKeyBase64: args.publicKeyBase64,
-        network: args.network,
-        createdAt: Date.now(),
-      }
-      unlockedPlaintext.accounts.push(secret)
-      if (unlockedPlaintext.primaryAccountId === null) {
-        unlockedPlaintext.primaryAccountId = id
-      }
+    async (args: NewAccountArgs): Promise<AccountPublic> => {
+      const secret = insertAccount(args)
       await persist()
       bump()
       void broadcastWalletEvent('accountsChanged', accountsChangedPayload())
-      return toPublic(secret, unlockedPlaintext.primaryAccountId)
+      return toPublic(secret, unlockedPlaintext?.primaryAccountId ?? null)
     },
-    [persist, bump, accountsChangedPayload],
+    [insertAccount, persist, bump, accountsChangedPayload],
   )
 
   const recordTransaction = useCallback(
@@ -425,12 +428,18 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
           skipped += 1
           continue
         }
-        await addAccount({ name, partyId, network, privateKeyHex, publicKeyBase64 })
+        insertAccount({ name, partyId, network, privateKeyHex, publicKeyBase64 })
         imported += 1
+      }
+      // Re-encrypt once for the whole batch rather than per account.
+      if (imported > 0) {
+        await persist()
+        bump()
+        void broadcastWalletEvent('accountsChanged', accountsChangedPayload())
       }
       return { imported, skipped, rejected }
     },
-    [addAccount],
+    [insertAccount, persist, bump, accountsChangedPayload],
   )
 
   const exportEncryptedVault = useCallback(

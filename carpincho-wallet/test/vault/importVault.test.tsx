@@ -244,6 +244,46 @@ describe('VaultContext.importEncryptedVault', () => {
     assert.deepEqual(result, { imported: 1, skipped: 1, rejected: 1 })
   })
 
+  it('persists every account from a multi-account batch in one re-encryption', async () => {
+    const alice = await generateKeypair()
+    const bob = await generateKeypair()
+    const backup = await makeBackup(SOURCE_PW, [
+      {
+        name: 'alice',
+        partyId: 'alice::ns',
+        publicKeyBase64: alice.publicKeyBase64,
+        privateKeyHex: alice.privateKeyHex,
+        network: 'devnet',
+      },
+      {
+        name: 'bob',
+        partyId: 'bob::ns',
+        publicKeyBase64: bob.publicKeyBase64,
+        privateKeyHex: bob.privateKeyHex,
+        network: 'devnet',
+      },
+    ])
+    const { ref } = captureVault()
+    await act(async () => {
+      await ref.current?.setup(DEST_PW)
+    })
+    let result: ImportVaultResult | undefined
+    await act(async () => {
+      result = await ref.current?.importEncryptedVault(backup, SOURCE_PW)
+    })
+    assert.deepEqual(result, { imported: 2, skipped: 0, rejected: 0 })
+
+    // Both must survive a lock/unlock, proving the batch was re-encrypted to disk.
+    await act(async () => {
+      ref.current?.lock()
+    })
+    await act(async () => {
+      await ref.current?.unlock(DEST_PW)
+    })
+    const names = ref.current?.accounts.map((a) => a.name).sort()
+    assert.deepEqual(names, ['alice', 'bob'])
+  })
+
   it('rejects import when the destination vault is locked', async () => {
     const kp = await generateKeypair()
     const backup = await makeBackup(SOURCE_PW, [
