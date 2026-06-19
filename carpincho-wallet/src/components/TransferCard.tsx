@@ -10,7 +10,6 @@ interface TransferCardProps {
   transfer: PendingTokenTransfer
   direction: 'incoming' | 'outgoing'
   // Acceptance only applies to incoming transfers; senders just watch theirs settle.
-  isAccepting?: boolean
   onAccept?: (transferInstructionCid: string) => void | Promise<void>
   onOpenDetails: (transfer: PendingTokenTransfer) => void
 }
@@ -23,7 +22,6 @@ const EYE_BUTTON_CLASS =
 export const TransferCard = ({
   transfer,
   direction,
-  isAccepting = false,
   onAccept,
   onOpenDetails,
 }: TransferCardProps): JSX.Element => {
@@ -103,12 +101,11 @@ export const TransferCard = ({
         <div className="flex shrink-0 items-center gap-2">
           <PrimaryButton
             className="px-3 py-1.5 text-[0.82rem]"
-            disabled={isAccepting}
             onClick={() => {
               void onAccept?.(transfer.contractId)
             }}
           >
-            {isAccepting ? 'Accepting...' : 'Accept'}
+            Accept
           </PrimaryButton>
           {detailsButton}
         </div>

@@ -83,24 +83,4 @@ describe('TransferCard', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Transfer details' }))
     assert.equal(opened?.contractId, 'outgoing-cid-1')
   })
-
-  it('shows a busy label while accepting', () => {
-    // Scenario: the Accept button reflects the in-flight state for its own transfer.
-    render(
-      <TransferCard
-        transfer={INCOMING}
-        direction="incoming"
-        isAccepting
-        onAccept={() => undefined}
-        onOpenDetails={() => undefined}
-      />,
-    )
-
-    const acceptingButton = screen.getByRole('button', { name: 'Accepting...' })
-    assert.ok(acceptingButton)
-    assert.ok(
-      acceptingButton.hasAttribute('disabled'),
-      'Accept button must be disabled while accepting',
-    )
-  })
 })
