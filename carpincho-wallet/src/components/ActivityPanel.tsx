@@ -54,7 +54,7 @@ export const ActivityPanel = ({
   const onPendingCountChangeRef = useRef(onPendingCountChange)
   useEffect(() => {
     onPendingCountChangeRef.current = onPendingCountChange
-  })
+  }, [onPendingCountChange])
 
   // Only incoming transfers need receiver action, so the badge counts those alone.
   useEffect(() => {
@@ -65,6 +65,14 @@ export const ActivityPanel = ({
   useEffect(() => {
     return () => onPendingCountChangeRef.current?.(0)
   }, [])
+
+  if (activeAccount === undefined) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center px-4 py-10 text-center">
+        <p className="m-0 text-[0.95rem] font-medium text-muted-foreground">No account selected</p>
+      </div>
+    )
+  }
 
   // Runs the receiver-acceptance flow while keeping the button state scoped to one transfer.
   const onAccept = async (transferInstructionCid: string): Promise<void> => {

@@ -44,6 +44,7 @@ describe('TransferDetailsSheet', () => {
       'TransferPendingReceiverAcceptance',
     )
     assert.equal(screen.getByText('2026-06-09 20:41 UTC').textContent, '2026-06-09 20:41 UTC')
+    assert.equal(screen.getByText('2026-06-10 20:41 UTC').textContent, '2026-06-10 20:41 UTC')
     assert.equal(screen.getByText('transfer-cid-1').textContent, 'transfer-cid-1')
   })
 
