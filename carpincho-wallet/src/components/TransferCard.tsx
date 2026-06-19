@@ -2,6 +2,7 @@ import cantonIcon from '@/assets/canton.png'
 import { formatTokenAmount } from '@/cip56/amount'
 import type { PendingTokenTransfer } from '@/cip56/transfers'
 import { tokenDisplayLabel, transferDescription } from '@/cip56/transfers'
+import { Badge } from '@/components/ui/Badge'
 import { PrimaryButton } from '@/components/ui/Button'
 import { Copyable } from '@/components/ui/Copyable'
 import { EYE_ICON } from '@/components/ui/icons'
@@ -80,9 +81,7 @@ export const TransferCard = ({
             )}
           </p>
         </div>
-        <span className="shrink-0 rounded-full border border-warning/40 bg-warning-soft px-2.5 py-1 text-[0.72rem] font-semibold text-warning">
-          Pending
-        </span>
+        <Badge tone="warning">Pending</Badge>
         {detailsButton}
       </article>
     )

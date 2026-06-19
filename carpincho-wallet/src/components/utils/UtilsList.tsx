@@ -9,6 +9,7 @@ import {
   SPINNER_ICON,
   UPLOAD_ICON,
 } from '@/components/ui/icons'
+import { SectionLabel } from '@/components/ui/SectionLabel'
 import { toast } from '@/components/ui/toast'
 import type { AccountPublic } from '@/vault/types'
 import { useVault } from '@/vault/useVault'
@@ -49,8 +50,6 @@ const ROW_CLASS =
   'outline-none transition-colors enabled:hover:border-primary/60 enabled:hover:bg-primary-soft/40 ' +
   'focus-visible:shadow-focus disabled:opacity-70'
 const ICON_WRAP_CLASS = 'grid size-9 shrink-0 place-items-center rounded-full bg-muted text-primary'
-const GROUP_LABEL_CLASS =
-  'px-1 pb-1.5 pt-1 text-[0.72rem] font-semibold uppercase tracking-wider text-muted-foreground'
 
 interface UtilsListProps {
   account: AccountPublic
@@ -86,7 +85,7 @@ export const UtilsList = ({ account, tapApi, onSelect }: UtilsListProps): JSX.El
   return (
     <div className="flex flex-col gap-4 px-1 py-2">
       <section className="flex flex-col gap-2">
-        <div className={GROUP_LABEL_CLASS}>Faucet</div>
+        <SectionLabel>Faucet</SectionLabel>
         <button
           type="button"
           className={ROW_CLASS}
@@ -111,7 +110,7 @@ export const UtilsList = ({ account, tapApi, onSelect }: UtilsListProps): JSX.El
       </section>
 
       <section className="flex flex-col gap-2">
-        <div className={GROUP_LABEL_CLASS}>Ledger tools</div>
+        <SectionLabel>Ledger tools</SectionLabel>
         {UTIL_ROWS.map((row) => (
           <button
             key={row.key}

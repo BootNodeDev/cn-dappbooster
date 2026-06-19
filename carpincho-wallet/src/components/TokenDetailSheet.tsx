@@ -7,8 +7,10 @@ import { SendConfirm } from '@/components/SendConfirm'
 import { type Cip56SendApi, SendTokenForm, type TransferDeadline } from '@/components/SendTokenForm'
 import { TokenHoldingDetail } from '@/components/TokenHoldingDetail'
 import { TokenReceive } from '@/components/TokenReceive'
+import { Badge } from '@/components/ui/Badge'
 import { SecondaryButton } from '@/components/ui/Button'
 import { CHEVRON_RIGHT_ICON, RECEIVE_ICON, SEND_ICON } from '@/components/ui/icons'
+import { SectionLabel } from '@/components/ui/SectionLabel'
 import { Sheet } from '@/components/ui/Sheet'
 import { useTokenHoldingDetails } from '@/hooks/useTokenHoldingDetails'
 import type { Cip56HoldingsApi } from '@/hooks/useTokenHoldings'
@@ -62,11 +64,7 @@ const HoldingListRow = ({
           <span className="min-w-0 truncate text-[0.9rem] font-medium text-foreground">
             {formatTokenAmount(view?.amount ?? 'unknown')}
           </span>
-          {view?.lock == null ? null : (
-            <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[0.62rem] font-semibold uppercase text-muted-foreground">
-              Locked
-            </span>
-          )}
+          {view?.lock == null ? null : <Badge tone="neutral">Locked</Badge>}
         </span>
       </span>
       <span
@@ -118,9 +116,7 @@ const DetailScreen = ({
     </div>
 
     <div className="flex min-h-0 flex-col gap-2">
-      <div className="px-1 text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-        Holdings
-      </div>
+      <SectionLabel>Holdings</SectionLabel>
       <div className="-mx-1 flex h-60 flex-col gap-2 overflow-y-auto px-1">
         {loading && holdings.length === 0 ? (
           <p className="m-0 px-1 text-[0.82rem] text-muted-foreground">Loading UTXOs</p>

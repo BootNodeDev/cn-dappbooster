@@ -5,6 +5,7 @@ import type { Cip56SendApi } from '@/components/SendTokenForm'
 import { TokenDetailSheet } from '@/components/TokenDetailSheet'
 import { TokenRow } from '@/components/TokenRow'
 import { LoadingState } from '@/components/ui/LoadingState'
+import { SectionLabel } from '@/components/ui/SectionLabel'
 import type { AmuletPreapprovalApi } from '@/hooks/useAmuletPreapproval'
 import type { Cip56HoldingsApi } from '@/hooks/useTokenHoldings'
 import { useTokenHoldings } from '@/hooks/useTokenHoldings'
@@ -53,9 +54,7 @@ export const AssetsPanel = ({
 
       {summaries.length > 0 ? (
         <div className="flex flex-col gap-2">
-          <div className="px-1 text-[0.7rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-            Holdings
-          </div>
+          <SectionLabel>Holdings</SectionLabel>
           {summaries.map((summary) => (
             <TokenRow
               key={summary.key}

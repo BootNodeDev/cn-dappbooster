@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react'
+import { Badge } from '@/components/ui/Badge'
 import { CopyableLabel } from '@/components/ui/CopyableLabel'
 import { DetailRow } from '@/components/ui/DetailRow'
 import { EYE_ICON, RECEIPT_ICON } from '@/components/ui/icons'
 import { JsonView } from '@/components/ui/JsonView'
+import { SectionLabel } from '@/components/ui/SectionLabel'
 import { Sheet } from '@/components/ui/Sheet'
 import type { TransactionRecord } from '@/vault/types'
 import { CANTON_METHOD_PREPARE_EXECUTE_AND_WAIT } from '@/wc/client'
@@ -134,10 +136,11 @@ export const ActivityList = ({ transactions }: ActivityListProps): JSX.Element =
   return (
     <div className="flex flex-col pb-2">
       {groups.map((group) => (
-        <div key={group.label}>
-          <div className="px-1 pb-1.5 pt-3 text-[0.8rem] font-semibold tracking-tight text-muted-foreground">
-            {group.label}
-          </div>
+        <div
+          key={group.label}
+          className="flex flex-col gap-2 pt-3"
+        >
+          <SectionLabel>{group.label}</SectionLabel>
           <div className="flex flex-col gap-2">
             {group.items.map((tx) => (
               <button
@@ -161,9 +164,7 @@ export const ActivityList = ({ transactions }: ActivityListProps): JSX.Element =
                   </span>
                 </span>
                 <span className="flex items-center gap-2 justify-self-end">
-                  <span className="shrink-0 rounded-full border border-success/40 bg-success-soft px-2.5 py-1 text-[0.72rem] font-semibold text-success">
-                    Confirmed
-                  </span>
+                  <Badge tone="success">Confirmed</Badge>
                   <span
                     aria-hidden="true"
                     className="grid size-8 place-items-center text-muted-foreground [&_svg]:size-4"

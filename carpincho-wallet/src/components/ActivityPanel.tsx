@@ -5,9 +5,11 @@ import { ActivityList } from '@/components/ActivityList'
 import { TransferCard } from '@/components/TransferCard'
 import { TransferDetailsSheet } from '@/components/TransferDetailsSheet'
 import { LoadingState } from '@/components/ui/LoadingState'
+import { SECTION_LABEL_CLASS } from '@/components/ui/SectionLabel'
 import { toast } from '@/components/ui/toast'
 import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
 import { usePendingCip56Transfers } from '@/hooks/usePendingCip56Transfers'
+import { cn } from '@/utils/cn'
 import type { AccountPublic, TransactionRecord } from '@/vault/types'
 import { useVault } from '@/vault/useVault'
 
@@ -109,9 +111,7 @@ export const ActivityPanel = ({
 
       {visibleIncoming.length > 0 ? (
         <section className="flex flex-col gap-2">
-          <h2 className="m-0 px-0.5 text-[0.7rem] font-bold uppercase tracking-[0.1em] text-foreground">
-            Needs action
-          </h2>
+          <h2 className={cn('m-0', SECTION_LABEL_CLASS)}>Needs action</h2>
           {visibleIncoming.map((transfer) => (
             <TransferCard
               key={transfer.contractId}
@@ -126,9 +126,7 @@ export const ActivityPanel = ({
 
       {outgoing.length > 0 ? (
         <section className="flex flex-col gap-2">
-          <h2 className="m-0 px-0.5 text-[0.62rem] font-bold uppercase tracking-[0.1em] text-muted-foreground/70">
-            Awaiting acceptance
-          </h2>
+          <h2 className={cn('m-0', SECTION_LABEL_CLASS)}>Awaiting acceptance</h2>
           {outgoing.map((transfer) => (
             <TransferCard
               key={transfer.contractId}
