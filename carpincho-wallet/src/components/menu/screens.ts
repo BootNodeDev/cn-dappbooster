@@ -4,13 +4,12 @@ import { WALLET_CONNECT_ICON } from '@/components/ui/icons'
 export type Screen =
   | 'root'
   | 'wallet-connect'
-  | 'settings'
-  | 'import-private-key'
-  | 'export-private-key'
   | 'theme'
-  | 'security'
+  | 'vault'
   | 'password'
   | 'auto-lock'
+  | 'export-vault'
+  | 'import-vault'
 export type Direction = 'forward' | 'back'
 
 interface ScreenConfig {
@@ -30,40 +29,35 @@ export const SCREENS: Record<Screen, ScreenConfig> = {
     description: 'Paste a WalletConnect URI to connect a dApp.',
     parent: 'root',
   },
-  settings: {
-    title: 'Settings',
-    description: 'Theme, security, and account key preferences.',
-    parent: 'root',
-  },
-  'import-private-key': {
-    title: 'Import private key',
-    description: 'Import an existing Canton party into this vault.',
-    parent: 'settings',
-  },
-  'export-private-key': {
-    title: 'Export private key',
-    description: 'Reveal the selected party private key.',
-    parent: 'settings',
-  },
   theme: {
     title: 'Theme',
     description: 'Choose light, dark, or follow the system setting.',
-    parent: 'settings',
+    parent: 'root',
   },
-  security: {
-    title: 'Security & Password',
-    description: 'Choose between password change and auto-lock configuration.',
-    parent: 'settings',
+  vault: {
+    title: 'Vault',
+    description: 'Password, auto-lock, and account backup.',
+    parent: 'root',
   },
   password: {
     title: 'Password',
-    description: 'Verify the current password and set a new one.',
-    parent: 'security',
+    description: 'Set a new password for this vault.',
+    parent: 'vault',
   },
   'auto-lock': {
     title: 'Auto-lock',
     description: 'Choose how long the wallet stays unlocked while idle.',
-    parent: 'security',
+    parent: 'vault',
+  },
+  'export-vault': {
+    title: 'Export Vault',
+    description: 'Reveal a JSON backup of every account in this vault.',
+    parent: 'vault',
+  },
+  'import-vault': {
+    title: 'Import Vault',
+    description: 'Restore accounts from a vault JSON backup.',
+    parent: 'vault',
   },
 }
 
@@ -74,21 +68,19 @@ export interface MenuListRow {
   icon?: ReactNode
 }
 
-// Leaf screens (theme, password, auto-lock) render dedicated components and are absent here.
+// Leaf screens (theme, password, auto-lock, export-vault, import-vault) render
+// dedicated components and are absent here.
 export const MENU_LISTS: Partial<Record<Screen, MenuListRow[]>> = {
   root: [
     { label: 'WalletConnect', to: 'wallet-connect', icon: WALLET_CONNECT_ICON },
-    { label: 'Settings', to: 'settings' },
+    { label: 'Theme', to: 'theme' },
+    { label: 'Vault', to: 'vault' },
     { label: 'Log out', to: 'logout', tone: 'danger' },
   ],
-  settings: [
-    { label: 'Theme', to: 'theme' },
-    { label: 'Security & Password', to: 'security' },
-    { label: 'Import private key', to: 'import-private-key' },
-    { label: 'Export private key', to: 'export-private-key' },
-  ],
-  security: [
+  vault: [
     { label: 'Password', to: 'password' },
-    { label: 'Auto-lock', to: 'auto-lock' },
+    { label: 'Auto Lock', to: 'auto-lock' },
+    { label: 'Export Vault', to: 'export-vault' },
+    { label: 'Import Vault', to: 'import-vault' },
   ],
 }

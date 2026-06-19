@@ -3,9 +3,9 @@ import { afterEach, describe, it } from 'node:test'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ReactNode } from 'react'
-import { AutoLockList, PasswordForm } from '@/components/SecurityPanel'
 import { TooltipProvider } from '@/components/ui/Tooltip'
 import { getToastEntries, toast } from '@/components/ui/toast'
+import { AutoLockList, PasswordForm } from '@/components/VaultPanel'
 import { VaultContext, type VaultContextValue } from '@/vault/VaultContext'
 
 const baseVault = (): VaultContextValue => ({
@@ -30,7 +30,6 @@ const baseVault = (): VaultContextValue => ({
     createdAt: 0,
   }),
   removeAccount: async () => undefined,
-  exportPrivateKey: () => '',
   exportVault: () => ({ v: 1, accounts: [] }) as import('@/vault/types').VaultEnvelope,
   importVault: async () => ({ imported: 0, skipped: 0, rejected: 0 }),
   signMessage: async () => '',

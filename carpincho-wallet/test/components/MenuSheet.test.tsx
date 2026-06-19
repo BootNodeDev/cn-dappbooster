@@ -30,7 +30,6 @@ const baseVault = (overrides: Partial<VaultContextValue> = {}): VaultContextValu
     createdAt: 0,
   }),
   removeAccount: async () => undefined,
-  exportPrivateKey: () => '',
   exportVault: () => ({ v: 1, accounts: [] }) as import('@/vault/types').VaultEnvelope,
   importVault: async () => ({ imported: 0, skipped: 0, rejected: 0 }),
   signMessage: async () => '',
@@ -55,7 +54,7 @@ describe('MenuSheet', () => {
     cleanup()
   })
 
-  it('renders the root menu items when open', () => {
+  it('renders the new root menu items when open', () => {
     render(
       wrap(
         baseVault(),
@@ -65,7 +64,9 @@ describe('MenuSheet', () => {
         />,
       ),
     )
-    assert.ok(screen.getByRole('button', { name: /^settings$/i }))
+    assert.ok(screen.getByRole('button', { name: /walletconnect/i }))
+    assert.ok(screen.getByRole('button', { name: /^theme$/i }))
+    assert.ok(screen.getByRole('button', { name: /^vault$/i }))
     assert.ok(screen.getByRole('button', { name: /log out/i }))
   })
 
@@ -79,10 +80,10 @@ describe('MenuSheet', () => {
         />,
       ),
     )
-    assert.equal(screen.queryByRole('button', { name: /^settings$/i }), null)
+    assert.equal(screen.queryByRole('button', { name: /^vault$/i }), null)
   })
 
-  it('navigates into settings and back to root', async () => {
+  it('drills into Vault and shows its four entries', async () => {
     const user = userEvent.setup()
     render(
       wrap(
@@ -93,54 +94,14 @@ describe('MenuSheet', () => {
         />,
       ),
     )
-    await user.click(screen.getByRole('button', { name: /^settings$/i }))
-    assert.ok(screen.getByRole('button', { name: /^theme$/i }))
-    assert.ok(screen.getByRole('button', { name: /security & password/i }))
-    await user.click(screen.getByRole('button', { name: /back/i }))
-    assert.ok(screen.getByRole('button', { name: /log out/i }))
-  })
-
-  it('shows private-key import and export entries inside Settings', async () => {
-    // Scenario: key import/export are Settings-level actions, not account-switcher actions.
-    const user = userEvent.setup()
-    render(
-      wrap(
-        baseVault(),
-        <MenuSheet
-          open={true}
-          onOpenChange={() => undefined}
-        />,
-      ),
-    )
-
-    // Action: open the Settings screen from the root drawer.
-    await user.click(screen.getByRole('button', { name: /^settings$/i }))
-
-    // Expected result: both private-key actions are available from Settings.
-    assert.ok(screen.getByRole('button', { name: /^import private key$/i }))
-    assert.ok(screen.getByRole('button', { name: /^export private key$/i }))
-  })
-
-  it('navigates settings to security and back', async () => {
-    const user = userEvent.setup()
-    render(
-      wrap(
-        baseVault(),
-        <MenuSheet
-          open={true}
-          onOpenChange={() => undefined}
-        />,
-      ),
-    )
-    await user.click(screen.getByRole('button', { name: /^settings$/i }))
-    await user.click(screen.getByRole('button', { name: /security & password/i }))
+    await user.click(screen.getByRole('button', { name: /^vault$/i }))
     assert.ok(screen.getByRole('button', { name: /^password$/i }))
-    assert.ok(screen.getByRole('button', { name: /^auto-lock$/i }))
-    await user.click(screen.getByRole('button', { name: /back/i }))
-    assert.ok(screen.getByRole('button', { name: /^theme$/i }))
+    assert.ok(screen.getByRole('button', { name: /^auto lock$/i }))
+    assert.ok(screen.getByRole('button', { name: /^export vault$/i }))
+    assert.ok(screen.getByRole('button', { name: /^import vault$/i }))
   })
 
-  it('drills into the theme leaf and marks system as the default', async () => {
+  it('opens Theme directly from root', async () => {
     const user = userEvent.setup()
     render(
       wrap(
@@ -151,15 +112,11 @@ describe('MenuSheet', () => {
         />,
       ),
     )
-    await user.click(screen.getByRole('button', { name: /^settings$/i }))
     await user.click(screen.getByRole('button', { name: /^theme$/i }))
-    assert.ok(screen.getByRole('button', { name: /^light$/i }))
-    assert.ok(screen.getByRole('button', { name: /^dark$/i }))
-    const system = screen.getByRole('button', { name: /^system$/i })
-    assert.equal(system.getAttribute('aria-current'), 'true')
+    assert.ok(screen.getByRole('button', { name: /^system$/i }))
   })
 
-  it('drills into the password leaf and back returns to security', async () => {
+  it('drills into the password leaf and back returns to Vault', async () => {
     const user = userEvent.setup()
     render(
       wrap(
@@ -170,32 +127,28 @@ describe('MenuSheet', () => {
         />,
       ),
     )
-    await user.click(screen.getByRole('button', { name: /^settings$/i }))
-    await user.click(screen.getByRole('button', { name: /security & password/i }))
+    await user.click(screen.getByRole('button', { name: /^vault$/i }))
     await user.click(screen.getByRole('button', { name: /^password$/i }))
     assert.ok(screen.getByLabelText(/current password/i))
     await user.click(screen.getByRole('button', { name: /back/i }))
-    assert.ok(screen.getByRole('button', { name: /^password$/i }))
-    assert.ok(screen.getByRole('button', { name: /^auto-lock$/i }))
+    assert.ok(screen.getByRole('button', { name: /^export vault$/i }))
   })
 
-  it('drills into the auto-lock leaf and back returns to security', async () => {
+  it('drills into Import Vault and shows the paste/upload tabs', async () => {
     const user = userEvent.setup()
     render(
       wrap(
-        baseVault({ autoLockOption: '5m' }),
+        baseVault(),
         <MenuSheet
           open={true}
           onOpenChange={() => undefined}
         />,
       ),
     )
-    await user.click(screen.getByRole('button', { name: /^settings$/i }))
-    await user.click(screen.getByRole('button', { name: /security & password/i }))
-    await user.click(screen.getByRole('button', { name: /^auto-lock$/i }))
-    assert.ok(screen.getByRole('button', { name: /^5 minutes$/i }))
-    await user.click(screen.getByRole('button', { name: /back/i }))
-    assert.ok(screen.getByRole('button', { name: /^password$/i }))
+    await user.click(screen.getByRole('button', { name: /^vault$/i }))
+    await user.click(screen.getByRole('button', { name: /^import vault$/i }))
+    assert.ok(screen.getByRole('tab', { name: /paste/i }))
+    assert.ok(screen.getByRole('tab', { name: /upload file/i }))
   })
 
   it('log out calls vault.lock and closes the sheet', async () => {
@@ -243,11 +196,11 @@ describe('MenuSheet', () => {
       )
     }
     render(<Harness />)
-    await user.click(screen.getByRole('button', { name: /^settings$/i }))
-    assert.ok(screen.getByRole('button', { name: /^theme$/i }))
+    await user.click(screen.getByRole('button', { name: /^vault$/i }))
+    assert.ok(screen.getByRole('button', { name: /^password$/i }))
     await user.keyboard('{Escape}')
     await user.click(screen.getByRole('button', { name: /reopen/i }))
-    assert.ok(screen.getByRole('button', { name: /^settings$/i }))
+    assert.ok(screen.getByRole('button', { name: /^vault$/i }))
   })
 
   it('shows the WalletConnect entry in web mode and drills into its pairing screen', async () => {
@@ -267,7 +220,6 @@ describe('MenuSheet', () => {
 
   it('hides the WalletConnect entry in extension mode', () => {
     const originalChrome = (globalThis as { chrome?: unknown }).chrome
-    // isExtensionRuntime() keys off chrome.runtime.sendMessage; WC pairing is web-only.
     ;(globalThis as { chrome?: unknown }).chrome = { runtime: { sendMessage: () => undefined } }
     try {
       render(
@@ -280,8 +232,7 @@ describe('MenuSheet', () => {
         ),
       )
       assert.equal(screen.queryByRole('button', { name: /walletconnect/i }), null)
-      // The rest of the drawer is unaffected.
-      assert.ok(screen.getByRole('button', { name: /^settings$/i }))
+      assert.ok(screen.getByRole('button', { name: /^vault$/i }))
     } finally {
       ;(globalThis as { chrome?: unknown }).chrome = originalChrome
     }
@@ -297,7 +248,6 @@ describe('MenuSheet', () => {
         />,
       ),
     )
-    // Root screen hides the "Menu" title visually (sr-only) while leaving it for screen readers.
     const title = screen.getByText('Menu')
     assert.match(title.className, /sr-only/)
   })

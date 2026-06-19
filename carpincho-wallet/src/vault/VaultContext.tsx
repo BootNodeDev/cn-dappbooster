@@ -112,7 +112,6 @@ export interface VaultContextValue {
     publicKeyBase64: string
   }) => Promise<AccountPublic>
   removeAccount: (id: string) => Promise<void>
-  exportPrivateKey: (accountId: string) => string
   exportVault: () => VaultEnvelope
   importVault: (envelope: VaultEnvelope) => Promise<ImportVaultResult>
   signMessage: (accountId: string, messageBase64: string) => Promise<string>
@@ -360,18 +359,6 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
     [],
   )
 
-  // Gives export UI the selected account secret without leaking keys into public account state.
-  const exportPrivateKey = useCallback((accountId: string): string => {
-    if (unlockedPlaintext === null) {
-      throw new Error('vault locked')
-    }
-    const acct = unlockedPlaintext.accounts.find((a) => a.id === accountId)
-    if (acct === undefined) {
-      throw new Error(`unknown account: ${accountId}`)
-    }
-    return acct.privateKeyHex
-  }, [])
-
   // Builds a portable backup of every account. Pure projection: omits id/createdAt,
   // never logged or persisted. Callers must drop the result as soon as it is shown.
   const exportVault = useCallback((): VaultEnvelope => {
@@ -582,7 +569,6 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
       setPrimary,
       addAccount,
       removeAccount,
-      exportPrivateKey,
       exportVault,
       importVault,
       signMessage,
@@ -604,7 +590,6 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
     setPrimary,
     addAccount,
     removeAccount,
-    exportPrivateKey,
     exportVault,
     importVault,
     signMessage,

@@ -32,7 +32,6 @@ const baseVault = (overrides: Partial<VaultContextValue> = {}): VaultContextValu
       createdAt: 0,
     }),
     removeAccount: async () => undefined,
-    exportPrivateKey: () => '',
     exportVault: () => ({ v: 1, accounts: [] }) as VaultEnvelope,
     importVault: async () => ({ imported: 0, skipped: 0, rejected: 0 }),
     signMessage: async () => '',
