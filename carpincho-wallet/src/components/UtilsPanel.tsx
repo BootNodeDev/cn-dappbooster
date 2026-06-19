@@ -2,10 +2,10 @@ import { useState } from 'react'
 import type { AmuletTapApi } from '@/cip56/amuletPreapproval'
 import { DarUploadPanel } from '@/components/DarUploadPanel'
 import { Alert } from '@/components/ui/Alert'
+import { Sheet } from '@/components/ui/Sheet'
 import { ActiveContractsUtil } from '@/components/utils/ActiveContractsUtil'
 import { CreateContractUtil } from '@/components/utils/CreateContractUtil'
 import { ExerciseChoiceUtil } from '@/components/utils/ExerciseChoiceUtil'
-import { UtilDetail } from '@/components/utils/UtilDetail'
 import { type UtilKey, UtilsList } from '@/components/utils/UtilsList'
 import { createContract, exerciseContract, listActiveContracts } from '@/ledger/contracts'
 import type { AccountPublic } from '@/vault/types'
@@ -31,7 +31,7 @@ interface UtilsPanelProps {
   tapApi?: AmuletTapApi
 }
 
-// Master/detail dev tools: a util list that drills into one util at a time.
+// Dev tools: a util list where selecting a util opens it in a modal.
 export const UtilsPanel = ({ account, api = defaultApi, tapApi }: UtilsPanelProps): JSX.Element => {
   const [selected, setSelected] = useState<UtilKey | null>(null)
 
@@ -43,40 +43,42 @@ export const UtilsPanel = ({ account, api = defaultApi, tapApi }: UtilsPanelProp
     )
   }
 
-  if (selected === null) {
-    return (
+  return (
+    <>
       <UtilsList
         account={account}
         tapApi={tapApi}
         onSelect={setSelected}
       />
-    )
-  }
-
-  return (
-    <UtilDetail
-      title={UTIL_TITLES[selected]}
-      onBack={() => setSelected(null)}
-    >
-      {selected === 'create' && (
-        <CreateContractUtil
-          account={account}
-          createContract={api.createContract}
-        />
-      )}
-      {selected === 'exercise' && (
-        <ExerciseChoiceUtil
-          account={account}
-          exerciseContract={api.exerciseContract}
-        />
-      )}
-      {selected === 'contracts' && (
-        <ActiveContractsUtil
-          account={account}
-          listActiveContracts={api.listActiveContracts}
-        />
-      )}
-      {selected === 'dar' && <DarUploadPanel />}
-    </UtilDetail>
+      <Sheet
+        open={selected !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelected(null)
+        }}
+        title={selected === null ? '' : UTIL_TITLES[selected]}
+        description="Ledger development tool."
+        side="center"
+      >
+        {selected === 'create' && (
+          <CreateContractUtil
+            account={account}
+            createContract={api.createContract}
+          />
+        )}
+        {selected === 'exercise' && (
+          <ExerciseChoiceUtil
+            account={account}
+            exerciseContract={api.exerciseContract}
+          />
+        )}
+        {selected === 'contracts' && (
+          <ActiveContractsUtil
+            account={account}
+            listActiveContracts={api.listActiveContracts}
+          />
+        )}
+        {selected === 'dar' && <DarUploadPanel />}
+      </Sheet>
+    </>
   )
 }

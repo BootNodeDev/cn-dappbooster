@@ -69,7 +69,7 @@ describe('UtilsPanel', () => {
     toast.clear()
   })
 
-  it('drills into Create, submits, and returns to the list via back', async () => {
+  it('opens Create in a modal, submits, and closes', async () => {
     const createCalls: Parameters<UtilsApi['createContract']>[0][] = []
     const api: UtilsApi = {
       createContract: async (params) => {
@@ -89,8 +89,8 @@ describe('UtilsPanel', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Create contract' }))
     await waitFor(() => assert.equal(createCalls.length, 1))
 
-    await userEvent.click(screen.getByRole('button', { name: 'Back' }))
-    assert.ok(screen.getByRole('button', { name: /Active contracts/ }))
+    await userEvent.click(screen.getByRole('button', { name: 'Close' }))
+    await waitFor(() => assert.equal(screen.queryByLabelText('Template ID'), null))
   })
 
   it('drills into Active contracts and applies the template filter', async () => {
