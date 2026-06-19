@@ -222,10 +222,9 @@ describe('ledger contract helpers', () => {
 
     const result = await listActiveContracts({
       partyId: 'alice::party',
-      templateId: 'pkg:Module:Template',
     })
 
-    assert.deepEqual(result, [contracts[0]])
+    assert.deepEqual(result, contracts)
     assert.deepEqual(calls, [
       {
         method: 'ledgerApi',

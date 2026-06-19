@@ -30,7 +30,6 @@ export interface ExerciseContractParams {
 
 export interface ListActiveContractsParams {
   partyId: string
-  templateId?: string
 }
 
 interface LedgerEndResponse {
@@ -195,7 +194,6 @@ export const contractMatchesQuery = (contract: ActiveContract, query: string): b
 // Lists active contracts visible to the selected party using JSON Ledger API v2 ACS.
 export const listActiveContracts = async ({
   partyId,
-  templateId,
 }: ListActiveContractsParams): Promise<ActiveContract[]> => {
   const activeAtOffset = await ledgerEnd()
   const entries = await ledgerApi<JsonActiveContractEntry[]>({
@@ -219,6 +217,6 @@ export const listActiveContracts = async ({
   })
   return entries.flatMap((entry) => {
     const contract = activeContractFromEntry(entry)
-    return contract === undefined || !matchesTemplate(contract, templateId) ? [] : [contract]
+    return contract === undefined ? [] : [contract]
   })
 }
