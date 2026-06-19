@@ -1,3 +1,4 @@
+import cantonIcon from '@/assets/canton.png'
 import { formatTokenAmount } from '@/cip56/amount'
 import type { PendingTokenTransfer } from '@/cip56/transfers'
 import { tokenDisplayLabel, transferDescription } from '@/cip56/transfers'
@@ -15,7 +16,7 @@ interface TransferCardProps {
 }
 
 const EYE_BUTTON_CLASS =
-  'grid size-8 shrink-0 place-items-center rounded-md border border-border-strong bg-transparent text-soft outline-none transition-colors hover:text-foreground focus-visible:shadow-focus [&_svg]:size-4'
+  'grid size-8 shrink-0 place-items-center rounded-md text-soft outline-none transition-colors hover:text-foreground focus-visible:shadow-focus [&_svg]:size-4'
 
 // One active transfer instruction. Incoming = accent needs-action card with Accept;
 // outgoing = quiet watch-only row with a Pending pill. Both open details in a Sheet.
@@ -35,6 +36,20 @@ export const TransferCard = ({
   const counterparty = direction === 'incoming' ? view?.sender : view?.receiver
   const counterpartyText = counterparty === undefined ? 'unknown' : shortMiddle(counterparty, 10, 6)
 
+  // Token icon sits before the amount so the row reads like the assets list.
+  const amountRow = (
+    <p className="m-0 flex items-center gap-2 text-[0.95rem] font-semibold text-foreground">
+      <img
+        src={cantonIcon}
+        alt=""
+        aria-hidden="true"
+        draggable={false}
+        className="size-5 shrink-0 rounded-full"
+      />
+      {label}
+    </p>
+  )
+
   const detailsButton = (
     <button
       type="button"
@@ -53,7 +68,7 @@ export const TransferCard = ({
         className="flex items-center gap-3 rounded-md border border-border bg-surface px-3 py-3"
       >
         <div className="min-w-0 flex-1">
-          <p className="m-0 text-[0.95rem] font-semibold text-foreground">{label}</p>
+          {amountRow}
           <p className="m-0 mt-1 font-mono text-[0.76rem] text-muted-foreground">
             {counterpartyLabel}: {counterpartyText}
           </p>
@@ -77,7 +92,7 @@ export const TransferCard = ({
       />
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
-          <p className="m-0 text-[0.95rem] font-semibold text-foreground">{label}</p>
+          {amountRow}
           {description === undefined ? null : (
             <p className="m-0 mt-1 text-[0.83rem] leading-5 text-foreground">{description}</p>
           )}
@@ -85,7 +100,7 @@ export const TransferCard = ({
             {counterpartyLabel}: {counterpartyText}
           </p>
         </div>
-        <div className="flex shrink-0 flex-col items-end gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <PrimaryButton
             className="px-3 py-1.5 text-[0.82rem]"
             disabled={isAccepting}

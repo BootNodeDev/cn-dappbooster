@@ -99,8 +99,8 @@ export const ActivityPanel = ({
 
       {incoming.length > 0 ? (
         <section className="flex flex-col gap-2">
-          <h2 className="m-0 flex items-center gap-2 px-0.5 text-[0.7rem] font-bold uppercase tracking-[0.1em] text-foreground">
-            Needs action <span className="text-accent">· {incoming.length}</span>
+          <h2 className="m-0 px-0.5 text-[0.7rem] font-bold uppercase tracking-[0.1em] text-foreground">
+            Needs action
           </h2>
           {incoming.map((transfer) => (
             <TransferCard
@@ -117,8 +117,8 @@ export const ActivityPanel = ({
 
       {outgoing.length > 0 ? (
         <section className="flex flex-col gap-2">
-          <h2 className="m-0 flex items-center gap-1.5 px-0.5 text-[0.62rem] font-bold uppercase tracking-[0.1em] text-muted-foreground/70">
-            Awaiting acceptance <span>· {outgoing.length}</span>
+          <h2 className="m-0 px-0.5 text-[0.62rem] font-bold uppercase tracking-[0.1em] text-muted-foreground/70">
+            Awaiting acceptance
           </h2>
           {outgoing.map((transfer) => (
             <TransferCard
