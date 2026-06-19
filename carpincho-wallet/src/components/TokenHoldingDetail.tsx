@@ -8,7 +8,7 @@ export const TokenHoldingDetail = ({ holding }: { holding: TokenHolding }): JSX.
   const view = holding.interfaceViewValue
   const lock = view?.lock
   return (
-    <dl className="grid gap-3 rounded-md border border-border bg-surface px-3 py-3">
+    <dl className="grid gap-3">
       <DetailRow
         label="amount"
         value={view?.amount === undefined ? 'unknown' : formatTokenAmount(view.amount)}

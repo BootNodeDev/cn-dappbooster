@@ -49,7 +49,7 @@ describe('ActiveContractsUtil', () => {
     await screen.findByText('cid-1')
     assert.ok(screen.getByRole('button', { name: /Copy contract ID/i }))
 
-    await userEvent.click(screen.getByRole('button', { name: /cid-1/ }))
+    await userEvent.click(screen.getByRole('button', { name: /toggle contract details/i }))
     await screen.findByText(/admin/)
   })
 

@@ -121,7 +121,7 @@ const DetailScreen = ({
       <div className="px-1 text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
         Holdings
       </div>
-      <div className="-mx-1 flex max-h-[50vh] flex-col gap-2 overflow-y-auto px-1">
+      <div className="-mx-1 flex max-h-60 flex-col gap-2 overflow-y-auto px-1">
         {loading && holdings.length === 0 ? (
           <p className="m-0 px-1 text-[0.82rem] text-muted-foreground">Loading UTXOs</p>
         ) : error !== undefined ? (

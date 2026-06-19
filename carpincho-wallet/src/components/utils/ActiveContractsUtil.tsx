@@ -3,6 +3,7 @@ import { Alert } from '@/components/ui/Alert'
 import { SecondaryButton } from '@/components/ui/Button'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/Collapsible'
 import { Copyable } from '@/components/ui/Copyable'
+import { DetailRow } from '@/components/ui/DetailRow'
 import { CHEVRON_DOWN_ICON } from '@/components/ui/icons'
 import { JsonView } from '@/components/ui/JsonView'
 import { TextInput } from '@/components/ui/TextInput'
@@ -15,58 +16,49 @@ interface ActiveContractsUtilProps {
   listActiveContracts?: typeof defaultList
 }
 
-// One active contract as a collapsible card: id first, args behind an expander.
+// One active contract as a collapsible card: id + chevron, args behind an expander.
 const ContractCard = ({ contract }: { contract: ActiveContract }): JSX.Element => (
-  <Collapsible className="rounded-md border border-border bg-surface">
-    <div className="flex items-center gap-2 p-3">
-      <CollapsibleTrigger className="group min-w-0 flex-1 text-left">
-        <span className="grid size-5 shrink-0 place-items-center text-muted-foreground transition-transform group-data-[state=open]:rotate-180">
-          {CHEVRON_DOWN_ICON}
-        </span>
-        <span className="min-w-0">
-          <span className="block text-[0.72rem] font-semibold uppercase tracking-wider text-muted-foreground">
-            Contract ID
-          </span>
-          <span className="block truncate font-mono text-[0.82rem] text-foreground">
-            {contract.contractId}
-          </span>
-        </span>
-      </CollapsibleTrigger>
-      <Copyable
-        value={contract.contractId}
-        label="contract ID"
-      />
-    </div>
-    <CollapsibleContent className="border-t border-border px-3 pb-3 pt-2">
-      <div className="flex items-center justify-between gap-2">
-        <div className="min-w-0">
-          <div className="text-[0.72rem] font-semibold uppercase tracking-wider text-muted-foreground">
-            Template
-          </div>
-          <div className="break-all font-mono text-[0.82rem] text-muted-foreground">
-            {contract.templateId}
-          </div>
-        </div>
-        <Copyable
-          value={contract.templateId}
-          label="template ID"
+  <Collapsible className="rounded-md border border-border bg-surface p-3">
+    <div className="flex items-start gap-2">
+      <div className="min-w-0 flex-1">
+        <DetailRow
+          label="Contract ID"
+          value={contract.contractId}
+          copyLabel="contract ID"
         />
       </div>
+      <CollapsibleTrigger className="group grid size-8 shrink-0 place-items-center rounded-md text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:shadow-focus [&_svg]:size-5">
+        <span className="sr-only">Toggle contract details</span>
+        <span className="transition-transform group-data-[state=open]:rotate-180">
+          {CHEVRON_DOWN_ICON}
+        </span>
+      </CollapsibleTrigger>
+    </div>
+    <CollapsibleContent className="mt-3 flex flex-col gap-3 border-t border-border pt-3">
+      <DetailRow
+        label="Template"
+        value={contract.templateId}
+        copyLabel="template ID"
+      />
       {contract.createdOffset === undefined ? null : (
-        <div className="mt-2 flex items-center gap-2">
-          <span className="text-[0.8rem] font-medium text-muted-foreground">
-            Offset {contract.createdOffset}
+        <DetailRow
+          label="Offset"
+          value={String(contract.createdOffset)}
+          copyLabel="offset"
+        />
+      )}
+      <div>
+        <div className="mb-1.5 flex items-center gap-1.5">
+          <span className="text-[0.7rem] font-semibold uppercase text-muted-foreground">
+            Create arguments
           </span>
           <Copyable
-            value={String(contract.createdOffset)}
-            label="offset"
+            value={JSON.stringify(contract.createArgument, null, 2)}
+            label="create arguments"
           />
         </div>
-      )}
-      <JsonView
-        value={contract.createArgument}
-        className="mt-3"
-      />
+        <JsonView value={contract.createArgument} />
+      </div>
     </CollapsibleContent>
   </Collapsible>
 )

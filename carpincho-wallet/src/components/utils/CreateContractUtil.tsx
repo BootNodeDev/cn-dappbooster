@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Alert } from '@/components/ui/Alert'
 import { PrimaryButton } from '@/components/ui/Button'
 import { Copyable } from '@/components/ui/Copyable'
 import { TextInput } from '@/components/ui/TextInput'
@@ -25,23 +24,18 @@ export const CreateContractUtil = ({
   const [json, setJson] = useState('{}')
   const [jsonValid, setJsonValid] = useState(true)
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | undefined>()
   const [updateId, setUpdateId] = useState<string | undefined>()
 
+  const canSubmit = templateId.trim() !== '' && jsonValid && !busy
+
   const onSubmit = async (): Promise<void> => {
-    const trimmed = templateId.trim()
-    if (trimmed === '') {
-      setError('Template ID is required')
-      return
-    }
     setBusy(true)
-    setError(undefined)
     setUpdateId(undefined)
     try {
       const createArguments = parseJsonObject(json, 'Create arguments')
       const result = await createContract({
         account,
-        templateId: trimmed,
+        templateId: templateId.trim(),
         createArguments,
         signMessage: vault.signMessage,
         recordTransaction: vault.recordTransaction,
@@ -49,9 +43,7 @@ export const CreateContractUtil = ({
       setUpdateId(result.updateId)
       toast.success('Contract created')
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
-      setError(message)
-      toast.error(message)
+      toast.error(err instanceof Error ? err.message : String(err))
     } finally {
       setBusy(false)
     }
@@ -85,7 +77,6 @@ export const CreateContractUtil = ({
         onChange={setJson}
         onValidityChange={setJsonValid}
       />
-      {error === undefined ? null : <Alert variant="error">{error}</Alert>}
       {updateId === undefined ? null : (
         <div className="flex items-center justify-between gap-2 rounded-md border border-success/40 bg-success-soft px-3 py-2">
           <div className="min-w-0">
@@ -103,7 +94,7 @@ export const CreateContractUtil = ({
       <PrimaryButton
         type="submit"
         className="w-full"
-        disabled={busy || !jsonValid}
+        disabled={!canSubmit}
       >
         {busy ? 'Creating...' : 'Create contract'}
       </PrimaryButton>

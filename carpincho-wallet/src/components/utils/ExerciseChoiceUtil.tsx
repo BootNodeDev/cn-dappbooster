@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Alert } from '@/components/ui/Alert'
 import { PrimaryButton } from '@/components/ui/Button'
 import { Copyable } from '@/components/ui/Copyable'
 import { TextInput } from '@/components/ui/TextInput'
@@ -27,35 +26,25 @@ export const ExerciseChoiceUtil = ({
   const [json, setJson] = useState('{}')
   const [jsonValid, setJsonValid] = useState(true)
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | undefined>()
   const [updateId, setUpdateId] = useState<string | undefined>()
 
+  const canSubmit =
+    templateId.trim() !== '' &&
+    contractId.trim() !== '' &&
+    choice.trim() !== '' &&
+    jsonValid &&
+    !busy
+
   const onSubmit = async (): Promise<void> => {
-    const trimmedTemplateId = templateId.trim()
-    const trimmedContractId = contractId.trim()
-    const trimmedChoice = choice.trim()
-    if (trimmedTemplateId === '') {
-      setError('Template ID is required')
-      return
-    }
-    if (trimmedContractId === '') {
-      setError('Contract ID is required')
-      return
-    }
-    if (trimmedChoice === '') {
-      setError('Choice is required')
-      return
-    }
     setBusy(true)
-    setError(undefined)
     setUpdateId(undefined)
     try {
       const choiceArgument = parseJsonObject(json, 'Choice argument')
       const result = await exerciseContract({
         account,
-        templateId: trimmedTemplateId,
-        contractId: trimmedContractId,
-        choice: trimmedChoice,
+        templateId: templateId.trim(),
+        contractId: contractId.trim(),
+        choice: choice.trim(),
         choiceArgument,
         signMessage: vault.signMessage,
         recordTransaction: vault.recordTransaction,
@@ -63,9 +52,7 @@ export const ExerciseChoiceUtil = ({
       setUpdateId(result.updateId)
       toast.success('Choice exercised')
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
-      setError(message)
-      toast.error(message)
+      toast.error(err instanceof Error ? err.message : String(err))
     } finally {
       setBusy(false)
     }
@@ -125,7 +112,6 @@ export const ExerciseChoiceUtil = ({
         onChange={setJson}
         onValidityChange={setJsonValid}
       />
-      {error === undefined ? null : <Alert variant="error">{error}</Alert>}
       {updateId === undefined ? null : (
         <div className="flex items-center justify-between gap-2 rounded-md border border-success/40 bg-success-soft px-3 py-2">
           <div className="min-w-0">
@@ -143,7 +129,7 @@ export const ExerciseChoiceUtil = ({
       <PrimaryButton
         type="submit"
         className="w-full"
-        disabled={busy || !jsonValid}
+        disabled={!canSubmit}
       >
         {busy ? 'Exercising...' : 'Exercise choice'}
       </PrimaryButton>

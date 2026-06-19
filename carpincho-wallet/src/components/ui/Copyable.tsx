@@ -1,4 +1,3 @@
-import * as RadixTooltip from '@radix-ui/react-tooltip'
 import { useState } from 'react'
 import { PLAIN_ICON_BUTTON_CLASS } from '@/components/ui/Button'
 import { CHECK_ICON, COPY_ICON } from '@/components/ui/icons'
@@ -31,28 +30,14 @@ export const Copyable = ({
     ;(handle as unknown as { unref?: () => void }).unref?.()
   }
   return (
-    <RadixTooltip.Root delayDuration={150}>
-      <RadixTooltip.Trigger asChild>
-        <button
-          type="button"
-          data-testid={testId}
-          aria-label={`Copy ${label}`}
-          onClick={onCopy}
-          className={cn(PLAIN_ICON_BUTTON_CLASS, 'pointer-events-auto size-6 shrink-0', className)}
-        >
-          {copied ? CHECK_ICON : COPY_ICON}
-        </button>
-      </RadixTooltip.Trigger>
-      <RadixTooltip.Portal>
-        <RadixTooltip.Content
-          side="top"
-          sideOffset={4}
-          className="z-50 rounded-md border border-border bg-surface px-2 py-1 text-[0.72rem] font-medium text-foreground shadow-[var(--shadow-popover)]"
-        >
-          {copied ? 'Copied' : `Copy ${label}`}
-          <RadixTooltip.Arrow className="fill-surface" />
-        </RadixTooltip.Content>
-      </RadixTooltip.Portal>
-    </RadixTooltip.Root>
+    <button
+      type="button"
+      data-testid={testId}
+      aria-label={`Copy ${label}`}
+      onClick={onCopy}
+      className={cn(PLAIN_ICON_BUTTON_CLASS, 'pointer-events-auto size-6 shrink-0', className)}
+    >
+      {copied ? CHECK_ICON : COPY_ICON}
+    </button>
   )
 }
