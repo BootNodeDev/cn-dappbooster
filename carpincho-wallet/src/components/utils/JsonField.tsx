@@ -18,7 +18,10 @@ const validate = (value: string, label: string): string | undefined => {
     parseJsonObject(value, label)
     return undefined
   } catch (err) {
-    return err instanceof Error ? err.message : 'Invalid JSON'
+    if (!(err instanceof Error)) return 'Invalid JSON'
+    const prefix = `${label}: `
+    const message = err.message.startsWith(prefix) ? err.message.slice(prefix.length) : err.message
+    return message
   }
 }
 

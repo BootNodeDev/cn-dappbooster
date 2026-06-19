@@ -97,7 +97,7 @@ export const UtilsList = ({ account, tapApi, onSelect }: UtilsListProps): JSX.El
         >
           <span
             aria-hidden="true"
-            className={ICON_WRAP_CLASS}
+            className="grid size-9 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground"
           >
             {tapping ? SPINNER_ICON : DROPLET_ICON}
           </span>

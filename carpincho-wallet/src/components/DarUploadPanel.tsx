@@ -41,31 +41,34 @@ export const DarUploadPanel = ({ api = defaultApi }: DarUploadPanelProps): JSX.E
   return (
     <section className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
+        <span className="text-[0.82rem] font-semibold uppercase tracking-wider text-muted-foreground">
+          DAR file
+        </span>
+        <input
+          id="dar-file"
+          type="file"
+          accept=".dar,application/octet-stream"
+          aria-label="DAR file"
+          className="sr-only"
+          onChange={(event) => {
+            setUploadedFileName(undefined)
+            setFile(event.currentTarget.files?.[0])
+          }}
+        />
         <label
           htmlFor="dar-file"
-          className="text-[0.82rem] font-semibold uppercase tracking-wider text-muted-foreground"
+          className="cursor-pointer rounded-md border border-dashed border-border bg-surface px-4 py-6 text-center hover:border-primary/60"
         >
-          DAR file
-        </label>
-        <div className="rounded-md border border-dashed border-border bg-surface px-4 py-6 text-center">
-          <input
-            id="dar-file"
-            type="file"
-            accept=".dar,application/octet-stream"
-            className="block w-full text-[0.9rem] font-medium normal-case tracking-normal text-foreground file:mr-3 file:rounded-sm file:border-0 file:bg-primary-soft file:px-3 file:py-1.5 file:font-semibold file:text-primary"
-            onChange={(event) => {
-              setUploadedFileName(undefined)
-              setFile(event.currentTarget.files?.[0])
-            }}
-          />
           {file === undefined ? (
-            <p className="mt-3 text-[0.82rem] font-medium text-muted-foreground">
-              Choose a compiled .dar archive to install.
-            </p>
+            <span className="text-[0.82rem] font-medium text-muted-foreground">
+              Drop a .dar file or click to choose.
+            </span>
           ) : (
-            <p className="mt-3 truncate font-mono text-[0.82rem] text-foreground">{file.name}</p>
+            <span className="rounded-sm bg-muted px-2 py-1">
+              <span className="font-mono text-[0.82rem] text-foreground">{file.name}</span>
+            </span>
           )}
-        </div>
+        </label>
       </div>
       <PrimaryButton
         className="w-full"
