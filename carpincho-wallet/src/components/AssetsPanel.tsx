@@ -40,7 +40,7 @@ export const AssetsPanel = ({
   }
 
   return (
-    <div className="flex min-h-full flex-col gap-3 px-1 py-2">
+    <div className="flex min-h-full flex-col gap-3 px-1 pt-3 pb-2">
       <AutoAcceptSetting
         account={activeAccount}
         api={preapprovalApi}

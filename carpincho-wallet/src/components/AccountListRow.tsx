@@ -35,7 +35,7 @@ export const AccountListRow = ({
       onClick={onSelect}
       className="absolute inset-0 z-0 rounded-md outline-none transition-colors group-hover/row:bg-primary-soft focus-visible:shadow-focus"
     />
-    <div className="pointer-events-none relative z-10 flex min-w-0 flex-1 items-center gap-2 p-2">
+    <div className="pointer-events-none relative z-10 flex min-w-0 flex-1 items-center gap-2 px-3 py-2.5">
       <AccountRow
         account={account}
         withName

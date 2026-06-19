@@ -56,7 +56,7 @@ export const AutoAcceptSetting = ({ account, api }: AutoAcceptSettingProps): JSX
   }
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-surface px-3.5 py-3.5">
+    <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-surface px-3 py-2.5">
       <div className="flex items-center gap-1.5">
         <span className="text-[0.95rem] font-semibold text-foreground">Auto-accept incoming</span>
         <Tooltip content={AUTO_ACCEPT_TOOLTIP} />

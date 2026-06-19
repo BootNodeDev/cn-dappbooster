@@ -65,7 +65,7 @@ export const TransferCard = ({
     return (
       <article
         aria-label="Outgoing transfer, awaiting acceptance"
-        className="flex items-center gap-3 rounded-md border border-border bg-surface px-3 py-3"
+        className="flex items-center gap-3 rounded-md border border-border bg-surface px-3 py-2.5"
       >
         <div className="min-w-0 flex-1">
           {amountRow}
@@ -90,7 +90,7 @@ export const TransferCard = ({
   return (
     <article
       aria-label="Incoming transfer"
-      className="relative overflow-hidden rounded-md border border-accent/45 bg-gradient-to-b from-accent/15 to-accent/[0.06] py-3 pr-3 pl-4"
+      className="relative overflow-hidden rounded-md border border-accent/45 bg-gradient-to-b from-accent/15 to-accent/[0.06] py-2.5 pr-3 pl-4"
     >
       <span
         aria-hidden="true"

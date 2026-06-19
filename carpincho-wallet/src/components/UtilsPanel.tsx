@@ -35,7 +35,7 @@ export const UtilsPanel = ({ account, api = defaultApi }: UtilsPanelProps): JSX.
 
   if (account === undefined) {
     return (
-      <section className="px-1 py-2">
+      <section className="px-1 pt-3 pb-2">
         <Alert variant="warning">Create an account before using ledger tools.</Alert>
       </section>
     )
