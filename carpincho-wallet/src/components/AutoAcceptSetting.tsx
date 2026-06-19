@@ -13,9 +13,9 @@ interface AutoAcceptSettingProps {
 }
 
 const AUTO_ACCEPT_TOOLTIP =
-  "When this is on, any Amulet someone sends you drops straight into your wallet. Turn it off and you'll have to accept each incoming transfer yourself."
+  "When this is on, any incoming transfer someone sends you drops straight into your wallet. Turn it off and you'll have to accept each one yourself."
 
-// Receiver opt-in for Amulet auto-accept, surfaced as a setting row on the Assets tab.
+// Receiver opt-in for auto-accepting incoming transfers, surfaced as a setting row on the Assets tab.
 export const AutoAcceptSetting = ({ account, api }: AutoAcceptSettingProps): JSX.Element => {
   const vault = useVault()
   const preapproval = useAmuletPreapproval(account, {
@@ -44,14 +44,14 @@ export const AutoAcceptSetting = ({ account, api }: AutoAcceptSettingProps): JSX
     try {
       if (next) {
         await preapproval.enable()
-        toast.success('Amulet auto-accept enabled')
+        toast.success('Auto-accept enabled')
       } else {
         await preapproval.disable()
-        toast.success('Amulet auto-accept disabled')
+        toast.success('Auto-accept disabled')
       }
     } catch (error) {
       setOptimistic(undefined)
-      toast.error(error instanceof Error ? error.message : 'Amulet auto-accept failed')
+      toast.error(error instanceof Error ? error.message : 'Auto-accept failed')
     }
   }
 
