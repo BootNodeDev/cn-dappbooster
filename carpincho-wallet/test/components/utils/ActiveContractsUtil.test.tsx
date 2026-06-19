@@ -60,18 +60,24 @@ describe('ActiveContractsUtil', () => {
     assert.ok(screen.getByText('Contract ID'))
   })
 
-  it('filters the list locally as the template id is typed', async () => {
+  it('filters the list locally by template or contract id as you type', async () => {
     const listActiveContracts = (async () => [CONTRACT, OTHER]) as typeof ListFn
     renderUtil(listActiveContracts)
     await screen.findByText('cid-1')
     await screen.findByText('cid-other')
 
-    // Suffix match keeps only the contract whose template ends with the typed name.
-    await userEvent.type(screen.getByLabelText('Template id'), 'Other')
+    // Template suffix match keeps only the contract whose template ends with the typed name.
+    await userEvent.type(screen.getByLabelText('Filter'), 'Other')
     assert.equal(screen.queryByText('cid-1'), null)
     assert.ok(screen.getByText('cid-other'))
 
-    await userEvent.clear(screen.getByLabelText('Template id'))
+    // A contract-id substring narrows it the other way.
+    await userEvent.clear(screen.getByLabelText('Filter'))
+    await userEvent.type(screen.getByLabelText('Filter'), '-1')
+    assert.ok(screen.getByText('cid-1'))
+    assert.equal(screen.queryByText('cid-other'), null)
+
+    await userEvent.clear(screen.getByLabelText('Filter'))
     assert.ok(screen.getByText('cid-1'))
     assert.ok(screen.getByText('cid-other'))
   })
@@ -104,7 +110,7 @@ describe('ActiveContractsUtil', () => {
     const one = (async () => [CONTRACT]) as typeof ListFn
     renderUtil(one)
     await screen.findByText('cid-1')
-    await userEvent.type(screen.getByLabelText('Template id'), 'Nope')
+    await userEvent.type(screen.getByLabelText('Filter'), 'Nope')
     assert.ok(screen.getByText(/no contracts match/i))
   })
 })

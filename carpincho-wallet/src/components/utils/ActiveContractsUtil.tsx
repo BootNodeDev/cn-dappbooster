@@ -10,8 +10,8 @@ import { TextInput } from '@/components/ui/TextInput'
 import { toast } from '@/components/ui/toast'
 import {
   type ActiveContract,
+  contractMatchesQuery,
   listActiveContracts as defaultList,
-  matchesTemplate,
 } from '@/ledger/contracts'
 import { shortMiddle } from '@/utils/account'
 import { cn } from '@/utils/cn'
@@ -73,7 +73,7 @@ export const ActiveContractsUtil = ({
   account,
   listActiveContracts = defaultList,
 }: ActiveContractsUtilProps): JSX.Element => {
-  const [filterTemplateId, setFilterTemplateId] = useState('')
+  const [filterQuery, setFilterQuery] = useState('')
   const [contracts, setContracts] = useState<ActiveContract[]>([])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | undefined>()
@@ -98,7 +98,7 @@ export const ActiveContractsUtil = ({
     void refresh()
   }, [refresh])
 
-  const visible = contracts.filter((contract) => matchesTemplate(contract, filterTemplateId))
+  const visible = contracts.filter((contract) => contractMatchesQuery(contract, filterQuery))
   const emptyMessage = !loaded
     ? 'Loading active contracts...'
     : contracts.length === 0
@@ -108,15 +108,15 @@ export const ActiveContractsUtil = ({
   return (
     <section className="flex flex-col gap-4">
       <label
-        htmlFor="filter-template-id"
+        htmlFor="contract-filter"
         className="flex flex-col gap-2 text-[0.82rem] font-semibold uppercase tracking-wider text-muted-foreground"
       >
-        Template id
+        Filter
         <TextInput
-          id="filter-template-id"
-          value={filterTemplateId}
-          onChange={(event) => setFilterTemplateId(event.currentTarget.value)}
-          placeholder="e.g. Module:Template"
+          id="contract-filter"
+          value={filterQuery}
+          onChange={(event) => setFilterQuery(event.currentTarget.value)}
+          placeholder="Template or contract id"
           className="font-mono text-[0.9rem] normal-case tracking-normal"
         />
       </label>

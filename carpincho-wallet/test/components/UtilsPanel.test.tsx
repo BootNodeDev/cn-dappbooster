@@ -122,7 +122,7 @@ describe('UtilsPanel', () => {
     assert.deepEqual(listCalls.at(-1), { partyId: 'alice::party' })
 
     // Typing narrows the already-fetched set client-side, no extra request.
-    await userEvent.type(screen.getByLabelText('Template id'), 'Other')
+    await userEvent.type(screen.getByLabelText('Filter'), 'Other')
     assert.equal(screen.queryByText('cid-1'), null)
     assert.ok(screen.getByText('cid-other'))
     assert.equal(listCalls.length, 1)

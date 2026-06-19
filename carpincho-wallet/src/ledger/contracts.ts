@@ -180,6 +180,18 @@ export const matchesTemplate = (contract: ActiveContract, templateId?: string): 
   return contract.templateId.endsWith(suffix)
 }
 
+// UI filter: a query hits a contract by template (exact/suffix) or contract-id substring.
+export const contractMatchesQuery = (contract: ActiveContract, query: string): boolean => {
+  const trimmed = query.trim()
+  if (trimmed === '') {
+    return true
+  }
+  return (
+    matchesTemplate(contract, trimmed) ||
+    contract.contractId.toLowerCase().includes(trimmed.toLowerCase())
+  )
+}
+
 // Lists active contracts visible to the selected party using JSON Ledger API v2 ACS.
 export const listActiveContracts = async ({
   partyId,

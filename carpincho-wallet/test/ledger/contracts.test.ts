@@ -2,6 +2,7 @@ import { strict as assert } from 'node:assert'
 import { afterEach, describe, it } from 'node:test'
 import {
   type ActiveContract,
+  contractMatchesQuery,
   createContract,
   exerciseContract,
   listActiveContracts,
@@ -289,5 +290,29 @@ describe('matchesTemplate', () => {
   it('matches a bare template-name suffix', () => {
     assert.equal(matchesTemplate(contract, 'Template'), true)
     assert.equal(matchesTemplate(contract, 'Other'), false)
+  })
+})
+
+describe('contractMatchesQuery', () => {
+  const contract: ActiveContract = {
+    contractId: '0041299d46bcfba01e',
+    templateId: 'pkg:Module:Template',
+    createArgument: {},
+  }
+
+  it('keeps every contract when the query is empty or whitespace', () => {
+    assert.equal(contractMatchesQuery(contract, ''), true)
+    assert.equal(contractMatchesQuery(contract, '   '), true)
+  })
+
+  it('matches on the template id like matchesTemplate', () => {
+    assert.equal(contractMatchesQuery(contract, 'Module:Template'), true)
+    assert.equal(contractMatchesQuery(contract, 'Other'), false)
+  })
+
+  it('matches a case-insensitive substring of the contract id', () => {
+    assert.equal(contractMatchesQuery(contract, '1299d46'), true)
+    assert.equal(contractMatchesQuery(contract, 'BCFBA01E'), true)
+    assert.equal(contractMatchesQuery(contract, 'deadbeef'), false)
   })
 })
