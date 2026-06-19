@@ -3,6 +3,7 @@ import { formatTokenAmount } from '@/cip56/amount'
 import type { PendingTokenTransfer } from '@/cip56/transfers'
 import { tokenDisplayLabel, transferDescription } from '@/cip56/transfers'
 import { PrimaryButton } from '@/components/ui/Button'
+import { Copyable } from '@/components/ui/Copyable'
 import { EYE_ICON } from '@/components/ui/icons'
 import { shortMiddle } from '@/utils/account'
 
@@ -67,8 +68,16 @@ export const TransferCard = ({
       >
         <div className="min-w-0 flex-1">
           {amountRow}
-          <p className="m-0 mt-1 font-mono text-[0.76rem] text-muted-foreground">
-            {counterpartyLabel}: {counterpartyText}
+          <p className="m-0 mt-1 flex items-center gap-1.5 font-mono text-[0.76rem] text-muted-foreground">
+            <span className="min-w-0 truncate">
+              {counterpartyLabel}: {counterpartyText}
+            </span>
+            {counterparty === undefined ? null : (
+              <Copyable
+                value={counterparty}
+                label={counterpartyLabel === 'from' ? 'sender' : 'receiver'}
+              />
+            )}
           </p>
         </div>
         <span className="shrink-0 rounded-full border border-warning/40 bg-warning-soft px-2.5 py-1 text-[0.72rem] font-semibold text-warning">
@@ -94,8 +103,16 @@ export const TransferCard = ({
           {description === undefined ? null : (
             <p className="m-0 mt-1 text-[0.83rem] leading-5 text-foreground">{description}</p>
           )}
-          <p className="m-0 mt-1 font-mono text-[0.76rem] text-muted-foreground">
-            {counterpartyLabel}: {counterpartyText}
+          <p className="m-0 mt-1 flex items-center gap-1.5 font-mono text-[0.76rem] text-muted-foreground">
+            <span className="min-w-0 truncate">
+              {counterpartyLabel}: {counterpartyText}
+            </span>
+            {counterparty === undefined ? null : (
+              <Copyable
+                value={counterparty}
+                label={counterpartyLabel === 'from' ? 'sender' : 'receiver'}
+              />
+            )}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
