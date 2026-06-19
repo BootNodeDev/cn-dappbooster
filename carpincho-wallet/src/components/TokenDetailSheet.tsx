@@ -117,27 +117,29 @@ const DetailScreen = ({
       </SecondaryButton>
     </div>
 
-    <div className="flex flex-col gap-2">
+    <div className="flex min-h-0 flex-col gap-2">
       <div className="px-1 text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
         Holdings
       </div>
-      {loading && holdings.length === 0 ? (
-        <p className="m-0 px-1 text-[0.82rem] text-muted-foreground">Loading UTXOs</p>
-      ) : error !== undefined ? (
-        <div className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-[0.82rem] text-danger">
-          {error}
-        </div>
-      ) : holdings.length === 0 ? (
-        <p className="m-0 px-1 text-[0.82rem] text-muted-foreground">No UTXO details</p>
-      ) : (
-        holdings.map((holding) => (
-          <HoldingListRow
-            key={holding.contractId}
-            holding={holding}
-            onOpen={() => onOpenHolding(holding)}
-          />
-        ))
-      )}
+      <div className="-mx-1 flex max-h-[50vh] flex-col gap-2 overflow-y-auto px-1">
+        {loading && holdings.length === 0 ? (
+          <p className="m-0 px-1 text-[0.82rem] text-muted-foreground">Loading UTXOs</p>
+        ) : error !== undefined ? (
+          <div className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-[0.82rem] text-danger">
+            {error}
+          </div>
+        ) : holdings.length === 0 ? (
+          <p className="m-0 px-1 text-[0.82rem] text-muted-foreground">No UTXO details</p>
+        ) : (
+          holdings.map((holding) => (
+            <HoldingListRow
+              key={holding.contractId}
+              holding={holding}
+              onOpen={() => onOpenHolding(holding)}
+            />
+          ))
+        )}
+      </div>
     </div>
   </div>
 )

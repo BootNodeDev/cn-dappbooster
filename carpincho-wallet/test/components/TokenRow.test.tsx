@@ -21,9 +21,10 @@ describe('TokenRow', () => {
     cleanup()
   })
 
-  it('shows the token name and formatted balance, no UTXO subtitle or chevron', () => {
-    // Scenario: the assets list is balance-first (MetaMask/Rabby-style): icon + name
-    // on the left, the grouped balance on the right. The UTXO count moved to the detail sheet.
+  it('shows the balance with the token name beneath and a chevron', () => {
+    // Scenario: the assets list is balance-first: icon + amount on the left with the token
+    // name beneath it, and a chevron on the right (the row opens the detail sheet). The UTXO
+    // count moved to the detail sheet.
     const { container } = render(
       <TokenRow
         summary={SUMMARY}
@@ -34,6 +35,7 @@ describe('TokenRow', () => {
     assert.equal(screen.getByText('Amulet').textContent, 'Amulet')
     assert.equal(screen.getByText('9,997.00').textContent, '9,997.00')
     assert.ok(container.querySelector('img'), 'the row should show the token icon')
+    assert.ok(container.querySelector('svg'), 'the row should show a chevron')
     assert.equal(screen.queryByText(/UTXO/i), null)
     assert.equal(screen.queryByRole('button', { name: /show holdings/i }), null)
   })

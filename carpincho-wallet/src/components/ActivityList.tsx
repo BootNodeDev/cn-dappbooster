@@ -1,9 +1,9 @@
-import { Fragment, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Copyable } from '@/components/ui/Copyable'
-import { CHEVRON_RIGHT_ICON, RECEIPT_ICON } from '@/components/ui/icons'
+import { DetailRow } from '@/components/ui/DetailRow'
+import { EYE_ICON, RECEIPT_ICON } from '@/components/ui/icons'
 import { JsonView } from '@/components/ui/JsonView'
 import { Sheet } from '@/components/ui/Sheet'
-import { cn } from '@/utils/cn'
 import type { TransactionRecord } from '@/vault/types'
 import { CANTON_METHOD_PREPARE_EXECUTE_AND_WAIT } from '@/wc/client'
 
@@ -92,32 +92,26 @@ const groupByDate = (transactions: TransactionRecord[]): DateGroup[] => {
 // Detail body shown inside the popup opened from an activity row.
 const TransactionDetails = ({ tx }: { tx: TransactionRecord }): JSX.Element => (
   <div>
-    <dl className="m-0 grid grid-cols-[minmax(96px,auto)_1fr] gap-x-3 gap-y-2 text-[0.92rem]">
+    <dl className="m-0 grid gap-3">
       {txDetailRows(tx).map((row) => (
-        <Fragment key={row.label}>
-          <dt className="font-semibold tracking-tight text-muted-foreground">{row.label}</dt>
-          <dd
-            className={cn(
-              'm-0 flex min-w-0 items-start gap-1.5 font-medium text-soft [overflow-wrap:anywhere]',
-              row.mono && 'font-mono text-[0.88rem]',
-            )}
-          >
-            <span className="min-w-0">{row.value}</span>
-            {row.mono && typeof row.value === 'string' ? (
-              <Copyable
-                value={row.value}
-                label={row.label}
-                className="mt-0.5"
-              />
-            ) : null}
-          </dd>
-        </Fragment>
+        <DetailRow
+          key={row.label}
+          label={row.label}
+          value={String(row.value)}
+          copyLabel={row.mono ? row.label : undefined}
+        />
       ))}
     </dl>
     {hasCommandPayload(tx) && (
       <div className="mt-3">
-        <div className="mb-1.5 text-[0.92rem] font-semibold tracking-tight text-muted-foreground">
-          Command payload
+        <div className="mb-1.5 flex items-center gap-1.5">
+          <span className="text-[0.7rem] font-semibold uppercase text-muted-foreground">
+            Command payload
+          </span>
+          <Copyable
+            value={JSON.stringify(tx.commands, null, 2)}
+            label="command payload"
+          />
         </div>
         <JsonView value={tx.commands} />
       </div>
@@ -146,41 +140,43 @@ export const ActivityList = ({ transactions }: ActivityListProps): JSX.Element =
     <div className="flex flex-col pb-2">
       {groups.map((group) => (
         <div key={group.label}>
-          <div className="px-1 pb-1 pt-3 text-[0.8rem] font-semibold tracking-tight text-muted-foreground">
+          <div className="px-1 pb-1.5 pt-3 text-[0.8rem] font-semibold tracking-tight text-muted-foreground">
             {group.label}
           </div>
-          {group.items.map((tx) => (
-            <button
-              key={tx.id}
-              type="button"
-              onClick={() => setSelected(tx)}
-              className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-md px-1 py-2.5 text-left outline-none transition-colors hover:bg-primary-soft/40 focus-visible:bg-primary-soft/60"
-            >
-              <span
-                aria-hidden="true"
-                className="grid size-9 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground"
+          <div className="flex flex-col gap-2">
+            {group.items.map((tx) => (
+              <button
+                key={tx.id}
+                type="button"
+                onClick={() => setSelected(tx)}
+                className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-md border border-border bg-surface px-3 py-2.5 text-left outline-none transition-colors hover:border-primary/60 hover:bg-primary-soft/40 focus-visible:shadow-focus"
               >
-                {RECEIPT_ICON}
-              </span>
-              <span className="min-w-0">
-                <span className="flex items-baseline gap-2">
-                  <span className="truncate text-[0.94rem] font-semibold text-foreground">
-                    {txTitle(tx)}
-                  </span>
-                  <span className="shrink-0 whitespace-nowrap text-[0.72rem] font-normal italic text-muted-foreground">
-                    {TIME_FMT.format(tx.createdAt)}
-                  </span>
+                <span
+                  aria-hidden="true"
+                  className="grid size-9 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground"
+                >
+                  {RECEIPT_ICON}
                 </span>
-                <span className="block text-[0.84rem] font-medium text-success">Confirmed</span>
-              </span>
-              <span
-                aria-hidden="true"
-                className="justify-self-end text-muted-foreground"
-              >
-                {CHEVRON_RIGHT_ICON}
-              </span>
-            </button>
-          ))}
+                <span className="min-w-0">
+                  <span className="flex items-baseline gap-2">
+                    <span className="truncate text-[0.94rem] font-semibold text-foreground">
+                      {txTitle(tx)}
+                    </span>
+                    <span className="shrink-0 whitespace-nowrap text-[0.72rem] font-normal italic text-muted-foreground">
+                      {TIME_FMT.format(tx.createdAt)}
+                    </span>
+                  </span>
+                  <span className="block text-[0.84rem] font-medium text-success">Confirmed</span>
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="grid size-8 place-items-center justify-self-end text-muted-foreground [&_svg]:size-4"
+                >
+                  {EYE_ICON}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
       ))}
 

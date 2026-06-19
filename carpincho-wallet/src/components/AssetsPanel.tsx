@@ -52,8 +52,8 @@ export const AssetsPanel = ({
       )}
 
       {summaries.length > 0 ? (
-        <div className="flex flex-col">
-          <div className="px-1 pb-1 text-[0.7rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+        <div className="flex flex-col gap-2">
+          <div className="px-1 text-[0.7rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
             Holdings
           </div>
           {summaries.map((summary) => (

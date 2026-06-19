@@ -11,7 +11,7 @@ interface UtilDetailProps {
 // Shared back-bar + title shell that hosts a single util's content.
 export const UtilDetail = ({ title, onBack, children }: UtilDetailProps): JSX.Element => (
   <div className="flex min-h-0 flex-1 flex-col">
-    <div className="sticky top-0 z-10 flex shrink-0 items-center gap-2 border-b border-border bg-background/95 pb-2.5 pt-1.5 backdrop-blur">
+    <div className="flex shrink-0 items-center gap-2 pb-2.5 pt-1.5">
       <button
         type="button"
         aria-label="Back"
