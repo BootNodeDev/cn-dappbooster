@@ -25,20 +25,32 @@ interface JsonViewProps {
 }
 
 // Read-only JSON tree with per-node copy; used for contract args, results, and tx payloads.
-export const JsonView = ({ value, className }: JsonViewProps): JSX.Element => (
-  <div
-    className={cn(
-      'max-h-64 overflow-auto rounded-md border border-border bg-muted p-3 text-[0.78rem] leading-relaxed',
-      className,
-    )}
-  >
-    <RjvJsonView
-      value={value as object}
-      style={THEME_STYLE}
-      displayDataTypes={false}
-      displayObjectSize={false}
-      enableClipboard
-      collapsed={2}
-    />
-  </div>
-)
+// Non-object values (strings, numbers, booleans, null, undefined) render as plain monospace text
+// to avoid the per-character tree the library produces when given a primitive.
+export const JsonView = ({ value, className }: JsonViewProps): JSX.Element => {
+  const isObject = value !== null && typeof value === 'object'
+
+  return (
+    <div
+      className={cn(
+        'max-h-64 overflow-auto rounded-md border border-border bg-muted p-3 text-[0.78rem] leading-relaxed',
+        className,
+      )}
+    >
+      {isObject ? (
+        <RjvJsonView
+          value={value as object}
+          style={THEME_STYLE}
+          displayDataTypes={false}
+          displayObjectSize={false}
+          enableClipboard
+          collapsed={2}
+        />
+      ) : (
+        <pre className="m-0 whitespace-pre-wrap break-words font-mono text-foreground">
+          {value == null ? '' : String(value)}
+        </pre>
+      )}
+    </div>
+  )
+}
