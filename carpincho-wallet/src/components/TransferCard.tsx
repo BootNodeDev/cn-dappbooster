@@ -90,7 +90,7 @@ export const TransferCard = ({
         aria-hidden="true"
         className="absolute inset-y-0 left-0 w-[3px] bg-gradient-to-b from-accent to-primary"
       />
-      <div className="flex items-start gap-3">
+      <div className="flex items-center gap-3">
         <div className="min-w-0 flex-1">
           {amountRow}
           {description === undefined ? null : (
