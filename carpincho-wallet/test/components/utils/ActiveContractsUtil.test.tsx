@@ -96,7 +96,7 @@ describe('ActiveContractsUtil', () => {
     const button = screen.getByRole('button', { name: 'Refresh contracts' })
     await userEvent.click(button)
     // The icon spins on click, independent of how fast the fetch resolves.
-    assert.ok(button.querySelector('.animate-spin'))
+    assert.ok(button.querySelector('.animate-spin-fast'))
     await waitFor(() => assert.equal(calls, 2))
   })
 

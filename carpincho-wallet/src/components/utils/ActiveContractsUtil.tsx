@@ -153,7 +153,7 @@ export const ActiveContractsUtil = ({
         >
           {/* Spin at least one full turn per click, and keep going while a fetch is in flight. */}
           <span
-            className={cn('inline-grid place-items-center', spinning && 'animate-spin')}
+            className={cn('inline-grid place-items-center', spinning && 'animate-spin-fast')}
             onAnimationIteration={() => {
               if (!busy) setSpinning(false)
             }}
