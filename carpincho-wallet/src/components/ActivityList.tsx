@@ -1,8 +1,9 @@
 import { Fragment, useMemo, useState } from 'react'
+import { Copyable } from '@/components/ui/Copyable'
 import { CHEVRON_RIGHT_ICON, RECEIPT_ICON } from '@/components/ui/icons'
+import { JsonView } from '@/components/ui/JsonView'
 import { Sheet } from '@/components/ui/Sheet'
 import { cn } from '@/utils/cn'
-import { prettyJson } from '@/utils/json'
 import type { TransactionRecord } from '@/vault/types'
 import { CANTON_METHOD_PREPARE_EXECUTE_AND_WAIT } from '@/wc/client'
 
@@ -97,11 +98,18 @@ const TransactionDetails = ({ tx }: { tx: TransactionRecord }): JSX.Element => (
           <dt className="font-semibold tracking-tight text-muted-foreground">{row.label}</dt>
           <dd
             className={cn(
-              'm-0 min-w-0 font-medium text-soft [overflow-wrap:anywhere]',
+              'm-0 flex min-w-0 items-start gap-1.5 font-medium text-soft [overflow-wrap:anywhere]',
               row.mono && 'font-mono text-[0.88rem]',
             )}
           >
-            {row.value}
+            <span className="min-w-0">{row.value}</span>
+            {row.mono && typeof row.value === 'string' ? (
+              <Copyable
+                value={row.value}
+                label={row.label}
+                className="mt-0.5"
+              />
+            ) : null}
           </dd>
         </Fragment>
       ))}
@@ -111,9 +119,7 @@ const TransactionDetails = ({ tx }: { tx: TransactionRecord }): JSX.Element => (
         <div className="mb-1.5 text-[0.92rem] font-semibold tracking-tight text-muted-foreground">
           Command payload
         </div>
-        <pre className="m-0 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-md border border-border bg-background/60 p-3 font-mono text-[0.78rem] leading-relaxed text-soft">
-          {prettyJson(tx.commands)}
-        </pre>
+        <JsonView value={tx.commands} />
       </div>
     )}
   </div>

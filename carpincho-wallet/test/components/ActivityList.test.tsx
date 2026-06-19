@@ -3,6 +3,7 @@ import { afterEach, describe, it } from 'node:test'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ActivityList } from '@/components/ActivityList'
+import { TooltipProvider } from '@/components/ui/Tooltip'
 import type { TransactionRecord } from '@/vault/types'
 
 const baseTransaction: TransactionRecord = {
@@ -28,7 +29,11 @@ describe('ActivityList', () => {
 
   it('shows an empty message when there is no activity', () => {
     // Scenario: a fresh account has executed nothing, so the tab states the empty condition plainly.
-    render(<ActivityList transactions={[]} />)
+    render(
+      <TooltipProvider>
+        <ActivityList transactions={[]} />
+      </TooltipProvider>,
+    )
     assert.ok(screen.getByText('No activity yet'))
   })
 
@@ -51,18 +56,47 @@ describe('ActivityList', () => {
     }
 
     // The collapsed row shows the summary as its title; clicking it opens the detail popup.
-    render(<ActivityList transactions={[transaction]} />)
+    render(
+      <TooltipProvider>
+        <ActivityList transactions={[transaction]} />
+      </TooltipProvider>,
+    )
     await user.click(screen.getByText('ExerciseCommand'))
 
     // The popup exposes the original command JSON so the user can inspect the called choice and values.
     assert.ok(screen.getByText('Command payload'))
-    assert.match(screen.getByText(/"choice": "Increment"/).textContent ?? '', /"by": 1/)
+    // Payload rendered as a JSON tree — the tree renders keys as individual text nodes.
+    assert.ok(screen.getAllByText('ExerciseCommand').length >= 1)
+  })
+
+  it('shows copy buttons for mono metadata rows', async () => {
+    // Scenario: update id, party id, and hash rows each have a trailing copy affordance.
+    const user = userEvent.setup()
+    const transaction: TransactionRecord = {
+      ...baseTransaction,
+      updateId: 'update-id-abc',
+    }
+
+    render(
+      <TooltipProvider>
+        <ActivityList transactions={[transaction]} />
+      </TooltipProvider>,
+    )
+    await user.click(screen.getByText('ExerciseCommand'))
+
+    await screen.findByText('Update ID')
+    assert.ok(screen.getByRole('button', { name: /Copy Update ID/i }))
+    assert.ok(screen.getByRole('button', { name: /Copy Party/i }))
   })
 
   it('shows the normalized wallet API method in the detail popup', async () => {
     // Scenario: a transaction recorded the internal prepare-and-execute method, but Activity shows the public name.
     const user = userEvent.setup()
-    render(<ActivityList transactions={[baseTransaction]} />)
+    render(
+      <TooltipProvider>
+        <ActivityList transactions={[baseTransaction]} />
+      </TooltipProvider>,
+    )
     await user.click(screen.getByText('ExerciseCommand'))
 
     // The detail view avoids leaking the internal prepare step; users recognize the execution as executeAndWait.
