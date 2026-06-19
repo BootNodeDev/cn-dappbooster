@@ -1,9 +1,8 @@
 import { useCallback, useMemo, useState } from 'react'
-import { ActivityList } from '@/components/ActivityList'
+import { ActivityPanel } from '@/components/ActivityPanel'
 import { AssetsPanel } from '@/components/AssetsPanel'
 import { LedgerToolsPanel } from '@/components/LedgerToolsPanel'
 import type { Cip56SendApi } from '@/components/SendTokenForm'
-import { TransfersPanel } from '@/components/TransfersPanel'
 import { TabContent, Tabs, TabsList, TabTrigger } from '@/components/ui/Tabs'
 import type { AmuletPreapprovalApi } from '@/hooks/useAmuletPreapproval'
 import type { Cip56TransferApi } from '@/hooks/usePendingCip56Transfers'
@@ -22,7 +21,8 @@ interface HomeTabsProps {
 // The only scrolling region between the account selector and the footer.
 const TAB_CONTENT_CLASS = 'min-h-0 flex-1 overflow-y-auto outline-none'
 
-// Tabbed home body; assets, transfers, activity, and sending each own a tab.
+// Tabbed home body; assets, activity, and dev tools each own a tab. Pending transfers
+// fold into Activity, which badges incoming receiver-acceptance work.
 export const HomeTabs = ({
   account,
   transactions,
@@ -61,15 +61,14 @@ export const HomeTabs = ({
     >
       <TabsList>
         <TabTrigger value="assets">Assets</TabTrigger>
-        <TabTrigger value="transfers">
-          <span>Transfers</span>
+        <TabTrigger value="activity">
+          <span>Activity</span>
           {pendingTransferCount > 0 ? (
-            <span className="ml-1 inline-grid min-w-5 place-items-center rounded-full bg-danger px-1.5 text-[0.72rem] leading-5 text-primary-foreground">
+            <span className="ml-1 inline-grid min-w-5 place-items-center rounded-full bg-accent px-1.5 text-[0.72rem] leading-5 text-primary-foreground">
               {pendingTransferCount}
             </span>
           ) : null}
         </TabTrigger>
-        <TabTrigger value="activity">Activity</TabTrigger>
         <TabTrigger value="utils">Utils</TabTrigger>
       </TabsList>
       <TabContent
@@ -80,25 +79,20 @@ export const HomeTabs = ({
           account={account}
           api={tokensApi}
           sendApi={sendApi}
+          preapprovalApi={preapprovalApi}
         />
       </TabContent>
       <TabContent
         forceMount
-        value="transfers"
-        className={TAB_CONTENT_CLASS}
-      >
-        <TransfersPanel
-          account={account}
-          api={transfersApi}
-          preapprovalApi={preapprovalApi}
-          onPendingCountChange={onPendingTransferCountChange}
-        />
-      </TabContent>
-      <TabContent
         value="activity"
         className={TAB_CONTENT_CLASS}
       >
-        <ActivityList transactions={activeTransactions} />
+        <ActivityPanel
+          account={account}
+          transactions={activeTransactions}
+          api={transfersApi}
+          onPendingCountChange={onPendingTransferCountChange}
+        />
       </TabContent>
       <TabContent
         value="utils"

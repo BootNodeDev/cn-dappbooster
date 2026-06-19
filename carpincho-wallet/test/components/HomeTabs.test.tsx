@@ -90,9 +90,8 @@ describe('HomeTabs navigation', () => {
     cleanup()
   })
 
-  it('renders Assets, Transfers, Activity, and Utils tabs', () => {
-    // Scenario: token balances, incoming transfers, and history each own a top-level
-    // tab. Sending now lives inside the token detail modal, so there is no Send tab.
+  it('renders Assets, Activity, and Utils tabs without Transfers or Send', () => {
+    // Scenario: the Transfers tab is gone; pending transfers live in Activity now.
     renderHome(
       baseVault(),
       <HomeTabs
@@ -102,9 +101,9 @@ describe('HomeTabs navigation', () => {
     )
 
     assert.equal(screen.getByRole('tab', { name: 'Assets' }).getAttribute('data-state'), 'active')
-    assert.ok(screen.getByRole('tab', { name: 'Transfers' }))
     assert.ok(screen.getByRole('tab', { name: 'Activity' }))
     assert.ok(screen.getByRole('tab', { name: 'Utils' }))
+    assert.equal(screen.queryByRole('tab', { name: 'Transfers' }), null)
     assert.equal(screen.queryByRole('tab', { name: 'Send' }), null)
   })
 
@@ -139,10 +138,9 @@ describe('HomeTabs navigation', () => {
     await screen.findByText('Amulet')
   })
 
-  it('badges the Transfers tab when hidden incoming transfers require action', async () => {
-    // Scenario: incoming transfer polling lives in the Transfers tab, which stays
-    // mounted while Activity is selected so pending receiver-acceptance work can
-    // still badge the tab.
+  it('badges the Activity tab when hidden incoming transfers require action', async () => {
+    // Scenario: the Activity content is force-mounted, so its incoming-transfer polling
+    // badges the tab even while Assets is selected.
     const transfersApi: Cip56TransferApi = {
       listPendingIncomingTransfers: async () => [
         {
@@ -174,7 +172,7 @@ describe('HomeTabs navigation', () => {
     )
 
     assert.equal(screen.getByRole('tab', { name: 'Assets' }).getAttribute('data-state'), 'active')
-    await screen.findByRole('tab', { name: 'Transfers 1' })
+    await screen.findByRole('tab', { name: 'Activity 1' })
   })
 
   it('shows Activity only for the selected account', async () => {
