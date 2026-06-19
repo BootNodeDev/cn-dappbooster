@@ -46,7 +46,7 @@ describe('ActiveContractsUtil', () => {
     const listActiveContracts = (async () => [CONTRACT]) as typeof ListFn
     renderUtil(listActiveContracts)
 
-    await screen.findByText('cid-1')
+    await screen.findAllByText('cid-1')
     assert.ok(screen.getByRole('button', { name: /Copy contract ID/i }))
 
     await userEvent.click(screen.getByRole('button', { name: /toggle contract details/i }))

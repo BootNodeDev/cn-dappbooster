@@ -7,8 +7,8 @@ import { TooltipProvider } from '@/components/ui/Tooltip'
 describe('DetailRow', () => {
   afterEach(cleanup)
 
-  it('shows a copy button only when copyLabel is set', () => {
-    const { rerender } = render(
+  it('renders the title, value, and a copy button labelled from the title', () => {
+    render(
       <TooltipProvider>
         <dl>
           <DetailRow
@@ -18,9 +18,13 @@ describe('DetailRow', () => {
         </dl>
       </TooltipProvider>,
     )
-    assert.equal(screen.queryByRole('button', { name: /Copy/i }), null)
+    assert.ok(screen.getByText('party'))
+    assert.equal(screen.getByText('alice::party').textContent, 'alice::party')
+    assert.ok(screen.getByRole('button', { name: 'Copy party' }))
+  })
 
-    rerender(
+  it('uses copyLabel for the copy button when provided', () => {
+    render(
       <TooltipProvider>
         <dl>
           <DetailRow

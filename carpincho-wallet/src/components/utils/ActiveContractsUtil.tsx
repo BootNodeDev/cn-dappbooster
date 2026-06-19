@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Alert } from '@/components/ui/Alert'
-import { SecondaryButton } from '@/components/ui/Button'
+import { PrimaryButton } from '@/components/ui/Button'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/Collapsible'
 import { Copyable } from '@/components/ui/Copyable'
 import { DetailRow } from '@/components/ui/DetailRow'
@@ -9,6 +9,7 @@ import { JsonView } from '@/components/ui/JsonView'
 import { TextInput } from '@/components/ui/TextInput'
 import { toast } from '@/components/ui/toast'
 import { type ActiveContract, listActiveContracts as defaultList } from '@/ledger/contracts'
+import { shortMiddle } from '@/utils/account'
 import type { AccountPublic } from '@/vault/types'
 
 interface ActiveContractsUtilProps {
@@ -18,16 +19,26 @@ interface ActiveContractsUtilProps {
 
 // One active contract as a collapsible card: id + chevron, args behind an expander.
 const ContractCard = ({ contract }: { contract: ActiveContract }): JSX.Element => (
-  <Collapsible className="rounded-md border border-border bg-surface p-3">
+  <Collapsible className="group rounded-md border border-border bg-surface p-3">
     <div className="flex items-start gap-2">
       <div className="min-w-0 flex-1">
-        <DetailRow
-          label="Contract ID"
-          value={contract.contractId}
-          copyLabel="contract ID"
-        />
+        <div className="mb-1 flex items-center gap-1.5">
+          <span className="text-[0.7rem] font-semibold uppercase text-muted-foreground">
+            Contract ID
+          </span>
+          <Copyable
+            value={contract.contractId}
+            label="contract ID"
+          />
+        </div>
+        <div className="break-all rounded-md border border-border bg-muted px-3 py-2 font-mono text-[0.74rem] leading-5 text-foreground">
+          <span className="block truncate group-data-[state=open]:hidden">
+            {shortMiddle(contract.contractId, 10, 8)}
+          </span>
+          <span className="hidden group-data-[state=open]:block">{contract.contractId}</span>
+        </div>
       </div>
-      <CollapsibleTrigger className="group grid size-8 shrink-0 place-items-center rounded-md text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:shadow-focus [&_svg]:size-5">
+      <CollapsibleTrigger className="grid size-8 shrink-0 place-items-center rounded-md text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:shadow-focus [&_svg]:size-5">
         <span className="sr-only">Toggle contract details</span>
         <span className="transition-transform group-data-[state=open]:rotate-180">
           {CHEVRON_DOWN_ICON}
@@ -116,7 +127,7 @@ export const ActiveContractsUtil = ({
           className="font-mono text-[0.9rem] normal-case tracking-normal"
         />
       </label>
-      <SecondaryButton
+      <PrimaryButton
         className="w-full"
         disabled={busy}
         onClick={() => {
@@ -124,14 +135,14 @@ export const ActiveContractsUtil = ({
         }}
       >
         {busy ? 'Refreshing...' : 'Refresh contracts'}
-      </SecondaryButton>
+      </PrimaryButton>
       {error === undefined ? null : <Alert variant="error">{error}</Alert>}
       {contracts.length === 0 ? (
         <p className="rounded-md border border-dashed border-border px-3 py-6 text-center text-[0.9rem] font-medium text-muted-foreground">
           {loaded ? 'No active contracts.' : 'Loading active contracts...'}
         </p>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="-mx-1 flex max-h-[22rem] flex-col gap-3 overflow-y-auto px-1">
           {contracts.map((contract) => (
             <ContractCard
               key={contract.contractId}

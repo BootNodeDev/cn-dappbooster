@@ -106,7 +106,7 @@ describe('UtilsPanel', () => {
     renderPanel(api)
 
     await userEvent.click(screen.getByRole('button', { name: /Active contracts/ }))
-    await screen.findByText('cid-1')
+    await screen.findAllByText('cid-1')
     await userEvent.type(screen.getByLabelText('Filter template ID'), 'pkg:Module:Template')
     await userEvent.click(screen.getByRole('button', { name: 'Refresh contracts' }))
 

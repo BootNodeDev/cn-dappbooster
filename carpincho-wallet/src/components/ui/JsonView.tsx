@@ -4,6 +4,7 @@ import { cn } from '@/utils/cn'
 
 // Map the json tree's CSS variables onto the wallet's existing token palette.
 const THEME_STYLE: CSSProperties = {
+  fontSize: '0.74rem',
   '--w-rjv-font-family': 'var(--font-mono)',
   '--w-rjv-font-size': '0.74rem',
   '--w-rjv-background-color': 'transparent',
