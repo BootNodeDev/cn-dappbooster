@@ -30,7 +30,7 @@ const DappIcon = ({ host, icon }: { host?: string; icon?: string }): JSX.Element
     return <span className={cn(TILE, 'bg-muted text-soft [&>svg]:size-[15px]')}>{GLOBE_ICON}</span>
   }
   return (
-    <Avatar.Root className={cn(TILE, 'bg-[image:var(--bg-gradient-brand)]')}>
+    <Avatar.Root className={cn(TILE, 'bg-muted')}>
       {icon !== undefined && (
         <Avatar.Image
           src={icon}
@@ -40,7 +40,7 @@ const DappIcon = ({ host, icon }: { host?: string; icon?: string }): JSX.Element
       )}
       <Avatar.Fallback
         delayMs={icon === undefined ? undefined : 200}
-        className="text-[0.8rem] font-bold text-white"
+        className="text-[0.8rem] font-bold text-muted-foreground"
       >
         {host.charAt(0).toUpperCase()}
       </Avatar.Fallback>
