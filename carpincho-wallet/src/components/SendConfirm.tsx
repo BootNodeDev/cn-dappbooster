@@ -9,6 +9,7 @@ import {
   transferDeadlineExpiration,
 } from '@/components/SendTokenForm'
 import { PrimaryButton, SecondaryButton } from '@/components/ui/Button'
+import { JsonView } from '@/components/ui/JsonView'
 import { toast } from '@/components/ui/toast'
 import { shortMiddle } from '@/utils/account'
 import type { AccountPublic } from '@/vault/types'
@@ -108,9 +109,12 @@ export const SendConfirm = ({
         <summary className="cursor-pointer select-none px-3 py-2 text-[0.78rem] font-semibold text-muted-foreground">
           View data
         </summary>
-        <pre className="overflow-x-auto border-t border-border px-3 py-2 font-mono text-[0.72rem] leading-relaxed text-foreground">
-          {JSON.stringify(request, null, 2)}
-        </pre>
+        <div className="border-t border-border">
+          <JsonView
+            value={request}
+            className="rounded-none border-0"
+          />
+        </div>
       </details>
 
       <div className="grid grid-cols-2 gap-3">
