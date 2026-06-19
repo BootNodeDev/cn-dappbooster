@@ -14,10 +14,10 @@
 | Wallet protocol | Injected CIP-0103 provider + optional WalletConnect Sign Client 2.x | Browser extension provider events by default; Reown relay only for WalletConnect fallback |
 | Cryptography | @noble/ed25519 3.x, @noble/hashes 1.x | Ed25519 signing; PBKDF2 + AES-GCM vault |
 | Data fetching | @tanstack/react-query 5.x | Polls CIP-56 token holdings, pending transfers, and Amulet preapproval status (5 s); imperative refetch after sends. Single `QueryClient` mounted in `App.tsx` |
-| UI primitives | React 18 + Radix UI | `@radix-ui/react-{collapsible,dialog,tabs,toast,tooltip}` for modals/tabs/toasts/tooltips; local wrappers (Button family, TextInput, PasswordInput, Alert, Card, AccountAvatar, PendingActionCard, Sheet, Tabs, OptionList, Stepper, DangerConfirm, MenuRow, DetailRow, Collapsible, Copyable, CopyableLabel, JsonView, ToastProvider, Tooltip) for static visuals and Radix re-skins; shared icon SVG literals live in `src/components/ui/icons.tsx`; `Sheet` is the shared Radix Dialog scaffold for sheet-style flows (overlay, title, close button) and takes `side: 'bottom' | 'right' | 'center'` (default `'bottom'`; right opens as a 400px-wide top-aligned drawer clamped by `100vw`; center renders a centered modal dialog); `ToastProvider` and `TooltipProvider` are both mounted once in `App.tsx`; `TextInput` and `PasswordInput` accept `error?: boolean` which applies a danger border, a persistent focus ring, and `aria-invalid`; `Button.tsx` exports `GHOST_BUTTON_CLASS` / `ICON_BUTTON_CLASS` for ad-hoc buttons (e.g. `PasswordInput`'s show/hide button) |
+| UI primitives | React 18 + Radix UI | `@radix-ui/react-{collapsible,dialog,tabs,toast,tooltip}` for modals/tabs/toasts/tooltips; local wrappers (Button family, TextInput, PasswordInput, Alert, Card, AccountAvatar, PendingActionCard, Sheet, Tabs, OptionList, Stepper, DangerConfirm, MenuRow, DetailRow, FileDropInput, Collapsible, Copyable, CopyableLabel, JsonView, ToastProvider, Tooltip) for static visuals and Radix re-skins; shared icon SVG literals live in `src/components/ui/icons.tsx`; `Sheet` is the shared Radix Dialog scaffold for sheet-style flows (overlay, title, close button) and takes `side: 'bottom' | 'right' | 'center'` (default `'bottom'`; right opens as a 400px-wide top-aligned drawer clamped by `100vw`; center renders a centered modal dialog); `ToastProvider` and `TooltipProvider` are both mounted once in `App.tsx`; `TextInput` and `PasswordInput` accept `error?: boolean` which applies a danger border, a persistent focus ring, and `aria-invalid`; `Button.tsx` exports `GHOST_BUTTON_CLASS` / `ICON_BUTTON_CLASS` for ad-hoc buttons (e.g. `PasswordInput`'s show/hide button) |
 | Styling | Tailwind CSS v4 (`@tailwindcss/vite`) | Utility classes inline in JSX; `src/index.css` declares CSS-variable tokens on `:root` / `[data-theme="dark"]` and exposes them to Tailwind through `@theme inline`; `@layer base` holds global resets; Radix `data-[state=...]` and `data-[highlighted]` attrs drive interactive variants |
 | Fonts | `@fontsource-variable/manrope`, `@fontsource-variable/jetbrains-mono` | Self-hosted variable fonts so the extension popup works offline. Manrope is the whole UI: `font-sans` (UI chrome, body, labels, buttons) and `font-display` (hero wordmarks, view headings, section markers — heavier weight for hierarchy). JetBrains Mono is `font-mono` (party IDs, hashes, RPC URLs, JSON payloads) |
-| Theming | Light / dark / system selector in the drawer menu | `src/theme/ThemeProvider.tsx` owns a persisted `mode` (`light` \| `dark` \| `system`, default `system`), resolves `system` against `prefers-color-scheme` (re-resolving on media changes while in `system`), and writes the resolved `data-theme` on `<html>` after mount; the selector lives at Settings → Theme (`src/components/menu/ThemeMenu.tsx`) with no header toggle; the Tailwind `dark:` variant is rebound to `[data-theme='dark']` via `@custom-variant` |
+| Theming | Light / dark / system selector in the drawer menu | `src/theme/ThemeProvider.tsx` owns a persisted `mode` (`light` \| `dark` \| `system`, default `system`), resolves `system` against `prefers-color-scheme` (re-resolving on media changes while in `system`), and writes the resolved `data-theme` on `<html>` after mount; the selector lives in the drawer under Theme (`src/components/menu/ThemeMenu.tsx`) with no header toggle; the Tailwind `dark:` variant is rebound to `[data-theme='dark']` via `@custom-variant` |
 | Testing | Node built-in `node:test` + `tsx` loader | React Testing Library + happy-dom for `.tsx` interaction tests; bootstrapped via `test/setup-dom.ts` |
 | Runtime | Browser (Chrome extension popup or standalone web tab) | |
 
@@ -36,7 +36,7 @@ src/
                     SendTokenForm, SendConfirm, ContactsPicker, AmountField,
                     ConnectionFooter,
                     NewPasswordFields, CreateAccountForm, PasswordStrengthIndicator,
-                    SecurityPanel, UtilsPanel, utils/* (UtilsList, CreateContractUtil,
+                    VaultPanel, VaultBackupPanel, UtilsPanel, utils/* (UtilsList, CreateContractUtil,
                     ExerciseChoiceUtil, ActiveContractsUtil, DarUploadPanel, JsonField,
                     UpdateIdResult), menu/* drawer, ui/* primitives).
                     ui/* wraps Radix headless primitives (Tabs on top of
@@ -45,8 +45,8 @@ src/
                     Collapsible on top of @radix-ui/react-collapsible)
                     and provides static visuals (Button, TextInput, PasswordInput,
                     Alert, Card, OptionList, Stepper, DangerConfirm, AccountAvatar,
-                    PendingActionCard, Select, DetailRow, Collapsible, Copyable,
-                    CopyableLabel, JsonView).
+                    PendingActionCard, Select, DetailRow, FileDropInput, Collapsible,
+                    Copyable, CopyableLabel, JsonView).
   theme/            ThemeProvider + ThemeContext + useTheme hook driving the
                     [data-theme] attribute on <html>
   cip56/            Token-standard domain logic: holdings/UTXO summaries, transfers, amount formatting,
@@ -57,7 +57,7 @@ src/
   extension/        Chrome extension scripts: background, content script, provider injection
   provider/         CIP-0103 wallet provider — request dispatcher and method handlers
   vault/            Encrypted local vault: PBKDF2 key derivation, AES-GCM storage, React context
-  utils/            Pure helpers (account formatting, clipboard, classnames cn, JSON pretty-print)
+  utils/            Pure helpers (account formatting, clipboard, classnames cn, JSON pretty-print, file download)
   views/            Top-level UI views (onboarding/* two-step wizard, Unlock, Home,
                     ConnectionSettings) plus home/* — the extracted HomeView logic
                     (pending-actions state, extension/provider request handling,
@@ -84,7 +84,7 @@ Transient system feedback — action results, async errors, network failures, co
 
 The vault is the security core of the wallet. It holds encrypted account secrets in `localStorage` and exposes a React context so views can read and mutate wallet state without ever touching the raw ciphertext.
 
-- **`VaultContext.tsx`** — React context that owns all in-memory plaintext. Module-scope closures hide the decrypted vault and session password from browser DevTools.
+- **`VaultContext.tsx`** — React context that owns all in-memory plaintext. Module-scope closures hide the decrypted vault and session password from browser DevTools. Exposes `exportVault()` / `importVault()` for a whole-vault JSON backup envelope (`{ v: 1, accounts: [{ name, partyId, publicKeyBase64, privateKeyHex, network }] }`); import validates each entry's Ed25519 derivation and partyId shape, skips duplicates, and reuses `addAccount`.
 - **`crypto.ts`** — Stateless encryption helpers: PBKDF2-HMAC-SHA256 (600 000 iterations) for key derivation; AES-256-GCM via `SubtleCrypto` for encryption/decryption.
 - **`storage.ts`** — Two-step localStorage write (`KEY_VAULT_NEXT` then `KEY_VAULT`) for crash-safe rotation. On load, checks for an interrupted rotation and recovers automatically.
 - **`keypair.ts`** — Ed25519 sign/verify wrappers around `@noble/ed25519`.
@@ -206,7 +206,7 @@ Three providers wrap the app. `ThemeProvider` is mounted outermost (in `src/main
           <Shell>           src/App.tsx — reads vault state to pick the active view
             <Header />      includes the Menu burger button
             <HomeView />    or <OnboardingFlow />, <UnlockView />, etc.
-            <MenuSheet />   drill-down drawer (Menu → Settings → Theme / Security & Password → Password / Auto-lock)
+            <MenuSheet />   drill-down drawer (Menu → Theme / Vault → Password / Auto Lock / Export Vault / Import Vault)
           </Shell>
         </ToastProvider>
       </TooltipProvider>
@@ -214,13 +214,13 @@ Three providers wrap the app. `ThemeProvider` is mounted outermost (in `src/main
 
 There is no router. `Shell` picks one view from `useVault()` via the pure `selectShellView` helper in `src/App.tsx`, branching on `hasVault`, `isLocked`, and `accounts.length`: no vault → `OnboardingFlow` (step 1, create vault); unlocked vault with no account yet → `OnboardingFlow` (step 2, create first account); locked vault → `UnlockView`; unlocked vault with at least one account → `HomeView`. While `useVault()` reports `isLoading`, `Shell` renders a centred spinner instead of any view so the session-restore decision lands in one paint and the Unlock screen never flashes.
 
-The Menu drawer lives in `src/components/menu/`: `MenuSheet.tsx` is the navigation orchestrator (wraps the shared `Sheet` primitive with `side="right"`, opening as a 400px-wide top-aligned panel clamped by `100vw` that slides in via `animate-sheet-slide-right`), `screens.ts` holds the `Screen` union plus the `SCREENS` metadata map and the `MENU_LISTS` row data for the navigation-list screens, `MenuList.tsx` renders those rows, and `ThemeMenu.tsx` is the Theme leaf. It manages internal screen state (`root` → `settings` → `theme` | `security`; `security` → `password` | `auto-lock`); each in-drawer transition uses `animate-slide-in-right` (forward) or `animate-slide-in-left` (back). Navigation-list screens are data-driven via `MENU_LISTS`; leaf screens (`theme`, `password`, `auto-lock`) render a component. Every new option must be added as another `Screen` with an entry in the `SCREENS` map (`title`, `description`, `parent`); accordion-style expansion inside a screen is disallowed.
+The Menu drawer lives in `src/components/menu/`: `MenuSheet.tsx` is the navigation orchestrator (wraps the shared `Sheet` primitive with `side="right"`, opening as a 400px-wide top-aligned panel clamped by `100vw` that slides in via `animate-sheet-slide-right`), `screens.ts` holds the `Screen` union plus the `SCREENS` metadata map and the `MENU_LISTS` row data for the navigation-list screens, `MenuList.tsx` renders those rows, and `ThemeMenu.tsx` is the Theme leaf. It manages internal screen state (`root` → `theme` | `vault`; `vault` → `password` | `auto-lock` | `export-vault` | `import-vault`); each in-drawer transition uses `animate-slide-in-right` (forward) or `animate-slide-in-left` (back). Navigation-list screens are data-driven via `MENU_LISTS`; leaf screens (`theme`, `password`, `auto-lock`, `export-vault`, `import-vault`) render a component. Every new option must be added as another `Screen` with an entry in the `SCREENS` map (`title`, `description`, `parent`); accordion-style expansion inside a screen is disallowed.
 
 ### Theming
 
 - **Tokens** — `src/index.css` defines colour, radius, font, shadow, animation, and sizing tokens. Colours live as CSS custom properties on `:root` (light) and `[data-theme="dark"]` (dark); `@theme inline` re-exposes them to Tailwind so utilities like `bg-surface` / `text-muted-foreground` / `bg-scrim` flip automatically with the data attribute. Radius (`rounded-sm/md/lg/xl`), shadows (`shadow-card`, `shadow-popover`, `shadow-focus`, `shadow-glow`), the font families (`font-display` / `font-sans` both Manrope, `font-mono` JetBrains Mono), and named keyframes (`fade-in`, `slide-down-and-fade`, `slide-up-and-fade`, `sheet-up`, `sheet-slide-right`, `slide-in-right`, `slide-in-left`, `soft-pulse`, `drift`) are also tokens. Custom sizing utilities are declared via `@utility`: `w-popup` (popup viewport width, `min(100%, 430px)`), `w-drawer` (right-anchored drawer width), and `max-h-sheet` (bottom-sheet max height). The palette follows the dappbooster brand: a cool navy dark theme (`#14152b`) matching `dappbooster-canton-landing` and a neutral-grey light theme (`#f7f7f7`, primary `#692581`) matching the `dAppBooster` boilerplate, with a shared purple→pink brand accent (`--bg-gradient-brand: linear-gradient(135deg, #c670e5, #e71d73)` plus `--shadow-glow`) applied on primary-button hover and the hero wordmark. Green (`--color-success`) is the positive accent (used for the connected-state indicator) and `--color-scrim` is the theme-aware modal/sheet backdrop tint. A brand-tinted radial top-glow (`--bg-radial`) sits behind the page; there is no paper-grain overlay.
 - **Theme provider** — `src/theme/ThemeProvider.tsx` owns a persisted `mode` (`light` | `dark` | `system`) stored in `localStorage.carpincho-theme`, defaulting to `system` when nothing is stored. It resolves `system` against `prefers-color-scheme`, re-resolves on media changes while in `system`, and writes the resolved `data-theme` on `<html>` after mount. Components consume it via the `useTheme()` hook (`src/theme/useTheme.ts`), which exposes `{ mode, setMode }`.
-- **Selector** — `src/components/menu/ThemeMenu.tsx` is the Theme leaf inside the Menu drawer (Settings → Theme). It lists `Light` / `Dark` / `System` (System default) and marks the active mode with a checkmark; there is no header toggle.
+- **Selector** — `src/components/menu/ThemeMenu.tsx` is the Theme leaf inside the Menu drawer (a top-level Theme item). It lists `Light` / `Dark` / `System` (System default) and marks the active mode with a checkmark; there is no header toggle.
 
 ### Auth / Session Management
 
