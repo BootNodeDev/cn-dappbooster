@@ -46,7 +46,7 @@ export const PasswordStrengthIndicator = ({ password, id }: Props): JSX.Element 
         </div>
       </div>
 
-      <p className="flex items-center gap-1 text-[0.8rem] text-soft">
+      <p className="flex items-center gap-1.5 text-[0.8rem] text-soft">
         More info
         <Tooltip
           label="Password recommendations"

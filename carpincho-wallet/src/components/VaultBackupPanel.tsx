@@ -53,12 +53,18 @@ export const ExportVaultView = (): JSX.Element => {
       <JsonView value={envelope} />
       <div className="flex gap-3">
         <SecondaryButton
+          className="flex-1"
           onClick={() => copyText(JSON.stringify(envelope, null, 2), 'Vault backup copied.')}
         >
           {COPY_ICON}
           Copy JSON
         </SecondaryButton>
-        <SecondaryButton onClick={onDownload}>Download JSON</SecondaryButton>
+        <SecondaryButton
+          className="flex-1"
+          onClick={onDownload}
+        >
+          Download JSON
+        </SecondaryButton>
       </div>
     </div>
   )
@@ -112,6 +118,9 @@ export const ImportVaultForm = ({ onImported }: ImportVaultFormProps): JSX.Eleme
 
   return (
     <Tabs defaultValue="paste">
+      <p className="mb-4 text-[0.85rem] text-muted-foreground">
+        Restore accounts from a backup created by Export Vault.
+      </p>
       <TabsList className="mb-4">
         <TabTrigger value="paste">Paste</TabTrigger>
         <TabTrigger value="upload">Upload file</TabTrigger>
