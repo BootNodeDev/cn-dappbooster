@@ -2,7 +2,6 @@ import { strict as assert } from 'node:assert'
 import { afterEach, describe, it } from 'node:test'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import type { AmuletTapApi } from '@/cip56/amuletPreapproval'
 import { AssetsPanel } from '@/components/AssetsPanel'
 import { TooltipProvider } from '@/components/ui/Tooltip'
 import { toast } from '@/components/ui/toast'
@@ -52,7 +51,6 @@ const baseVault = (): VaultContextValue =>
 // Mounts the panel under vault + tooltip context so it can resolve the account and toggle.
 const renderAssets = (
   api: Cip56HoldingsApi,
-  tapApi?: AmuletTapApi,
   preapprovalApi: AmuletPreapprovalApi = inactivePreapprovalApi,
 ): void => {
   render(
@@ -61,7 +59,6 @@ const renderAssets = (
         <VaultContext.Provider value={baseVault()}>
           <AssetsPanel
             api={api}
-            tapApi={tapApi}
             preapprovalApi={preapprovalApi}
           />
         </VaultContext.Provider>
@@ -118,46 +115,6 @@ describe('AssetsPanel', () => {
     assert.equal(screen.getByText('15.75').textContent, '15.75')
     assert.equal(screen.queryByText(/UTXO/i), null)
     assert.equal(screen.queryByRole('button', { name: /show holdings/i }), null)
-  })
-
-  it('taps a fixed 100 AMT amount for the selected party and refreshes balances', async () => {
-    // Scenario: the faucet button belongs in the Assets tab because it changes
-    // balances. A successful tap should request the active account and reload holdings.
-    let listCalls = 0
-    const tappedAccounts: string[] = []
-    const api: Cip56HoldingsApi = {
-      listTokenHoldingSummaries: async () => {
-        listCalls += 1
-        return []
-      },
-    }
-    const tapApi: AmuletTapApi = {
-      tapAmulet: async ({ account, signMessage, recordTransaction }) => {
-        tappedAccounts.push(account.partyId)
-        assert.equal(await signMessage(account.id, 'tap-hash'), 'signature')
-        await recordTransaction?.({
-          accountId: account.id,
-          accountName: account.name,
-          partyId: account.partyId,
-          network: account.network,
-          method: 'amulet.tap',
-          status: 'executed',
-          preparedTransaction: 'tap-tx',
-          preparedTransactionHash: 'tap-hash',
-          commands: [],
-          summary: 'Tap 100 AMT',
-          commandCount: 1,
-        })
-        return { updateId: 'tap-update-1' }
-      },
-    }
-
-    renderAssets(api, tapApi)
-
-    await userEvent.click(await screen.findByRole('button', { name: 'Tap Amulet' }))
-
-    assert.deepEqual(tappedAccounts, ['alice::party'])
-    assert.ok(listCalls >= 2)
   })
 
   it('opens the token detail modal and fetches UTXOs on demand', async () => {
