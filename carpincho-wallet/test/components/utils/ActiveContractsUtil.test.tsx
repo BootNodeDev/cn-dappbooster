@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert'
 import { afterEach, describe, it } from 'node:test'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TooltipProvider } from '@/components/ui/Tooltip'
 import { toast } from '@/components/ui/toast'
@@ -98,6 +98,34 @@ describe('ActiveContractsUtil', () => {
     // The icon spins on click, independent of how fast the fetch resolves.
     assert.ok(button.querySelector('.animate-spin-fast'))
     await waitFor(() => assert.equal(calls, 2))
+  })
+
+  it('keeps the icon spinning until the fetch settles, then stops on the next turn', async () => {
+    let calls = 0
+    let resolveRefresh: (contracts: ActiveContract[]) => void = () => {}
+    const listActiveContracts = (() => {
+      calls += 1
+      if (calls === 1) return Promise.resolve([CONTRACT])
+      return new Promise<ActiveContract[]>((resolve) => {
+        resolveRefresh = resolve
+      })
+    }) as typeof ListFn
+    renderUtil(listActiveContracts)
+
+    await screen.findByText('cid-1')
+    const button = screen.getByRole('button', { name: 'Refresh contracts' })
+    await userEvent.click(button)
+    await waitFor(() => assert.equal((button as HTMLButtonElement).disabled, true))
+
+    // A full turn while the fetch is still in flight does not stop the spin.
+    fireEvent.animationIteration(button.querySelector('.animate-spin-fast') as Element)
+    assert.ok(button.querySelector('.animate-spin-fast'))
+
+    // Once the fetch settles, the next completed turn ends the spin.
+    resolveRefresh([CONTRACT])
+    await waitFor(() => assert.equal((button as HTMLButtonElement).disabled, false))
+    fireEvent.animationIteration(button.querySelector('.animate-spin-fast') as Element)
+    await waitFor(() => assert.equal(button.querySelector('.animate-spin-fast'), null))
   })
 
   it('messages the loading, empty, and no-match states', async () => {
