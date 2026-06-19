@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, useId, useState } from 'react'
 import { NewPasswordFields } from '@/components/NewPasswordFields'
 import { PrimaryButton } from '@/components/ui/Button'
 import { OptionList } from '@/components/ui/OptionList'
@@ -34,6 +34,7 @@ export const PasswordForm = (): JSX.Element => {
   const v = useVault()
   const [state, setState] = useState<PasswordState>(initialState)
   const [busy, setBusy] = useState(false)
+  const currentId = useId()
 
   const canSubmit = state.current.trim() !== '' && state.valid
 
@@ -58,18 +59,21 @@ export const PasswordForm = (): JSX.Element => {
       onSubmit={onSubmit}
       className="flex flex-col gap-3"
     >
-      <PasswordInput
-        aria-label="Current password"
-        aria-errormessage={state.error !== null ? 'change-password-error' : undefined}
-        autoComplete="current-password"
-        placeholder="Current password"
-        error={state.error !== null}
-        value={state.current}
-        onChange={(e) => setState((s) => ({ ...s, current: e.target.value, error: null }))}
-      />
+      <div>
+        <label htmlFor={currentId}>Current password</label>
+        <PasswordInput
+          id={currentId}
+          aria-errormessage={state.error !== null ? 'change-password-error' : undefined}
+          autoComplete="current-password"
+          error={state.error !== null}
+          value={state.current}
+          onChange={(e) => setState((s) => ({ ...s, current: e.target.value, error: null }))}
+        />
+      </div>
       <hr className="border-border" />
       <NewPasswordFields
         confirm={state.confirm}
+        labelMode="visible"
         onConfirmChange={(value) => setState((s) => ({ ...s, confirm: value }))}
         onPasswordChange={(value) => setState((s) => ({ ...s, next: value }))}
         onValidityChange={(valid) => setState((s) => ({ ...s, valid }))}
