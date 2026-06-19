@@ -28,7 +28,6 @@ const txTitle = (tx: TransactionRecord): string => tx.summary ?? txMethodLabel(t
 interface TxDetailRow {
   label: string
   value: string | number
-  mono?: boolean
 }
 
 // Scalar metadata rows shown before the command payload block.
@@ -46,18 +45,18 @@ const txDetailRows = (tx: TransactionRecord): TxDetailRow[] => {
   }
   rows.push(
     { label: 'Network', value: tx.network },
-    { label: 'Party', value: tx.partyId, mono: true },
+    { label: 'Party', value: tx.partyId },
     { label: 'Method', value: txMethodLabel(tx.method) },
-    { label: 'Prepared hash', value: tx.preparedTransactionHash, mono: true },
+    { label: 'Prepared hash', value: tx.preparedTransactionHash },
   )
   if (tx.commandId !== undefined) {
-    rows.push({ label: 'Command ID', value: tx.commandId, mono: true })
+    rows.push({ label: 'Command ID', value: tx.commandId })
   }
   if (tx.submissionId !== undefined) {
-    rows.push({ label: 'Submission ID', value: tx.submissionId, mono: true })
+    rows.push({ label: 'Submission ID', value: tx.submissionId })
   }
   if (tx.updateId !== undefined) {
-    rows.push({ label: 'Update ID', value: tx.updateId, mono: true })
+    rows.push({ label: 'Update ID', value: tx.updateId })
   }
   if (tx.completionOffset !== undefined) {
     rows.push({ label: 'Completion offset', value: tx.completionOffset })
@@ -98,7 +97,6 @@ const TransactionDetails = ({ tx }: { tx: TransactionRecord }): JSX.Element => (
           key={row.label}
           label={row.label}
           value={String(row.value)}
-          copyLabel={row.mono ? row.label : undefined}
         />
       ))}
     </dl>
