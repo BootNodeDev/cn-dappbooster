@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { PrimaryButton } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { ALERT_CIRCLE_ICON, SPINNER_ICON } from '@/components/ui/icons'
@@ -17,6 +17,7 @@ export interface ConfigureRpcStepProps {
 export const ConfigureRpcStep = ({ onConfirmed }: ConfigureRpcStepProps): JSX.Element => {
   const { config, saveConfig } = useRuntimeConfig()
   const [url, setUrl] = useState(config.walletServiceRpcUrl)
+  const fieldId = useId()
   const { state, networkId, reason, testedUrl, test } = useWalletServiceTest()
 
   // Probe on mount and (debounced) whenever the URL changes.
@@ -48,9 +49,9 @@ export const ConfigureRpcStep = ({ onConfirmed }: ConfigureRpcStepProps): JSX.El
 
   return (
     <Card>
-      <label htmlFor="rpc-url">Wallet-service RPC URL</label>
+      <label htmlFor={fieldId}>Wallet-service RPC URL</label>
       <TextInput
-        id="rpc-url"
+        id={fieldId}
         type="url"
         className="font-mono"
         value={url}
