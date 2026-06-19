@@ -61,3 +61,22 @@ export interface TransactionRecord {
   commandCount?: number
   summary?: string
 }
+
+export interface VaultEnvelopeAccount {
+  name: string
+  partyId: string
+  publicKeyBase64: string
+  privateKeyHex: string
+  network: string
+}
+
+export interface VaultEnvelope {
+  v: 1
+  accounts: VaultEnvelopeAccount[]
+}
+
+export interface ImportVaultResult {
+  imported: number
+  skipped: number
+  rejected: number
+}

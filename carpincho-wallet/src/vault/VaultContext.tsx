@@ -15,7 +15,7 @@ import { broadcastWalletEvent } from '@/extension/eventBroadcast'
 import { persistWalletSnapshot } from '@/extension/walletSnapshot'
 import { accountToCip103Wallet } from '@/provider/accounts'
 import { assertSecureContext, decryptVault, encryptVault } from '@/vault/crypto'
-import { signMessageBase64 } from '@/vault/keypair'
+import { derivePublicKeyBase64, signMessageBase64 } from '@/vault/keypair'
 import { ensurePasswordStrengthReady, isPasswordAcceptable } from '@/vault/passwordStrength'
 import {
   clearLockAt,
@@ -36,7 +36,14 @@ import {
   writeAutoLockOption,
   writeFreshVault,
 } from '@/vault/storage'
-import type { AccountPublic, AccountSecret, TransactionRecord, VaultPlaintext } from '@/vault/types'
+import type {
+  AccountPublic,
+  AccountSecret,
+  ImportVaultResult,
+  TransactionRecord,
+  VaultEnvelope,
+  VaultPlaintext,
+} from '@/vault/types'
 import { wipeWalletConnectStorage } from '@/wc/storage'
 
 const AUTO_LOCK_MS: Record<AutoLockOption, number | null> = {
@@ -106,6 +113,8 @@ export interface VaultContextValue {
   }) => Promise<AccountPublic>
   removeAccount: (id: string) => Promise<void>
   exportPrivateKey: (accountId: string) => string
+  exportVault: () => VaultEnvelope
+  importVault: (envelope: VaultEnvelope) => Promise<ImportVaultResult>
   signMessage: (accountId: string, messageBase64: string) => Promise<string>
   recordTransaction: (
     args: Omit<TransactionRecord, 'id' | 'createdAt'>,
@@ -363,6 +372,68 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
     return acct.privateKeyHex
   }, [])
 
+  // Builds a portable backup of every account. Pure projection: omits id/createdAt,
+  // never logged or persisted. Callers must drop the result as soon as it is shown.
+  const exportVault = useCallback((): VaultEnvelope => {
+    if (unlockedPlaintext === null) {
+      throw new Error('vault locked')
+    }
+    return {
+      v: 1,
+      accounts: unlockedPlaintext.accounts.map((a) => ({
+        name: a.name,
+        partyId: a.partyId,
+        publicKeyBase64: a.publicKeyBase64,
+        privateKeyHex: a.privateKeyHex,
+        network: a.network,
+      })),
+    }
+  }, [])
+
+  // Restores accounts from an envelope. Per entry: the private key must derive the
+  // stored public key and the partyId must be `hint::namespace`; duplicates are skipped.
+  // One bad entry never aborts the rest. No Canton fingerprint check (not derivable here).
+  const importVault = useCallback(
+    async (envelope: VaultEnvelope): Promise<ImportVaultResult> => {
+      if (unlockedPlaintext === null) {
+        throw new Error('vault locked')
+      }
+      if (envelope?.v !== 1 || !Array.isArray(envelope.accounts)) {
+        throw new Error('unsupported vault envelope')
+      }
+      let imported = 0
+      let skipped = 0
+      let rejected = 0
+      for (const entry of envelope.accounts) {
+        let derived: string
+        try {
+          derived = await derivePublicKeyBase64(entry.privateKeyHex)
+        } catch {
+          rejected += 1
+          continue
+        }
+        if (derived !== entry.publicKeyBase64 || !/^.+::.+$/.test(entry.partyId)) {
+          rejected += 1
+          continue
+        }
+        if (unlockedPlaintext.accounts.some((a) => a.partyId === entry.partyId)) {
+          skipped += 1
+          continue
+        }
+        await addAccount({
+          name: entry.name,
+          partyId: entry.partyId,
+          network: entry.network,
+          privateKeyHex: entry.privateKeyHex,
+          publicKeyBase64: entry.publicKeyBase64,
+        })
+        imported += 1
+      }
+      return { imported, skipped, rejected }
+    },
+    [addAccount],
+  )
+
   const verifyPassword = useCallback(
     (password: string): boolean => cachedPassword !== null && cachedPassword === password,
     [],
@@ -512,6 +583,8 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
       addAccount,
       removeAccount,
       exportPrivateKey,
+      exportVault,
+      importVault,
       signMessage,
       recordTransaction,
       changePassword,
@@ -532,6 +605,8 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
     addAccount,
     removeAccount,
     exportPrivateKey,
+    exportVault,
+    importVault,
     signMessage,
     recordTransaction,
     changePassword,

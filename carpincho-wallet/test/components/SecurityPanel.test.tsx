@@ -31,6 +31,8 @@ const baseVault = (): VaultContextValue => ({
   }),
   removeAccount: async () => undefined,
   exportPrivateKey: () => '',
+  exportVault: () => ({ v: 1, accounts: [] }) as import('@/vault/types').VaultEnvelope,
+  importVault: async () => ({ imported: 0, skipped: 0, rejected: 0 }),
   signMessage: async () => '',
   recordTransaction: async () => ({}) as unknown as import('@/vault/types').TransactionRecord,
   changePassword: async () => undefined,
