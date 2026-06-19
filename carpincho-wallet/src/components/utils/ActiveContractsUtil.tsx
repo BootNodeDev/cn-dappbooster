@@ -19,21 +19,23 @@ interface ActiveContractsUtilProps {
 
 // One active contract as a collapsible card: id + chevron, args behind an expander.
 const ContractCard = ({ contract }: { contract: ActiveContract }): JSX.Element => (
-  <Collapsible className="group rounded-md border border-border bg-surface p-3">
-    <div className="flex items-start gap-2">
-      <div className="min-w-0 flex-1">
+  <Collapsible className="group rounded-md border border-border bg-surface px-3 py-2.5">
+    <div className="flex items-center gap-2">
+      {/* collapsed: shortened id summary; hidden when open */}
+      <span className="min-w-0 flex-1 truncate font-mono text-[0.74rem] leading-5 text-foreground group-data-[state=open]:hidden">
+        {shortMiddle(contract.contractId, 10, 8)}
+      </span>
+      {/* expanded: full contract id label + value; hidden when closed */}
+      <div className="hidden min-w-0 flex-1 group-data-[state=open]:block">
         <CopyableLabel
           className="mb-1"
           label="Contract ID"
           value={contract.contractId}
           copyLabel="contract ID"
         />
-        <div className="break-all rounded-md border border-border bg-muted px-3 py-2 font-mono text-[0.74rem] leading-5 text-foreground">
-          <span className="block truncate group-data-[state=open]:hidden">
-            {shortMiddle(contract.contractId, 10, 8)}
-          </span>
-          <span className="hidden group-data-[state=open]:block">{contract.contractId}</span>
-        </div>
+        <span className="break-all font-mono text-[0.74rem] leading-5 text-foreground">
+          {contract.contractId}
+        </span>
       </div>
       <CollapsibleTrigger className="grid size-8 shrink-0 place-items-center rounded-md text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:shadow-focus [&_svg]:size-5">
         <span className="sr-only">Toggle contract details</span>
@@ -136,7 +138,7 @@ export const ActiveContractsUtil = ({
           {loaded ? 'No active contracts.' : 'Loading active contracts...'}
         </p>
       ) : (
-        <div className="-mx-1 flex max-h-[22rem] flex-col gap-3 overflow-y-auto px-1">
+        <div className="-mx-1 flex h-[15.5rem] flex-col gap-3 overflow-y-auto px-1">
           {contracts.map((contract) => (
             <ContractCard
               key={contract.contractId}
