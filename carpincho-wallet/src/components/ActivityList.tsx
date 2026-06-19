@@ -146,6 +146,7 @@ export const ActivityList = ({ transactions }: ActivityListProps): JSX.Element =
               <button
                 key={tx.id}
                 type="button"
+                data-testid="activity-row"
                 onClick={() => setSelected(tx)}
                 className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-md border border-border bg-surface px-3 py-2.5 text-left outline-none transition-colors hover:border-primary/60 hover:bg-primary-soft/40 focus-visible:shadow-focus"
               >
@@ -183,6 +184,7 @@ export const ActivityList = ({ transactions }: ActivityListProps): JSX.Element =
         onOpenChange={(open) => {
           if (!open) setSelected(null)
         }}
+        testId="activity-detail-sheet"
         side="center"
         title={selected === null ? '' : txTitle(selected)}
         description="Transaction details."

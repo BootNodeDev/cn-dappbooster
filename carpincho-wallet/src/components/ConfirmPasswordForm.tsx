@@ -12,6 +12,8 @@ interface ConfirmPasswordFormProps {
   initialError?: string | null
   // Content rendered above the password field (account summary, description).
   children?: ReactNode
+  passwordTestId?: string
+  submitTestId?: string
 }
 
 // Re-checks the unlocked vault password before a sensitive action (change password,
@@ -22,6 +24,8 @@ export const ConfirmPasswordForm = ({
   onVerified,
   initialError = null,
   children,
+  passwordTestId,
+  submitTestId,
 }: ConfirmPasswordFormProps): JSX.Element => {
   const v = useVault()
   const [current, setCurrent] = useState('')
@@ -47,6 +51,7 @@ export const ConfirmPasswordForm = ({
       {children}
       <PasswordInput
         aria-label={label}
+        data-testid={passwordTestId}
         aria-errormessage={hasError ? 'confirm-password-error' : undefined}
         placeholder="Current password"
         autoComplete="current-password"
@@ -65,7 +70,12 @@ export const ConfirmPasswordForm = ({
           {error}
         </p>
       )}
-      <PrimaryButton type="submit">{submitLabel}</PrimaryButton>
+      <PrimaryButton
+        type="submit"
+        data-testid={submitTestId}
+      >
+        {submitLabel}
+      </PrimaryButton>
     </form>
   )
 }

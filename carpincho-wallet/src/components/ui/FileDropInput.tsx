@@ -5,6 +5,7 @@ interface FileDropInputProps {
   prompt: string
   fileName: string | null
   onSelect: (file: File | null) => void
+  testId?: string
 }
 
 // Visually-hidden file input fronted by a dashed dropzone label; shows the chosen
@@ -16,10 +17,12 @@ export const FileDropInput = ({
   prompt,
   fileName,
   onSelect,
+  testId,
 }: FileDropInputProps): JSX.Element => (
   <>
     <input
       id={id}
+      data-testid={testId}
       type="file"
       accept={accept}
       aria-label={ariaLabel}

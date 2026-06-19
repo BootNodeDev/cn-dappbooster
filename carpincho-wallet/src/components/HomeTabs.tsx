@@ -60,8 +60,16 @@ export const HomeTabs = ({
       className="flex min-h-0 flex-1 flex-col"
     >
       <TabsList>
-        <TabTrigger value="assets">Assets</TabTrigger>
-        <TabTrigger value="activity">
+        <TabTrigger
+          value="assets"
+          testId="tab-assets"
+        >
+          Assets
+        </TabTrigger>
+        <TabTrigger
+          value="activity"
+          testId="tab-activity"
+        >
           <span>Activity</span>
           {pendingTransferCount > 0 ? (
             <span className="ml-1 inline-grid min-w-5 place-items-center rounded-full bg-accent px-1.5 text-[0.72rem] leading-5 text-primary-foreground">
@@ -69,7 +77,12 @@ export const HomeTabs = ({
             </span>
           ) : null}
         </TabTrigger>
-        <TabTrigger value="utils">Utils</TabTrigger>
+        <TabTrigger
+          value="utils"
+          testId="tab-utils"
+        >
+          Utils
+        </TabTrigger>
       </TabsList>
       <TabContent
         forceMount

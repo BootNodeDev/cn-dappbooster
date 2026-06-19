@@ -52,6 +52,7 @@ export const UtilsPanel = ({ account, api = defaultApi }: UtilsPanelProps): JSX.
         onOpenChange={(open) => {
           if (!open) setSelected(null)
         }}
+        testId="utils-sheet"
         title={selected === null ? '' : UTIL_TITLES[selected]}
         description="Ledger development tool."
         side="center"

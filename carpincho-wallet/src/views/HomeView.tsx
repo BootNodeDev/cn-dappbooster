@@ -158,6 +158,7 @@ export const HomeView = (): JSX.Element => {
       <Sheet
         open={hasPending}
         onOpenChange={() => undefined}
+        testId="approval-sheet"
         side="center"
         title="Awaiting approval"
         description="Review and approve or reject this dApp request."
@@ -178,6 +179,7 @@ export const HomeView = (): JSX.Element => {
       <Sheet
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
+        testId="connection-settings-sheet"
         title="Connection"
         description="Configure wallet-service URL and network."
       >
@@ -187,6 +189,7 @@ export const HomeView = (): JSX.Element => {
       <Sheet
         open={disconnectConfirmOpen}
         onOpenChange={setDisconnectConfirmOpen}
+        testId="disconnect-confirm-sheet"
         side="center"
         title={`Disconnect ${connectedLabel}?`}
         description="Disconnect this dApp from the wallet."

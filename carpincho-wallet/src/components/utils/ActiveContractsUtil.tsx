@@ -25,12 +25,18 @@ interface ActiveContractsUtilProps {
 // One active contract as a collapsible card: a shortened id with a top-right chevron, full
 // details (matching the other sheets' field styling) revealed below.
 const ContractCard = ({ contract }: { contract: ActiveContract }): JSX.Element => (
-  <Collapsible className="group rounded-md border border-border bg-surface px-3 py-2.5">
+  <Collapsible
+    data-testid="active-contract"
+    className="group rounded-md border border-border bg-surface px-3 py-2.5"
+  >
     <div className="flex items-center gap-2">
       <span className="min-w-0 flex-1 truncate font-mono text-[0.74rem] leading-5 text-foreground">
         {shortMiddle(contract.contractId, 10, 8)}
       </span>
-      <CollapsibleTrigger className="grid size-8 shrink-0 place-items-center rounded-md text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:shadow-focus [&_svg]:size-5">
+      <CollapsibleTrigger
+        testId="active-contract-toggle"
+        className="grid size-8 shrink-0 place-items-center rounded-md text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:shadow-focus [&_svg]:size-5"
+      >
         <span className="sr-only">Toggle contract details</span>
         <span className="transition-transform group-data-[state=open]:rotate-180">
           {CHEVRON_DOWN_ICON}
@@ -117,6 +123,7 @@ export const ActiveContractsUtil = ({
         </span>
         <TextInput
           id="contract-filter"
+          data-testid="contract-filter"
           value={filterQuery}
           onChange={(event) => setFilterQuery(event.currentTarget.value)}
           placeholder="Template or contract id"
@@ -141,6 +148,7 @@ export const ActiveContractsUtil = ({
       <div className="flex items-center justify-end">
         <button
           type="button"
+          data-testid="contracts-refresh"
           aria-label="Refresh contracts"
           title="Refresh contracts"
           disabled={busy}

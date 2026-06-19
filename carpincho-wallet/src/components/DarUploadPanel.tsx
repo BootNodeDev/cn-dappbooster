@@ -43,6 +43,7 @@ export const DarUploadPanel = ({ api = defaultApi }: DarUploadPanelProps): JSX.E
     <section className="flex flex-col gap-4">
       <FileDropInput
         id="dar-file"
+        testId="dar-file-input"
         accept=".dar,application/octet-stream"
         ariaLabel="DAR file"
         prompt="Drop a .dar file or click to choose."
@@ -54,6 +55,7 @@ export const DarUploadPanel = ({ api = defaultApi }: DarUploadPanelProps): JSX.E
       />
       <PrimaryButton
         className="w-full"
+        data-testid="dar-upload-submit"
         disabled={file === undefined || uploading}
         onClick={() => {
           void onUpload()

@@ -53,6 +53,7 @@ export const TransferCard = ({
   const detailsButton = (
     <button
       type="button"
+      data-testid="transfer-details"
       aria-label="Transfer details"
       className={EYE_BUTTON_CLASS}
       onClick={() => onOpenDetails(transfer)}
@@ -64,6 +65,8 @@ export const TransferCard = ({
   if (direction === 'outgoing') {
     return (
       <article
+        data-testid="transfer-card"
+        data-direction="outgoing"
         aria-label="Outgoing transfer, awaiting acceptance"
         className="flex items-center gap-3 rounded-md border border-border bg-surface px-3 py-2.5"
       >
@@ -89,6 +92,8 @@ export const TransferCard = ({
 
   return (
     <article
+      data-testid="transfer-card"
+      data-direction="incoming"
       aria-label="Incoming transfer"
       className="relative overflow-hidden rounded-md border border-accent/45 bg-gradient-to-b from-accent/15 to-accent/[0.06] py-2.5 pr-3 pl-4"
     >
@@ -117,6 +122,7 @@ export const TransferCard = ({
         <div className="flex shrink-0 items-center gap-2">
           <PrimaryButton
             className="px-3 py-1.5 text-[0.82rem]"
+            data-testid="transfer-accept"
             onClick={() => {
               void onAccept?.(transfer.contractId)
             }}

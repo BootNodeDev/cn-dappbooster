@@ -14,6 +14,8 @@ export const TokenRow = ({ summary, onOpen }: TokenRowProps): JSX.Element => {
   return (
     <button
       type="button"
+      data-testid="token-row"
+      data-token-label={summary.tokenLabel}
       onClick={onOpen}
       className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-md border border-border bg-surface px-3 py-2.5 text-left outline-none transition-colors hover:border-primary/60 hover:bg-primary-soft/40 focus-visible:shadow-focus"
     >

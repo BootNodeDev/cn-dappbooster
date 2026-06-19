@@ -64,6 +64,7 @@ export const CreateContractUtil = ({
         Template ID
         <TextInput
           id="create-template-id"
+          data-testid="create-template-id"
           value={templateId}
           onChange={(event) => setTemplateId(event.currentTarget.value)}
           placeholder="package:Module:Template"
@@ -81,6 +82,7 @@ export const CreateContractUtil = ({
       <PrimaryButton
         type="submit"
         className="w-full"
+        data-testid="create-contract-submit"
         disabled={!canSubmit}
       >
         {busy ? 'Creating...' : 'Create'}

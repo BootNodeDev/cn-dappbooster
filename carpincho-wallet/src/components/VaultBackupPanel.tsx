@@ -38,6 +38,8 @@ export const ExportVaultView = ({ onExported }: ExportVaultViewProps): JSX.Eleme
     <ConfirmPasswordForm
       label="Confirm password"
       submitLabel="Export"
+      passwordTestId="vault-export-password"
+      submitTestId="vault-export-submit"
       onVerified={(password) => void exportBackup(password)}
     >
       <p className="text-[0.85rem] text-muted-foreground">
@@ -95,6 +97,7 @@ export const ImportVaultForm = ({ onImported }: ImportVaultFormProps): JSX.Eleme
     >
       <FileDropInput
         id="import-vault-file"
+        testId="vault-import-file"
         accept=".json,application/json"
         ariaLabel="Backup file"
         prompt="Drop a .json backup or click to choose."
@@ -105,6 +108,7 @@ export const ImportVaultForm = ({ onImported }: ImportVaultFormProps): JSX.Eleme
         <label htmlFor="import-vault-password">Backup password</label>
         <PasswordInput
           id="import-vault-password"
+          data-testid="vault-import-password"
           autoComplete="off"
           placeholder="Backup password"
           value={password}
@@ -116,6 +120,7 @@ export const ImportVaultForm = ({ onImported }: ImportVaultFormProps): JSX.Eleme
       </div>
       <PrimaryButton
         type="submit"
+        data-testid="vault-import-submit"
         disabled={busy || file === null || password === ''}
       >
         {busy ? 'Importing...' : 'Import'}

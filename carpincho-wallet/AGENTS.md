@@ -29,6 +29,15 @@ This file applies only to `carpincho-wallet/`. For monorepo-wide rules (commit s
 - **Imports:** every import that resolves inside `src/` must use the `@/*` alias (e.g. `import { Foo } from '@/components/Foo'`); relative `./` and `../` paths are banned by Biome's `style/noRestrictedImports`. Do **not** add the `.ts` / `.tsx` extension on import paths — `moduleResolution: bundler` (Vite + the tsx test loader) resolves extensionless. Because resolution is extensionless, two modules in the same directory must not differ only by case and extension (e.g. `Toast.tsx` vs `toast.ts`), or the import becomes ambiguous on a case-insensitive filesystem. The alias is declared in `tsconfig.app.json`, `test/tsconfig.json`, and `vite.config.ts`
 - **Functional style:** prefer `const` with expression-returning forms (ternaries, IIFEs, helper functions, lookup objects, destructured ternaries) over `let` + reassignment. Reach for `let` only when no clean expression form exists.
 
+## Test selectors (`data-testid`)
+
+Every interactive or assertion-worthy element ships a stable `data-testid` so end-to-end tooling never falls back on text, role, or DOM-position selectors. This is a hard requirement: do not merge new UI without it, and add one when you touch an existing element that lacks it.
+
+- **What gets one:** every control a user acts on (buttons, links, inputs, selects, toggles, file pickers); every list row that can be opened, selected, or actioned; every modal / sheet / dialog container; and any value with a copy affordance. Result and landing containers worth asserting (home tabs, connection footer, the pending-approval modal) get one too.
+- **Naming:** kebab-case, area-prefixed, action- or role-descriptive — e.g. `send-confirm`, `account-remove`, `utils-tap-amulet`, `transfer-accept`, `rpc-save`. Mirror the existing names and keep them stable; tests depend on them. For repeated rows use one constant testid plus a `data-*` discriminator (`data-testid="token-row" data-token-label={…}`) rather than interpolating unstable values into the id.
+- **Native elements** (`<button>`, `<input>`, …) and prop-spreading primitives (`Button` family, `TextInput`, `PasswordInput`, `Switch`) take `data-testid` directly via `{...rest}`.
+- **Shared primitives that don't spread props** expose an explicit `testId` prop forwarded to their root DOM node — `Sheet`, `Select`, `TabTrigger`, `MenuRow`, `FileDropInput`, `Collapsible`, `Copyable`, `DangerConfirm` (`testId` / `confirmTestId`), `DetailRow` (`copyTestId`), `AmountField`, `ConfirmPasswordForm` (`passwordTestId` / `submitTestId`). When you build a new primitive that hides its DOM element, add the same `testId` passthrough so callers can label it instead of reaching past the abstraction.
+
 ## Working Rules
 
 - Use **npm** only (never pnpm or yarn)

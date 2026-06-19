@@ -73,6 +73,7 @@ export const ExerciseChoiceUtil = ({
         Template ID
         <TextInput
           id="exercise-template-id"
+          data-testid="exercise-template-id"
           value={templateId}
           onChange={(event) => setTemplateId(event.currentTarget.value)}
           placeholder="package:Module:TemplateOrInterface"
@@ -86,6 +87,7 @@ export const ExerciseChoiceUtil = ({
         Contract ID
         <TextInput
           id="exercise-contract-id"
+          data-testid="exercise-contract-id"
           value={contractId}
           onChange={(event) => setContractId(event.currentTarget.value)}
           placeholder="active contract id"
@@ -99,6 +101,7 @@ export const ExerciseChoiceUtil = ({
         Choice
         <TextInput
           id="exercise-choice"
+          data-testid="exercise-choice-input"
           value={choice}
           onChange={(event) => setChoice(event.currentTarget.value)}
           placeholder="Template_Choice"
@@ -116,6 +119,7 @@ export const ExerciseChoiceUtil = ({
       <PrimaryButton
         type="submit"
         className="w-full"
+        data-testid="exercise-choice-submit"
         disabled={!canSubmit}
       >
         {busy ? 'Exercising...' : 'Exercise'}

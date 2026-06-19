@@ -20,6 +20,7 @@ export const TransferDetailsSheet = ({
       onOpenChange={(open) => {
         if (!open) onClose()
       }}
+      testId="transfer-details-sheet"
       side="center"
       title="Transfer details"
       description="Full details for this transfer instruction."

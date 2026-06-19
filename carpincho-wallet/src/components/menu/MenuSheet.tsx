@@ -72,6 +72,7 @@ export const MenuSheet = ({ open, onOpenChange }: MenuSheetProps): JSX.Element =
     <Sheet
       open={open}
       onOpenChange={handleOpenChange}
+      testId="menu-sheet"
       title={config.title}
       description={config.description}
       onBack={goBack}

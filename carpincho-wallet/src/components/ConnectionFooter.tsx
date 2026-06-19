@@ -103,6 +103,7 @@ export const ConnectionFooter = ({
               {connected && onDisconnectDapp !== undefined && (
                 <button
                   type="button"
+                  data-testid="footer-disconnect"
                   onClick={onDisconnectDapp}
                   aria-label="Disconnect"
                   title="Disconnect"
@@ -121,6 +122,7 @@ export const ConnectionFooter = ({
 
       <button
         type="button"
+        data-testid="connection-pill"
         onClick={onOpenSettings}
         aria-label="Connection settings"
         title={walletService.reason ?? 'Connection settings'}

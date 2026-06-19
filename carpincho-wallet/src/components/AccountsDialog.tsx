@@ -71,6 +71,7 @@ export const AccountsDialog = ({ open, onOpenChange }: AccountsDialogProps): JSX
     <Sheet
       open={open}
       onOpenChange={handleOpenChange}
+      testId="accounts-sheet"
       side="center"
       title={
         removeTarget !== null ? `Remove ${removeTarget.name}?` : isAdd ? 'Add account' : 'Accounts'

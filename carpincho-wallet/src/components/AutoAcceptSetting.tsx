@@ -63,6 +63,7 @@ export const AutoAcceptSetting = ({ account, api }: AutoAcceptSettingProps): JSX
       </div>
       <Switch
         aria-label="Auto-accept incoming"
+        data-testid="auto-accept-toggle"
         checked={checked}
         disabled={preapproval.busy || (preapproval.loading && status === undefined)}
         onCheckedChange={() => {

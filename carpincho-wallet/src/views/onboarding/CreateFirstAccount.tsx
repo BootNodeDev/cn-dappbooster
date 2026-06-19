@@ -10,8 +10,18 @@ export const CreateFirstAccount = (): JSX.Element => (
   <Card>
     <Tabs defaultValue="create">
       <TabsList className="mb-4">
-        <TabTrigger value="create">Create new account</TabTrigger>
-        <TabTrigger value="restore">Restore from backup</TabTrigger>
+        <TabTrigger
+          value="create"
+          testId="onboarding-tab-create"
+        >
+          Create new account
+        </TabTrigger>
+        <TabTrigger
+          value="restore"
+          testId="onboarding-tab-restore"
+        >
+          Restore from backup
+        </TabTrigger>
       </TabsList>
       <TabContent value="create">
         <CreateAccountForm showIntro />

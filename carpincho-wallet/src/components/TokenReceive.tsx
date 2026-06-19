@@ -26,6 +26,7 @@ export const TokenReceive = ({ partyId }: TokenReceiveProps): JSX.Element => (
         label="Your party ID"
         value={partyId}
         copyLabel="party ID"
+        copyTestId="receive-copy-party-id"
       />
     </dl>
   </div>

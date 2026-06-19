@@ -106,7 +106,10 @@ export const SendConfirm = ({
       </div>
 
       <details className="rounded-md border border-border bg-surface">
-        <summary className="cursor-pointer select-none px-3 py-2 text-[0.78rem] font-semibold text-muted-foreground">
+        <summary
+          data-testid="send-view-data"
+          className="cursor-pointer select-none px-3 py-2 text-[0.78rem] font-semibold text-muted-foreground"
+        >
           View data
         </summary>
         <div className="border-t border-border">
@@ -119,12 +122,14 @@ export const SendConfirm = ({
 
       <div className="grid grid-cols-2 gap-3">
         <SecondaryButton
+          data-testid="send-cancel"
           onClick={onCancel}
           disabled={submitting}
         >
           Cancel
         </SecondaryButton>
         <PrimaryButton
+          data-testid="send-confirm"
           disabled={submitting}
           onClick={() => {
             void onConfirm()

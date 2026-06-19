@@ -88,6 +88,7 @@ export const UtilsList = ({ account, tapApi, onSelect }: UtilsListProps): JSX.El
         <SectionLabel>Faucet</SectionLabel>
         <button
           type="button"
+          data-testid="utils-tap-amulet"
           className={ROW_CLASS}
           disabled={tapping}
           onClick={() => {
@@ -115,6 +116,7 @@ export const UtilsList = ({ account, tapApi, onSelect }: UtilsListProps): JSX.El
           <button
             key={row.key}
             type="button"
+            data-testid={`utils-${row.key}`}
             className={ROW_CLASS}
             onClick={() => onSelect(row.key)}
           >

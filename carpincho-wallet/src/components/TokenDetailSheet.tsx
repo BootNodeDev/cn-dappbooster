@@ -53,6 +53,7 @@ const HoldingListRow = ({
   return (
     <button
       type="button"
+      data-testid="holding-row"
       onClick={onOpen}
       className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md border border-border bg-surface px-3 py-2.5 text-left outline-none transition-colors hover:bg-primary-soft/40 focus-visible:bg-primary-soft/60"
     >
@@ -105,11 +106,17 @@ const DetailScreen = ({
     </div>
 
     <div className="grid grid-cols-2 gap-3">
-      <SecondaryButton onClick={onSend}>
+      <SecondaryButton
+        data-testid="token-send"
+        onClick={onSend}
+      >
         {SEND_ICON}
         Send
       </SecondaryButton>
-      <SecondaryButton onClick={onReceive}>
+      <SecondaryButton
+        data-testid="token-receive"
+        onClick={onReceive}
+      >
         {RECEIVE_ICON}
         Receive
       </SecondaryButton>
@@ -258,6 +265,7 @@ export const TokenDetailSheet = ({
     <Sheet
       open={open}
       onOpenChange={handleOpenChange}
+      testId="token-detail-sheet"
       title={title}
       description={`${summary.tokenLabel} token details`}
       hideTitle={screen === 'detail'}
