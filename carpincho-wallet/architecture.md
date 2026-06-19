@@ -30,7 +30,8 @@ src/
   assets/           SVG brand assets (carpincho-logo.svg)
   components/       Shared UI components (Logo, Header, WelcomeHero, AccountCard,
                     AccountRow, AccountListRow, AccountsDialog, CopyPartyIdButton,
-                    ActivityList, HomeTabs, AssetsPanel, TransfersPanel,
+                    ActivityList, HomeTabs, AssetsPanel, ActivityPanel,
+                    AutoAcceptSetting, TransferCard, TransferDetailsSheet,
                     TokenRow, TokenDetailSheet, TokenReceive, TokenHoldingDetail,
                     SendTokenForm, SendConfirm, ContactsPicker, AmountField,
                     ConnectionFooter,
@@ -41,7 +42,7 @@ src/
                     Select on top of @radix-ui/react-select)
                     and provides static visuals (Button, TextInput, PasswordInput,
                     Alert, Card, OptionList, Stepper, DangerConfirm, AccountAvatar,
-                    PendingActionCard, Select).
+                    PendingActionCard, Select, DetailRow).
   theme/            ThemeProvider + ThemeContext + useTheme hook driving the
                     [data-theme] attribute on <html>
   cip56/            Token-standard domain logic: holdings/UTXO summaries, transfers, amount formatting,
@@ -125,7 +126,7 @@ Token balances, transfers, and Amulet auto-accept are layered on top of the wall
 - **`cip56/transfers.ts`** — `listPendingIncomingTransfers` reads pending CIP-56 transfers (the ledger returns every instruction the party is a stakeholder on, so the list spans both directions) and `transferDirection` classifies each as incoming or outgoing relative to the active party; `acceptPendingTransfer` and `createTokenTransfer` run write flows through `executePreparedCommands`.
 - **`cip56/amuletPreapproval.ts`** — `getAmuletPreapprovalStatus` reads the Amulet auto-accept (preapproval) state; `createAmuletPreapproval` / `cancelAmuletPreapproval` toggle it via `executePreparedCommands`.
 - **`api/interactiveSubmission.ts`** — `executePreparedCommands` orchestrates the Canton interactive submission pattern: wallet-service `prepareTransaction`, then local signing through the Vault (`signMessage`), then wallet-service `executePrepared`, then an optional `recordTransaction`. It is the single write path for every token transfer and preapproval action, keeping command preparation and ledger submission on the wallet-service while signing stays local.
-- **`hooks/`** — Thin React Query wrappers: `useTokenHoldings` and `usePendingCip56Transfers` poll every 5 s; `useTokenHoldingDetails` lazy-loads a token's UTXOs when its detail modal opens; `useAmuletPreapproval` polls status and exposes `enable()` / `disable()`. `AssetsPanel`, `TokenDetailSheet`, and `TransfersPanel` consume these hooks.
+- **`hooks/`** — Thin React Query wrappers: `useTokenHoldings` and `usePendingCip56Transfers` poll every 5 s; `useTokenHoldingDetails` lazy-loads a token's UTXOs when its detail modal opens; `useAmuletPreapproval` polls status and exposes `enable()` / `disable()`. `AssetsPanel` / `AutoAcceptSetting`, `TokenDetailSheet`, and `ActivityPanel` consume these hooks.
 
 ### Data Access Layer
 
