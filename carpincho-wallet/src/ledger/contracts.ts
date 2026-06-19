@@ -168,7 +168,7 @@ const activeContractFromEntry = (entry: JsonActiveContractEntry): ActiveContract
 }
 
 // Matches exact template ids and package-agnostic module/template suffixes for dev-time lookup.
-const matchesTemplate = (contract: ActiveContract, templateId?: string): boolean => {
+export const matchesTemplate = (contract: ActiveContract, templateId?: string): boolean => {
   const trimmed = templateId?.trim()
   if (trimmed === undefined || trimmed === '') {
     return true

@@ -5,6 +5,7 @@ import {
   createContract,
   exerciseContract,
   listActiveContracts,
+  matchesTemplate,
 } from '@/ledger/contracts'
 import type { AccountPublic } from '@/vault/types'
 
@@ -261,5 +262,32 @@ describe('ledger contract helpers', () => {
         },
       },
     ])
+  })
+})
+
+describe('matchesTemplate', () => {
+  const contract: ActiveContract = {
+    contractId: 'cid',
+    templateId: 'pkg:Module:Template',
+    createArgument: {},
+  }
+
+  it('keeps every contract when the filter is empty or whitespace', () => {
+    assert.equal(matchesTemplate(contract, undefined), true)
+    assert.equal(matchesTemplate(contract, ''), true)
+    assert.equal(matchesTemplate(contract, '   '), true)
+  })
+
+  it('matches the exact template id', () => {
+    assert.equal(matchesTemplate(contract, 'pkg:Module:Template'), true)
+  })
+
+  it('matches a package-agnostic module:template suffix', () => {
+    assert.equal(matchesTemplate(contract, 'Module:Template'), true)
+  })
+
+  it('matches a bare template-name suffix', () => {
+    assert.equal(matchesTemplate(contract, 'Template'), true)
+    assert.equal(matchesTemplate(contract, 'Other'), false)
   })
 })

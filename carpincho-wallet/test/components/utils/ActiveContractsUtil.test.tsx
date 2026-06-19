@@ -25,6 +25,13 @@ const CONTRACT: ActiveContract = {
   createdOffset: 42,
 }
 
+const OTHER: ActiveContract = {
+  contractId: 'cid-other',
+  templateId: 'pkg:Module:Other',
+  createArgument: { admin: 'alice::party' },
+  createdOffset: 43,
+}
+
 const renderUtil = (listActiveContracts: typeof ListFn): void => {
   render(
     <TooltipProvider>
@@ -42,34 +49,62 @@ describe('ActiveContractsUtil', () => {
     toast.clear()
   })
 
-  it('auto-loads contracts on mount and expands the JSON on demand', async () => {
+  it('auto-loads contracts on mount and reveals the details on demand', async () => {
     const listActiveContracts = (async () => [CONTRACT]) as typeof ListFn
     renderUtil(listActiveContracts)
 
-    await screen.findAllByText('cid-1')
-    assert.ok(screen.getByRole('button', { name: /Copy contract ID/i }))
-
+    await screen.findByText('cid-1')
     await userEvent.click(screen.getByRole('button', { name: /toggle contract details/i }))
     await screen.findByText(/admin/)
+    // The contract id is shown as a labelled field, like Template and Offset.
+    assert.ok(screen.getByText('Contract ID'))
   })
 
-  it('passes the optional template filter to the helper on refresh', async () => {
-    const calls: Parameters<typeof ListFn>[0][] = []
-    const listActiveContracts = (async (params) => {
-      calls.push(params)
+  it('filters the list locally as the template id is typed', async () => {
+    const listActiveContracts = (async () => [CONTRACT, OTHER]) as typeof ListFn
+    renderUtil(listActiveContracts)
+    await screen.findByText('cid-1')
+    await screen.findByText('cid-other')
+
+    // Suffix match keeps only the contract whose template ends with the typed name.
+    await userEvent.type(screen.getByLabelText('Template id'), 'Other')
+    assert.equal(screen.queryByText('cid-1'), null)
+    assert.ok(screen.getByText('cid-other'))
+
+    await userEvent.clear(screen.getByLabelText('Template id'))
+    assert.ok(screen.getByText('cid-1'))
+    assert.ok(screen.getByText('cid-other'))
+  })
+
+  it('re-fetches the snapshot when the refresh button is pressed', async () => {
+    let calls = 0
+    const listActiveContracts = (async () => {
+      calls += 1
       return [CONTRACT]
     }) as typeof ListFn
     renderUtil(listActiveContracts)
 
-    await waitFor(() => assert.ok(calls.length >= 1))
-    await userEvent.type(screen.getByLabelText('Filter template ID'), 'pkg:Module:Template')
+    await screen.findByText('cid-1')
+    await waitFor(() => assert.equal(calls, 1))
     await userEvent.click(screen.getByRole('button', { name: 'Refresh contracts' }))
+    await waitFor(() => assert.equal(calls, 2))
+  })
 
-    await waitFor(() =>
-      assert.deepEqual(calls.at(-1), {
-        partyId: 'alice::party',
-        templateId: 'pkg:Module:Template',
-      }),
-    )
+  it('messages the loading, empty, and no-match states', async () => {
+    const pending = (() => new Promise<ActiveContract[]>(() => {})) as typeof ListFn
+    renderUtil(pending)
+    assert.ok(screen.getByText(/loading active contracts/i))
+    cleanup()
+
+    const none = (async () => []) as typeof ListFn
+    renderUtil(none)
+    await screen.findByText(/no active contracts/i)
+    cleanup()
+
+    const one = (async () => [CONTRACT]) as typeof ListFn
+    renderUtil(one)
+    await screen.findByText('cid-1')
+    await userEvent.type(screen.getByLabelText('Template id'), 'Nope')
+    assert.ok(screen.getByText(/no contracts match/i))
   })
 })

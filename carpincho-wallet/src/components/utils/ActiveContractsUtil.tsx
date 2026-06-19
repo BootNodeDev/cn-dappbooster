@@ -1,15 +1,20 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Alert } from '@/components/ui/Alert'
-import { PrimaryButton } from '@/components/ui/Button'
+import { ICON_BUTTON_CLASS } from '@/components/ui/Button'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/Collapsible'
 import { CopyableLabel } from '@/components/ui/CopyableLabel'
 import { DetailRow } from '@/components/ui/DetailRow'
-import { CHEVRON_DOWN_ICON } from '@/components/ui/icons'
+import { CHEVRON_DOWN_ICON, REFRESH_ICON } from '@/components/ui/icons'
 import { JsonView } from '@/components/ui/JsonView'
 import { TextInput } from '@/components/ui/TextInput'
 import { toast } from '@/components/ui/toast'
-import { type ActiveContract, listActiveContracts as defaultList } from '@/ledger/contracts'
+import {
+  type ActiveContract,
+  listActiveContracts as defaultList,
+  matchesTemplate,
+} from '@/ledger/contracts'
 import { shortMiddle } from '@/utils/account'
+import { cn } from '@/utils/cn'
 import type { AccountPublic } from '@/vault/types'
 
 interface ActiveContractsUtilProps {
@@ -17,26 +22,14 @@ interface ActiveContractsUtilProps {
   listActiveContracts?: typeof defaultList
 }
 
-// One active contract as a collapsible card: id + chevron, args behind an expander.
+// One active contract as a collapsible card: a shortened id with a top-right chevron, full
+// details (matching the other sheets' field styling) revealed below.
 const ContractCard = ({ contract }: { contract: ActiveContract }): JSX.Element => (
   <Collapsible className="group rounded-md border border-border bg-surface px-3 py-2.5">
     <div className="flex items-center gap-2">
-      {/* collapsed: shortened id summary; hidden when open */}
-      <span className="min-w-0 flex-1 truncate font-mono text-[0.74rem] leading-5 text-foreground group-data-[state=open]:hidden">
+      <span className="min-w-0 flex-1 truncate font-mono text-[0.74rem] leading-5 text-foreground">
         {shortMiddle(contract.contractId, 10, 8)}
       </span>
-      {/* expanded: full contract id label + value; hidden when closed */}
-      <div className="hidden min-w-0 flex-1 group-data-[state=open]:block">
-        <CopyableLabel
-          className="mb-1"
-          label="Contract ID"
-          value={contract.contractId}
-          copyLabel="contract ID"
-        />
-        <span className="break-all font-mono text-[0.74rem] leading-5 text-foreground">
-          {contract.contractId}
-        </span>
-      </div>
       <CollapsibleTrigger className="grid size-8 shrink-0 place-items-center rounded-md text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:shadow-focus [&_svg]:size-5">
         <span className="sr-only">Toggle contract details</span>
         <span className="transition-transform group-data-[state=open]:rotate-180">
@@ -45,6 +38,11 @@ const ContractCard = ({ contract }: { contract: ActiveContract }): JSX.Element =
       </CollapsibleTrigger>
     </div>
     <CollapsibleContent className="mt-3 flex flex-col gap-3 border-t border-border pt-3">
+      <DetailRow
+        label="Contract ID"
+        value={contract.contractId}
+        copyLabel="contract ID"
+      />
       <DetailRow
         label="Template"
         value={contract.templateId}
@@ -70,7 +68,7 @@ const ContractCard = ({ contract }: { contract: ActiveContract }): JSX.Element =
   </Collapsible>
 )
 
-// Browses the active contract set with an optional template filter.
+// Browses the active contract set, narrowing it live by template id as you type.
 export const ActiveContractsUtil = ({
   account,
   listActiveContracts = defaultList,
@@ -81,32 +79,31 @@ export const ActiveContractsUtil = ({
   const [error, setError] = useState<string | undefined>()
   const [loaded, setLoaded] = useState(false)
 
-  const refresh = useCallback(
-    async (templateId: string): Promise<void> => {
-      setBusy(true)
-      setError(undefined)
-      try {
-        setContracts(
-          await listActiveContracts({
-            partyId: account.partyId,
-            ...(templateId.trim() === '' ? {} : { templateId: templateId.trim() }),
-          }),
-        )
-        setLoaded(true)
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err)
-        setError(message)
-        toast.error(message)
-      } finally {
-        setBusy(false)
-      }
-    },
-    [account.partyId, listActiveContracts],
-  )
+  const refresh = useCallback(async (): Promise<void> => {
+    setBusy(true)
+    setError(undefined)
+    try {
+      setContracts(await listActiveContracts({ partyId: account.partyId }))
+      setLoaded(true)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      setError(message)
+      toast.error(message)
+    } finally {
+      setBusy(false)
+    }
+  }, [account.partyId, listActiveContracts])
 
   useEffect(() => {
-    void refresh('')
+    void refresh()
   }, [refresh])
+
+  const visible = contracts.filter((contract) => matchesTemplate(contract, filterTemplateId))
+  const emptyMessage = !loaded
+    ? 'Loading active contracts...'
+    : contracts.length === 0
+      ? 'No active contracts.'
+      : 'No contracts match the filter.'
 
   return (
     <section className="flex flex-col gap-4">
@@ -114,32 +111,39 @@ export const ActiveContractsUtil = ({
         htmlFor="filter-template-id"
         className="flex flex-col gap-2 text-[0.82rem] font-semibold uppercase tracking-wider text-muted-foreground"
       >
-        Filter template ID
+        Template id
         <TextInput
           id="filter-template-id"
           value={filterTemplateId}
           onChange={(event) => setFilterTemplateId(event.currentTarget.value)}
-          placeholder="optional"
+          placeholder="e.g. Module:Template"
           className="font-mono text-[0.9rem] normal-case tracking-normal"
         />
       </label>
-      <PrimaryButton
-        className="w-full"
-        disabled={busy}
-        onClick={() => {
-          void refresh(filterTemplateId)
-        }}
-      >
-        {busy ? 'Refreshing...' : 'Refresh contracts'}
-      </PrimaryButton>
       {error === undefined ? null : <Alert variant="error">{error}</Alert>}
-      {contracts.length === 0 ? (
+      <div className="flex items-center justify-end">
+        <button
+          type="button"
+          aria-label="Refresh contracts"
+          title="Refresh contracts"
+          disabled={busy}
+          onClick={() => {
+            void refresh()
+          }}
+          className={cn(ICON_BUTTON_CLASS, 'size-8 rounded-md [&_svg]:size-[1.05rem]')}
+        >
+          <span className={cn('inline-grid place-items-center', busy && 'animate-spin')}>
+            {REFRESH_ICON}
+          </span>
+        </button>
+      </div>
+      {visible.length === 0 ? (
         <p className="rounded-md border border-dashed border-border px-3 py-6 text-center text-[0.9rem] font-medium text-muted-foreground">
-          {loaded ? 'No active contracts.' : 'Loading active contracts...'}
+          {emptyMessage}
         </p>
       ) : (
         <div className="-mx-1 flex h-[15.5rem] flex-col gap-3 overflow-y-auto px-1">
-          {contracts.map((contract) => (
+          {visible.map((contract) => (
             <ContractCard
               key={contract.contractId}
               contract={contract}

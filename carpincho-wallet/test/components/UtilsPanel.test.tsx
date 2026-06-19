@@ -26,6 +26,13 @@ const CONTRACT: ActiveContract = {
   createdOffset: 42,
 }
 
+const OTHER: ActiveContract = {
+  contractId: 'cid-other',
+  templateId: 'pkg:Module:Other',
+  createArgument: { admin: 'alice::party' },
+  createdOffset: 43,
+}
+
 const baseVault = (): VaultContextValue =>
   ({
     isLocked: false,
@@ -94,29 +101,36 @@ describe('UtilsPanel', () => {
     await waitFor(() => assert.equal(screen.queryByLabelText('Template ID'), null))
   })
 
-  it('drills into Active contracts and applies the template filter', async () => {
+  it('drills into Active contracts, filters locally, and refreshes from the header', async () => {
     const listCalls: Parameters<UtilsApi['listActiveContracts']>[0][] = []
     const api: UtilsApi = {
       createContract: async () => ({ updateId: 'unused' }),
       exerciseContract: async () => ({ updateId: 'unused' }),
       listActiveContracts: async (params) => {
         listCalls.push(params)
-        return [CONTRACT]
+        return [CONTRACT, OTHER]
       },
     }
     renderPanel(api)
 
     await userEvent.click(screen.getByRole('button', { name: /Active contracts/ }))
-    await screen.findAllByText('cid-1')
-    await userEvent.type(screen.getByLabelText('Filter template ID'), 'pkg:Module:Template')
-    await userEvent.click(screen.getByRole('button', { name: 'Refresh contracts' }))
+    await screen.findByText('cid-1')
+    await screen.findByText('cid-other')
 
-    await waitFor(() =>
-      assert.deepEqual(listCalls.at(-1), {
-        partyId: 'alice::party',
-        templateId: 'pkg:Module:Template',
-      }),
-    )
+    // The list auto-loads the full ACS without a server-side template filter.
+    await waitFor(() => assert.ok(listCalls.length >= 1))
+    assert.deepEqual(listCalls.at(-1), { partyId: 'alice::party' })
+
+    // Typing narrows the already-fetched set client-side, no extra request.
+    await userEvent.type(screen.getByLabelText('Template id'), 'Other')
+    assert.equal(screen.queryByText('cid-1'), null)
+    assert.ok(screen.getByText('cid-other'))
+    assert.equal(listCalls.length, 1)
+
+    // The header refresh icon re-fetches the snapshot.
+    await userEvent.click(screen.getByRole('button', { name: 'Refresh contracts' }))
+    await waitFor(() => assert.equal(listCalls.length, 2))
+    assert.deepEqual(listCalls.at(-1), { partyId: 'alice::party' })
   })
 
   it('warns when there is no account', () => {
