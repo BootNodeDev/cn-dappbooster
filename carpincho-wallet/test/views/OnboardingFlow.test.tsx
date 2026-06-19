@@ -1,6 +1,7 @@
 import { strict as assert } from 'node:assert'
 import { afterEach, describe, it } from 'node:test'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { TooltipProvider } from '@/components/ui/Tooltip'
 import { VaultContext, type VaultContextValue } from '@/vault/VaultContext'
 import { OnboardingFlow } from '@/views/onboarding/OnboardingFlow'
@@ -30,8 +31,7 @@ const baseVault = (overrides: Partial<VaultContextValue> = {}): VaultContextValu
       createdAt: 0,
     }),
     removeAccount: async () => undefined,
-    exportVault: () => ({ v: 1, accounts: [] }) as import('@/vault/types').VaultEnvelope,
-    importVault: async () => ({ imported: 0, skipped: 0, rejected: 0 }),
+    exportPrivateKey: () => '',
     signMessage: async () => '',
     recordTransaction: async () => ({}) as unknown as import('@/vault/types').TransactionRecord,
     changePassword: async () => undefined,
@@ -51,8 +51,8 @@ const renderFlow = (overrides: Partial<VaultContextValue> = {}): void => {
   )
 }
 
-// Installs a healthy wallet-service status response so onboarding can render the real footer state.
-const installWalletServiceStatus = (): void => {
+// Configure RPC auto-tests on entry; this keeps that probe healthy and deterministic.
+const installHealthyWalletService = (): void => {
   globalThis.fetch = async () =>
     new Response(
       JSON.stringify({
@@ -72,38 +72,40 @@ describe('OnboardingFlow', () => {
     globalThis.fetch = originalFetch
   })
 
-  it('shows step 1 (create vault) active when there is no vault', () => {
+  it('shows step 1 (Vault) active when there is no vault', () => {
     renderFlow({ hasVault: false })
     assert.ok(screen.getByRole('button', { name: /^create$/i }))
     assert.equal(screen.getByTestId('step-1').getAttribute('aria-current'), 'step')
     assert.equal(screen.getByTestId('step-2').getAttribute('data-state'), 'upcoming')
   })
 
-  it('shows step 2 (create account) active with step 1 complete when the vault has no accounts', () => {
-    // Step 2 owns the live footer, so status polling is isolated from the test environment.
-    installWalletServiceStatus()
-
+  it('shows step 2 (Configure RPC) when the vault exists but no account, with step 1 complete', () => {
+    installHealthyWalletService()
     renderFlow({ hasVault: true, accounts: [] })
-    assert.ok(screen.getByTestId('add-account-hint-input'))
+    assert.ok(screen.getByLabelText(/wallet-service rpc url/i))
     assert.equal(screen.getByTestId('step-1').getAttribute('data-state'), 'complete')
     assert.equal(screen.getByTestId('step-2').getAttribute('aria-current'), 'step')
   })
 
-  it('does not render a Cancel control on the account step', () => {
-    // The connection footer is present, but the account form should remain a one-action setup flow.
-    installWalletServiceStatus()
-
+  it('does not skip the RPC step to the account step on reload (vault exists, no account)', () => {
+    installHealthyWalletService()
     renderFlow({ hasVault: true, accounts: [] })
-    assert.equal(screen.queryByTestId('add-account-cancel'), null)
+    assert.ok(screen.getByLabelText(/wallet-service rpc url/i))
+    assert.equal(screen.queryByTestId('add-account-hint-input'), null)
   })
 
-  it('does not render the connection footer on the account step', () => {
-    // Connection config moved to its own onboarding step, so the account step is just the form.
-    installWalletServiceStatus()
-
+  it('advances to step 3 (Create Account) after the RPC connection is confirmed', async () => {
+    installHealthyWalletService()
     renderFlow({ hasVault: true, accounts: [] })
-
-    // The "Connection settings" button should not be present since the footer is gone.
-    assert.equal(screen.queryByRole('button', { name: 'Connection settings' }), null)
+    await waitFor(() =>
+      assert.equal(
+        (screen.getByTestId('configure-rpc-continue') as HTMLButtonElement).disabled,
+        false,
+      ),
+    )
+    await userEvent.click(screen.getByTestId('configure-rpc-continue'))
+    await waitFor(() => assert.ok(screen.getByTestId('add-account-hint-input')))
+    assert.equal(screen.getByTestId('step-3').getAttribute('aria-current'), 'step')
+    assert.equal(screen.getByTestId('step-2').getAttribute('data-state'), 'complete')
   })
 })
