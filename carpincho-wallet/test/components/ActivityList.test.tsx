@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert'
 import { afterEach, describe, it } from 'node:test'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ActivityList } from '@/components/ActivityList'
 import { TooltipProvider } from '@/components/ui/Tooltip'
@@ -65,8 +65,10 @@ describe('ActivityList', () => {
 
     // The popup exposes the original command JSON so the user can inspect the called choice and values.
     assert.ok(screen.getByText('Command payload'))
-    // Payload rendered as a JSON tree — the tree renders keys as individual text nodes.
-    assert.ok(screen.getAllByText('ExerciseCommand').length >= 1)
+    // The dialog title accounts for one occurrence; the JSON tree key is a second.
+    // Asserting >= 2 inside the dialog fails if the payload tree never rendered.
+    const dialog = screen.getByRole('dialog')
+    assert.ok(within(dialog).getAllByText('ExerciseCommand').length >= 2)
   })
 
   it('shows copy buttons for mono metadata rows', async () => {

@@ -38,7 +38,7 @@ export const PendingActionCard = ({
       <div>
         <div className="font-mono text-[0.84rem] font-medium text-muted-foreground">payload:</div>
         <JsonView
-          value={typeof payload.json === 'string' ? payload.json : payload.json}
+          value={payload.json}
           className="mt-1.5 max-h-[40vh]"
         />
       </div>
