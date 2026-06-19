@@ -114,8 +114,6 @@ export interface VaultContextValue {
     publicKeyBase64: string
   }) => Promise<AccountPublic>
   removeAccount: (id: string) => Promise<void>
-  exportVault: () => VaultEnvelope
-  importVault: (envelope: VaultEnvelope) => Promise<ImportVaultResult>
   exportEncryptedVault: (password: string) => Promise<CarpinchoBackup>
   importEncryptedVault: (file: unknown, password: string) => Promise<ImportVaultResult>
   signMessage: (accountId: string, messageBase64: string) => Promise<string>
@@ -364,8 +362,8 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
   )
 
   // Builds a portable backup of every account. Pure projection: omits id/createdAt,
-  // never logged or persisted. Callers must drop the result as soon as it is shown.
-  const exportVault = useCallback((): VaultEnvelope => {
+  // never logged or persisted. Internal: consumed only by exportEncryptedVault.
+  const buildEnvelope = useCallback((): VaultEnvelope => {
     if (unlockedPlaintext === null) {
       throw new Error('vault locked')
     }
@@ -383,8 +381,8 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
 
   // Restores accounts from an envelope. Per entry: the private key must derive the
   // stored public key and the partyId must be `hint::namespace`; duplicates are skipped.
-  // One bad entry never aborts the rest. No Canton fingerprint check (not derivable here).
-  const importVault = useCallback(
+  // Internal: consumed only by importEncryptedVault.
+  const mergeEnvelope = useCallback(
     async (envelope: VaultEnvelope): Promise<ImportVaultResult> => {
       if (unlockedPlaintext === null) {
         throw new Error('vault locked')
@@ -444,11 +442,11 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
       if (cachedPassword !== password) {
         throw new Error('invalid password')
       }
-      const envelope = exportVault()
+      const envelope = buildEnvelope()
       const vault = await encryptVault(password, JSON.stringify(envelope))
       return wrapBackup(vault)
     },
-    [exportVault],
+    [buildEnvelope],
   )
 
   const importEncryptedVault = useCallback(
@@ -464,9 +462,9 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
         throw new Error('Wrong password for this file.')
       }
       const envelope = JSON.parse(plaintext) as VaultEnvelope
-      return await importVault(envelope)
+      return await mergeEnvelope(envelope)
     },
-    [importVault],
+    [mergeEnvelope],
   )
 
   const verifyPassword = useCallback(
@@ -617,8 +615,6 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
       setPrimary,
       addAccount,
       removeAccount,
-      exportVault,
-      importVault,
       exportEncryptedVault,
       importEncryptedVault,
       signMessage,
@@ -640,8 +636,6 @@ export const VaultProvider = ({ children }: PropsWithChildren): JSX.Element => {
     setPrimary,
     addAccount,
     removeAccount,
-    exportVault,
-    importVault,
     exportEncryptedVault,
     importEncryptedVault,
     signMessage,
