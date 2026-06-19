@@ -61,9 +61,10 @@ export const ConfigureRpcStep = ({ onConfirmed }: ConfigureRpcStepProps): JSX.El
       <div
         role="status"
         className={cn(
-          'mt-3 flex items-center gap-2.5 rounded-md px-3 py-2.5 text-[0.85rem] font-semibold',
+          'mt-3 flex gap-2.5 rounded-md px-3 py-2.5 text-[0.85rem] font-semibold',
+          state === 'unreachable' ? 'items-start' : 'items-center',
           state === 'connected' && 'bg-success-soft text-success',
-          state === 'unreachable' && 'items-start bg-danger-soft text-danger',
+          state === 'unreachable' && 'bg-danger-soft text-danger',
           state !== 'connected' && state !== 'unreachable' && 'bg-muted text-soft',
         )}
       >

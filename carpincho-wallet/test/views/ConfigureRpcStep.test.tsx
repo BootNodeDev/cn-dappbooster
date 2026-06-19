@@ -59,8 +59,10 @@ describe('ConfigureRpcStep', () => {
       throw new Error('Failed to fetch')
     }
     render(<ConfigureRpcStep onConfirmed={() => undefined} />)
-    await waitFor(() => assert.ok(screen.getByText(/can.t reach wallet-service/i)))
-    assert.equal(continueButton().disabled, true)
+    await waitFor(() => {
+      assert.ok(screen.getByText(/can.t reach wallet-service/i))
+      assert.equal(continueButton().disabled, true)
+    })
     assert.equal(screen.queryByRole('button', { name: /^test$/i }), null)
   })
 
