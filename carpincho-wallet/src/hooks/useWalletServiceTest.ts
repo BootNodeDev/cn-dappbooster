@@ -43,7 +43,7 @@ export const useWalletServiceTest = (): WalletServiceTest => {
         return
       }
       setNetworkId(undefined)
-      setReason((err as Error).message)
+      setReason(err instanceof Error ? err.message : String(err))
       setState('unreachable')
     }
   }, [])
