@@ -74,19 +74,25 @@ export const ActivityPanel = ({
     )
   }
 
-  // Runs the receiver-acceptance flow while keeping the button state scoped to one transfer.
+  // Optimistically hides the accepted transfer while it settles; a progress toast tracks the
+  // flow and is replaced by the result. On failure the transfer reappears so it can be retried.
   const onAccept = async (transferInstructionCid: string): Promise<void> => {
     setAcceptingCid(transferInstructionCid)
+    const pendingToastId = toast.info('Accepting transfer...')
     try {
       await accept(transferInstructionCid)
+      toast.dismiss(pendingToastId)
       toast.success('Transfer accepted.')
     } catch (err) {
+      toast.dismiss(pendingToastId)
       toast.error(`Accept failed: ${(err as Error).message}`)
     } finally {
       setAcceptingCid(undefined)
     }
   }
 
+  // Hide the in-flight transfer from the actionable list as soon as Accept is clicked.
+  const visibleIncoming = incoming.filter((transfer) => transfer.contractId !== acceptingCid)
   const hasPending = incoming.length > 0 || outgoing.length > 0
 
   return (
@@ -97,17 +103,16 @@ export const ActivityPanel = ({
         </div>
       )}
 
-      {incoming.length > 0 ? (
+      {visibleIncoming.length > 0 ? (
         <section className="flex flex-col gap-2">
           <h2 className="m-0 px-0.5 text-[0.7rem] font-bold uppercase tracking-[0.1em] text-foreground">
             Needs action
           </h2>
-          {incoming.map((transfer) => (
+          {visibleIncoming.map((transfer) => (
             <TransferCard
               key={transfer.contractId}
               transfer={transfer}
               direction="incoming"
-              isAccepting={acceptingCid === transfer.contractId}
               onAccept={onAccept}
               onOpenDetails={setDetailsTransfer}
             />
@@ -133,9 +138,11 @@ export const ActivityPanel = ({
 
       {loading && !hasPending && transactions.length === 0 ? (
         <LoadingState label="Loading transfers" />
-      ) : (
+      ) : transactions.length > 0 || !hasPending ? (
+        // Only the settled-history list owns the "No activity yet" empty state, so suppress it
+        // while transfers are pending — otherwise it reads as empty beneath the pending cards.
         <ActivityList transactions={transactions} />
-      )}
+      ) : null}
 
       <TransferDetailsSheet
         transfer={detailsTransfer}
