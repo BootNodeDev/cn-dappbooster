@@ -72,6 +72,7 @@ export const HomeTabs = ({
         <TabTrigger value="utils">Utils</TabTrigger>
       </TabsList>
       <TabContent
+        forceMount
         value="assets"
         className={TAB_CONTENT_CLASS}
       >

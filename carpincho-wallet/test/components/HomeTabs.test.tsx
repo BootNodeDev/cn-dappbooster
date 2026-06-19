@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert'
 import { afterEach, describe, it } from 'node:test'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ReactNode } from 'react'
 import { HomeTabs } from '@/components/HomeTabs'
@@ -173,6 +173,35 @@ describe('HomeTabs navigation', () => {
 
     assert.equal(screen.getByRole('tab', { name: 'Assets' }).getAttribute('data-state'), 'active')
     await screen.findByRole('tab', { name: 'Activity 1' })
+  })
+
+  it('keeps the optimistic auto-accept toggle on across tab switches', async () => {
+    // Scenario: enabling auto-accept flips the toggle on optimistically while the ledger
+    // catches up. Switching tabs must not unmount the Assets panel and lose that state.
+    const holdingsApi: Cip56HoldingsApi = {
+      listTokenHoldingSummaries: async () => [],
+    }
+
+    renderHome(
+      baseVault(),
+      <HomeTabs
+        transactions={[]}
+        tokensApi={holdingsApi}
+        preapprovalApi={inactivePreapprovalApi}
+      />,
+    )
+
+    const toggle = await screen.findByRole('switch', { name: 'Auto-accept incoming' })
+    await waitFor(() => assert.equal(toggle.hasAttribute('disabled'), false))
+    await userEvent.click(toggle)
+    await waitFor(() => assert.equal(toggle.getAttribute('aria-checked'), 'true'))
+
+    // Leave the Assets tab and come back.
+    await userEvent.click(screen.getByRole('tab', { name: 'Activity' }))
+    await userEvent.click(screen.getByRole('tab', { name: 'Assets' }))
+
+    const toggleAfter = await screen.findByRole('switch', { name: 'Auto-accept incoming' })
+    assert.equal(toggleAfter.getAttribute('aria-checked'), 'true')
   })
 
   it('shows Activity only for the selected account', async () => {
