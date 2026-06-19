@@ -39,19 +39,34 @@ export const DarUploadPanel = ({ api = defaultApi }: DarUploadPanelProps): JSX.E
   }
 
   return (
-    <section className="flex flex-col gap-4 px-1 py-2">
-      <label className="flex flex-col gap-2 text-[0.82rem] font-semibold uppercase tracking-wider text-muted-foreground">
-        DAR file
-        <input
-          type="file"
-          accept=".dar,application/octet-stream"
-          className="block w-full rounded-md border border-border bg-surface px-3 py-2 text-[0.95rem] font-medium normal-case tracking-normal text-foreground file:mr-3 file:rounded-sm file:border-0 file:bg-primary-soft file:px-3 file:py-1.5 file:text-primary file:font-semibold"
-          onChange={(event) => {
-            setUploadedFileName(undefined)
-            setFile(event.currentTarget.files?.[0])
-          }}
-        />
-      </label>
+    <section className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
+        <label
+          htmlFor="dar-file"
+          className="text-[0.82rem] font-semibold uppercase tracking-wider text-muted-foreground"
+        >
+          DAR file
+        </label>
+        <div className="rounded-md border border-dashed border-border bg-surface px-4 py-6 text-center">
+          <input
+            id="dar-file"
+            type="file"
+            accept=".dar,application/octet-stream"
+            className="block w-full text-[0.9rem] font-medium normal-case tracking-normal text-foreground file:mr-3 file:rounded-sm file:border-0 file:bg-primary-soft file:px-3 file:py-1.5 file:font-semibold file:text-primary"
+            onChange={(event) => {
+              setUploadedFileName(undefined)
+              setFile(event.currentTarget.files?.[0])
+            }}
+          />
+          {file === undefined ? (
+            <p className="mt-3 text-[0.82rem] font-medium text-muted-foreground">
+              Choose a compiled .dar archive to install.
+            </p>
+          ) : (
+            <p className="mt-3 truncate font-mono text-[0.82rem] text-foreground">{file.name}</p>
+          )}
+        </div>
+      </div>
       <PrimaryButton
         className="w-full"
         disabled={file === undefined || uploading}
