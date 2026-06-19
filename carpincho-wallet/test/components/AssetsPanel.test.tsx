@@ -4,8 +4,11 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { AmuletTapApi } from '@/cip56/amuletPreapproval'
 import { AssetsPanel } from '@/components/AssetsPanel'
+import { TooltipProvider } from '@/components/ui/Tooltip'
 import { toast } from '@/components/ui/toast'
+import type { AmuletPreapprovalApi } from '@/hooks/useAmuletPreapproval'
 import type { Cip56HoldingsApi } from '@/hooks/useTokenHoldings'
+import { inactivePreapprovalApi } from '@/test-utils/preapproval'
 import { TestQueryClientProvider } from '@/test-utils/queryClient'
 import type { AccountPublic } from '@/vault/types'
 import { VaultContext, type VaultContextValue } from '@/vault/VaultContext'
@@ -46,16 +49,23 @@ const baseVault = (): VaultContextValue =>
     setAutoLockOption: () => undefined,
   }) as VaultContextValue
 
-// Mounts the panel under vault context so it can resolve the active account.
-const renderAssets = (api: Cip56HoldingsApi, tapApi?: AmuletTapApi): void => {
+// Mounts the panel under vault + tooltip context so it can resolve the account and toggle.
+const renderAssets = (
+  api: Cip56HoldingsApi,
+  tapApi?: AmuletTapApi,
+  preapprovalApi: AmuletPreapprovalApi = inactivePreapprovalApi,
+): void => {
   render(
     <TestQueryClientProvider>
-      <VaultContext.Provider value={baseVault()}>
-        <AssetsPanel
-          api={api}
-          tapApi={tapApi}
-        />
-      </VaultContext.Provider>
+      <TooltipProvider>
+        <VaultContext.Provider value={baseVault()}>
+          <AssetsPanel
+            api={api}
+            tapApi={tapApi}
+            preapprovalApi={preapprovalApi}
+          />
+        </VaultContext.Provider>
+      </TooltipProvider>
     </TestQueryClientProvider>,
   )
 }
@@ -259,5 +269,29 @@ describe('AssetsPanel', () => {
     renderAssets(api)
 
     await screen.findByText('No token holdings')
+  })
+
+  it('shows the auto-accept setting above the holdings list', async () => {
+    // Scenario: the auto-accept toggle now lives on the Assets tab as a setting row,
+    // with the holdings grouped beneath a label.
+    const api: Cip56HoldingsApi = {
+      listTokenHoldingSummaries: async () => [
+        {
+          key: 'dso::party:Amulet',
+          tokenLabel: 'Amulet',
+          instrumentId: { admin: 'dso::party', id: 'Amulet' },
+          totalAmount: '15.75',
+          utxoCount: 2,
+          lockedCount: 0,
+          unlockedCount: 2,
+          source: 'utxos',
+        },
+      ],
+    }
+
+    renderAssets(api)
+
+    assert.ok(await screen.findByRole('switch', { name: 'Auto-accept incoming' }))
+    assert.equal(screen.getByText('Holdings').textContent, 'Holdings')
   })
 })

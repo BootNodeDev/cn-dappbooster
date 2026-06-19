@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { type AmuletTapApi, tapAmulet } from '@/cip56/amuletPreapproval'
 import type { TokenHoldingSummary } from '@/cip56/holdings'
+import { AutoAcceptSetting } from '@/components/AutoAcceptSetting'
 import type { Cip56SendApi } from '@/components/SendTokenForm'
 import { TokenDetailSheet } from '@/components/TokenDetailSheet'
 import { TokenRow } from '@/components/TokenRow'
 import { PrimaryButton } from '@/components/ui/Button'
 import { LoadingState } from '@/components/ui/LoadingState'
 import { toast } from '@/components/ui/toast'
+import type { AmuletPreapprovalApi } from '@/hooks/useAmuletPreapproval'
 import type { Cip56HoldingsApi } from '@/hooks/useTokenHoldings'
 import { useTokenHoldings } from '@/hooks/useTokenHoldings'
 import type { AccountPublic } from '@/vault/types'
@@ -17,12 +19,19 @@ export interface AssetsPanelProps {
   api?: Cip56HoldingsApi
   sendApi?: Cip56SendApi
   tapApi?: AmuletTapApi
+  preapprovalApi?: AmuletPreapprovalApi
 }
 
 const defaultTapApi: AmuletTapApi = { tapAmulet }
 
 // Renders active CIP-56 token holdings as activity-style rows that open a detail modal.
-export const AssetsPanel = ({ account, api, sendApi, tapApi }: AssetsPanelProps): JSX.Element => {
+export const AssetsPanel = ({
+  account,
+  api,
+  sendApi,
+  tapApi,
+  preapprovalApi,
+}: AssetsPanelProps): JSX.Element => {
   const vault = useVault()
   const activeAccount = account ?? vault.primary ?? vault.accounts[0]
   const [selected, setSelected] = useState<TokenHoldingSummary | null>(null)
@@ -58,6 +67,11 @@ export const AssetsPanel = ({ account, api, sendApi, tapApi }: AssetsPanelProps)
 
   return (
     <div className="flex min-h-full flex-col gap-3 px-1 py-2">
+      <AutoAcceptSetting
+        account={activeAccount}
+        api={preapprovalApi}
+      />
+
       <div className="flex justify-end">
         <PrimaryButton
           className="px-3 py-1.5 text-[0.82rem]"
@@ -78,6 +92,9 @@ export const AssetsPanel = ({ account, api, sendApi, tapApi }: AssetsPanelProps)
 
       {summaries.length > 0 ? (
         <div className="flex flex-col">
+          <div className="px-1 pb-1 text-[0.7rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+            Holdings
+          </div>
           {summaries.map((summary) => (
             <TokenRow
               key={summary.key}
