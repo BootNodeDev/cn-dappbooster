@@ -33,12 +33,14 @@ const initialState = (): PasswordState => ({
 export const PasswordForm = (): JSX.Element => {
   const v = useVault()
   const [state, setState] = useState<PasswordState>(initialState)
+  const [busy, setBusy] = useState(false)
 
   const canSubmit = state.current.trim() !== '' && state.valid
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault()
-    if (!canSubmit) return
+    if (!canSubmit || busy) return
+    setBusy(true)
     try {
       await v.changePassword(state.current, state.next)
       setState(initialState())
@@ -46,6 +48,8 @@ export const PasswordForm = (): JSX.Element => {
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Could not change password.'
       setState((s) => ({ ...s, error: msg }))
+    } finally {
+      setBusy(false)
     }
   }
 
@@ -79,10 +83,10 @@ export const PasswordForm = (): JSX.Element => {
         </p>
       )}
       <PrimaryButton
-        disabled={!canSubmit}
+        disabled={!canSubmit || busy}
         type="submit"
       >
-        Change password
+        {busy ? 'Changing…' : 'Change password'}
       </PrimaryButton>
     </form>
   )
