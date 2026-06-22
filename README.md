@@ -116,7 +116,7 @@ registry URLs behind service configuration.
 Build and deploy the sample DAR:
 
 ```bash
-npm run build-dar -- dapp/daml
+cd dapp/daml && dpm build && cd ../..
 npm run deploy-dar -- dapp/daml/.daml/dist/quickstart-tally-0.0.1.dar
 ```
 

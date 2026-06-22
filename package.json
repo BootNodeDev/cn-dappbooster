@@ -19,7 +19,6 @@
     "canton:down": "npm --prefix canton-barebones run down",
     "canton:health": "npm --prefix canton-barebones run health",
     "canton:token": "npm --prefix canton-barebones run token",
-    "build-dar": "bash scripts/build-dar.sh",
     "deploy-dar": "bash canton-barebones/scripts/deploy-dar.sh",
     "wallet:dev": "npm --prefix carpincho-wallet run dev",
     "wallet-gateway-devkit:dev": "npm --prefix canton-barebones/wallet-gateway-devkit run dev",
