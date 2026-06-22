@@ -93,10 +93,10 @@ describe('Splice LocalNet shell config', () => {
     assert.match(upScript, /COMPOSE_IGNORE_ORPHANS=true splice_compose up -d/)
   })
 
-  it('starts wallet-service without warning about Splice orphan services', () => {
-    // Scenario: wallet-service uses a small local compose file while Splice
-    // uses the official compose files. Both share one project, so the
-    // wallet-service startup command must explicitly ignore expected orphans.
+  it('starts the devkit facade without warning about Splice orphan services', () => {
+    // Scenario: devkit mode uses a small local compose file while Splice uses
+    // the official compose files. Both share one project, so the facade startup
+    // command must explicitly ignore expected orphans.
     const upScript = execFileSync('cat', [path.join(projectRoot, 'scripts/up.sh')], {
       cwd: projectRoot,
       encoding: 'utf8',
@@ -104,8 +104,49 @@ describe('Splice LocalNet shell config', () => {
 
     assert.match(
       upScript,
-      /COMPOSE_IGNORE_ORPHANS=true docker compose --project-directory "\$ROOT" up -d --build wallet-service/,
+      /COMPOSE_IGNORE_ORPHANS=true docker compose --project-directory "\$ROOT" up -d --build wallet-gateway wallet-service/,
     )
+  })
+
+  it('starts only the official wallet-gateway when gateway mode is wallet-gateway', () => {
+    // Scenario: operators can expose the upstream wallet-gateway without the
+    // development facade. The startup script should route this mode to the
+    // wallet-gateway service and leave the devkit service out.
+    const upScript = execFileSync('cat', [path.join(projectRoot, 'scripts/up.sh')], {
+      cwd: projectRoot,
+      encoding: 'utf8',
+    })
+
+    assert.match(upScript, /wallet-gateway\)\n {4}start_wallet_gateway\n {4};;/)
+    assert.doesNotMatch(upScript, /wallet-gateway\)\n {4}start_wallet_gateway_devkit\n {4};;/)
+  })
+
+  it('starts wallet-gateway plus the devkit facade when gateway mode is wallet-gateway-devkit', () => {
+    // Scenario: devkit mode must still start the upstream wallet-gateway
+    // because the facade only owns /devkit and forwards standard gateway
+    // traffic to the official service.
+    const upScript = execFileSync('cat', [path.join(projectRoot, 'scripts/up.sh')], {
+      cwd: projectRoot,
+      encoding: 'utf8',
+    })
+
+    assert.match(upScript, /wallet-gateway-devkit\)\n.*start_wallet_gateway_devkit/s)
+  })
+
+  it('publishes wallet-gateway and the devkit facade on stable host ports', () => {
+    // Scenario: local developers can target the official gateway directly on
+    // 3010 or use the devkit facade on 3011 for helper RPCs.
+    const composeFile = execFileSync('cat', [path.join(projectRoot, 'docker-compose.yaml')], {
+      cwd: projectRoot,
+      encoding: 'utf8',
+    })
+
+    const walletGatewayBlock = composeFile.split('\n  wallet-service:')[0] ?? ''
+
+    assert.match(walletGatewayBlock, /wallet-gateway:/)
+    assert.match(walletGatewayBlock, /ports:\n {6}- "3010:3030"/)
+    assert.match(composeFile, /ports:\n {6}- "3011:3010"/)
+    assert.match(composeFile, /WALLET_GATEWAY_UPSTREAM_URL: "http:\/\/wallet-gateway:3030"/)
   })
 
   it('passes Docker-reachable Splice URLs into wallet-service', () => {

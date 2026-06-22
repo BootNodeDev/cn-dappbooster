@@ -3,7 +3,9 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "up": "./scripts/up.sh",
+    "up": "./scripts/up.sh wallet-gateway-devkit",
+    "up:wallet-gateway": "./scripts/up.sh wallet-gateway",
+    "up:wallet-gateway-devkit": "./scripts/up.sh wallet-gateway-devkit",
     "down": "./scripts/down.sh",
     "health": "./scripts/health-check.sh",
     "token": "node ./scripts/mint-token.mjs",

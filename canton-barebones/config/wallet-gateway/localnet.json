@@ -1,0 +1,47 @@
+{
+  "kernel": {
+    "id": "wallet-gateway",
+    "publicUrl": "http://localhost:3010",
+    "clientType": "remote"
+  },
+  "store": {
+    "connection": {
+      "type": "sqlite",
+      "database": "/data/wallet-gateway-store.sqlite"
+    }
+  },
+  "signingStore": {
+    "connection": {
+      "type": "sqlite",
+      "database": "/data/wallet-gateway-signing-store.sqlite"
+    }
+  },
+  "bootstrap": {
+    "idps": [
+      {
+        "id": "idp-localnet-self-signed",
+        "type": "self_signed",
+        "issuer": "unsafe-auth"
+      }
+    ],
+    "networks": [
+      {
+        "id": "canton:localnet",
+        "name": "Splice LocalNet",
+        "description": "Local Splice app-user validator from canton-barebones",
+        "identityProviderId": "idp-localnet-self-signed",
+        "auth": {
+          "method": "self_signed",
+          "issuer": "self-signed",
+          "audience": "https://canton.network.global",
+          "scope": "openid daml_ledger_api offline_access",
+          "clientId": "ledger-api-user",
+          "clientSecret": "unsafe"
+        },
+        "ledgerApi": {
+          "baseUrl": "http://host.docker.internal:2975"
+        }
+      }
+    ]
+  }
+}

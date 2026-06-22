@@ -9,6 +9,13 @@ EXTERNAL_LOCALNET_DIR="${LOCALNET_DIR:-}"
 EXTERNAL_LOCALNET_ENV_DIR="${LOCALNET_ENV_DIR:-}"
 EXTERNAL_SPLICE_COMPOSE_PROJECT_NAME="${SPLICE_COMPOSE_PROJECT_NAME:-}"
 
+if [ -f "$ROOT/config/splice/localnet.env" ]; then
+  set -a
+  # shellcheck disable=SC1091
+  source "$ROOT/config/splice/localnet.env"
+  set +a
+fi
+
 if [ -f "$ROOT/.env" ]; then
   set -a
   # shellcheck disable=SC1091
