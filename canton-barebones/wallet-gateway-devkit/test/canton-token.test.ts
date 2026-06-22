@@ -9,7 +9,7 @@ const b64urlDecode = (value: string): Buffer => {
 
 describe('createCantonToken', () => {
   it('produces the same HS256 token as canton-barebones/scripts/mint-token.mjs for the pinned inputs', () => {
-    // Scenario: wallet-service and the top-level token script must agree on
+    // Scenario: wallet-gateway-devkit and the top-level token script must agree on
     // the exact LocalNet JWT shape so generated tokens work across app-user
     // Ledger, Validator, Scan, and Registry endpoints.
     const token = createCantonToken({

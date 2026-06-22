@@ -31,8 +31,8 @@ check_http "Scan UI" "http://scan.localhost:4000"
 check_http "SV UI" "http://sv.localhost:4000"
 
 echo ""
-echo "Carpincho bridge"
-check_http "wallet-service" "http://localhost:${WALLET_SERVICE_PORT:-3010}/health"
+echo "Wallet gateway"
+check_http "wallet-gateway-devkit" "http://localhost:${WALLET_GATEWAY_DEVKIT_PUBLIC_PORT:-${WALLET_SERVICE_PORT:-3010}}/health"
 
 echo ""
 if docker info >/dev/null 2>&1; then
@@ -40,7 +40,7 @@ if docker info >/dev/null 2>&1; then
     echo "Docker compose project: $COMPOSE_PROJECT_NAME"
     COMPOSE_IGNORE_ORPHANS=true docker compose --project-directory "$ROOT" ps
   else
-    echo "wallet-service compose:"
+    echo "wallet-gateway-devkit compose:"
     COMPOSE_IGNORE_ORPHANS=true docker compose --project-directory "$ROOT" ps
     if [ -f "$LOCALNET_DIR/compose.yaml" ]; then
       echo ""

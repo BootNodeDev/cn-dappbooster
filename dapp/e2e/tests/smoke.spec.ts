@@ -2,31 +2,33 @@
 //
 // These tests deliberately do NOT exercise the full transaction flow — that's
 // Phase 2 work. Here we only verify the cross-package wiring works:
-//   * wallet-service responds with the post-Phase-1 surface
+//   * wallet-gateway-devkit responds with the post-Phase-1 surface
 //   * Carpincho extension loads and announces via the discovery protocol
 //   * dApp page loads
 //
 // A failing smoke means the integration boundary is broken. Each test runs in
 // well under a second once the stack is up.
 
-import { DAPP_URL, expect, test, WALLET_SERVICE_URL } from '../fixtures/stack.ts'
+import { DAPP_URL, expect, test, WALLET_GATEWAY_DEVKIT_URL } from '../fixtures/stack.ts'
 
 test.describe('cn-dappbooster integration smoke', () => {
-  test('wallet-service /health responds with the configured service', async ({ request }) => {
-    const response = await request.get(`${WALLET_SERVICE_URL}/health`)
+  test('wallet-gateway-devkit /health responds with the configured service', async ({
+    request,
+  }) => {
+    const response = await request.get(`${WALLET_GATEWAY_DEVKIT_URL}/health`)
     expect(response.ok()).toBe(true)
     const body = await response.json()
     expect(body).toMatchObject({
       ok: true,
-      service: 'wallet-service',
-      network: 'canton:local',
+      service: 'wallet-gateway-devkit',
+      network: 'canton:localnet',
     })
   })
 
-  test('wallet-service /wallet-service/info exposes the post-Phase-1 surface', async ({
+  test('wallet-gateway-devkit /devkit/info exposes the post-Phase-1 surface', async ({
     request,
   }) => {
-    const response = await request.get(`${WALLET_SERVICE_URL}/wallet-service/info`)
+    const response = await request.get(`${WALLET_GATEWAY_DEVKIT_URL}/devkit/info`)
     expect(response.ok()).toBe(true)
     const body = (await response.json()) as Record<string, unknown>
     expect(body.supportedMethods).toEqual([

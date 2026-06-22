@@ -37,8 +37,8 @@ start_wallet_gateway() {
 
 start_wallet_gateway_devkit() {
   log "Starting wallet-gateway-devkit"
-  COMPOSE_IGNORE_ORPHANS=true docker compose --project-directory "$ROOT" up -d --build wallet-gateway wallet-service
-  wait_http "http://localhost:3011/health" "wallet-gateway-devkit" "${WALLET_SERVICE_HEALTH_TIMEOUT_SECONDS:-120}"
+  COMPOSE_IGNORE_ORPHANS=true docker compose --project-directory "$ROOT" up -d --build wallet-gateway wallet-gateway-devkit
+  wait_http "http://localhost:3011/health" "wallet-gateway-devkit" "${WALLET_GATEWAY_DEVKIT_HEALTH_TIMEOUT_SECONDS:-120}"
 }
 
 case "$GATEWAY_MODE" in

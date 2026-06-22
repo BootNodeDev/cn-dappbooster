@@ -1,5 +1,5 @@
 // Hand-authored TypeScript types for the schemas in
-// ../api-specs/openrpc-dapp-api.json that wallet-service consumes or produces.
+// ../api-specs/openrpc-dapp-api.json that wallet-gateway-devkit consumes or produces.
 // Refresh when the spec is bumped; see api-specs/README.md.
 
 export type JsonRpcId = string | number | null

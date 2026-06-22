@@ -23,7 +23,7 @@ test('signMessage round-trips a base64 signature through the injected provider',
 }) => {
   test.setTimeout(60_000)
 
-  // 1-2. Vault setup + party create — exercises wallet-service /admin/party/{prepare,complete}.
+  // 1-2. Vault setup + party create — exercises wallet-gateway-devkit /admin/party/{prepare,complete}.
   const wallet = await context.newPage()
   await onboardWallet(wallet, extensionId, PARTY_HINT)
 

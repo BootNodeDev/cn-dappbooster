@@ -1,21 +1,17 @@
 import cors from 'cors'
 import express from 'express'
 import { createProxyMiddleware } from 'http-proxy-middleware'
-import type { WalletServiceConfig } from './config.ts'
-import { createMockPartyApi, createMockRpc, createMockState, isMockEnabled } from './mock.ts'
+import type { WalletGatewayDevkitConfig } from './config.ts'
 import { createPartyApi } from './party.ts'
 import { createRpc, InvalidParams } from './rpc.ts'
 import type { JsonRpcRequest, JsonRpcResponse } from './types.ts'
 
 // Builds the HTTP app so tests can exercise routing without binding a fixed port.
-export const createWalletServiceApp = (config: WalletServiceConfig): express.Express => {
-  const mockEnabled = isMockEnabled()
-  const mockState = mockEnabled ? createMockState() : undefined
-  const rpc = mockState !== undefined ? createMockRpc(config, mockState) : createRpc(config)
-  const adminParty =
-    mockState !== undefined
-      ? createMockPartyApi(config, mockState)
-      : createPartyApi(config, { getSdk: () => rpc.getSdk() })
+export const createWalletGatewayDevkitApp = (
+  config: WalletGatewayDevkitConfig,
+): express.Express => {
+  const rpc = createRpc(config)
+  const adminParty = createPartyApi(config, { getSdk: () => rpc.getSdk() })
   const app = express()
   const jsonBody = express.json({ limit: '1mb' })
 
@@ -27,17 +23,26 @@ export const createWalletServiceApp = (config: WalletServiceConfig): express.Exp
   )
 
   app.get('/health', (_req, res) => {
-    res.json({ ok: true, service: 'wallet-service', network: config.network, mock: mockEnabled })
+    res.json({
+      ok: true,
+      service: 'wallet-gateway-devkit',
+      network: config.network,
+    })
   })
 
   app.get('/devkit/health', (_req, res) => {
-    res.json({ ok: true, service: 'wallet-service', network: config.network, mock: mockEnabled })
+    res.json({
+      ok: true,
+      service: 'wallet-gateway-devkit',
+      network: config.network,
+    })
   })
 
   app.get('/devkit/info', (_req, res) => {
     res.json(rpc.serviceInfo())
   })
 
+  // Keeps older diagnostics clients working while docs move to /devkit/info.
   app.get('/wallet-service/info', (_req, res) => {
     res.json(rpc.serviceInfo())
   })
@@ -48,7 +53,7 @@ export const createWalletServiceApp = (config: WalletServiceConfig): express.Exp
       res.status(400).json({ error: error.message })
       return
     }
-    console.error('[wallet-service] admin failed', error)
+    console.error('[wallet-gateway-devkit] admin failed', error)
     res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
   }
 

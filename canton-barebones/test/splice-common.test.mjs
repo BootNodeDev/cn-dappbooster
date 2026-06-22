@@ -57,7 +57,7 @@ describe('Splice LocalNet shell config', () => {
   })
 
   it('uses the canton-barebones compose project and the local nginx override', () => {
-    // Scenario: Splice and wallet-service share one compose project so Docker
+    // Scenario: Splice and wallet-gateway-devkit share one compose project so Docker
     // groups all local stack containers under canton-barebones. The local
     // nginx override still disables app-provider UI routes when that profile is off.
     const output = execFileSync(
@@ -81,7 +81,7 @@ describe('Splice LocalNet shell config', () => {
   })
 
   it('starts Splice without removing other services from the shared project', () => {
-    // Scenario: Splice and wallet-service now share one compose project, so
+    // Scenario: Splice and wallet-gateway-devkit now share one compose project, so
     // Splice startup must not ask Compose to remove services missing from the
     // official Splice compose files.
     const upScript = execFileSync('cat', [path.join(projectRoot, 'scripts/up.sh')], {
@@ -104,7 +104,7 @@ describe('Splice LocalNet shell config', () => {
 
     assert.match(
       upScript,
-      /COMPOSE_IGNORE_ORPHANS=true docker compose --project-directory "\$ROOT" up -d --build wallet-gateway wallet-service/,
+      /COMPOSE_IGNORE_ORPHANS=true docker compose --project-directory "\$ROOT" up -d --build wallet-gateway wallet-gateway-devkit/,
     )
   })
 
@@ -141,7 +141,7 @@ describe('Splice LocalNet shell config', () => {
       encoding: 'utf8',
     })
 
-    const walletGatewayBlock = composeFile.split('\n  wallet-service:')[0] ?? ''
+    const walletGatewayBlock = composeFile.split('\n  wallet-gateway-devkit:')[0] ?? ''
 
     assert.match(walletGatewayBlock, /wallet-gateway:/)
     assert.match(walletGatewayBlock, /ports:\n {6}- "3010:3030"/)
@@ -149,9 +149,9 @@ describe('Splice LocalNet shell config', () => {
     assert.match(composeFile, /WALLET_GATEWAY_UPSTREAM_URL: "http:\/\/wallet-gateway:3030"/)
   })
 
-  it('passes Docker-reachable Splice URLs into wallet-service', () => {
-    // Scenario: wallet-service runs inside its own container, so URLs that are
-    // valid in a browser, such as localhost, would point back to wallet-service.
+  it('passes Docker-reachable Splice URLs into wallet-gateway-devkit', () => {
+    // Scenario: wallet-gateway-devkit runs inside its own container, so URLs that are
+    // valid in a browser, such as localhost, would point back to the devkit.
     // The compose config must inject host.docker.internal URLs so SDK helpers
     // can reach the LocalNet nginx routes from inside Docker.
     const composeFile = execFileSync('cat', [path.join(projectRoot, 'docker-compose.yaml')], {

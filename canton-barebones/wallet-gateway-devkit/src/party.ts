@@ -1,5 +1,5 @@
 import type { SDK } from '@canton-network/wallet-sdk'
-import type { WalletServiceConfig } from './config.ts'
+import type { WalletGatewayDevkitConfig } from './config.ts'
 import type { PendingStore } from './rpc.ts'
 import { createPendingStore, InvalidParams } from './rpc.ts'
 
@@ -21,7 +21,10 @@ type PartyApiDeps = {
   store?: PendingStore<PreparedExternalPartyCreation>
 }
 
-export const createPartyApi = (_config: WalletServiceConfig, deps: PartyApiDeps): PartyApi => {
+export const createPartyApi = (
+  _config: WalletGatewayDevkitConfig,
+  deps: PartyApiDeps,
+): PartyApi => {
   const store =
     deps.store ??
     createPendingStore<PreparedExternalPartyCreation>({

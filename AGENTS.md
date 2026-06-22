@@ -6,7 +6,7 @@ Each subproject can layer its own `AGENTS.md` for stack-specific deltas:
 
 - [`carpincho-wallet/AGENTS.md`](carpincho-wallet/AGENTS.md) — CIP-0103 wallet (Vite + React + Biome)
 - [`canton-connect-kit/AGENTS.md`](canton-connect-kit/AGENTS.md) — wagmi-style React hooks for Canton dApps
-- [`canton-barebones/wallet-service/AGENTS.md`](canton-barebones/wallet-service/AGENTS.md) — wallet-service bridge rules
+- [`canton-barebones/wallet-gateway-devkit/AGENTS.md`](canton-barebones/wallet-gateway-devkit/AGENTS.md) — wallet-gateway-devkit bridge rules
 - [`dapp/e2e/AGENTS.md`](dapp/e2e/AGENTS.md) — Playwright black-box integration test rules
 - `canton-barebones/`, `dapp/daml/`, `dapp/frontend/` — see each subproject's `README.md`
 
@@ -32,7 +32,7 @@ Current distribution:
 | root | yes | yes | shim | yes | Canonical repo rules and cross-component seams. |
 | `carpincho-wallet/` | yes | yes | shim | yes | Complex wallet internals: vault, provider, extension, WalletConnect, theme, session. |
 | `canton-connect-kit/` | yes | yes | shim | yes | Public hook API, connector abstractions, provider event wiring. |
-| `canton-barebones/wallet-service/` | yes | yes | shim | no | Local bridge rules are useful; README API boundary is enough architecture for now. |
+| `canton-barebones/wallet-gateway-devkit/` | yes | yes | shim | no | Local bridge rules are useful; README API boundary is enough architecture for now. |
 | `dapp/e2e/` | yes | yes | shim | no | Independent Playwright package with strict black-box testing conventions. |
 | `dapp/frontend/` | yes | no | no | no | Small dApp UI; root rules and README are enough. |
 | `dapp/daml/` | yes | no | no | no | Single DAML package. |
@@ -59,7 +59,7 @@ Subproject docs must not restate root rules. They should describe only their loc
 |------|---------|-------|------|
 | [`canton-barebones/`](canton-barebones/) | Local Canton participant + Postgres via docker-compose; deploy + health + token scripts | Docker, Bash, Node scripts | 3013/3014/3015/3016/3017/3018 |
 | [`dapp/daml/`](dapp/daml/) | `quickstart-tally` DAML model | DAML | n/a (DAR artifact) |
-| [`canton-barebones/wallet-service/`](canton-barebones/wallet-service/) | JSON-RPC bridge between the wallet and the Canton participant. Started by `npm run canton:up`. Self-mints its Canton JWT. | Node + Express + TypeScript | 3010 |
+| [`canton-barebones/wallet-gateway-devkit/`](canton-barebones/wallet-gateway-devkit/) | JSON-RPC bridge between the wallet and the Canton participant. Started by `npm run canton:up`. Uses an explicit Canton JWT from `.env`. | Node + Express + TypeScript | 3010 |
 | [`carpincho-wallet/`](carpincho-wallet/) | CIP-0103 wallet — vault, signing, WalletConnect, Chrome extension | Vite 6 + React 18 + Tailwind v4 + Biome | 3011 |
 | [`dapp/frontend/`](dapp/frontend/) | dApp UI | Vite + React + Tailwind v4 + Radix UI + Biome | 3012 |
 | [`dapp/e2e/`](dapp/e2e/) | dApp integration tests | Playwright + TypeScript | n/a |
@@ -179,7 +179,7 @@ Before declaring monorepo-touching work done:
 
 - Subproject-level: `npm run lint` and `npm test` inside any subproject you touched.
 - Root-level: `git push --dry-run` exercises the pre-push tsc sweep across all Node subprojects.
-- For the full end-to-end loop (Canton up → DAR built → DAR deployed → wallet-service → wallet → dApp), follow [`README.md`](README.md) §1–6.
+- For the full end-to-end loop (Canton up → DAR built → DAR deployed → wallet-gateway-devkit → wallet → dApp), follow [`README.md`](README.md) §1–6.
 
 ## References
 

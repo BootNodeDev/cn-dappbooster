@@ -16,12 +16,12 @@
 #   ./scripts/dev-stack.sh docker-down # macOS only: quit Docker Desktop
 #   ./scripts/dev-stack.sh status      # show what is currently running
 #   ./scripts/dev-stack.sh extension   # build the Chrome extension into carpincho-wallet/dist-extension
-#   ./scripts/dev-stack.sh mock-up     # mock-only: mocked wallet-service + carpincho web app (no Docker)
-#   ./scripts/dev-stack.sh mock-down   # stop the mocked wallet-service + carpincho web app only
+#   ./scripts/dev-stack.sh mock-up     # mock-only: mocked wallet-gateway-devkit + carpincho web app (no Docker)
+#   ./scripts/dev-stack.sh mock-down   # stop the mocked wallet-gateway-devkit + carpincho web app only
 #
 # What `up` starts (in order; Docker must already be running):
-#   1. Splice LocalNet bundle + wallet-service containers (npm run canton:up)
-#   2. Health checks (canton + wallet-service)
+#   1. Splice LocalNet bundle + wallet-gateway-devkit containers (npm run canton:up)
+#   2. Health checks (canton + wallet-gateway-devkit)
 #   3. Builds and deploys the Daml DAR (name derived from daml.yaml)
 #   4. Carpincho wallet dev server  -> http://localhost:3011  (background)
 #   5. dApp frontend dev server     -> http://localhost:3012  (background)
@@ -41,8 +41,8 @@ WALLET_LOG="$RUN_DIR/wallet-dev.log"
 DAPP_LOG="$RUN_DIR/dapp-dev.log"
 WALLET_PID="$RUN_DIR/wallet-dev.pid"
 DAPP_PID="$RUN_DIR/dapp-dev.pid"
-MOCK_WS_LOG="$RUN_DIR/mock-wallet-service.log"
-MOCK_WS_PID="$RUN_DIR/mock-wallet-service.pid"
+MOCK_WS_LOG="$RUN_DIR/mock-wallet-gateway-devkit.log"
+MOCK_WS_PID="$RUN_DIR/mock-wallet-gateway-devkit.pid"
 
 # Derive the DAR name from daml.yaml so renames/bumps need no edits here.
 DAML_DIR="dapp/daml"
@@ -137,15 +137,16 @@ up() {
     cp canton-barebones/.env.example canton-barebones/.env
   fi
 
-  # Splice LocalNet requires CANTON_BACKEND_TOKEN unless wallet-service runs in
+  # Splice LocalNet requires CANTON_BACKEND_TOKEN unless wallet-gateway-devkit runs in
   # mock mode; splice-common.sh's require_backend_token hard-fails without it.
-  if [ "${WALLET_SERVICE_MOCK:-}" = "1" ] \
+  if [ "${WALLET_GATEWAY_DEVKIT_MOCK:-${WALLET_SERVICE_MOCK:-}}" = "1" ] \
+    || grep -qE '^[[:space:]]*WALLET_GATEWAY_DEVKIT_MOCK=1' canton-barebones/.env \
     || grep -qE '^[[:space:]]*WALLET_SERVICE_MOCK=1' canton-barebones/.env; then
-    log "WALLET_SERVICE_MOCK=1 — skipping CANTON_BACKEND_TOKEN."
+    log "WALLET_GATEWAY_DEVKIT_MOCK=1 - skipping CANTON_BACKEND_TOKEN."
   elif grep -qE '^[[:space:]]*CANTON_BACKEND_TOKEN=.+' canton-barebones/.env; then
     log "CANTON_BACKEND_TOKEN already set in canton-barebones/.env."
   else
-    log "Minting CANTON_BACKEND_TOKEN for the LocalNet wallet-service..."
+    log "Minting CANTON_BACKEND_TOKEN for the LocalNet wallet-gateway-devkit..."
     local token_line tmp_env
     # mint-token.mjs prints a full 'CANTON_BACKEND_TOKEN=<jwt>' line; capture it
     # without echoing the secret to the terminal.
@@ -163,14 +164,14 @@ up() {
   fi
 
   # 1. Containers
-  log "Bringing up the Splice LocalNet bundle + wallet-service containers..."
+  log "Bringing up the Splice LocalNet bundle + wallet-gateway-devkit containers..."
   npm run canton:up
 
   # 2. Health
   log "Checking Canton health..."
   npm run canton:health
-  log "Checking wallet-service health..."
-  npm run wallet-service:health && echo
+  log "Checking wallet-gateway-devkit health..."
+  npm run wallet-gateway-devkit:health && echo
 
   # 3. Build + deploy DAR
   log "Building the $DAR_NAME DAR..."
@@ -204,7 +205,7 @@ up() {
   echo
   log "Stack is up:"
   cat <<EOF
-   wallet-service          http://localhost:3010
+   wallet-gateway-devkit   http://localhost:3010
    carpincho wallet        http://localhost:3011   (log: $WALLET_LOG)
    dApp frontend           http://localhost:3012   (log: $DAPP_LOG)
    app-user wallet UI      http://wallet.localhost:2000
@@ -277,19 +278,19 @@ mock_up() {
 
   # Mock mode needs no Docker — it short-circuits the Canton SDK. A fresh clone
   # may have no deps yet; one root install links every workspace, including the
-  # wallet-service started below.
+  # wallet-gateway-devkit started below.
   if [ ! -d node_modules ]; then
     install_deps
   fi
 
-  # Mocked data server (wallet-service in MOCK MODE) -> http://localhost:3010
+  # Mocked data server (wallet-gateway-devkit in MOCK MODE) -> http://localhost:3010
   if lsof -nP -iTCP:3010 -sTCP:LISTEN >/dev/null 2>&1; then
-    warn "Port 3010 already in use; skipping mocked wallet-service."
+    warn "Port 3010 already in use; skipping mocked wallet-gateway-devkit."
   else
-    log "Starting mocked wallet-service (MOCK MODE) -> http://localhost:3010"
-    WALLET_SERVICE_MOCK=1 nohup npm run wallet-service:dev >"$MOCK_WS_LOG" 2>&1 &
+    log "Starting mocked wallet-gateway-devkit (MOCK MODE) -> http://localhost:3010"
+    WALLET_GATEWAY_DEVKIT_MOCK=1 nohup npm run wallet-gateway-devkit:dev >"$MOCK_WS_LOG" 2>&1 &
     echo $! >"$MOCK_WS_PID"
-    wait_http 60 "http://localhost:3010/health" "mocked wallet-service" || true
+    wait_http 60 "http://localhost:3010/health" "mocked wallet-gateway-devkit" || true
   fi
 
   # Carpincho web app -> http://localhost:3011
@@ -305,16 +306,17 @@ mock_up() {
   echo
   log "Mock stack is up:"
   cat <<EOF
-   mocked wallet-service  http://localhost:3010   (log: $MOCK_WS_LOG)
+   mocked wallet-gateway-devkit  http://localhost:3010   (log: $MOCK_WS_LOG)
    carpincho web app      http://localhost:3011   (log: $WALLET_LOG)
 EOF
   echo "   No Docker / Canton / dApp frontend in this mode. Stop with: $0 mock-down"
 }
 
 mock_down() {
-  stop_pidfile "$MOCK_WS_PID" "mocked wallet-service"
+  stop_pidfile "$MOCK_WS_PID" "mocked wallet-gateway-devkit"
   stop_pidfile "$WALLET_PID" "carpincho web app"
   # Belt-and-suspenders for stray processes on our ports.
+  pkill -f "WALLET_GATEWAY_DEVKIT_MOCK" 2>/dev/null || true
   pkill -f "WALLET_SERVICE_MOCK" 2>/dev/null || true
   pkill -f "tsx watch src/server.ts" 2>/dev/null || true
   pkill -f "carpincho-wallet run dev" 2>/dev/null || true
@@ -342,8 +344,8 @@ menu() {
     "quit Docker Desktop (macOS)"
     "start containers, dev servers, build DAR and extension"
     "stop dev servers + tear down containers"
-    "start mock wallet-service + carpincho web app (no Docker)"
-    "stop the mock wallet-service + carpincho web app"
+    "start mock wallet-gateway-devkit + carpincho web app (no Docker)"
+    "stop the mock wallet-gateway-devkit + carpincho web app"
     "build the extension (carpincho-wallet/dist-extension)"
     "exit"
   )

@@ -20,11 +20,11 @@ services:
       retries: 30
       start_period: 5s
 
-  wallet-service:
+  wallet-gateway-devkit:
     build:
       context: ..
-      dockerfile: canton-barebones/wallet-service/Dockerfile
-    container_name: canton-barebones-wallet-service
+      dockerfile: canton-barebones/wallet-gateway-devkit/Dockerfile
+    container_name: canton-barebones-wallet-gateway-devkit
     depends_on:
       wallet-gateway:
         condition: service_healthy
@@ -39,14 +39,13 @@ services:
       SPLICE_VALIDATOR_URL: "${SPLICE_VALIDATOR_URL:-http://host.docker.internal:2000/api/validator}"
       SPLICE_SCAN_API_URL: "${SPLICE_SCAN_API_URL:-http://host.docker.internal:4000/api/scan}"
       SPLICE_REGISTRY_API_URL: "${SPLICE_REGISTRY_API_URL:-http://host.docker.internal:2000/api/validator/v0/scan-proxy}"
-      WALLET_SERVICE_PORT: "3010"
-      WALLET_SERVICE_CORS_ORIGINS: "${WALLET_SERVICE_CORS_ORIGINS:-http://localhost:3013}"
+      WALLET_GATEWAY_DEVKIT_PORT: "3010"
+      WALLET_GATEWAY_DEVKIT_CORS_ORIGINS: "${WALLET_GATEWAY_DEVKIT_CORS_ORIGINS:-http://localhost:3013}"
       NETWORK: "${NETWORK:-canton:localnet}"
-      WALLET_PROVIDER_ID: "${WALLET_PROVIDER_ID:-wallet-service}"
+      WALLET_PROVIDER_ID: "${WALLET_PROVIDER_ID:-wallet-gateway-devkit}"
       WALLET_PROVIDER_VERSION: "${WALLET_PROVIDER_VERSION:-0.1.0}"
       WALLET_PROVIDER_URL: "${WALLET_PROVIDER_URL:-http://localhost:3011}"
       WALLET_PROVIDER_USER_URL: "${WALLET_PROVIDER_USER_URL:-http://localhost:3011}"
-      WALLET_SERVICE_MOCK: "${WALLET_SERVICE_MOCK:-}"
     ports:
       - "3011:3010"
 

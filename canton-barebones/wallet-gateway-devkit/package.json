@@ -1,5 +1,5 @@
 {
-  "name": "@canton-dappbooster/wallet-service",
+  "name": "@canton-dappbooster/wallet-gateway-devkit",
   "version": "0.1.0",
   "private": true,
   "type": "module",

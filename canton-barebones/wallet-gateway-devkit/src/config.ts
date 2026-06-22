@@ -1,8 +1,6 @@
-import { isMockEnabled } from './mock.ts'
-
 export type TokenSource = 'env' | 'none'
 
-export interface WalletServiceConfig {
+export interface WalletGatewayDevkitConfig {
   port: number
   corsOrigins: string[]
   network: string
@@ -34,6 +32,17 @@ const optional = (name: string): string | undefined => {
   return value === undefined || value === '' ? undefined : value
 }
 
+// Reads the first configured alias so renamed env vars can coexist with local legacy files.
+const optionalFirst = (...names: string[]): string | undefined => {
+  for (const name of names) {
+    const value = optional(name)
+    if (value !== undefined) {
+      return value
+    }
+  }
+  return undefined
+}
+
 const optionalNumber = (name: string, fallback: number): number => {
   const value = optional(name)
   if (value === undefined) {
@@ -46,11 +55,27 @@ const optionalNumber = (name: string, fallback: number): number => {
   return parsed
 }
 
+// Preserves "first alias wins" for positive integer settings.
+const optionalNumberFirst = (names: string[], fallback: number): number => {
+  for (const name of names) {
+    const value = optional(name)
+    if (value !== undefined) {
+      return optionalNumber(name, fallback)
+    }
+  }
+  return fallback
+}
+
+// Converts the old generated default while preserving intentional custom ids.
+const providerId = (): string => {
+  const configured = optional('WALLET_PROVIDER_ID')
+  return configured === undefined || configured === 'wallet-service'
+    ? 'wallet-gateway-devkit'
+    : configured
+}
+
 // Resolves the explicit runtime bearer token without exposing the local signing recipe to services.
 const resolveToken = (): { token?: string; source: TokenSource } => {
-  if (isMockEnabled()) {
-    return { source: 'none' }
-  }
   const explicit = optional('CANTON_BACKEND_TOKEN')
   if (explicit !== undefined) {
     return { token: explicit, source: 'env' }
@@ -60,21 +85,24 @@ const resolveToken = (): { token?: string; source: TokenSource } => {
   )
 }
 
-export const loadConfig = (): WalletServiceConfig => {
+export const loadConfig = (): WalletGatewayDevkitConfig => {
   const resolved = resolveToken()
   return {
-    port: optionalNumber('WALLET_SERVICE_PORT', 3010),
+    port: optionalNumberFirst(['WALLET_GATEWAY_DEVKIT_PORT', 'WALLET_SERVICE_PORT'], 3010),
     corsOrigins: (
-      optional('WALLET_SERVICE_CORS_ORIGINS') ??
-      optional('WALLET_SERVICE_CORS_ORIGIN') ??
-      'http://localhost:3011'
+      optionalFirst(
+        'WALLET_GATEWAY_DEVKIT_CORS_ORIGINS',
+        'WALLET_GATEWAY_DEVKIT_CORS_ORIGIN',
+        'WALLET_SERVICE_CORS_ORIGINS',
+        'WALLET_SERVICE_CORS_ORIGIN',
+      ) ?? 'http://localhost:3011'
     )
       .split(',')
       .map((origin) => origin.trim())
       .filter((origin) => origin.length > 0),
     network: optional('NETWORK') ?? 'canton:local',
     provider: {
-      id: optional('WALLET_PROVIDER_ID') ?? 'wallet-service',
+      id: providerId(),
       version: optional('WALLET_PROVIDER_VERSION') ?? '0.1.0',
       url: optional('WALLET_PROVIDER_URL') ?? 'http://localhost:3010',
       userUrl: optional('WALLET_PROVIDER_USER_URL') ?? 'http://localhost:3010',
