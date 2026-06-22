@@ -46,7 +46,7 @@ export const DarUploadPanel = ({ api = defaultApi }: DarUploadPanelProps): JSX.E
         testId="dar-file-input"
         accept=".dar,application/octet-stream"
         ariaLabel="DAR file"
-        prompt="Drop a .dar file or click to choose."
+        prompt="Click to choose a .dar file."
         fileName={file?.name ?? null}
         onSelect={(selected) => {
           setUploadedFileName(undefined)

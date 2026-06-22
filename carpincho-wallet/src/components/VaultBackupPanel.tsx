@@ -100,7 +100,7 @@ export const ImportVaultForm = ({ onImported }: ImportVaultFormProps): JSX.Eleme
         testId="vault-import-file"
         accept=".json,application/json"
         ariaLabel="Backup file"
-        prompt="Drop a .json backup or click to choose."
+        prompt="Click to choose a .json backup."
         fileName={file?.name ?? null}
         onSelect={setFile}
       />
