@@ -24,6 +24,9 @@ export interface WalletServiceConfig {
     scanApiUrl: string
     registryApiUrl: string
   }
+  walletGateway?: {
+    upstreamUrl: string
+  }
 }
 
 const optional = (name: string): string | undefined => {
@@ -89,5 +92,9 @@ export const loadConfig = (): WalletServiceConfig => {
       registryApiUrl:
         optional('SPLICE_REGISTRY_API_URL') ?? 'http://localhost:2000/api/validator/v0/scan-proxy',
     },
+    walletGateway:
+      optional('WALLET_GATEWAY_UPSTREAM_URL') === undefined
+        ? undefined
+        : { upstreamUrl: optional('WALLET_GATEWAY_UPSTREAM_URL')! },
   }
 }

@@ -9,6 +9,7 @@ const CANTON_VARS = [
   'SPLICE_VALIDATOR_URL',
   'SPLICE_SCAN_API_URL',
   'SPLICE_REGISTRY_API_URL',
+  'WALLET_GATEWAY_UPSTREAM_URL',
   'WALLET_SERVICE_MOCK',
 ] as const
 
@@ -114,5 +115,19 @@ describe('config loader', () => {
     const config = loadConfig()
     assert.equal(config.canton.tokenSource, 'none')
     assert.equal(config.canton.backendToken, undefined)
+  })
+
+  it('reads the upstream wallet-gateway URL for devkit facade mode', () => {
+    // Scenario: devkit mode is a facade in front of the official wallet-gateway.
+    // The upstream URL is injected by Docker Compose so non-devkit routes can
+    // be proxied without hard-coding service topology in application code.
+    process.env.CANTON_BACKEND_TOKEN = 'explicit.jwt.value'
+    process.env.WALLET_GATEWAY_UPSTREAM_URL = 'http://wallet-gateway:3030'
+
+    const config = loadConfig()
+
+    assert.deepEqual(config.walletGateway, {
+      upstreamUrl: 'http://wallet-gateway:3030',
+    })
   })
 })
