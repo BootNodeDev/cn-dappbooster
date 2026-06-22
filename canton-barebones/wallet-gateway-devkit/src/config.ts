@@ -1,4 +1,7 @@
-export type TokenSource = 'env' | 'none'
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import type { CantonAuthConfig } from './auth.ts'
 
 export interface WalletGatewayDevkitConfig {
   port: number
@@ -14,8 +17,7 @@ export interface WalletGatewayDevkitConfig {
     jsonApiUrl: string
     ledgerApiUrl: string
     adminApiUrl: string
-    backendToken?: string
-    tokenSource: TokenSource
+    auth: CantonAuthConfig
   }
   splice: {
     validatorUrl: string
@@ -27,102 +29,188 @@ export interface WalletGatewayDevkitConfig {
   }
 }
 
+type EnvironmentAuthConfig =
+  | { mode: 'self-signed'; audience: string; subject?: string }
+  | { mode: 'static-token' }
+  | { mode: 'oauth-client-credentials'; tokenUrl: string; scope?: string }
+
+type EnvironmentConfig = {
+  network: string
+  auth: EnvironmentAuthConfig
+  canton: {
+    jsonApiUrl: string
+    ledgerApiUrl: string
+    adminApiUrl: string
+  }
+  splice: {
+    validatorUrl: string
+    scanApiUrl: string
+    registryApiUrl: string
+  }
+  provider?: {
+    id?: string
+    version?: string
+    url?: string
+    userUrl?: string
+  }
+  devkit?: {
+    corsOrigins?: string[]
+    walletGatewayUpstreamUrl?: string
+  }
+}
+
 const optional = (name: string): string | undefined => {
   const value = process.env[name]
   return value === undefined || value === '' ? undefined : value
 }
 
-// Reads the first configured alias so renamed env vars can coexist with local legacy files.
-const optionalFirst = (...names: string[]): string | undefined => {
-  for (const name of names) {
-    const value = optional(name)
-    if (value !== undefined) {
-      return value
-    }
-  }
-  return undefined
-}
+const defaultEnvironmentConfigDir = (): string =>
+  path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../config/environments')
 
-const optionalNumber = (name: string, fallback: number): number => {
+const requiredAuth = (name: string, environment: string, mode: string): string => {
   const value = optional(name)
   if (value === undefined) {
-    return fallback
+    throw new Error(`${name} is required for ${environment} ${mode} auth`)
   }
-  const parsed = Number(value)
-  if (!Number.isInteger(parsed) || parsed <= 0) {
-    throw new Error(`${name} must be a positive integer`)
-  }
-  return parsed
+  return value
 }
 
-// Preserves "first alias wins" for positive integer settings.
-const optionalNumberFirst = (names: string[], fallback: number): number => {
-  for (const name of names) {
-    const value = optional(name)
-    if (value !== undefined) {
-      return optionalNumber(name, fallback)
+const requiredConfigString = (value: unknown, name: string): string => {
+  if (typeof value !== 'string' || value.trim() === '') {
+    throw new Error(`${name} is required in environment config`)
+  }
+  return value
+}
+
+const optionalConfigString = (value: unknown, name: string): string | undefined => {
+  if (value === undefined) {
+    return undefined
+  }
+  return requiredConfigString(value, name)
+}
+
+const optionalConfigStringArray = (value: unknown, name: string): string[] | undefined => {
+  if (value === undefined) {
+    return undefined
+  }
+  if (!Array.isArray(value)) {
+    throw new Error(`${name} must be an array in environment config`)
+  }
+  return value.map((item, index) => requiredConfigString(item, `${name}[${index}]`))
+}
+
+const environmentName = (): string => {
+  const name = optional('CANTON_ENVIRONMENT') ?? 'localnet'
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9_-]*$/.test(name)) {
+    throw new Error(`Unsupported CANTON_ENVIRONMENT: ${name}`)
+  }
+  return name
+}
+
+// Loads the selected environment file without allowing path traversal.
+const loadEnvironmentConfig = (environment: string): EnvironmentConfig => {
+  const configDir = optional('CANTON_ENVIRONMENT_CONFIG_DIR') ?? defaultEnvironmentConfigDir()
+  const filePath = path.join(configDir, `${environment}.json`)
+  const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8')) as EnvironmentConfig
+  return {
+    network: requiredConfigString(parsed.network, `${environment}.network`),
+    auth: parsed.auth,
+    canton: {
+      jsonApiUrl: requiredConfigString(
+        parsed.canton?.jsonApiUrl,
+        `${environment}.canton.jsonApiUrl`,
+      ),
+      ledgerApiUrl: requiredConfigString(
+        parsed.canton?.ledgerApiUrl,
+        `${environment}.canton.ledgerApiUrl`,
+      ),
+      adminApiUrl: requiredConfigString(
+        parsed.canton?.adminApiUrl,
+        `${environment}.canton.adminApiUrl`,
+      ),
+    },
+    splice: {
+      validatorUrl: requiredConfigString(
+        parsed.splice?.validatorUrl,
+        `${environment}.splice.validatorUrl`,
+      ),
+      scanApiUrl: requiredConfigString(
+        parsed.splice?.scanApiUrl,
+        `${environment}.splice.scanApiUrl`,
+      ),
+      registryApiUrl: requiredConfigString(
+        parsed.splice?.registryApiUrl,
+        `${environment}.splice.registryApiUrl`,
+      ),
+    },
+    provider: parsed.provider,
+    devkit: {
+      corsOrigins: optionalConfigStringArray(
+        parsed.devkit?.corsOrigins,
+        `${environment}.devkit.corsOrigins`,
+      ),
+      walletGatewayUpstreamUrl: optionalConfigString(
+        parsed.devkit?.walletGatewayUpstreamUrl,
+        `${environment}.devkit.walletGatewayUpstreamUrl`,
+      ),
+    },
+  }
+}
+
+// Combines public environment metadata with runtime-only auth secrets.
+const loadAuthConfig = (environment: string, config: EnvironmentAuthConfig): CantonAuthConfig => {
+  switch (config.mode) {
+    case 'static-token':
+      return {
+        mode: config.mode,
+        token: requiredAuth('CANTON_AUTH_TOKEN', environment, config.mode),
+      }
+    case 'self-signed':
+      return {
+        mode: config.mode,
+        audience: requiredConfigString(config.audience, `${environment}.auth.audience`),
+        secret: requiredAuth('CANTON_AUTH_SECRET', environment, config.mode),
+        subject: config.subject ?? 'ledger-api-user',
+      }
+    case 'oauth-client-credentials': {
+      return {
+        mode: config.mode,
+        tokenUrl: requiredConfigString(config.tokenUrl, `${environment}.auth.tokenUrl`),
+        clientId: requiredAuth('CANTON_OAUTH_CLIENT_ID', environment, config.mode),
+        clientSecret: requiredAuth('CANTON_OAUTH_CLIENT_SECRET', environment, config.mode),
+        ...(config.scope === undefined ? {} : { scope: config.scope }),
+      }
     }
+    default:
+      throw new Error(
+        `Unsupported auth mode in ${environment}: ${(config as { mode?: unknown }).mode}`,
+      )
   }
-  return fallback
-}
-
-// Converts the old generated default while preserving intentional custom ids.
-const providerId = (): string => {
-  const configured = optional('WALLET_PROVIDER_ID')
-  return configured === undefined || configured === 'wallet-service'
-    ? 'wallet-gateway-devkit'
-    : configured
-}
-
-// Resolves the explicit runtime bearer token without exposing the local signing recipe to services.
-const resolveToken = (): { token?: string; source: TokenSource } => {
-  const explicit = optional('CANTON_BACKEND_TOKEN')
-  if (explicit !== undefined) {
-    return { token: explicit, source: 'env' }
-  }
-  throw new Error(
-    'CANTON_BACKEND_TOKEN is required. Generate one with: npm run canton:token -- ledger-api-user',
-  )
 }
 
 export const loadConfig = (): WalletGatewayDevkitConfig => {
-  const resolved = resolveToken()
+  const environment = environmentName()
+  const environmentConfig = loadEnvironmentConfig(environment)
   return {
-    port: optionalNumberFirst(['WALLET_GATEWAY_DEVKIT_PORT', 'WALLET_SERVICE_PORT'], 3010),
-    corsOrigins: (
-      optionalFirst(
-        'WALLET_GATEWAY_DEVKIT_CORS_ORIGINS',
-        'WALLET_GATEWAY_DEVKIT_CORS_ORIGIN',
-        'WALLET_SERVICE_CORS_ORIGINS',
-        'WALLET_SERVICE_CORS_ORIGIN',
-      ) ?? 'http://localhost:3011'
-    )
-      .split(',')
-      .map((origin) => origin.trim())
-      .filter((origin) => origin.length > 0),
-    network: optional('NETWORK') ?? 'canton:local',
+    port: 3010,
+    corsOrigins: environmentConfig.devkit?.corsOrigins ?? ['http://localhost:3013'],
+    network: environmentConfig.network,
     provider: {
-      id: providerId(),
-      version: optional('WALLET_PROVIDER_VERSION') ?? '0.1.0',
-      url: optional('WALLET_PROVIDER_URL') ?? 'http://localhost:3010',
-      userUrl: optional('WALLET_PROVIDER_USER_URL') ?? 'http://localhost:3010',
+      id: environmentConfig.provider?.id ?? 'wallet-gateway-devkit',
+      version: environmentConfig.provider?.version ?? '0.1.0',
+      url: environmentConfig.provider?.url ?? 'http://localhost:3011',
+      userUrl: environmentConfig.provider?.userUrl ?? 'http://localhost:3011',
     },
     canton: {
-      jsonApiUrl: optional('CANTON_JSON_API_URL') ?? 'http://localhost:3013',
-      ledgerApiUrl: optional('CANTON_LEDGER_API_URL') ?? 'grpc://localhost:3014',
-      adminApiUrl: optional('CANTON_ADMIN_API_URL') ?? 'grpc://localhost:3015',
-      backendToken: resolved.token,
-      tokenSource: resolved.source,
+      jsonApiUrl: environmentConfig.canton.jsonApiUrl,
+      ledgerApiUrl: environmentConfig.canton.ledgerApiUrl,
+      adminApiUrl: environmentConfig.canton.adminApiUrl,
+      auth: loadAuthConfig(environment, environmentConfig.auth),
     },
-    splice: {
-      validatorUrl: optional('SPLICE_VALIDATOR_URL') ?? 'http://localhost:2000/api/validator',
-      scanApiUrl: optional('SPLICE_SCAN_API_URL') ?? 'http://scan.localhost:4000/api/scan',
-      registryApiUrl:
-        optional('SPLICE_REGISTRY_API_URL') ?? 'http://localhost:2000/api/validator/v0/scan-proxy',
-    },
+    splice: environmentConfig.splice,
     walletGateway:
-      optional('WALLET_GATEWAY_UPSTREAM_URL') === undefined
+      environmentConfig.devkit?.walletGatewayUpstreamUrl === undefined
         ? undefined
-        : { upstreamUrl: optional('WALLET_GATEWAY_UPSTREAM_URL')! },
+        : { upstreamUrl: environmentConfig.devkit.walletGatewayUpstreamUrl },
   }
 }

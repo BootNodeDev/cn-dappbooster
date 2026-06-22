@@ -1,4 +1,5 @@
 import { SDK } from '@canton-network/wallet-sdk'
+import { type AuthProvider, createAuthProvider } from './auth.ts'
 import type { WalletGatewayDevkitConfig } from './config.ts'
 import type {
   ConnectResult,
@@ -89,6 +90,7 @@ type SdkFactory = (options: unknown) => Promise<unknown>
 
 type RpcDependencies = {
   sdkFactory?: SdkFactory
+  authProvider?: AuthProvider
   fetch?: typeof fetch
   now?: () => Date
   sleep?: (ms: number) => Promise<void>
@@ -530,59 +532,67 @@ export const createRpc = (config: WalletGatewayDevkitConfig, deps: RpcDependenci
     })
   const fetchImpl = deps.fetch ?? fetch
   const now = deps.now ?? (() => new Date())
+  const authProvider =
+    deps.authProvider ?? createAuthProvider(config.canton.auth, { fetch: fetchImpl, now })
   const sleep =
     deps.sleep ??
     ((ms) =>
       new Promise<void>((resolve) => {
         setTimeout(resolve, ms)
       }))
-  let sdkPromise: Promise<WalletSdk> | undefined
-  let tokenSdkPromise: Promise<Cip56TokenSdk> | undefined
+  let sdkCache: { token: string; promise: Promise<WalletSdk> } | undefined
+  let tokenSdkCache: { token: string; promise: Promise<Cip56TokenSdk> } | undefined
 
   const getSdk = async (): Promise<WalletSdk> => {
-    if (config.canton.backendToken === undefined) {
-      throw new Error('CANTON_BACKEND_TOKEN is required for Canton JSON API calls')
+    const token = await authProvider.getToken()
+    if (sdkCache?.token !== token) {
+      sdkCache = {
+        token,
+        promise: sdkFactory({
+          auth: { method: 'static', token },
+          ledgerClientUrl: config.canton.jsonApiUrl,
+          logAdapter: 'console',
+        })
+          .then((sdk) => sdk as WalletSdk)
+          .catch((cause: unknown) => {
+            sdkCache = undefined
+            throw new Error('Canton wallet SDK failed to initialize', { cause })
+          }),
+      }
     }
-    sdkPromise ??= sdkFactory({
-      auth: { method: 'static', token: config.canton.backendToken },
-      ledgerClientUrl: config.canton.jsonApiUrl,
-      logAdapter: 'console',
-    })
-      .then((sdk) => sdk as WalletSdk)
-      .catch((cause: unknown) => {
-        sdkPromise = undefined
-        throw new Error('Canton wallet SDK failed to initialize', { cause })
-      })
-    return await sdkPromise
+    return await sdkCache.promise
   }
 
   const getTokenSdk = async (): Promise<Cip56TokenSdk> => {
-    if (config.canton.backendToken === undefined) {
-      throw new Error('CANTON_BACKEND_TOKEN is required for CIP-56 token helper calls')
+    const token = await authProvider.getToken()
+    const auth = { method: 'static', token }
+    if (tokenSdkCache?.token !== token) {
+      tokenSdkCache = {
+        token,
+        promise: sdkFactory({
+          auth,
+          ledgerClientUrl: config.canton.jsonApiUrl,
+          logAdapter: 'console',
+          token: {
+            validatorUrl: config.splice.validatorUrl,
+            auth,
+            registries: [config.splice.registryApiUrl],
+          },
+          amulet: {
+            validatorUrl: config.splice.validatorUrl,
+            scanApiUrl: config.splice.scanApiUrl,
+            registryUrl: new URL(config.splice.registryApiUrl),
+            auth,
+          },
+        })
+          .then((sdk) => sdk as Cip56TokenSdk)
+          .catch((cause: unknown) => {
+            tokenSdkCache = undefined
+            throw new Error('CIP-56 wallet SDK failed to initialize', { cause })
+          }),
+      }
     }
-    const auth = { method: 'static', token: config.canton.backendToken }
-    tokenSdkPromise ??= sdkFactory({
-      auth,
-      ledgerClientUrl: config.canton.jsonApiUrl,
-      logAdapter: 'console',
-      token: {
-        validatorUrl: config.splice.validatorUrl,
-        auth,
-        registries: [config.splice.registryApiUrl],
-      },
-      amulet: {
-        validatorUrl: config.splice.validatorUrl,
-        scanApiUrl: config.splice.scanApiUrl,
-        registryUrl: new URL(config.splice.registryApiUrl),
-        auth,
-      },
-    })
-      .then((sdk) => sdk as Cip56TokenSdk)
-      .catch((cause: unknown) => {
-        tokenSdkPromise = undefined
-        throw new Error('CIP-56 wallet SDK failed to initialize', { cause })
-      })
-    return await tokenSdkPromise
+    return await tokenSdkCache.promise
   }
 
   const ledgerJsonApiVersion = async (): Promise<{ connected: boolean; reason?: string }> => {
@@ -689,9 +699,7 @@ export const createRpc = (config: WalletGatewayDevkitConfig, deps: RpcDependenci
       throw new InvalidParams('requestMethod is required')
     }
     const method = p.requestMethod.toUpperCase()
-    if (config.canton.backendToken === undefined) {
-      throw new Error('CANTON_BACKEND_TOKEN is required for Canton JSON API calls')
-    }
+    const token = await authProvider.getToken()
     const url = new URL(p.resource, config.canton.jsonApiUrl)
     for (const [key, value] of Object.entries(p.query ?? {})) {
       url.searchParams.set(key, String(value))
@@ -700,7 +708,7 @@ export const createRpc = (config: WalletGatewayDevkitConfig, deps: RpcDependenci
       method,
       headers: {
         'content-type': 'application/json',
-        authorization: `Bearer ${config.canton.backendToken}`,
+        authorization: `Bearer ${token}`,
       },
       signal: AbortSignal.timeout(15_000),
     }
@@ -757,13 +765,12 @@ export const createRpc = (config: WalletGatewayDevkitConfig, deps: RpcDependenci
     instrumentId?: TokenInstrumentId,
   ): Promise<TokenHoldingSummary[]> => {
     const url = `${config.splice.scanApiUrl.replace(/\/$/, '')}/v0/holdings/summary`
+    const token = await authProvider.getToken()
     const response = await fetchImpl(url, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        ...(config.canton.backendToken === undefined
-          ? {}
-          : { authorization: `Bearer ${config.canton.backendToken}` }),
+        authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         migration_id: 0,
@@ -1168,7 +1175,7 @@ export const createRpc = (config: WalletGatewayDevkitConfig, deps: RpcDependenci
       jsonApiUrl: config.canton.jsonApiUrl,
       ledgerApiUrl: config.canton.ledgerApiUrl,
       adminApiUrl: config.canton.adminApiUrl,
-      hasBackendToken: config.canton.backendToken !== undefined,
+      authMode: config.canton.auth.mode,
     },
   })
 

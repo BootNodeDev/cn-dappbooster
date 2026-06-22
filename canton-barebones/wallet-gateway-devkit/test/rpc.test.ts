@@ -17,8 +17,7 @@ const baseConfig = () => ({
     jsonApiUrl: 'http://localhost:3013',
     ledgerApiUrl: 'grpc://localhost:3014',
     adminApiUrl: 'grpc://localhost:3015',
-    backendToken: undefined as string | undefined,
-    tokenSource: 'none' as const,
+    auth: { mode: 'none' as const },
   },
   splice: {
     validatorUrl: 'http://localhost:2000/api/validator',
@@ -31,8 +30,7 @@ const withToken = () => ({
   ...baseConfig(),
   canton: {
     ...baseConfig().canton,
-    backendToken: 'backend.jwt',
-    tokenSource: 'env' as const,
+    auth: { mode: 'static-token' as const, token: 'backend.jwt' },
   },
 })
 

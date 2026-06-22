@@ -11,7 +11,7 @@ export interface CantonTokenInputs {
 
 export const createCantonToken = ({ subject, audience, secret }: CantonTokenInputs): string => {
   if (!subject) throw new Error('subject is required')
-  if (!audience) throw new Error('CANTON_AUTH_AUDIENCE is required')
+  if (!audience) throw new Error('audience is required')
   if (!secret) throw new Error('CANTON_AUTH_SECRET is required')
 
   const header = { alg: 'HS256', typ: 'JWT' }

@@ -137,32 +137,6 @@ up() {
     cp canton-barebones/.env.example canton-barebones/.env
   fi
 
-  # Splice LocalNet requires CANTON_BACKEND_TOKEN unless wallet-gateway-devkit runs in
-  # mock mode; splice-common.sh's require_backend_token hard-fails without it.
-  if [ "${WALLET_GATEWAY_DEVKIT_MOCK:-${WALLET_SERVICE_MOCK:-}}" = "1" ] \
-    || grep -qE '^[[:space:]]*WALLET_GATEWAY_DEVKIT_MOCK=1' canton-barebones/.env \
-    || grep -qE '^[[:space:]]*WALLET_SERVICE_MOCK=1' canton-barebones/.env; then
-    log "WALLET_GATEWAY_DEVKIT_MOCK=1 - skipping CANTON_BACKEND_TOKEN."
-  elif grep -qE '^[[:space:]]*CANTON_BACKEND_TOKEN=.+' canton-barebones/.env; then
-    log "CANTON_BACKEND_TOKEN already set in canton-barebones/.env."
-  else
-    log "Minting CANTON_BACKEND_TOKEN for the LocalNet wallet-gateway-devkit..."
-    local token_line tmp_env
-    # mint-token.mjs prints a full 'CANTON_BACKEND_TOKEN=<jwt>' line; capture it
-    # without echoing the secret to the terminal.
-    token_line="$(npm run --silent canton:token -- ledger-api-user 2>/dev/null \
-      | grep -m1 -E '^[[:space:]]*CANTON_BACKEND_TOKEN=' \
-      | sed -E 's/^[[:space:]]*//')" || true
-    [ -n "$token_line" ] \
-      || die "Failed to mint CANTON_BACKEND_TOKEN (npm run canton:token -- ledger-api-user). Check CANTON_AUTH_SECRET / CANTON_AUTH_AUDIENCE in canton-barebones/.env."
-    # Replace any existing (empty) entry, else append — never print the token.
-    tmp_env="$(mktemp)"
-    grep -vE '^[[:space:]]*CANTON_BACKEND_TOKEN=' canton-barebones/.env >"$tmp_env" || true
-    printf '%s\n' "$token_line" >>"$tmp_env"
-    mv "$tmp_env" canton-barebones/.env
-    log "Wrote CANTON_BACKEND_TOKEN to canton-barebones/.env."
-  fi
-
   # 1. Containers
   log "Bringing up the Splice LocalNet bundle + wallet-gateway-devkit containers..."
   npm run canton:up
@@ -317,7 +291,6 @@ mock_down() {
   stop_pidfile "$WALLET_PID" "carpincho web app"
   # Belt-and-suspenders for stray processes on our ports.
   pkill -f "WALLET_GATEWAY_DEVKIT_MOCK" 2>/dev/null || true
-  pkill -f "WALLET_SERVICE_MOCK" 2>/dev/null || true
   pkill -f "tsx watch src/server.ts" 2>/dev/null || true
   pkill -f "carpincho-wallet run dev" 2>/dev/null || true
 

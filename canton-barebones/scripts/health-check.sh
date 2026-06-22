@@ -32,7 +32,10 @@ check_http "SV UI" "http://sv.localhost:4000"
 
 echo ""
 echo "Wallet gateway"
-check_http "wallet-gateway-devkit" "http://localhost:${WALLET_GATEWAY_DEVKIT_PUBLIC_PORT:-${WALLET_SERVICE_PORT:-3010}}/health"
+check_http "wallet-gateway" "http://localhost:3010/readyz"
+if docker compose --project-directory "$ROOT" ps --services --filter status=running | grep -qx 'wallet-gateway-devkit'; then
+  check_http "wallet-gateway-devkit" "http://localhost:3011/health"
+fi
 
 echo ""
 if docker info >/dev/null 2>&1; then

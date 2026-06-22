@@ -39,12 +39,28 @@ const parseEnvFile = (filePath) => {
   )
 }
 
+const environmentName = (env) => {
+  const name = env.CANTON_ENVIRONMENT ?? 'localnet'
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9_-]*$/.test(name)) {
+    throw new Error(`Unsupported CANTON_ENVIRONMENT: ${name}`)
+  }
+  return name
+}
+
+// Reads public auth metadata from the selected environment config.
+const readEnvironmentConfig = (env) => {
+  const name = environmentName(env)
+  const configDir = env.CANTON_ENVIRONMENT_CONFIG_DIR ?? path.join(root, 'config/environments')
+  const filePath = path.join(configDir, `${name}.json`)
+  return JSON.parse(fs.readFileSync(filePath, 'utf8'))
+}
+
 export const createCantonToken = ({ subject, audience, secret }) => {
   if (subject === undefined || subject === '') {
     throw new Error('subject is required')
   }
   if (audience === undefined || audience === '') {
-    throw new Error('CANTON_AUTH_AUDIENCE is required')
+    throw new Error('audience is required')
   }
   if (secret === undefined || secret === '') {
     throw new Error('CANTON_AUTH_SECRET is required')
@@ -57,21 +73,29 @@ export const createCantonToken = ({ subject, audience, secret }) => {
   return `${encoded}.${b64url(signature)}`
 }
 
-// Prints a LocalNet token and the two places it can be copied for development.
+// Prints a LocalNet token for static-token mode or emits only the raw token for scripts.
 const main = () => {
   const env = {
     ...parseEnvFile(path.join(root, '.env')),
     ...process.env,
   }
-  const subject = process.argv[2] ?? 'ledger-api-user'
+  const environmentConfig = readEnvironmentConfig(env)
+  const args = process.argv.slice(2)
+  const raw = args[0] === '--raw'
+  const subject = (raw ? args[1] : args[0]) ?? environmentConfig.auth?.subject ?? 'ledger-api-user'
   const token = createCantonToken({
     subject,
-    audience: env.CANTON_AUTH_AUDIENCE,
+    audience: environmentConfig.auth?.audience,
     secret: env.CANTON_AUTH_SECRET,
   })
+  if (raw) {
+    process.stdout.write(`${token}\n`)
+    return
+  }
   process.stdout.write(`${token}\n\n`)
-  process.stdout.write('For wallet-gateway-devkit:\n')
-  process.stdout.write(`  CANTON_BACKEND_TOKEN=${token}\n\n`)
+  process.stdout.write('For wallet-gateway-devkit static-token auth:\n')
+  process.stdout.write('  Set an environment config to static-token auth.\n')
+  process.stdout.write(`  CANTON_AUTH_TOKEN=${token}\n\n`)
   process.stdout.write('For Carpincho LocalNet settings:\n')
   process.stdout.write('  Use this token as the LocalNet bearer token.\n')
   process.stdout.write(

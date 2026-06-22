@@ -19,7 +19,7 @@ import { type BrowserContext, test as base, chromium, type Worker } from '@playw
 const moduleDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const WALLET_GATEWAY_DEVKIT_URL =
-  process.env.WALLET_GATEWAY_DEVKIT_URL ?? process.env.WALLET_SERVICE_URL ?? 'http://localhost:3010'
+  process.env.WALLET_GATEWAY_DEVKIT_URL ?? 'http://localhost:3011'
 export const DAPP_URL = process.env.DAPP_URL ?? 'http://localhost:3012'
 
 // Default: the in-tree dev extension. Override via EXTENSION_PATH for published builds.

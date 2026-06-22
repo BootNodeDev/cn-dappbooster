@@ -55,7 +55,7 @@ describe('createCantonToken', () => {
   it('throws when audience is empty', () => {
     assert.throws(
       () => createCantonToken({ subject: 'sub', audience: '', secret: 'sec' }),
-      /CANTON_AUTH_AUDIENCE is required/,
+      /audience is required/,
     )
   })
 

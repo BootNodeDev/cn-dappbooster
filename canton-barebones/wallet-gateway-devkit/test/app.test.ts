@@ -40,8 +40,7 @@ const config = (upstreamUrl: string): WalletGatewayDevkitConfig => ({
     jsonApiUrl: 'http://localhost:2975',
     ledgerApiUrl: 'grpc://localhost:2901',
     adminApiUrl: 'grpc://localhost:2902',
-    backendToken: 'local-token',
-    tokenSource: 'env',
+    auth: { mode: 'static-token', token: 'local-token' },
   },
   splice: {
     validatorUrl: 'http://localhost:2000/api/validator',

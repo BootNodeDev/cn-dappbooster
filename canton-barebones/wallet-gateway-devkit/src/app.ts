@@ -42,11 +42,6 @@ export const createWalletGatewayDevkitApp = (
     res.json(rpc.serviceInfo())
   })
 
-  // Keeps older diagnostics clients working while docs move to /devkit/info.
-  app.get('/wallet-service/info', (_req, res) => {
-    res.json(rpc.serviceInfo())
-  })
-
   // Converts expected devkit validation failures into client errors.
   const handleAdminError = (res: express.Response, error: unknown): void => {
     if (error instanceof InvalidParams) {

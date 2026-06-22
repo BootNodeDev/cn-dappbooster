@@ -8,6 +8,6 @@ const app = createWalletGatewayDevkitApp(config)
 
 app.listen(config.port, () => {
   console.log(
-    `wallet-gateway-devkit listening on ${config.port} (token: ${config.canton.tokenSource})`,
+    `wallet-gateway-devkit listening on ${config.port} (auth: ${config.canton.auth.mode})`,
   )
 })

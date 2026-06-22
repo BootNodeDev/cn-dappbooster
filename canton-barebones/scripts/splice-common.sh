@@ -139,7 +139,39 @@ check_docker_memory() {
   fi
 }
 
-# Ensures the real wallet-gateway-devkit has the explicit token required by LocalNet.
-require_backend_token() {
-  [ -n "${CANTON_BACKEND_TOKEN:-}" ] || die "CANTON_BACKEND_TOKEN is required. Generate one with: npm run canton:token -- ledger-api-user"
+environment_config_file() {
+  local environment="${CANTON_ENVIRONMENT:-localnet}"
+  if [[ ! "$environment" =~ ^[a-zA-Z0-9][a-zA-Z0-9_-]*$ ]]; then
+    die "Unsupported CANTON_ENVIRONMENT: $environment"
+  fi
+  printf '%s/config/environments/%s.json\n' "$ROOT" "$environment"
+}
+
+environment_auth_mode() {
+  local config_file
+  config_file="$(environment_config_file)"
+  [ -f "$config_file" ] || die "Environment config not found: $config_file"
+  node -e 'const fs = require("fs"); const config = JSON.parse(fs.readFileSync(process.argv[1], "utf8")); console.log(config.auth?.mode ?? "")' "$config_file"
+}
+
+# Ensures the selected gateway auth mode has the env values needed to start.
+require_auth_config() {
+  local environment auth_mode
+  environment="${CANTON_ENVIRONMENT:-localnet}"
+  auth_mode="$(environment_auth_mode)"
+  case "$auth_mode" in
+    static-token)
+      [ -n "${CANTON_AUTH_TOKEN:-}" ] || die "CANTON_AUTH_TOKEN is required for $environment static-token auth"
+      ;;
+    self-signed)
+      [ -n "${CANTON_AUTH_SECRET:-}" ] || die "CANTON_AUTH_SECRET is required for $environment self-signed auth"
+      ;;
+    oauth-client-credentials)
+      [ -n "${CANTON_OAUTH_CLIENT_ID:-}" ] || die "CANTON_OAUTH_CLIENT_ID is required for $environment oauth-client-credentials auth"
+      [ -n "${CANTON_OAUTH_CLIENT_SECRET:-}" ] || die "CANTON_OAUTH_CLIENT_SECRET is required for $environment oauth-client-credentials auth"
+      ;;
+    *)
+      die "Unsupported auth mode in $environment: $auth_mode"
+      ;;
+  esac
 }

@@ -111,7 +111,7 @@ describe('Splice LocalNet shell config', () => {
   it('starts only the official wallet-gateway when gateway mode is wallet-gateway', () => {
     // Scenario: operators can expose the upstream wallet-gateway without the
     // development facade. The startup script should route this mode to the
-    // wallet-gateway service and leave the devkit service out.
+    // wallet-gateway compose files and leave the devkit service out.
     const upScript = execFileSync('cat', [path.join(projectRoot, 'scripts/up.sh')], {
       cwd: projectRoot,
       encoding: 'utf8',
@@ -119,6 +119,7 @@ describe('Splice LocalNet shell config', () => {
 
     assert.match(upScript, /wallet-gateway\)\n {4}start_wallet_gateway\n {4};;/)
     assert.doesNotMatch(upScript, /wallet-gateway\)\n {4}start_wallet_gateway_devkit\n {4};;/)
+    assert.doesNotMatch(upScript, /docker-compose\.wallet-gateway-public\.yaml/)
   })
 
   it('starts wallet-gateway plus the devkit facade when gateway mode is wallet-gateway-devkit', () => {
@@ -133,9 +134,10 @@ describe('Splice LocalNet shell config', () => {
     assert.match(upScript, /wallet-gateway-devkit\)\n.*start_wallet_gateway_devkit/s)
   })
 
-  it('publishes wallet-gateway and the devkit facade on stable host ports', () => {
-    // Scenario: local developers can target the official gateway directly on
-    // 3010 or use the devkit facade on 3011 for helper RPCs.
+  it('publishes wallet-gateway and wallet-gateway-devkit on stable host ports', () => {
+    // Scenario: users of this stack should always be able to reach the
+    // official wallet-gateway on 3010, while devkit gets a separate public
+    // port and still proxies to the official service inside Docker.
     const composeFile = execFileSync('cat', [path.join(projectRoot, 'docker-compose.yaml')], {
       cwd: projectRoot,
       encoding: 'utf8',
@@ -144,32 +146,34 @@ describe('Splice LocalNet shell config', () => {
     const walletGatewayBlock = composeFile.split('\n  wallet-gateway-devkit:')[0] ?? ''
 
     assert.match(walletGatewayBlock, /wallet-gateway:/)
-    assert.match(walletGatewayBlock, /ports:\n {6}- "3010:3030"/)
-    assert.match(composeFile, /ports:\n {6}- "3011:3010"/)
-    assert.match(composeFile, /WALLET_GATEWAY_UPSTREAM_URL: "http:\/\/wallet-gateway:3030"/)
+    assert.match(walletGatewayBlock, /\n {4}ports:\n {6}- "3010:3030"/)
+    assert.match(composeFile, /\n {4}ports:\n {6}- "3011:3010"/)
   })
 
-  it('passes Docker-reachable Splice URLs into wallet-gateway-devkit', () => {
-    // Scenario: wallet-gateway-devkit runs inside its own container, so URLs that are
-    // valid in a browser, such as localhost, would point back to the devkit.
-    // The compose config must inject host.docker.internal URLs so SDK helpers
-    // can reach the LocalNet nginx routes from inside Docker.
+  it('keeps wallet-gateway-devkit compose environment minimal', () => {
+    // Scenario: endpoints live in config/environments/*.json. Docker should
+    // select the environment and mount .env for dotenv without expanding every
+    // supported auth field into the compose service environment.
     const composeFile = execFileSync('cat', [path.join(projectRoot, 'docker-compose.yaml')], {
       cwd: projectRoot,
       encoding: 'utf8',
     })
 
-    assert.match(
-      composeFile,
-      /SPLICE_VALIDATOR_URL: "\$\{SPLICE_VALIDATOR_URL:-http:\/\/host\.docker\.internal:2000\/api\/validator\}"/,
-    )
-    assert.match(
-      composeFile,
-      /SPLICE_SCAN_API_URL: "\$\{SPLICE_SCAN_API_URL:-http:\/\/host\.docker\.internal:4000\/api\/scan\}"/,
-    )
-    assert.match(
-      composeFile,
-      /SPLICE_REGISTRY_API_URL: "\$\{SPLICE_REGISTRY_API_URL:-http:\/\/host\.docker\.internal:2000\/api\/validator\/v0\/scan-proxy\}"/,
-    )
+    assert.match(composeFile, /CANTON_ENVIRONMENT: "\$\{CANTON_ENVIRONMENT:-localnet\}"/)
+    assert.match(composeFile, /source: \.\/\.env/)
+    assert.match(composeFile, /target: \/app\/canton-barebones\/wallet-gateway-devkit\/\.env/)
+    assert.match(composeFile, /create_host_path: false/)
+    assert.doesNotMatch(composeFile, /env_file:/)
+    assert.doesNotMatch(composeFile, /CANTON_AUTH_SECRET:/)
+    assert.doesNotMatch(composeFile, /CANTON_AUTH_TOKEN:/)
+    assert.doesNotMatch(composeFile, /CANTON_OAUTH_CLIENT_ID:/)
+    assert.doesNotMatch(composeFile, /CANTON_OAUTH_CLIENT_SECRET:/)
+    assert.doesNotMatch(composeFile, /WALLET_GATEWAY_UPSTREAM_URL:/)
+    assert.doesNotMatch(composeFile, /WALLET_GATEWAY_DEVKIT_PORT:/)
+    assert.doesNotMatch(composeFile, /WALLET_GATEWAY_DEVKIT_CORS_ORIGINS:/)
+    assert.doesNotMatch(composeFile, /WALLET_PROVIDER_ID:/)
+    assert.doesNotMatch(composeFile, /SPLICE_VALIDATOR_URL:/)
+    assert.doesNotMatch(composeFile, /SPLICE_SCAN_API_URL:/)
+    assert.doesNotMatch(composeFile, /CANTON_JSON_API_URL:/)
   })
 })

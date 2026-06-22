@@ -25,12 +25,15 @@ test.describe('cn-dappbooster integration smoke', () => {
     })
   })
 
-  test('wallet-gateway-devkit /devkit/info exposes the post-Phase-1 surface', async ({
+  test('wallet-gateway-devkit /devkit/info exposes the current helper surface', async ({
     request,
   }) => {
+    // The devkit info endpoint is the discoverable contract for wallet-side tooling.
     const response = await request.get(`${WALLET_GATEWAY_DEVKIT_URL}/devkit/info`)
+    // A healthy devkit must describe every RPC helper Carpincho can call through /rpc.
     expect(response.ok()).toBe(true)
     const body = (await response.json()) as Record<string, unknown>
+    // The method list intentionally includes unsigned helpers only; signing stays in Carpincho.
     expect(body.supportedMethods).toEqual([
       'status',
       'connect',
@@ -42,6 +45,16 @@ test.describe('cn-dappbooster integration smoke', () => {
       'ledgerApi',
       'prepareTransaction',
       'executePrepared',
+      'cip56.listPendingTransfers',
+      'cip56.listHoldings',
+      'cip56.listHoldingSummary',
+      'cip56.acceptTransfer',
+      'cip56.createTransfer',
+      'amulet.preapproval.status',
+      'amulet.tap',
+      'amulet.preapproval.create',
+      'amulet.preapproval.acceptProposal',
+      'amulet.preapproval.cancel',
     ])
     expect(body.adminEndpoints).toEqual(['POST /admin/party/prepare', 'POST /admin/party/complete'])
     expect(body.reservedMethods).toEqual(['prepareExecute', 'prepareExecuteAndWait', 'signMessage'])

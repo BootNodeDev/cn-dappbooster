@@ -12,7 +12,7 @@ GATEWAY_MODE="${1:-wallet-gateway-devkit}"
 docker info >/dev/null 2>&1 || die "Docker is not running. Start Docker Desktop and retry."
 docker compose version >/dev/null 2>&1 || die "Docker Compose v2 is required."
 
-require_backend_token
+require_auth_config
 check_docker_memory
 check_localnet_hosts
 ensure_splice_bundle

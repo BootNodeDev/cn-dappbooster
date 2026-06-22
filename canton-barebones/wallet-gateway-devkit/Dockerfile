@@ -35,6 +35,7 @@ COPY dapp/daml/package.json dapp/daml/
 COPY dapp/e2e/package.json dapp/e2e/
 COPY dapp/frontend/package.json dapp/frontend/
 RUN npm ci --omit=dev --ignore-scripts
+COPY canton-barebones/config/environments canton-barebones/config/environments
 COPY --from=build /app/canton-barebones/wallet-gateway-devkit/dist canton-barebones/wallet-gateway-devkit/dist
 WORKDIR /app/canton-barebones/wallet-gateway-devkit
 EXPOSE 3010
