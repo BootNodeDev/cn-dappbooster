@@ -8,9 +8,9 @@ consumer, Carpincho owns signing and approval UI, and this package only handles
 Canton connectivity, participant reads, prepared transaction execution,
 wallet-internal party onboarding, and helper RPCs useful during development.
 
-The selected environment config can define the upstream official
-wallet-gateway. Unclaimed HTTP routes are proxied there, while devkit keeps its
-own public port for helper RPCs.
+`../env/.env.wallet-gateway-devkit` defines the upstream official wallet-gateway.
+Unclaimed HTTP routes are proxied there, while devkit keeps its own public port
+for helper RPCs.
 Carpincho should point only at the devkit RPC URL; Canton, Scan, validator, and
 registry URLs are configured in this service, not in the wallet.
 
@@ -27,15 +27,15 @@ npm run wallet-gateway-devkit:health
 ## Auth
 
 Real Canton calls require a bearer token accepted by the target participant.
-wallet-gateway-devkit owns this auth boundary. `CANTON_ENVIRONMENT` selects
-`../../config/environments/<name>.json`; that JSON owns endpoints, network id,
-provider metadata, and auth mode.
+wallet-gateway-devkit owns this auth boundary. It reads endpoints, network id,
+provider metadata, auth mode, and secrets directly from
+`../env/.env.wallet-gateway-devkit`.
 
-| Mode | JSON fields | Secret env vars |
-| --- | --- | --- |
-| `self-signed` | `auth.audience`, optional `auth.subject` | `CANTON_AUTH_SECRET` |
-| `oauth-client-credentials` | `auth.tokenUrl`, optional `auth.scope` | `CANTON_OAUTH_CLIENT_ID`, `CANTON_OAUTH_CLIENT_SECRET` |
-| `static-token` | `auth.mode` only | `CANTON_AUTH_TOKEN` |
+| Mode | Required values |
+| --- | --- |
+| `self-signed` | `AUTH_SECRET`, optional `AUTH_AUDIENCE`, `AUTH_SUBJECT` |
+| `oauth-client-credentials` | `AUTH_TOKEN_URL`, `AUTH_CLIENT_ID`, `AUTH_CLIENT_SECRET`, optional `AUTH_SCOPE` |
+| `static-token` | `AUTH_TOKEN` |
 
 ## API Boundary
 

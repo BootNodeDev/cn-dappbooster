@@ -7,6 +7,9 @@ source "$SCRIPT_DIR/splice-common.sh"
 
 cd "$ROOT"
 
+load_env_file "$ROOT/env/.env.wallet-gateway"
+load_env_file "$ROOT/env/.env.wallet-gateway-devkit"
+
 status=0
 
 # Checks one HTTP endpoint and records a non-zero final exit if it is down.
@@ -32,9 +35,9 @@ check_http "SV UI" "http://sv.localhost:4000"
 
 echo ""
 echo "Wallet gateway"
-check_http "wallet-gateway" "http://localhost:3010/readyz"
+check_http "wallet-gateway" "http://localhost:${WALLET_GATEWAY_PORT:-3010}/readyz"
 if docker compose --project-directory "$ROOT" ps --services --filter status=running | grep -qx 'wallet-gateway-devkit'; then
-  check_http "wallet-gateway-devkit" "http://localhost:3011/health"
+  check_http "wallet-gateway-devkit" "http://localhost:${WALLET_GATEWAY_DEVKIT_PORT:-3011}/health"
 fi
 
 echo ""

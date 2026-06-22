@@ -12,7 +12,7 @@ The wallet-gateway-devkit is a consumer-dApp-agnostic Express JSON-RPC bridge be
 - Keep the public dApp-facing API in Carpincho. This service exposes only the HTTP bridge Carpincho needs.
 - Keep wallet-internal party onboarding under `/admin/party/*`, not on the `/rpc` dApp surface.
 - Keep `ledgerApi` as a participant-native pass-through. Do not silently translate request bodies or wrap participant responses.
-- Keep Canton auth handling inside this service boundary. Do not expose `CANTON_AUTH_SECRET`, OAuth client secrets, or bearer tokens to the dApp or wallet UI.
+- Keep Canton auth handling inside this service boundary. Do not expose `AUTH_SECRET`, OAuth client secrets, or bearer tokens to the dApp or wallet UI.
 
 ## Testing
 

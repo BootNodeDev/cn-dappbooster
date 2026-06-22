@@ -2,6 +2,17 @@
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+# Sources a service env file when present so scripts and Compose share one config surface.
+load_env_file() {
+  local file_path="$1"
+  if [ -f "$file_path" ]; then
+    set -a
+    # shellcheck disable=SC1090
+    source "$file_path"
+    set +a
+  fi
+}
+
 EXTERNAL_SPLICE_IMAGE_TAG="${SPLICE_IMAGE_TAG:-}"
 EXTERNAL_SPLICE_BUNDLE_DIR="${SPLICE_BUNDLE_DIR:-}"
 EXTERNAL_IMAGE_TAG="${IMAGE_TAG:-}"
@@ -9,19 +20,7 @@ EXTERNAL_LOCALNET_DIR="${LOCALNET_DIR:-}"
 EXTERNAL_LOCALNET_ENV_DIR="${LOCALNET_ENV_DIR:-}"
 EXTERNAL_SPLICE_COMPOSE_PROJECT_NAME="${SPLICE_COMPOSE_PROJECT_NAME:-}"
 
-if [ -f "$ROOT/config/splice/localnet.env" ]; then
-  set -a
-  # shellcheck disable=SC1091
-  source "$ROOT/config/splice/localnet.env"
-  set +a
-fi
-
-if [ -f "$ROOT/.env" ]; then
-  set -a
-  # shellcheck disable=SC1091
-  source "$ROOT/.env"
-  set +a
-fi
+load_env_file "$ROOT/env/.env.splice"
 
 [ -n "$EXTERNAL_SPLICE_IMAGE_TAG" ] && SPLICE_IMAGE_TAG="$EXTERNAL_SPLICE_IMAGE_TAG"
 [ -n "$EXTERNAL_SPLICE_BUNDLE_DIR" ] && SPLICE_BUNDLE_DIR="$EXTERNAL_SPLICE_BUNDLE_DIR"
@@ -38,7 +37,7 @@ LOCALNET_DIR="${LOCALNET_DIR:-$SPLICE_BUNDLE_DIR/splice-node/docker-compose/loca
 LOCALNET_ENV_DIR="${LOCALNET_ENV_DIR:-$LOCALNET_DIR/env}"
 SPLICE_COMPOSE_PROJECT_NAME="${SPLICE_COMPOSE_PROJECT_NAME:-$COMPOSE_PROJECT_NAME}"
 CANTON_BAREBONES_DIR="$ROOT"
-SPLICE_PROFILES=(sv app-user)
+IFS=',' read -r -a SPLICE_PROFILES <<< "${SPLICE_PROFILES:-sv,app-user}"
 
 export COMPOSE_PROJECT_NAME SPLICE_IMAGE_TAG IMAGE_TAG SPLICE_BUNDLE_DIR LOCALNET_DIR LOCALNET_ENV_DIR SPLICE_COMPOSE_PROJECT_NAME CANTON_BAREBONES_DIR
 
@@ -139,39 +138,24 @@ check_docker_memory() {
   fi
 }
 
-environment_config_file() {
-  local environment="${CANTON_ENVIRONMENT:-localnet}"
-  if [[ ! "$environment" =~ ^[a-zA-Z0-9][a-zA-Z0-9_-]*$ ]]; then
-    die "Unsupported CANTON_ENVIRONMENT: $environment"
-  fi
-  printf '%s/config/environments/%s.json\n' "$ROOT" "$environment"
-}
-
-environment_auth_mode() {
-  local config_file
-  config_file="$(environment_config_file)"
-  [ -f "$config_file" ] || die "Environment config not found: $config_file"
-  node -e 'const fs = require("fs"); const config = JSON.parse(fs.readFileSync(process.argv[1], "utf8")); console.log(config.auth?.mode ?? "")' "$config_file"
-}
-
-# Ensures the selected gateway auth mode has the env values needed to start.
-require_auth_config() {
-  local environment auth_mode
-  environment="${CANTON_ENVIRONMENT:-localnet}"
-  auth_mode="$(environment_auth_mode)"
+# Ensures the devkit auth mode has the env values needed to start.
+require_devkit_auth_config() {
+  local auth_mode
+  auth_mode="${AUTH_MODE:-self-signed}"
   case "$auth_mode" in
     static-token)
-      [ -n "${CANTON_AUTH_TOKEN:-}" ] || die "CANTON_AUTH_TOKEN is required for $environment static-token auth"
+      [ -n "${AUTH_TOKEN:-}" ] || die "AUTH_TOKEN is required for static-token auth"
       ;;
     self-signed)
-      [ -n "${CANTON_AUTH_SECRET:-}" ] || die "CANTON_AUTH_SECRET is required for $environment self-signed auth"
+      [ -n "${AUTH_SECRET:-}" ] || die "AUTH_SECRET is required for self-signed auth"
       ;;
     oauth-client-credentials)
-      [ -n "${CANTON_OAUTH_CLIENT_ID:-}" ] || die "CANTON_OAUTH_CLIENT_ID is required for $environment oauth-client-credentials auth"
-      [ -n "${CANTON_OAUTH_CLIENT_SECRET:-}" ] || die "CANTON_OAUTH_CLIENT_SECRET is required for $environment oauth-client-credentials auth"
+      [ -n "${AUTH_TOKEN_URL:-}" ] || die "AUTH_TOKEN_URL is required for oauth-client-credentials auth"
+      [ -n "${AUTH_CLIENT_ID:-}" ] || die "AUTH_CLIENT_ID is required for oauth-client-credentials auth"
+      [ -n "${AUTH_CLIENT_SECRET:-}" ] || die "AUTH_CLIENT_SECRET is required for oauth-client-credentials auth"
       ;;
     *)
-      die "Unsupported auth mode in $environment: $auth_mode"
+      die "Unsupported AUTH_MODE: $auth_mode"
       ;;
   esac
 }

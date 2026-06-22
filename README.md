@@ -49,24 +49,27 @@ Install workspace dependencies:
 npm install
 ```
 
-Create the local env file:
+Local service env files are already present under `canton-barebones/env/`:
 
-```bash
-cp canton-barebones/.env.example canton-barebones/.env
-```
+| File | Owner |
+| --- | --- |
+| `env/.env.splice` | Splice LocalNet download/profiles |
+| `env/.env.wallet-gateway` | public wallet-gateway port |
+| `env/.env.wallet-gateway-devkit` | devkit endpoints and auth |
 
-Runtime endpoints are selected by `CANTON_ENVIRONMENT` from
-`canton-barebones/config/environments/<name>.json`. Carpincho only needs the
-gateway RPC URL.
+The official wallet-gateway also reads
+`canton-barebones/config/wallet-gateway/config.json` because that package
+expects a JSON config file. The compose file pins that path by default.
+Examples for other setups live in `canton-barebones/env/examples/`.
+Carpincho only needs one RPC URL.
 
 Auth configuration:
 
 | Name | What It Is | Who Uses It |
 | --- | --- | --- |
-| `CANTON_ENVIRONMENT=localnet` | selects `config/environments/localnet.json` | wallet-gateway-devkit |
-| `CANTON_AUTH_SECRET` | LocalNet self-signed JWT secret | wallet-gateway-devkit |
-| `CANTON_OAUTH_CLIENT_ID` / `CANTON_OAUTH_CLIENT_SECRET` | OAuth credentials when the selected JSON uses OAuth | wallet-gateway-devkit |
-| `CANTON_AUTH_TOKEN` | externally obtained JWT when the selected JSON uses static-token auth | wallet-gateway-devkit |
+| `AUTH_MODE=self-signed` | local JWT signed with `AUTH_SECRET` | wallet-gateway-devkit |
+| `AUTH_MODE=oauth-client-credentials` | OAuth client credentials flow | wallet-gateway-devkit |
+| `AUTH_MODE=static-token` | externally obtained bearer token | wallet-gateway-devkit |
 
 `npm run canton:token -- ledger-api-user` is only needed when you explicitly
 want to generate a JWT for `static-token` mode or another manual client.
@@ -95,6 +98,13 @@ switch the public gateway behavior:
 ```bash
 npm run localnet:wallet-gateway:up          # Splice + official wallet-gateway
 npm run localnet:wallet-gateway-devkit:up   # Splice + wallet-gateway + devkit facade
+```
+
+When pointing the gateway layer at an external Splice stack, edit
+`canton-barebones/env/.env.wallet-gateway-devkit` and start without LocalNet:
+
+```bash
+npm --prefix canton-barebones run up -- --no-splice wallet-gateway-devkit
 ```
 
 The official wallet-gateway is always public on `http://localhost:3010`.

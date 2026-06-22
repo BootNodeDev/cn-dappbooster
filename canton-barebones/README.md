@@ -31,7 +31,6 @@ user and not a product user.
 ## Start
 
 ```bash
-cp .env.example .env
 npm run up
 npm run health
 ```
@@ -64,57 +63,69 @@ npm run localnet:wallet-gateway-devkit:up
 The official wallet-gateway is always public on `http://localhost:3010`.
 In devkit mode, wallet-gateway-devkit is also public on `http://localhost:3011`.
 Carpincho points at `http://localhost:3011/rpc` when it needs devkit helper
-RPCs. Canton, Scan, validator, and registry URLs stay in the selected
-environment config.
+RPCs. Canton, Scan, validator, and registry URLs stay in
+`env/.env.wallet-gateway-devkit`.
 
 ## Environment Config
 
-`CANTON_ENVIRONMENT` selects one JSON file from
-`config/environments/<name>.json`. That file owns public endpoints, network id,
-provider metadata, and the auth mode.
+Runtime config is split by service:
 
-Docker Compose passes only the selector and secrets into wallet-gateway-devkit:
-
-| Value | Purpose |
+| File | Purpose |
 | --- | --- |
-| `CANTON_ENVIRONMENT` | selects `localnet`, `devnet`, or `testnet` config |
-| `CANTON_AUTH_SECRET` | secret for `self-signed` environments |
-| `CANTON_OAUTH_CLIENT_ID` / `CANTON_OAUTH_CLIENT_SECRET` | secrets for OAuth environments |
-| `CANTON_AUTH_TOKEN` | secret for static-token environments |
+| `env/.env.splice` | Splice bundle tag, cache path, compose project, and profiles |
+| `env/.env.wallet-gateway` | official wallet-gateway public port |
+| `env/.env.wallet-gateway-devkit` | devkit public port, Canton/Scan URLs, provider metadata, auth, upstream wallet-gateway URL |
+| `config/wallet-gateway/config.json` | JSON config consumed by the official wallet-gateway package |
 
-Splice LocalNet download/runtime settings live in `config/splice/localnet.env`.
+`docker-compose.yaml` fixes `WALLET_GATEWAY_CONFIG` to
+`./config/wallet-gateway/config.json` by default. Override it from the shell
+only if you need a different official wallet-gateway JSON:
+
+```bash
+WALLET_GATEWAY_CONFIG=./path/to/wallet-gateway-config.json npm run up:wallet-gateway
+```
+
+Reference values for localnet and external setups live in `env/examples/`.
 
 ## Auth
 
-wallet-gateway-devkit supports three auth modes through the selected environment
-JSON:
+wallet-gateway-devkit supports three auth modes through
+`env/.env.wallet-gateway-devkit`:
 
-| Mode | JSON fields | Secret env vars |
-| --- | --- | --- |
-| `self-signed` | `auth.audience`, optional `auth.subject` | `CANTON_AUTH_SECRET` |
-| `oauth-client-credentials` | `auth.tokenUrl`, optional `auth.scope` | `CANTON_OAUTH_CLIENT_ID`, `CANTON_OAUTH_CLIENT_SECRET` |
-| `static-token` | `auth.mode` only | `CANTON_AUTH_TOKEN` |
+| Mode | Required values |
+| --- | --- |
+| `self-signed` | `AUTH_SECRET`, optional `AUTH_AUDIENCE`, `AUTH_SUBJECT` |
+| `oauth-client-credentials` | `AUTH_TOKEN_URL`, `AUTH_CLIENT_ID`, `AUTH_CLIENT_SECRET`, optional `AUTH_SCOPE` |
+| `static-token` | `AUTH_TOKEN` |
 
 The token script is optional. Use it only when you want a manual JWT for
-`static-token` mode or another client. It reads the selected environment JSON
-and `CANTON_AUTH_SECRET`.
+`static-token` mode or another client. It reads
+`env/.env.wallet-gateway-devkit` and `AUTH_SECRET`.
 
 It prints a JWT. It does not edit `.env`. Pass a subject as the first argument
 only if LocalNet expects something other than `ledger-api-user`.
 
-Do not put `CANTON_AUTH_SECRET` in Carpincho. Generate a token and paste only
-the token.
+Do not put `AUTH_SECRET`, OAuth client secrets, or bearer tokens in Carpincho.
+Carpincho points at one gateway URL.
 
 ## Wallet Gateway Devkit
 
 `npm run up` starts wallet-gateway-devkit after app-user is ready.
 
-wallet-gateway-devkit points to app-user through `config/environments/localnet.json`:
+wallet-gateway-devkit points to app-user through
+`env/.env.wallet-gateway-devkit`:
 
 ```text
 JSON API   http://host.docker.internal:2975
 Ledger API grpc://host.docker.internal:2901
 Admin API  grpc://host.docker.internal:2902
+```
+
+To use an external Splice stack, edit `env/.env.wallet-gateway-devkit` and skip
+LocalNet startup:
+
+```bash
+npm run up -- --no-splice wallet-gateway-devkit
 ```
 
 ## Services And Ports

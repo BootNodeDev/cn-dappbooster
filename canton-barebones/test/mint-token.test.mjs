@@ -48,14 +48,15 @@ describe('Canton token generation', () => {
       cwd: path.resolve(__dirname, '..'),
       env: {
         ...process.env,
-        CANTON_AUTH_SECRET: 'unsafe',
+        AUTH_AUDIENCE: 'https://canton.network.global',
+        AUTH_SECRET: 'unsafe',
       },
       encoding: 'utf8',
     })
 
     assert.match(output, /eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/)
     assert.match(output, /static-token auth/)
-    assert.match(output, /CANTON_AUTH_TOKEN=/)
+    assert.match(output, /AUTH_TOKEN=/)
     assert.match(output, /Carpincho LocalNet settings/)
   })
 })

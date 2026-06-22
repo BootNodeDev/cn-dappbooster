@@ -50,7 +50,7 @@ State boundaries:
 - wallet-gateway-devkit owns Canton/Scan endpoint config and proxies standard wallet-gateway routes to the official wallet-gateway when it runs in devkit mode.
 - Splice LocalNet owns the app-user participant/validator, Scan, SV, and CC infrastructure.
 - Splice, wallet-gateway, and wallet-gateway-devkit share the `canton-barebones` Docker Compose project label, but the gateway layer uses its own compose file and Docker network.
-- Carpincho should use generated bearer tokens for direct LocalNet endpoints; it should not copy `CANTON_AUTH_SECRET` into the browser.
+- Carpincho should use generated bearer tokens for direct LocalNet endpoints; it should not copy `AUTH_SECRET` into the browser.
 
 ## Docker Composition
 
@@ -114,10 +114,19 @@ client -> http://localhost:3010
      -> host.docker.internal:2975 for JSON Ledger API
 ```
 
+Runtime config is split by service:
+
+| File | Owner |
+| --- | --- |
+| `canton-barebones/env/.env.splice` | Splice LocalNet bundle tag, cache path, compose project, profiles |
+| `canton-barebones/env/.env.wallet-gateway` | official wallet-gateway public port |
+| `canton-barebones/env/.env.wallet-gateway-devkit` | devkit ports, Canton/Scan URLs, provider metadata, auth, upstream wallet-gateway URL |
+| `canton-barebones/config/wallet-gateway/config.json` | JSON config consumed by the official wallet-gateway package |
+
 ## Splice Profiles
 
-The current LocalNet profile set is fixed in
-`canton-barebones/scripts/splice-common.sh`:
+The current LocalNet profile set lives in
+`canton-barebones/env/.env.splice`:
 
 ```text
 sv
@@ -161,28 +170,21 @@ target app-user or point at app-provider endpoints.
 
 ## Config And Auth
 
-`CANTON_ENVIRONMENT` selects `canton-barebones/config/environments/<name>.json`.
-Those JSON files own public endpoints, network id, provider metadata, and auth
-mode. Docker passes only the selector and secrets into wallet-gateway-devkit, so
-compose does not carry one variable per Canton, Scan, validator, or registry
-URL.
+There is no environment selector in code. A developer edits the service env
+files directly, or copies a reference file from `canton-barebones/env/examples/`.
 
-Splice LocalNet download/runtime settings live in
-`canton-barebones/config/splice/localnet.env`; `canton-barebones/.env` is only
-for local overrides and secrets.
+wallet-gateway-devkit supports three auth modes through
+`canton-barebones/env/.env.wallet-gateway-devkit`:
 
-wallet-gateway-devkit supports three auth modes through the selected environment
-JSON:
+| Mode | Required values | When to use |
+| --- | --- | --- |
+| `self-signed` | `AUTH_SECRET`, optional `AUTH_AUDIENCE`, `AUTH_SUBJECT` | LocalNet |
+| `oauth-client-credentials` | `AUTH_TOKEN_URL`, `AUTH_CLIENT_ID`, `AUTH_CLIENT_SECRET`, optional `AUTH_SCOPE` | DevNet/TestNet environments that issue JWTs through OAuth |
+| `static-token` | `AUTH_TOKEN` | Operators who already have a valid JWT |
 
-| Mode | JSON fields | Secret env vars | When to use |
-| --- | --- | --- | --- |
-| `self-signed` | `auth.audience`, optional `auth.subject` | `CANTON_AUTH_SECRET` | LocalNet |
-| `oauth-client-credentials` | `auth.tokenUrl`, optional `auth.scope` | `CANTON_OAUTH_CLIENT_ID`, `CANTON_OAUTH_CLIENT_SECRET` | DevNet/TestNet environments that issue JWTs through OAuth |
-| `static-token` | `auth.mode` only | `CANTON_AUTH_TOKEN` | Operators who already have a valid JWT |
-
-`CANTON_AUTH_SECRET` stays server-side. Carpincho only points at one gateway URL;
-it does not receive Canton, Scan, validator, registry, OAuth, or signing-secret
-configuration from this repo.
+`AUTH_SECRET`, OAuth client secrets, and bearer tokens stay server-side.
+Carpincho only points at one gateway URL; it does not receive Canton, Scan,
+validator, registry, OAuth, or signing-secret configuration from this repo.
 
 ## Orchestration
 
@@ -191,6 +193,7 @@ configuration from this repo.
 | `npm run canton:up` | download/cache Splice bundle, start `sv + app-user` UI profiles, then wallet-gateway-devkit mode |
 | `npm run localnet:wallet-gateway:up` | start Splice plus the official wallet-gateway as the public gateway |
 | `npm run localnet:wallet-gateway-devkit:up` | start Splice plus wallet-gateway behind the public devkit facade |
+| `npm --prefix canton-barebones run up -- --no-splice wallet-gateway-devkit` | start only the gateway layer against externally configured Splice endpoints |
 | `npm run canton:down` | stop the selected gateway and Splice LocalNet, preserving volumes |
 | `npm run canton:health` | check app-user, sv, Scan, wallet UI, and the selected gateway |
 | `npm run canton:token -- ledger-api-user` | generate a LocalNet dev JWT for manual/static-token use |

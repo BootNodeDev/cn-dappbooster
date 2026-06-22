@@ -8,10 +8,10 @@ fi
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-if [ -f "$ROOT/.env" ]; then
+if [ -f "$ROOT/env/.env.wallet-gateway-devkit" ]; then
   set -a
   # shellcheck disable=SC1091
-  source "$ROOT/.env"
+  source "$ROOT/env/.env.wallet-gateway-devkit"
   set +a
 fi
 
@@ -22,40 +22,26 @@ if [ ! -f "$DAR_PATH" ]; then
   exit 1
 fi
 
-auth_mode() {
-  local environment="${CANTON_ENVIRONMENT:-localnet}"
-  if [[ ! "$environment" =~ ^[a-zA-Z0-9][a-zA-Z0-9_-]*$ ]]; then
-    echo "Unsupported CANTON_ENVIRONMENT: $environment" >&2
-    return 1
-  fi
-  local config_file="$ROOT/config/environments/${environment}.json"
-  if [ ! -f "$config_file" ]; then
-    echo "Environment config not found: $config_file" >&2
-    return 1
-  fi
-  node -e 'const fs = require("fs"); const config = JSON.parse(fs.readFileSync(process.argv[1], "utf8")); console.log(config.auth?.mode ?? "")' "$config_file"
-}
-
 # Resolves the JSON API bearer token without requiring LocalNet users to paste one.
 resolve_auth_token() {
-  if [ -n "${CANTON_AUTH_TOKEN:-}" ]; then
-    printf '%s\n' "$CANTON_AUTH_TOKEN"
+  if [ -n "${AUTH_TOKEN:-}" ]; then
+    printf '%s\n' "$AUTH_TOKEN"
     return 0
   fi
-  case "$(auth_mode)" in
+  case "${AUTH_MODE:-self-signed}" in
     self-signed)
       node "$ROOT/scripts/mint-token.mjs" --raw
       ;;
     static-token)
-      echo "CANTON_AUTH_TOKEN is required for static-token auth" >&2
+      echo "AUTH_TOKEN is required for static-token auth" >&2
       return 1
       ;;
     oauth-client-credentials)
-      echo "deploy-dar requires CANTON_AUTH_TOKEN when the selected environment uses oauth-client-credentials" >&2
+      echo "deploy-dar requires AUTH_TOKEN when AUTH_MODE=oauth-client-credentials" >&2
       return 1
       ;;
     *)
-      echo "Unsupported auth mode in selected environment" >&2
+      echo "Unsupported AUTH_MODE: ${AUTH_MODE:-}" >&2
       return 1
       ;;
   esac

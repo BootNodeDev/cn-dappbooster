@@ -1,24 +1,36 @@
 import { strict as assert } from 'node:assert'
-import fs from 'node:fs'
-import os from 'node:os'
-import path from 'node:path'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 import { loadConfig } from '../src/config.ts'
 
-const CANTON_VARS = [
-  'CANTON_ENVIRONMENT',
-  'CANTON_ENVIRONMENT_CONFIG_DIR',
-  'CANTON_AUTH_TOKEN',
-  'CANTON_AUTH_SECRET',
-  'CANTON_OAUTH_CLIENT_ID',
-  'CANTON_OAUTH_CLIENT_SECRET',
+const CONFIG_VARS = [
+  'PORT',
+  'CORS_ORIGINS',
+  'NETWORK',
+  'PROVIDER_ID',
+  'PROVIDER_VERSION',
+  'PROVIDER_URL',
+  'PROVIDER_USER_URL',
+  'CANTON_JSON_API_URL',
+  'CANTON_LEDGER_API_URL',
+  'CANTON_ADMIN_API_URL',
+  'SPLICE_VALIDATOR_URL',
+  'SPLICE_SCAN_API_URL',
+  'SPLICE_REGISTRY_API_URL',
+  'AUTH_MODE',
+  'AUTH_AUDIENCE',
+  'AUTH_SUBJECT',
+  'AUTH_SECRET',
+  'AUTH_TOKEN',
+  'AUTH_TOKEN_URL',
+  'AUTH_SCOPE',
+  'AUTH_CLIENT_ID',
+  'AUTH_CLIENT_SECRET',
   'WALLET_GATEWAY_UPSTREAM_URL',
-  'WALLET_GATEWAY_DEVKIT_CORS_ORIGINS',
-  'WALLET_PROVIDER_ID',
+  'CANTON_ENVIRONMENT',
 ] as const
 
 const snapshot = (): Record<string, string | undefined> =>
-  Object.fromEntries(CANTON_VARS.map((name) => [name, process.env[name]]))
+  Object.fromEntries(CONFIG_VARS.map((name) => [name, process.env[name]]))
 
 const restore = (saved: Record<string, string | undefined>): void => {
   for (const [name, value] of Object.entries(saved)) {
@@ -32,38 +44,35 @@ const restore = (saved: Record<string, string | undefined>): void => {
 
 describe('config loader', () => {
   let saved: Record<string, string | undefined>
-  let tempDirs: string[]
 
   beforeEach(() => {
     saved = snapshot()
-    tempDirs = []
-    for (const name of CANTON_VARS) {
+    for (const name of CONFIG_VARS) {
       delete process.env[name]
     }
   })
 
   afterEach(() => {
     restore(saved)
-    for (const dir of tempDirs) {
-      fs.rmSync(dir, { recursive: true, force: true })
-    }
   })
 
-  const writeEnvironmentConfig = (environment: string, config: unknown): void => {
-    // Scenario setup: tests use isolated environment config dirs so selected
-    // DevNet/TestNet recipes cannot leak into the committed LocalNet defaults.
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'wallet-gateway-devkit-env-'))
-    tempDirs.push(dir)
-    fs.writeFileSync(path.join(dir, `${environment}.json`), JSON.stringify(config))
-    process.env.CANTON_ENVIRONMENT_CONFIG_DIR = dir
-    process.env.CANTON_ENVIRONMENT = environment
-  }
-
-  it('defaults real mode to LocalNet self-signed auth', () => {
-    // Scenario: LocalNet should be selected by one environment name. Endpoints
-    // and the public JWT recipe come from the committed config file; only the
-    // signing secret is injected through the process environment.
-    process.env.CANTON_AUTH_SECRET = 'unsafe'
+  it('loads LocalNet values directly from the service environment', () => {
+    // Scenario: wallet-gateway-devkit is configured like any other service.
+    // The selected endpoints and auth recipe are direct env values, with no
+    // CANTON_ENVIRONMENT indirection or environment JSON lookup.
+    process.env.NETWORK = 'canton:localnet'
+    process.env.CANTON_JSON_API_URL = 'http://host.docker.internal:2975'
+    process.env.CANTON_LEDGER_API_URL = 'grpc://host.docker.internal:2901'
+    process.env.CANTON_ADMIN_API_URL = 'grpc://host.docker.internal:2902'
+    process.env.SPLICE_VALIDATOR_URL = 'http://host.docker.internal:2000/api/validator'
+    process.env.SPLICE_SCAN_API_URL = 'http://host.docker.internal:4000/api/scan'
+    process.env.SPLICE_REGISTRY_API_URL =
+      'http://host.docker.internal:2000/api/validator/v0/scan-proxy'
+    process.env.AUTH_MODE = 'self-signed'
+    process.env.AUTH_AUDIENCE = 'https://canton.network.global'
+    process.env.AUTH_SUBJECT = 'ledger-api-user'
+    process.env.AUTH_SECRET = 'unsafe'
+    process.env.WALLET_GATEWAY_UPSTREAM_URL = 'http://wallet-gateway:3030'
 
     const config = loadConfig()
 
@@ -75,170 +84,77 @@ describe('config loader', () => {
       subject: 'ledger-api-user',
     })
     assert.equal(config.canton.jsonApiUrl, 'http://host.docker.internal:2975')
-    assert.equal(config.provider.url, 'http://localhost:3011')
-    assert.deepEqual(config.corsOrigins, ['http://localhost:3013'])
+    assert.deepEqual(config.walletGateway, { upstreamUrl: 'http://wallet-gateway:3030' })
   })
 
-  it('fails clearly when self-signed auth misses the LocalNet signing recipe', () => {
-    // Scenario: LocalNet keeps the unsafe signing secret out of the committed
-    // environment file. Missing secret configuration must fail before boot.
-    assert.throws(
-      () => loadConfig(),
-      /CANTON_AUTH_SECRET is required for localnet self-signed auth/,
-    )
-  })
-
-  it('reads static-token auth from the selected environment file and secret env', () => {
-    // Scenario: a selected environment can declare static-token auth while the
-    // bearer token remains outside versioned config.
-    writeEnvironmentConfig('testnet', {
-      network: 'canton:testnet',
-      auth: { mode: 'static-token' },
-      canton: {
-        jsonApiUrl: 'https://json.testnet.example',
-        ledgerApiUrl: 'grpcs://ledger.testnet.example',
-        adminApiUrl: 'grpcs://admin.testnet.example',
-      },
-      splice: {
-        validatorUrl: 'https://validator.testnet.example/api/validator',
-        scanApiUrl: 'https://scan.testnet.example/api/scan',
-        registryApiUrl: 'https://registry.testnet.example/api/registry',
-      },
-    })
-    process.env.CANTON_AUTH_TOKEN = 'static.jwt.value'
+  it('ignores CANTON_ENVIRONMENT because environments are not a devkit concept', () => {
+    // Scenario: older branches selected config/environments/<name>.json. The
+    // devkit should now ignore that selector and rely only on direct values in
+    // env/.env.wallet-gateway-devkit.
+    process.env.CANTON_ENVIRONMENT = '../secret'
+    process.env.AUTH_MODE = 'static-token'
+    process.env.AUTH_TOKEN = 'static.jwt.value'
 
     const config = loadConfig()
 
-    assert.equal(config.network, 'canton:testnet')
-    assert.deepEqual(config.canton.auth, {
-      mode: 'static-token',
-      token: 'static.jwt.value',
-    })
+    assert.equal(config.network, 'canton:localnet')
+    assert.deepEqual(config.canton.auth, { mode: 'static-token', token: 'static.jwt.value' })
   })
 
-  it('requires CANTON_AUTH_TOKEN for static-token auth', () => {
-    // Scenario: static-token mode declares no refresh recipe. Missing token
-    // secret configuration should fail before the service starts.
-    writeEnvironmentConfig('testnet', {
-      network: 'canton:testnet',
-      auth: { mode: 'static-token' },
-      canton: { jsonApiUrl: 'x', ledgerApiUrl: 'y', adminApiUrl: 'z' },
-      splice: { validatorUrl: 'v', scanApiUrl: 's', registryApiUrl: 'r' },
-    })
+  it('requires direct static token auth values when AUTH_MODE is static-token', () => {
+    // Scenario: static-token mode has no refresh recipe. The token must be
+    // supplied in the devkit env file or exported by the operator.
+    process.env.AUTH_MODE = 'static-token'
 
-    assert.throws(() => loadConfig(), /CANTON_AUTH_TOKEN is required for testnet static-token auth/)
+    assert.throws(() => loadConfig(), /AUTH_TOKEN is required for static-token auth/)
   })
 
-  it('reads OAuth endpoint config from the selected environment and secrets from env', () => {
-    // Scenario: DevNet/TestNet deployments can version token endpoints and
-    // scopes while injecting only OAuth client credentials at runtime.
-    writeEnvironmentConfig('devnet', {
-      network: 'canton:devnet',
-      auth: {
-        mode: 'oauth-client-credentials',
-        tokenUrl: 'https://auth.example/token',
-        scope: 'daml_ledger_api',
-      },
-      canton: {
-        jsonApiUrl: 'https://json.devnet.example',
-        ledgerApiUrl: 'grpcs://ledger.devnet.example',
-        adminApiUrl: 'grpcs://admin.devnet.example',
-      },
-      splice: {
-        validatorUrl: 'https://validator.devnet.example/api/validator',
-        scanApiUrl: 'https://scan.devnet.example/api/scan',
-        registryApiUrl: 'https://registry.devnet.example/api/registry',
-      },
-    })
-    process.env.CANTON_OAUTH_CLIENT_ID = 'devkit-client'
-    process.env.CANTON_OAUTH_CLIENT_SECRET = 'devkit-secret'
+  it('loads direct OAuth client credentials values', () => {
+    // Scenario: external DevNet/TestNet stacks can use OAuth without adding a
+    // repo-level environment selector. Every auth value comes from the devkit
+    // service env file.
+    process.env.AUTH_MODE = 'oauth-client-credentials'
+    process.env.AUTH_TOKEN_URL = 'https://auth.example/token'
+    process.env.AUTH_SCOPE = 'daml_ledger_api'
+    process.env.AUTH_CLIENT_ID = 'devkit-client'
+    process.env.AUTH_CLIENT_SECRET = 'devkit-secret'
 
     const config = loadConfig()
 
     assert.deepEqual(config.canton.auth, {
       mode: 'oauth-client-credentials',
       tokenUrl: 'https://auth.example/token',
+      scope: 'daml_ledger_api',
       clientId: 'devkit-client',
       clientSecret: 'devkit-secret',
-      scope: 'daml_ledger_api',
     })
-    assert.equal(config.canton.jsonApiUrl, 'https://json.devnet.example')
   })
 
-  it('requires OAuth client credentials fields for OAuth auth', () => {
-    // Scenario: OAuth endpoint metadata is versioned, but client credentials
-    // are secrets and must still be supplied by the runtime environment.
-    writeEnvironmentConfig('devnet', {
-      network: 'canton:devnet',
-      auth: { mode: 'oauth-client-credentials', tokenUrl: 'https://auth.example/token' },
-      canton: { jsonApiUrl: 'x', ledgerApiUrl: 'y', adminApiUrl: 'z' },
-      splice: { validatorUrl: 'v', scanApiUrl: 's', registryApiUrl: 'r' },
-    })
+  it('requires direct OAuth client credentials fields', () => {
+    // Scenario: OAuth mode is explicit. Missing client credentials should fail
+    // before the service starts instead of falling back to a hidden config file.
+    process.env.AUTH_MODE = 'oauth-client-credentials'
+    process.env.AUTH_TOKEN_URL = 'https://auth.example/token'
 
     assert.throws(
       () => loadConfig(),
-      /CANTON_OAUTH_CLIENT_ID is required for devnet oauth-client-credentials auth/,
+      /AUTH_CLIENT_ID is required for oauth-client-credentials auth/,
     )
   })
 
-  it('rejects unsafe environment names', () => {
-    // Scenario: CANTON_ENVIRONMENT selects a local JSON file. Rejecting path
-    // separators prevents selecting files outside the config directory.
-    process.env.CANTON_ENVIRONMENT = '../secret'
-
-    assert.throws(() => loadConfig(), /Unsupported CANTON_ENVIRONMENT: \.\.\/secret/)
-  })
-
-  it('loads Splice service URLs from the selected environment file', () => {
-    // Scenario: Carpincho keeps one gateway URL while devkit gets every
-    // Canton, Scan, validator, and registry endpoint from the selected env.
-    process.env.CANTON_AUTH_SECRET = 'unsafe'
+  it('keeps provider metadata local to the devkit env file', () => {
+    // Scenario: provider metadata can be changed by editing the devkit service
+    // env file. Legacy names are not normalized by hidden logic.
+    process.env.AUTH_MODE = 'static-token'
+    process.env.AUTH_TOKEN = 'static.jwt.value'
+    process.env.PROVIDER_ID = 'custom-devkit'
+    process.env.PROVIDER_URL = 'http://localhost:4311'
+    process.env.PROVIDER_USER_URL = 'http://localhost:4311'
 
     const config = loadConfig()
 
-    assert.deepEqual(config.splice, {
-      validatorUrl: 'http://host.docker.internal:2000/api/validator',
-      scanApiUrl: 'http://host.docker.internal:4000/api/scan',
-      registryApiUrl: 'http://host.docker.internal:2000/api/validator/v0/scan-proxy',
-    })
-  })
-
-  it('ignores stale provider id environment values', () => {
-    // Scenario: provider metadata is selected from the environment JSON. Local
-    // .env files from older branches must not rename the public provider.
-    process.env.CANTON_AUTH_SECRET = 'unsafe'
-    process.env.WALLET_PROVIDER_ID = 'wallet-service'
-
-    const config = loadConfig()
-
-    assert.equal(config.provider.id, 'wallet-gateway-devkit')
-  })
-
-  it('reads the upstream wallet-gateway URL from the selected environment config', () => {
-    // Scenario: devkit mode is a facade in front of the official wallet-gateway.
-    // The upstream URL is versioned with the selected environment so Docker
-    // does not need to pass service topology as an environment variable.
-    process.env.CANTON_AUTH_SECRET = 'unsafe'
-
-    const config = loadConfig()
-
-    assert.deepEqual(config.walletGateway, {
-      upstreamUrl: 'http://wallet-gateway:3030',
-    })
-  })
-
-  it('ignores stale service defaults from environment variables', () => {
-    // Scenario: old .env files may still contain pre-config-file service
-    // defaults. Environment JSON must remain the source of truth.
-    process.env.CANTON_AUTH_SECRET = 'unsafe'
-    process.env.WALLET_GATEWAY_UPSTREAM_URL = 'http://old-upstream:3030'
-    process.env.WALLET_GATEWAY_DEVKIT_CORS_ORIGINS = 'http://old-carpincho:3011'
-
-    const config = loadConfig()
-
-    assert.deepEqual(config.walletGateway, {
-      upstreamUrl: 'http://wallet-gateway:3030',
-    })
-    assert.deepEqual(config.corsOrigins, ['http://localhost:3013'])
+    assert.equal(config.provider.id, 'custom-devkit')
+    assert.equal(config.provider.url, 'http://localhost:4311')
+    assert.equal(config.provider.userUrl, 'http://localhost:4311')
   })
 })

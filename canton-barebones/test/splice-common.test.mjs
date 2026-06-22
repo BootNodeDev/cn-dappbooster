@@ -29,9 +29,9 @@ describe('Splice LocalNet shell config', () => {
     assert.deepEqual(output.trim().split('\n'), ['sv', 'app-user'])
   })
 
-  it('exports the official compose variables required by LocalNet', () => {
+  it('loads Splice settings from the service env file', () => {
     // Scenario: Docker Compose reads IMAGE_TAG and LocalNet paths from the
-    // environment before resolving image names and bind mounts.
+    // Splice service env file before resolving image names and bind mounts.
     const output = execFileSync(
       'bash',
       [
@@ -104,7 +104,7 @@ describe('Splice LocalNet shell config', () => {
 
     assert.match(
       upScript,
-      /COMPOSE_IGNORE_ORPHANS=true docker compose --project-directory "\$ROOT" up -d --build wallet-gateway wallet-gateway-devkit/,
+      /COMPOSE_IGNORE_ORPHANS=true wallet_gateway_devkit_compose up -d --build wallet-gateway wallet-gateway-devkit/,
     )
   })
 
@@ -134,10 +134,24 @@ describe('Splice LocalNet shell config', () => {
     assert.match(upScript, /wallet-gateway-devkit\)\n.*start_wallet_gateway_devkit/s)
   })
 
-  it('publishes wallet-gateway and wallet-gateway-devkit on stable host ports', () => {
+  it('can skip Splice LocalNet when services point to external infrastructure', () => {
+    // Scenario: devs can point wallet-gateway and devkit to an external
+    // Splice stack. The startup script should expose a no-splice mode instead
+    // of forcing the LocalNet bundle and official Splice compose files.
+    const upScript = execFileSync('cat', [path.join(projectRoot, 'scripts/up.sh')], {
+      cwd: projectRoot,
+      encoding: 'utf8',
+    })
+
+    assert.match(upScript, /--no-splice/)
+    assert.match(upScript, /WITH_SPLICE=0/)
+    assert.match(upScript, /if \[ "\$WITH_SPLICE" = "1" \]/)
+  })
+
+  it('publishes wallet-gateway and wallet-gateway-devkit through service env files', () => {
     // Scenario: users of this stack should always be able to reach the
     // official wallet-gateway on 3010, while devkit gets a separate public
-    // port and still proxies to the official service inside Docker.
+    // port. The defaults live in service env files, not environment JSON.
     const composeFile = execFileSync('cat', [path.join(projectRoot, 'docker-compose.yaml')], {
       cwd: projectRoot,
       encoding: 'utf8',
@@ -146,34 +160,40 @@ describe('Splice LocalNet shell config', () => {
     const walletGatewayBlock = composeFile.split('\n  wallet-gateway-devkit:')[0] ?? ''
 
     assert.match(walletGatewayBlock, /wallet-gateway:/)
-    assert.match(walletGatewayBlock, /\n {4}ports:\n {6}- "3010:3030"/)
-    assert.match(composeFile, /\n {4}ports:\n {6}- "3011:3010"/)
+    assert.match(walletGatewayBlock, /env_file:\n {6}- \.\/env\/\.env\.wallet-gateway/)
+    assert.match(
+      walletGatewayBlock,
+      /\$\{WALLET_GATEWAY_CONFIG:-\.\/config\/wallet-gateway\/config\.json\}:\/config\/wallet-gateway\.json:ro/,
+    )
+    assert.match(walletGatewayBlock, /\$\{WALLET_GATEWAY_PORT:-3010\}:3030/)
+    assert.match(composeFile, /env_file:\n {6}- \.\/env\/\.env\.wallet-gateway-devkit/)
+    assert.match(composeFile, /\$\{WALLET_GATEWAY_DEVKIT_PORT:-3011\}:3010/)
+  })
+
+  it('checks gateway health through the service port env files', () => {
+    // Scenario: gateway port overrides live in service env files. Health
+    // checks must read the same files instead of hardcoding public ports.
+    const healthScript = execFileSync('cat', [path.join(projectRoot, 'scripts/health-check.sh')], {
+      cwd: projectRoot,
+      encoding: 'utf8',
+    })
+
+    assert.match(healthScript, /load_env_file "\$ROOT\/env\/\.env\.wallet-gateway"/)
+    assert.match(healthScript, /load_env_file "\$ROOT\/env\/\.env\.wallet-gateway-devkit"/)
+    assert.match(healthScript, /http:\/\/localhost:\$\{WALLET_GATEWAY_PORT:-3010\}\/readyz/)
+    assert.match(healthScript, /http:\/\/localhost:\$\{WALLET_GATEWAY_DEVKIT_PORT:-3011\}\/health/)
   })
 
   it('keeps wallet-gateway-devkit compose environment minimal', () => {
-    // Scenario: endpoints live in config/environments/*.json. Docker should
-    // select the environment and mount .env for dotenv without expanding every
-    // supported auth field into the compose service environment.
+    // Scenario: devkit reads direct service env values. Docker should not
+    // select an environment name or mount a monolithic root .env file.
     const composeFile = execFileSync('cat', [path.join(projectRoot, 'docker-compose.yaml')], {
       cwd: projectRoot,
       encoding: 'utf8',
     })
 
-    assert.match(composeFile, /CANTON_ENVIRONMENT: "\$\{CANTON_ENVIRONMENT:-localnet\}"/)
-    assert.match(composeFile, /source: \.\/\.env/)
-    assert.match(composeFile, /target: \/app\/canton-barebones\/wallet-gateway-devkit\/\.env/)
-    assert.match(composeFile, /create_host_path: false/)
-    assert.doesNotMatch(composeFile, /env_file:/)
-    assert.doesNotMatch(composeFile, /CANTON_AUTH_SECRET:/)
-    assert.doesNotMatch(composeFile, /CANTON_AUTH_TOKEN:/)
-    assert.doesNotMatch(composeFile, /CANTON_OAUTH_CLIENT_ID:/)
-    assert.doesNotMatch(composeFile, /CANTON_OAUTH_CLIENT_SECRET:/)
-    assert.doesNotMatch(composeFile, /WALLET_GATEWAY_UPSTREAM_URL:/)
-    assert.doesNotMatch(composeFile, /WALLET_GATEWAY_DEVKIT_PORT:/)
-    assert.doesNotMatch(composeFile, /WALLET_GATEWAY_DEVKIT_CORS_ORIGINS:/)
-    assert.doesNotMatch(composeFile, /WALLET_PROVIDER_ID:/)
-    assert.doesNotMatch(composeFile, /SPLICE_VALIDATOR_URL:/)
-    assert.doesNotMatch(composeFile, /SPLICE_SCAN_API_URL:/)
-    assert.doesNotMatch(composeFile, /CANTON_JSON_API_URL:/)
+    assert.doesNotMatch(composeFile, /CANTON_ENVIRONMENT/)
+    assert.doesNotMatch(composeFile, /config\/environments/)
+    assert.doesNotMatch(composeFile, /source: \.\/\.env/)
   })
 })

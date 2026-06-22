@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const projectRoot = path.resolve(__dirname, '..')
-const walletGatewayConfigPath = path.join(projectRoot, 'config/wallet-gateway/localnet.json')
+const walletGatewayConfigPath = path.join(projectRoot, 'config/wallet-gateway/config.json')
 
 describe('wallet-gateway LocalNet config', () => {
   it('keeps only the required official wallet-gateway config', () => {

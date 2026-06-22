@@ -46,6 +46,7 @@ describe('createCantonToken', () => {
   })
 
   it('throws when subject is empty', () => {
+    // Scenario: a token without subject cannot identify the ledger user.
     assert.throws(
       () => createCantonToken({ subject: '', audience: 'aud', secret: 'sec' }),
       /subject is required/,
@@ -53,6 +54,7 @@ describe('createCantonToken', () => {
   })
 
   it('throws when audience is empty', () => {
+    // Scenario: Canton validates the audience, so missing it must fail locally.
     assert.throws(
       () => createCantonToken({ subject: 'sub', audience: '', secret: 'sec' }),
       /audience is required/,
@@ -60,9 +62,10 @@ describe('createCantonToken', () => {
   })
 
   it('throws when secret is empty', () => {
+    // Scenario: self-signed mode must not emit unsigned or weakly configured tokens.
     assert.throws(
       () => createCantonToken({ subject: 'sub', audience: 'aud', secret: '' }),
-      /CANTON_AUTH_SECRET is required/,
+      /AUTH_SECRET is required/,
     )
   })
 })
