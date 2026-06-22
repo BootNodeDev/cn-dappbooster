@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+# Shared helpers for every canton-barebones script. This file owns path
+# discovery, Splice bundle defaults, compose wrappers, logging, waits, and
+# startup validation so the public scripts stay short.
+
+# Step 1: anchor every relative path at canton-barebones/.
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # Sources a service env file when present so scripts and Compose share one config surface.
@@ -20,8 +25,10 @@ EXTERNAL_LOCALNET_DIR="${LOCALNET_DIR:-}"
 EXTERNAL_LOCALNET_ENV_DIR="${LOCALNET_ENV_DIR:-}"
 EXTERNAL_SPLICE_COMPOSE_PROJECT_NAME="${SPLICE_COMPOSE_PROJECT_NAME:-}"
 
+# Step 2: load default Splice LocalNet settings from the service env file.
 load_env_file "$ROOT/env/.env.splice"
 
+# Step 3: restore shell-provided overrides so CLI callers can replace env-file defaults.
 [ -n "$EXTERNAL_SPLICE_IMAGE_TAG" ] && SPLICE_IMAGE_TAG="$EXTERNAL_SPLICE_IMAGE_TAG"
 [ -n "$EXTERNAL_SPLICE_BUNDLE_DIR" ] && SPLICE_BUNDLE_DIR="$EXTERNAL_SPLICE_BUNDLE_DIR"
 [ -n "$EXTERNAL_IMAGE_TAG" ] && IMAGE_TAG="$EXTERNAL_IMAGE_TAG"
@@ -29,6 +36,7 @@ load_env_file "$ROOT/env/.env.splice"
 [ -n "$EXTERNAL_LOCALNET_ENV_DIR" ] && LOCALNET_ENV_DIR="$EXTERNAL_LOCALNET_ENV_DIR"
 [ -n "$EXTERNAL_SPLICE_COMPOSE_PROJECT_NAME" ] && SPLICE_COMPOSE_PROJECT_NAME="$EXTERNAL_SPLICE_COMPOSE_PROJECT_NAME"
 
+# Step 4: normalize Splice paths, image tag aliases, compose project names, and profiles.
 SPLICE_IMAGE_TAG="${SPLICE_IMAGE_TAG:-${IMAGE_TAG:-0.5.18}}"
 IMAGE_TAG="${IMAGE_TAG:-$SPLICE_IMAGE_TAG}"
 COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-canton-barebones}"
@@ -39,6 +47,7 @@ SPLICE_COMPOSE_PROJECT_NAME="${SPLICE_COMPOSE_PROJECT_NAME:-$COMPOSE_PROJECT_NAM
 CANTON_BAREBONES_DIR="$ROOT"
 IFS=',' read -r -a SPLICE_PROFILES <<< "${SPLICE_PROFILES:-sv,app-user}"
 
+# Step 5: export values needed by the official Splice compose files and local overrides.
 export COMPOSE_PROJECT_NAME SPLICE_IMAGE_TAG IMAGE_TAG SPLICE_BUNDLE_DIR LOCALNET_DIR LOCALNET_ENV_DIR SPLICE_COMPOSE_PROJECT_NAME CANTON_BAREBONES_DIR
 
 # Prints a compact status line so stack scripts are easy to scan.

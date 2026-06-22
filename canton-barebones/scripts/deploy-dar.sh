@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# This script uploads one DAR to the app-user JSON API used by the local stack.
+# It intentionally reads the same devkit env file as runtime services, so DAR
+# deployment uses the same auth mode and endpoint assumptions as the running stack.
+
+# Step 1: require the caller to pass the DAR path explicitly.
 if [ "$#" -ne 1 ]; then
   echo "Usage: scripts/deploy-dar.sh path/to/file.dar" >&2
   exit 1
@@ -8,6 +13,7 @@ fi
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+# Step 2: load wallet-gateway-devkit env values for auth and optional endpoint overrides.
 if [ -f "$ROOT/env/.env.wallet-gateway-devkit" ]; then
   set -a
   # shellcheck disable=SC1091
@@ -17,6 +23,7 @@ fi
 
 DAR_PATH="$1"
 
+# Step 3: fail before making network calls if the DAR path is wrong.
 if [ ! -f "$DAR_PATH" ]; then
   echo "DAR not found: $DAR_PATH" >&2
   exit 1
@@ -51,6 +58,7 @@ json_api_url="${APP_USER_JSON_API_URL:-http://localhost:2975}"
 dar_name="$(basename "$DAR_PATH")"
 auth_token="$(resolve_auth_token)"
 
+# Step 4: upload the raw DAR bytes to the Canton JSON API package endpoint.
 echo "Uploading $dar_name to app-user JSON API at $json_api_url"
 
 http_code="$(
@@ -62,6 +70,7 @@ http_code="$(
     --data-binary "@$DAR_PATH"
 )"
 
+# Step 5: treat an already-installed DAR as success so repeated local runs are idempotent.
 case "$http_code" in
   200 | 204)
     echo "deployed $dar_name to app-user"

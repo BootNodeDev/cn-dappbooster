@@ -7,6 +7,9 @@ import { fileURLToPath } from 'node:url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const root = path.resolve(__dirname, '..')
 
+// This script creates a LocalNet-compatible JWT for humans or other scripts.
+// It reads wallet-gateway-devkit env defaults first, then lets shell env win.
+
 // Encodes JWT segments in the URL-safe base64 variant required by bearer tokens.
 const b64url = (input) =>
   Buffer.from(input).toString('base64').replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')
@@ -59,22 +62,27 @@ export const createCantonToken = ({ subject, audience, secret }) => {
 
 // Prints a LocalNet token for static-token mode or emits only the raw token for scripts.
 const main = () => {
+  // Step 1: merge checked-in service defaults with caller-provided overrides.
   const env = {
     ...parseEnvFile(path.join(root, 'env/.env.wallet-gateway-devkit')),
     ...process.env,
   }
+  // Step 2: support raw output for scripts and pretty instructions for humans.
   const args = process.argv.slice(2)
   const raw = args[0] === '--raw'
   const subject = (raw ? args[1] : args[0]) ?? env.AUTH_SUBJECT ?? 'ledger-api-user'
+  // Step 3: sign the token with the same audience and secret used by devkit.
   const token = createCantonToken({
     subject,
     audience: env.AUTH_AUDIENCE,
     secret: env.AUTH_SECRET,
   })
+  // Step 4: keep machine-readable mode to exactly one token line.
   if (raw) {
     process.stdout.write(`${token}\n`)
     return
   }
+  // Step 5: print copy-paste instructions for manual static-token workflows.
   process.stdout.write(`${token}\n\n`)
   process.stdout.write('For wallet-gateway-devkit static-token auth:\n')
   process.stdout.write('  Set AUTH_MODE=static-token in env/.env.wallet-gateway-devkit.\n')
@@ -86,6 +94,7 @@ const main = () => {
   )
 }
 
+// Run the CLI only when the file is executed directly; tests import helpers.
 if (import.meta.url === `file://${process.argv[1]}`) {
   main()
 }
