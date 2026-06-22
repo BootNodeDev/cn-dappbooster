@@ -56,8 +56,8 @@ npm run up:wallet-gateway-devkit   # Splice + wallet-gateway + devkit facade
 From the repo root:
 
 ```bash
-npm run localnet:wallet-gateway:up
-npm run localnet:wallet-gateway-devkit:up
+npm run canton:up:wallet-gateway
+npm run canton:up:wallet-gateway-devkit
 ```
 
 The official wallet-gateway is always public on `http://localhost:3010`.

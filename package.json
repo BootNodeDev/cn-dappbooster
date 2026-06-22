@@ -14,8 +14,8 @@
   ],
   "scripts": {
     "canton:up": "npm --prefix canton-barebones run up",
-    "localnet:wallet-gateway:up": "npm --prefix canton-barebones run up:wallet-gateway",
-    "localnet:wallet-gateway-devkit:up": "npm --prefix canton-barebones run up:wallet-gateway-devkit",
+    "canton:up:wallet-gateway": "npm --prefix canton-barebones run up:wallet-gateway",
+    "canton:up:wallet-gateway-devkit": "npm --prefix canton-barebones run up:wallet-gateway-devkit",
     "canton:down": "npm --prefix canton-barebones run down",
     "canton:health": "npm --prefix canton-barebones run health",
     "canton:token": "npm --prefix canton-barebones run token",

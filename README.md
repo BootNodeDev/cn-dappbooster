@@ -96,8 +96,8 @@ npm run canton:health
 switch the public gateway behavior:
 
 ```bash
-npm run localnet:wallet-gateway:up          # Splice + official wallet-gateway
-npm run localnet:wallet-gateway-devkit:up   # Splice + wallet-gateway + devkit facade
+npm run canton:up:wallet-gateway          # Splice + official wallet-gateway
+npm run canton:up:wallet-gateway-devkit   # Splice + wallet-gateway + devkit facade
 ```
 
 When pointing the gateway layer at an external Splice stack, edit
