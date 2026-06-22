@@ -6,8 +6,8 @@ echo "TypeScript checks: carpincho-wallet"
 echo "TypeScript checks: dapp/frontend"
 ( cd dapp/frontend && npx tsc -b --noEmit --pretty )
 
-echo "TypeScript checks: canton-barebones/wallet-service"
-( cd canton-barebones/wallet-service && npx tsc --noEmit --pretty )
+echo "TypeScript checks: canton-barebones/wallet-gateway-devkit"
+( cd canton-barebones/wallet-gateway-devkit && npx tsc --noEmit --pretty )
 
 echo "TypeScript checks: canton-connect-kit"
 ( cd canton-connect-kit && npx tsc -b --noEmit --pretty )
