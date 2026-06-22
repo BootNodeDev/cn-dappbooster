@@ -29,7 +29,7 @@ describe('ConfigureRpcStep', () => {
     globalThis.fetch = originalFetch
   })
 
-  it('enables Continue once the wallet-service is reachable', async () => {
+  it('enables Continue once the wallet gateway is reachable', async () => {
     respondConnected()
     render(<ConfigureRpcStep onConfirmed={() => undefined} />)
     assert.equal(continueButton().disabled, true)
@@ -60,7 +60,7 @@ describe('ConfigureRpcStep', () => {
     }
     render(<ConfigureRpcStep onConfirmed={() => undefined} />)
     await waitFor(() => {
-      assert.ok(screen.getByText(/can.t reach wallet-service/i))
+      assert.ok(screen.getByText(/can.t reach wallet gateway/i))
       assert.equal(continueButton().disabled, true)
     })
     assert.equal(screen.queryByRole('button', { name: /^test$/i }), null)
@@ -70,11 +70,11 @@ describe('ConfigureRpcStep', () => {
     respondConnected()
     render(<ConfigureRpcStep onConfirmed={() => undefined} />)
     await waitFor(() => assert.equal(continueButton().disabled, false))
-    await userEvent.type(screen.getByLabelText(/wallet-service rpc url/i), 'x')
+    await userEvent.type(screen.getByLabelText(/wallet gateway rpc url/i), 'x')
     assert.equal(continueButton().disabled, true)
   })
 
-  it('auto-recovers and enables Continue once wallet-service comes up', async () => {
+  it('auto-recovers and enables Continue once the wallet gateway comes up', async () => {
     let reachable = false
     globalThis.fetch = async () => {
       if (!reachable) throw new Error('Failed to fetch')
@@ -89,7 +89,7 @@ describe('ConfigureRpcStep', () => {
       )
     }
     render(<ConfigureRpcStep onConfirmed={() => undefined} />)
-    await waitFor(() => assert.ok(screen.getByText(/can.t reach wallet-service/i)), {
+    await waitFor(() => assert.ok(screen.getByText(/can.t reach wallet gateway/i)), {
       timeout: 2000,
     })
     assert.equal(continueButton().disabled, true)

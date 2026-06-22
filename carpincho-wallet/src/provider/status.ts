@@ -7,9 +7,9 @@ export interface ProviderStatus {
   network?: { networkId: string }
 }
 
-// Builds the browser provider status from wallet-service without inventing a local network.
+// Builds the browser provider status from the configured gateway without inventing a local network.
 // Local connection state must not depend on network discovery, so an unreachable
-// wallet-service degrades to "not network connected" rather than failing connect.
+// gateway failures degrade to "not network connected" rather than failing connect.
 export const buildStatus = async (): Promise<ProviderStatus> => {
   const provider = {
     id: SIGNING_PROVIDER_ID,
@@ -36,13 +36,13 @@ export const buildStatus = async (): Promise<ProviderStatus> => {
       connection: {
         isConnected: true,
         isNetworkConnected: false,
-        networkReason: `wallet-service unavailable: ${(error as Error).message}`,
+        networkReason: `wallet gateway unavailable: ${(error as Error).message}`,
       },
     }
   }
 }
 
-// Resolves getActiveNetwork through wallet-service status, matching wallet-gateway's source.
+// Resolves getActiveNetwork through gateway status, matching the configured backend source.
 export const getActiveNetwork = async (): Promise<{ networkId: string }> => ({
   networkId: await getWalletServiceNetworkId(),
 })

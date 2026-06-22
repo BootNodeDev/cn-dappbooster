@@ -12,7 +12,7 @@ export const forwardToWalletService = async (
     return { status: 'handled' }
   } catch (error) {
     const code = error instanceof WalletServiceRpcError ? error.code : -32000
-    await responder.error(code, `wallet-service: ${(error as Error).message}`)
+    await responder.error(code, `wallet gateway: ${(error as Error).message}`)
     return { status: 'error' }
   }
 }

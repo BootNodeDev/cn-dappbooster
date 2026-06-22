@@ -26,12 +26,12 @@ describe('ConnectionSettingsView', () => {
   })
 
   it('renders the current runtime config', () => {
-    // Scenario: runtime config should only expose the wallet-service endpoint for editing.
-    // The Canton network is discovered from wallet-service status, so no editable local value
+    // Scenario: runtime config should only expose the gateway endpoint for editing.
+    // The Canton network is discovered from gateway status, so no editable local value
     // should be present in the settings form.
     render(<ConnectionSettingsView />)
     assert.equal(
-      (screen.getByLabelText('Wallet-service RPC URL') as HTMLInputElement).value,
+      (screen.getByLabelText('Wallet gateway RPC URL') as HTMLInputElement).value,
       'http://localhost:3010/rpc',
     )
     assert.equal(screen.queryByLabelText('Canton network'), null)
@@ -40,7 +40,7 @@ describe('ConnectionSettingsView', () => {
   it('saves edited config and confirms with a success toast', async () => {
     render(<ConnectionSettingsView />)
 
-    fireEvent.change(screen.getByLabelText('Wallet-service RPC URL'), {
+    fireEvent.change(screen.getByLabelText('Wallet gateway RPC URL'), {
       target: { value: 'http://localhost:9999/rpc' },
     })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
@@ -49,7 +49,7 @@ describe('ConnectionSettingsView', () => {
     assert.equal(loadRuntimeConfig().walletServiceRpcUrl, 'http://localhost:9999/rpc')
   })
 
-  it('reports a reachable wallet-service when Canton is connected', async () => {
+  it('reports a reachable wallet gateway when Canton is connected', async () => {
     installStatus({
       result: { connection: { isNetworkConnected: true }, network: { networkId: 'canton:local' } },
     })
@@ -61,7 +61,7 @@ describe('ConnectionSettingsView', () => {
     assert.match(String(lastToast()?.message), /reachable: canton:local/)
   })
 
-  it('warns when the wallet-service responds but Canton is not connected', async () => {
+  it('warns when the wallet gateway responds but Canton is not connected', async () => {
     installStatus({
       result: {
         connection: { isNetworkConnected: false, networkReason: 'syncing' },
@@ -75,7 +75,7 @@ describe('ConnectionSettingsView', () => {
     await waitFor(() => assert.equal(lastToast()?.variant, 'warning'))
   })
 
-  it('surfaces an error when the wallet-service request fails', async () => {
+  it('surfaces an error when the wallet gateway request fails', async () => {
     installStatus({}, false)
     render(<ConnectionSettingsView />)
 

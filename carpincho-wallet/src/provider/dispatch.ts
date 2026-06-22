@@ -31,12 +31,12 @@ export type {
   ProviderResponder,
 } from '@/provider/types'
 
-// Converts wallet-service discovery failures into JSON-RPC provider errors.
+// Converts gateway discovery failures into JSON-RPC provider errors.
 const respondWalletServiceError = async (
   responder: ProviderResponder,
   error: unknown,
 ): Promise<DispatchResult> => {
-  await responder.error(-32000, `wallet-service: ${(error as Error).message}`)
+  await responder.error(-32000, `wallet gateway: ${(error as Error).message}`)
   return { status: 'error' }
 }
 

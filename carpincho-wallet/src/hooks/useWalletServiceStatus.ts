@@ -14,7 +14,7 @@ interface UseWalletServiceStatusOptions {
 
 const DEFAULT_POLL_MS = 5000
 
-// Converts the wallet-service status payload into the footer's binary Canton state.
+// Converts the gateway status payload into the footer's binary Canton state.
 const statusFromResponse = (status: WalletServiceStatusResponse): WalletServiceStatus => ({
   connected: status.connection?.isNetworkConnected === true,
   ...(status.network?.networkId === undefined ? {} : { networkId: status.network.networkId }),
@@ -23,7 +23,7 @@ const statusFromResponse = (status: WalletServiceStatusResponse): WalletServiceS
     : { reason: status.connection.networkReason }),
 })
 
-// Tracks whether wallet-service currently reports Canton network connectivity.
+// Tracks whether the configured gateway currently reports Canton network connectivity.
 export const useWalletServiceStatus = (
   options: UseWalletServiceStatusOptions = {},
 ): WalletServiceStatus => {

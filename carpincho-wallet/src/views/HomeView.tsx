@@ -179,7 +179,7 @@ export const HomeView = (): JSX.Element => {
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
         title="Connection"
-        description="Configure wallet-service URL and network."
+        description="Configure the wallet gateway RPC URL."
       >
         <ConnectionSettingsView />
       </Sheet>

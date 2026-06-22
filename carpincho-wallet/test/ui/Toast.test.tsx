@@ -55,9 +55,9 @@ describe('toast emitter', () => {
 
   it('keeps distinct messages of the same variant', () => {
     toast.success('Party ID copied')
-    toast.success('wallet-service reachable: canton-local')
+    toast.success('wallet gateway reachable: canton-local')
     const messages = getToastEntries().map((entry) => entry.message)
-    assert.deepEqual(messages, ['Party ID copied', 'wallet-service reachable: canton-local'])
+    assert.deepEqual(messages, ['Party ID copied', 'wallet gateway reachable: canton-local'])
   })
 
   it('does not collapse toasts of different variants', () => {

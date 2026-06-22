@@ -139,7 +139,7 @@ describe('provider request dispatch', () => {
     // Expected result: the provider reports an error and returns no fallback network.
     assert.deepEqual(result, { status: 'error' })
     assert.equal(responder.results.length, 0)
-    assert.match(responder.errors[0]?.message ?? '', /wallet-service/i)
+    assert.match(responder.errors[0]?.message ?? '', /wallet gateway/i)
   })
 
   it('does not attach a fallback network to status when wallet-service omits it', async () => {

@@ -20,7 +20,7 @@ describe('WalletServiceRpcError', () => {
 
   it('falls back to a code-tagged message when message is undefined', () => {
     const error = new WalletServiceRpcError({ code: -32000, message: undefined as never })
-    assert.equal(error.message, 'wallet-service error -32000')
+    assert.equal(error.message, 'wallet gateway error -32000')
   })
 
   it('preserves code and data', () => {

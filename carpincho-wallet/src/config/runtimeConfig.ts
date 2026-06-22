@@ -34,7 +34,7 @@ const dispatchRuntimeConfigChange = (config: RuntimeConfig): void => {
   window.dispatchEvent(new CustomEvent('carpincho-runtime-config-changed', { detail: config }))
 }
 
-// Mirrors popup-local config into extension storage so the MV3 worker can reach wallet-service.
+// Mirrors popup-local config into extension storage so the MV3 worker can reach the gateway.
 const persistChromeRuntimeConfig = (config: RuntimeConfig): void => {
   void Promise.resolve(chromeLocalStorage()?.set({ [STORAGE_KEY]: config })).catch(() => undefined)
 }

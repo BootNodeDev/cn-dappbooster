@@ -36,7 +36,7 @@ export const ConfigureRpcStep = ({ onConfirmed }: ConfigureRpcStepProps): JSX.El
     return () => window.clearTimeout(id)
   }, [url, test])
 
-  // Auto-retry while unreachable so the step unblocks once wallet-service comes up.
+  // Auto-retry while unreachable so the step unblocks once the gateway comes up.
   useEffect(() => {
     if (state !== 'unreachable') {
       return undefined
@@ -59,7 +59,7 @@ export const ConfigureRpcStep = ({ onConfirmed }: ConfigureRpcStepProps): JSX.El
 
   return (
     <Card>
-      <label htmlFor={fieldId}>Wallet-service RPC URL</label>
+      <label htmlFor={fieldId}>Wallet gateway RPC URL</label>
       <TextInput
         id={fieldId}
         type="url"
@@ -82,7 +82,7 @@ export const ConfigureRpcStep = ({ onConfirmed }: ConfigureRpcStepProps): JSX.El
               aria-hidden="true"
               className="size-2 shrink-0 rounded-full bg-success"
             />
-            <span>wallet-service reachable</span>
+            <span>wallet gateway reachable</span>
             {network !== undefined && (
               <span className="ml-auto rounded-full border border-success/40 bg-surface px-2 py-0.5 font-mono text-[0.76rem] text-success">
                 {network}
@@ -94,7 +94,7 @@ export const ConfigureRpcStep = ({ onConfirmed }: ConfigureRpcStepProps): JSX.El
           <>
             <span className="shrink-0 [&>svg]:size-4">{ALERT_CIRCLE_ICON}</span>
             <span className="flex flex-col gap-0.5">
-              <span>Can't reach wallet-service</span>
+              <span>Can't reach wallet gateway</span>
               {reason !== undefined && (
                 <span className="text-[0.78rem] font-normal opacity-85">
                   {reason} — retrying automatically…

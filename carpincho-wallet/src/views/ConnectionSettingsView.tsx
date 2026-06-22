@@ -39,9 +39,9 @@ export const ConnectionSettingsView = (): JSX.Element => {
       const connected = status.connection?.isNetworkConnected === true
       const reason = status.connection?.networkReason
       if (connected) {
-        toast.success(`wallet-service reachable: ${network}`)
+        toast.success(`wallet gateway reachable: ${network}`)
       } else {
-        toast.warning(`wallet-service responded, Canton not connected: ${reason ?? network}`)
+        toast.warning(`wallet gateway responded, Canton not connected: ${reason ?? network}`)
       }
     } catch (err) {
       toast.error((err as Error).message)
@@ -54,7 +54,7 @@ export const ConnectionSettingsView = (): JSX.Element => {
     <section className="flex flex-col gap-4 pt-1">
       <div>
         <div className="flex items-baseline justify-between gap-3">
-          <label htmlFor="wallet-service-rpc">Wallet-service RPC URL</label>
+          <label htmlFor="wallet-gateway-rpc">Wallet gateway RPC URL</label>
           <GhostButton
             type="button"
             onClick={() => {
@@ -67,7 +67,7 @@ export const ConnectionSettingsView = (): JSX.Element => {
           </GhostButton>
         </div>
         <TextInput
-          id="wallet-service-rpc"
+          id="wallet-gateway-rpc"
           type="url"
           className="font-mono"
           value={draft.walletServiceRpcUrl}

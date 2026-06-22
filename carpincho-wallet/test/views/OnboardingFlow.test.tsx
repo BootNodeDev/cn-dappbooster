@@ -82,7 +82,7 @@ describe('OnboardingFlow', () => {
   it('shows step 2 (Configure RPC) when the vault exists but no account, with step 1 complete', () => {
     installHealthyWalletService()
     renderFlow({ hasVault: true, accounts: [] })
-    assert.ok(screen.getByLabelText(/wallet-service rpc url/i))
+    assert.ok(screen.getByLabelText(/wallet gateway rpc url/i))
     assert.equal(screen.getByTestId('step-1').getAttribute('data-state'), 'complete')
     assert.equal(screen.getByTestId('step-2').getAttribute('aria-current'), 'step')
   })
@@ -90,7 +90,7 @@ describe('OnboardingFlow', () => {
   it('does not skip the RPC step to the account step on reload (vault exists, no account)', () => {
     installHealthyWalletService()
     renderFlow({ hasVault: true, accounts: [] })
-    assert.ok(screen.getByLabelText(/wallet-service rpc url/i))
+    assert.ok(screen.getByLabelText(/wallet gateway rpc url/i))
     assert.equal(screen.queryByTestId('add-account-hint-input'), null)
   })
 

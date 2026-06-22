@@ -12,7 +12,7 @@ const coerceMessage = (message: unknown, code: number): string => {
     return message
   }
   try {
-    return JSON.stringify(message) ?? `wallet-service error ${code}`
+    return JSON.stringify(message) ?? `wallet gateway error ${code}`
   } catch {
     return String(message)
   }
@@ -81,7 +81,7 @@ export const walletServiceRequest = async <T>(
 
   if (!response.ok) {
     const body = await response.text().catch(() => '')
-    throw new Error(`wallet-service HTTP ${response.status}${body === '' ? '' : `: ${body}`}`)
+    throw new Error(`wallet gateway HTTP ${response.status}${body === '' ? '' : `: ${body}`}`)
   }
 
   const payload = (await response.json()) as {
@@ -94,29 +94,29 @@ export const walletServiceRequest = async <T>(
   return payload.result as T
 }
 
-// Reads the wallet-service dApp status so Carpincho uses the same network source as wallet-gateway.
+// Reads gateway status so Carpincho discovers the network through its single RPC endpoint.
 export const walletServiceStatus = async (
   options?: WalletServiceRequestOptions,
 ): Promise<WalletServiceStatusResponse> =>
   await walletServiceRequest<WalletServiceStatusResponse>('status', undefined, options)
 
-// Extracts the active network id and fails when wallet-service cannot provide one.
+// Extracts the active network id and fails when the gateway cannot provide one.
 export const networkIdFromWalletServiceStatus = (status: WalletServiceStatusResponse): string => {
   const networkId = status.network?.networkId?.trim()
   if (networkId === undefined || networkId === '') {
-    throw new Error('wallet-service status did not include networkId')
+    throw new Error('wallet gateway status did not include networkId')
   }
   return networkId
 }
 
-// Discovers the active Canton network from wallet-service status.
+// Discovers the active Canton network from gateway status.
 export const getWalletServiceNetworkId = async (
   options?: WalletServiceRequestOptions,
 ): Promise<string> => networkIdFromWalletServiceStatus(await walletServiceStatus(options))
 
 type AdminRequestOptions = WalletServiceRequestOptions
 
-// Reuses the configured JSON-RPC base so admin utilities follow the same wallet-service target.
+// Reuses the configured JSON-RPC base so admin utilities follow the same gateway target.
 const adminUrl = async (path: string, options?: AdminRequestOptions): Promise<string> => {
   const base =
     options?.rpcUrl?.trim() === undefined || options.rpcUrl.trim() === ''
@@ -137,12 +137,12 @@ export const walletServiceAdminPost = async <TResult>(
   })
   if (!response.ok) {
     const text = await response.text().catch(() => '')
-    throw new Error(`wallet-service HTTP ${response.status}${text === '' ? '' : `: ${text}`}`)
+    throw new Error(`wallet gateway HTTP ${response.status}${text === '' ? '' : `: ${text}`}`)
   }
   return (await response.json()) as TResult
 }
 
-// Sends compiled DAML archives as raw bytes so wallet-service can keep the ledger token boundary.
+// Sends compiled DAML archives as raw bytes so the gateway keeps the ledger token boundary.
 export const uploadDarFile = async (
   file: File,
   options?: AdminRequestOptions,
@@ -154,7 +154,7 @@ export const uploadDarFile = async (
   })
   if (!response.ok) {
     const text = await response.text().catch(() => '')
-    throw new Error(`wallet-service HTTP ${response.status}${text === '' ? '' : `: ${text}`}`)
+    throw new Error(`wallet gateway HTTP ${response.status}${text === '' ? '' : `: ${text}`}`)
   }
   return (await response.json()) as DarUploadResponse
 }
