@@ -24,10 +24,11 @@ export const Copyable = ({
 }: CopyableProps): JSX.Element => {
   const [copied, setCopied] = useState(false)
   const onCopy = (): void => {
-    copyText(value, successMessage ?? `${label} copied`)
-    setCopied(true)
-    const handle = setTimeout(() => setCopied(false), COPIED_RESET_MS)
-    ;(handle as unknown as { unref?: () => void }).unref?.()
+    copyText(value, successMessage ?? `${label} copied`, () => {
+      setCopied(true)
+      const handle = setTimeout(() => setCopied(false), COPIED_RESET_MS)
+      ;(handle as unknown as { unref?: () => void }).unref?.()
+    })
   }
   return (
     <button
