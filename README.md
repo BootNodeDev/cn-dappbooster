@@ -5,28 +5,31 @@ Local Canton Network stack for wallet-first dApp experiments.
 ```mermaid
 flowchart TD
   fe["dapp/frontend<br/>dApp frontend<br/>http://localhost:3012"]
-  wallet["carpincho-wallet<br/>Vault + signer<br/>http://localhost:3011"]
-  ws["canton-barebones/wallet-service<br/>External-party bridge<br/>http://localhost:3010"]
+  wallet["carpincho-wallet<br/>Vault + signer<br/>http://localhost:3013 in devkit mode"]
+  devkit["canton-barebones/wallet-gateway-devkit<br/>Facade + dev helpers<br/>http://localhost:3011"]
+  wg["official wallet-gateway<br/>http://localhost:3010"]
   au["Splice app-user<br/>primary local validator<br/>JSON API http://localhost:2975"]
   sv["Splice sv<br/>SV / DSO / synchronizer side"]
   scan["Scan<br/>Splice read model<br/>http://scan.localhost:4000"]
   dar["dapp/daml<br/>quickstart-tally DAR"]
 
   fe <-->|"Injected CIP-0103 provider<br/>optional WalletConnect"| wallet
-  wallet -->|"external-party onboarding"| ws
-  wallet -->|"Scan API / token metadata"| scan
-  ws -->|"Bearer CANTON_BACKEND_TOKEN"| au
+  wallet -->|"one configured RPC URL<br/>/rpc"| devkit
+  devkit -->|"proxy standard wallet-gateway routes"| wg
+  devkit -->|"Scan API / token metadata"| scan
+  devkit -->|"configured Canton auth<br/>dev helpers"| au
+  wg -->|"LocalNet network config"| au
   au <--> sv
   sv -->|"indexed Splice read model"| scan
   dar -->|"deploy package"| au
 ```
 
 `canton:up` activates the official Splice LocalNet `sv` and `app-user` Docker
-profiles, then starts wallet-service. It does not start Keycloak or OIDC.
+profiles, then starts the wallet-gateway-devkit facade. It does not start Keycloak or OIDC.
 The app-provider UI containers are not started; a local compose override
 disables their Nginx routes. The official shared Canton/Splice containers still
 expose app-provider backend ports because the bundle bakes that config in.
-Splice and wallet-service share the `canton-barebones` Docker Compose project,
+Splice, wallet-gateway, and wallet-gateway-devkit share the `canton-barebones` Docker Compose project,
 so Docker groups the full local stack together.
 `app-user` is Splice's technical name for the primary local validator; it is not
 the Carpincho user.
@@ -52,25 +55,21 @@ Create the local env file:
 cp canton-barebones/.env.example canton-barebones/.env
 ```
 
-Generate the backend token and paste the printed `CANTON_BACKEND_TOKEN=...`
-line into `canton-barebones/.env`:
+Runtime endpoints are selected by `CANTON_ENVIRONMENT` from
+`canton-barebones/config/environments/<name>.json`. Carpincho only needs the
+gateway RPC URL.
 
-```bash
-npm run canton:token -- ledger-api-user
-```
-
-Token configuration:
+Auth configuration:
 
 | Name | What It Is | Who Uses It |
 | --- | --- | --- |
-| `CANTON_AUTH_AUDIENCE` | JWT audience recipe value | token script |
-| `CANTON_AUTH_SECRET` | local unsafe JWT signing secret | token script only |
-| `CANTON_BACKEND_TOKEN` | generated JWT pasted into `.env` | wallet-service |
-| Carpincho LocalNet token | generated JWT pasted into Carpincho settings | Carpincho |
+| `CANTON_ENVIRONMENT=localnet` | selects `config/environments/localnet.json` | wallet-gateway-devkit |
+| `CANTON_AUTH_SECRET` | LocalNet self-signed JWT secret | wallet-gateway-devkit |
+| `CANTON_OAUTH_CLIENT_ID` / `CANTON_OAUTH_CLIENT_SECRET` | OAuth credentials when the selected JSON uses OAuth | wallet-gateway-devkit |
+| `CANTON_AUTH_TOKEN` | externally obtained JWT when the selected JSON uses static-token auth | wallet-gateway-devkit |
 
-The token script uses `ledger-api-user` as the default JWT subject. Generate
-another token with the same script or reuse the backend token locally. Do not
-copy `CANTON_AUTH_SECRET` into Carpincho.
+`npm run canton:token -- ledger-api-user` is only needed when you explicitly
+want to generate a JWT for `static-token` mode or another manual client.
 
 Optional WalletConnect fallback:
 
@@ -90,6 +89,20 @@ npm run canton:up
 npm run canton:health
 ```
 
+`canton:up` is the default devkit mode. Use a specific mode when you need to
+switch the public gateway behavior:
+
+```bash
+npm run localnet:wallet-gateway:up          # Splice + official wallet-gateway
+npm run localnet:wallet-gateway-devkit:up   # Splice + wallet-gateway + devkit facade
+```
+
+The official wallet-gateway is always public on `http://localhost:3010`.
+Devkit mode also exposes wallet-gateway-devkit on `http://localhost:3011`.
+Carpincho should point at `http://localhost:3011/rpc` when you want the
+development helper RPCs. Devkit mode owns the Canton, Scan, validator, and
+registry URLs behind service configuration.
+
 Build and deploy the sample DAR:
 
 ```bash
@@ -97,16 +110,17 @@ npm run build-dar -- dapp/daml
 npm run deploy-dar -- dapp/daml/.daml/dist/quickstart-tally-0.0.1.dar
 ```
 
-Verify wallet-service:
+Verify wallet-gateway-devkit:
 
 ```bash
-npm run wallet-service:health
+npm run wallet-gateway-devkit:health
 ```
 
-Start Carpincho and the dApp:
+Start Carpincho and the dApp. Carpincho still defaults to `3011`; until that
+project moves, run it on another dev port when wallet-gateway-devkit is up:
 
 ```bash
-npm run wallet:dev
+npm --prefix carpincho-wallet run dev -- --host localhost --port 3013 --strictPort
 npm run app:dev
 ```
 
@@ -137,20 +151,21 @@ Developer mode enabled.
 
 | Service | What It Is | URL / Port | Who Uses It |
 | --- | --- | --- | --- |
-| wallet-service | Carpincho bridge for external-party onboarding | `http://localhost:3010` | Carpincho |
-| Carpincho wallet | Browser wallet UI/provider | `http://localhost:3011` | user/dApp |
+| wallet-gateway | Official wallet-gateway | `http://localhost:3010` | direct wallet-gateway clients/devkit |
+| wallet-gateway-devkit | Public facade for official wallet-gateway plus dev helpers | `http://localhost:3011` | Carpincho via `/rpc`, tools |
+| Carpincho wallet | Browser wallet UI/provider | `http://localhost:3013` during devkit mode | user/dApp |
 | dApp frontend | Example dApp | `http://localhost:3012` | user |
 | app-user Wallet UI | Official Splice wallet UI for app-user | `http://wallet.localhost:2000` | optional/manual |
 | app-user Ledger API | gRPC Ledger API | `grpc://localhost:2901` | SDK/tools |
-| app-user Admin API | gRPC Admin API | `grpc://localhost:2902` | wallet-service/tools |
+| app-user Admin API | gRPC Admin API | `grpc://localhost:2902` | wallet-gateway-devkit/tools |
 | app-user Validator API | Splice validator readiness/API | `http://localhost:2903` | health/tools |
-| app-user JSON API | JSON Ledger API | `http://localhost:2975` | wallet-service/tools |
-| app-user Validator proxy | wallet-sdk validator route | `http://localhost:2000/api/validator` | Carpincho |
+| app-user JSON API | JSON Ledger API | `http://localhost:2975` | wallet-gateway-devkit/tools |
+| app-user Validator proxy | wallet-sdk validator route | `http://localhost:2000/api/validator` | wallet-gateway-devkit/tools |
 | app-provider backend APIs | Official bundle backend wiring, unused here | `grpc://localhost:3901`, `grpc://localhost:3902`, `http://localhost:3903`, `http://localhost:3975` | not used |
 | app-provider UI port | Nginx port exposed by the bundle; routes disabled here | `http://localhost:3000` | not used |
 | Scan UI | Splice explorer/read model UI | `http://scan.localhost:4000` | optional/manual |
-| Scan API | Splice indexed API | `http://scan.localhost:4000/api/scan` | Carpincho/tools |
-| Amulet Registry | token metadata via scan proxy | `http://localhost:2000/api/validator/v0/scan-proxy` | Carpincho/tools |
+| Scan API | Splice indexed API | `http://scan.localhost:4000/api/scan` | wallet-gateway-devkit/tools |
+| Amulet Registry | token metadata via scan proxy | `http://localhost:2000/api/validator/v0/scan-proxy` | wallet-gateway-devkit/tools |
 | SV UI | Super Validator operations UI | `http://sv.localhost:4000` | optional/manual |
 | sv Ledger/Admin/JSON APIs | Official SV participant APIs | `grpc://localhost:4901`, `grpc://localhost:4902`, `http://localhost:4975` | Splice internals/tools |
 | sv Validator API | SV readiness/admin surface | `http://localhost:4903` | health checks |

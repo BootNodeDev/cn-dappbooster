@@ -7,7 +7,7 @@ This package starts the official Splice LocalNet bundle with:
 ```text
 sv
 app-user
-wallet-service
+wallet-gateway or wallet-gateway-devkit
 ```
 
 It does not start:
@@ -21,8 +21,9 @@ disables app-provider Nginx routes. The official shared Canton/Splice
 containers still expose app-provider backend ports because the bundle bakes
 that config in.
 
-Splice and wallet-service share the `canton-barebones` Docker Compose project,
-so Docker groups the full local stack together.
+Splice, wallet-gateway, and wallet-gateway-devkit share the
+`canton-barebones` Docker Compose project, so Docker groups the selected local
+stack together.
 
 `app-user` is Splice's primary local validator name. It is not the Carpincho
 user and not a product user.
@@ -31,12 +32,6 @@ user and not a product user.
 
 ```bash
 cp .env.example .env
-npm run token -- ledger-api-user
-```
-
-Paste the printed `CANTON_BACKEND_TOKEN=...` line into `.env`, then run:
-
-```bash
 npm run up
 npm run health
 ```
@@ -48,14 +43,61 @@ npm run canton:up
 npm run canton:health
 ```
 
+`npm run up` and `npm run canton:up` use devkit mode by default.
+
+## Gateway Modes
+
+Use one gateway mode per local stack:
+
+```bash
+npm run up:wallet-gateway          # Splice + official wallet-gateway
+npm run up:wallet-gateway-devkit   # Splice + wallet-gateway + devkit facade
+```
+
+From the repo root:
+
+```bash
+npm run localnet:wallet-gateway:up
+npm run localnet:wallet-gateway-devkit:up
+```
+
+The official wallet-gateway is always public on `http://localhost:3010`.
+In devkit mode, wallet-gateway-devkit is also public on `http://localhost:3011`.
+Carpincho points at `http://localhost:3011/rpc` when it needs devkit helper
+RPCs. Canton, Scan, validator, and registry URLs stay in the selected
+environment config.
+
+## Environment Config
+
+`CANTON_ENVIRONMENT` selects one JSON file from
+`config/environments/<name>.json`. That file owns public endpoints, network id,
+provider metadata, and the auth mode.
+
+Docker Compose passes only the selector and secrets into wallet-gateway-devkit:
+
+| Value | Purpose |
+| --- | --- |
+| `CANTON_ENVIRONMENT` | selects `localnet`, `devnet`, or `testnet` config |
+| `CANTON_AUTH_SECRET` | secret for `self-signed` environments |
+| `CANTON_OAUTH_CLIENT_ID` / `CANTON_OAUTH_CLIENT_SECRET` | secrets for OAuth environments |
+| `CANTON_AUTH_TOKEN` | secret for static-token environments |
+
+Splice LocalNet download/runtime settings live in `config/splice/localnet.env`.
+
 ## Auth
 
-The token script reads:
+wallet-gateway-devkit supports three auth modes through the selected environment
+JSON:
 
-```text
-CANTON_AUTH_AUDIENCE
-CANTON_AUTH_SECRET
-```
+| Mode | JSON fields | Secret env vars |
+| --- | --- | --- |
+| `self-signed` | `auth.audience`, optional `auth.subject` | `CANTON_AUTH_SECRET` |
+| `oauth-client-credentials` | `auth.tokenUrl`, optional `auth.scope` | `CANTON_OAUTH_CLIENT_ID`, `CANTON_OAUTH_CLIENT_SECRET` |
+| `static-token` | `auth.mode` only | `CANTON_AUTH_TOKEN` |
+
+The token script is optional. Use it only when you want a manual JWT for
+`static-token` mode or another client. It reads the selected environment JSON
+and `CANTON_AUTH_SECRET`.
 
 It prints a JWT. It does not edit `.env`. Pass a subject as the first argument
 only if LocalNet expects something other than `ledger-api-user`.
@@ -63,11 +105,11 @@ only if LocalNet expects something other than `ledger-api-user`.
 Do not put `CANTON_AUTH_SECRET` in Carpincho. Generate a token and paste only
 the token.
 
-## Wallet Service
+## Wallet Gateway Devkit
 
-`npm run up` starts `wallet-service` after app-user is ready.
+`npm run up` starts wallet-gateway-devkit after app-user is ready.
 
-wallet-service points to app-user:
+wallet-gateway-devkit points to app-user through `config/environments/localnet.json`:
 
 ```text
 JSON API   http://host.docker.internal:2975
@@ -75,14 +117,12 @@ Ledger API grpc://host.docker.internal:2901
 Admin API  grpc://host.docker.internal:2902
 ```
 
-Set `WALLET_SERVICE_MOCK=1` in `.env` to short-circuit Canton calls. Mock mode
-does not require `CANTON_BACKEND_TOKEN`.
-
 ## Services And Ports
 
 | Service | What It Is | URL / Port |
 | --- | --- | --- |
-| wallet-service | Carpincho bridge | `http://localhost:3010` |
+| wallet-gateway | official wallet-gateway | `http://localhost:3010` |
+| wallet-gateway-devkit | public facade plus dev helpers | `http://localhost:3011` |
 | app-user Wallet UI | official Splice wallet UI | `http://wallet.localhost:2000` |
 | app-user Ledger API | gRPC Ledger API | `grpc://localhost:2901` |
 | app-user Admin API | gRPC Admin API | `grpc://localhost:2902` |

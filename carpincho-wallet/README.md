@@ -2,10 +2,10 @@
 
 Standalone browser wallet for the Canton barebones.
 
-Carpincho is a wallet/provider UI with an encrypted local vault, an injected CIP-0103 browser provider, and optional WalletConnect support. A dApp connects to Carpincho through the injected provider by default; Carpincho answers wallet/provider requests and forwards Canton execution requests to the app's wallet-service JSON-RPC endpoint. A dApp must be explicitly approved per origin before Carpincho exposes accounts or signs for it: an unapproved site sees no accounts, and the first `connect` opens an approval prompt in Carpincho.
+Carpincho is a wallet/provider UI with an encrypted local vault, an injected CIP-0103 browser provider, and optional WalletConnect support. A dApp connects to Carpincho through the injected provider by default; Carpincho answers wallet/provider requests and forwards Canton execution requests to one configured wallet-gateway-devkit JSON-RPC endpoint. Canton, Scan, validator, and registry URLs live behind that endpoint. A dApp must be explicitly approved per origin before Carpincho exposes accounts or signs for it: an unapproved site sees no accounts, and the first `connect` opens an approval prompt in Carpincho.
 
 ```text
-dApp frontend -> injected CIP-0103 provider -> carpincho-wallet -> wallet-service /rpc -> Canton participant
+dApp frontend -> injected CIP-0103 provider -> carpincho-wallet -> wallet-gateway-devkit /rpc -> Canton participant
 ```
 
 ## Browser extension

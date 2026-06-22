@@ -1,45 +1,64 @@
-# Wallet Service
+# Wallet Gateway Devkit
 
-Express JSON-RPC bridge between Carpincho and the Splice LocalNet `app-user`
-participant.
+Express facade that composes the official Canton wallet-gateway with
+development helpers for Carpincho and local dApp work.
 
 It is intentionally app-agnostic: app-specific Daml commands come from the
-consumer, Carpincho owns signing and approval UI, and this service only handles
-Canton connectivity, participant reads, prepared transaction execution, and
-wallet-internal party onboarding.
+consumer, Carpincho owns signing and approval UI, and this package only handles
+Canton connectivity, participant reads, prepared transaction execution,
+wallet-internal party onboarding, and helper RPCs useful during development.
+
+The selected environment config can define the upstream official
+wallet-gateway. Unclaimed HTTP routes are proxied there, while devkit keeps its
+own public port for helper RPCs.
+Carpincho should point only at the devkit RPC URL; Canton, Scan, validator, and
+registry URLs are configured in this service, not in the wallet.
 
 ## Run
 
 `npm run canton:up` (the root [quick start](../../README.md#quick-start)) brings
-this service up alongside Postgres and Canton. Verify it from the repo root:
+wallet-gateway-devkit up alongside Splice LocalNet and the official
+wallet-gateway. Verify it from the repo root:
 
 ```bash
-npm run wallet-service:health
+npm run wallet-gateway-devkit:health
 ```
 
-## Token
+## Auth
 
-Real Canton calls require a bearer token accepted by Splice LocalNet.
-wallet-service does not mint this token at boot. It requires
-`CANTON_BACKEND_TOKEN`.
+Real Canton calls require a bearer token accepted by the target participant.
+wallet-gateway-devkit owns this auth boundary. `CANTON_ENVIRONMENT` selects
+`../../config/environments/<name>.json`; that JSON owns endpoints, network id,
+provider metadata, and auth mode.
 
-Generate one from the repo root:
-
-```bash
-npm run canton:token -- ledger-api-user
-```
-
-Paste the printed `CANTON_BACKEND_TOKEN=...` line into
-`canton-barebones/.env`, then start the stack.
+| Mode | JSON fields | Secret env vars |
+| --- | --- | --- |
+| `self-signed` | `auth.audience`, optional `auth.subject` | `CANTON_AUTH_SECRET` |
+| `oauth-client-credentials` | `auth.tokenUrl`, optional `auth.scope` | `CANTON_OAUTH_CLIENT_ID`, `CANTON_OAUTH_CLIENT_SECRET` |
+| `static-token` | `auth.mode` only | `CANTON_AUTH_TOKEN` |
 
 ## API Boundary
 
-The public dApp surface is CIP-0103. Carpincho exposes that provider to dApps;
-this service exposes only the HTTP JSON-RPC bridge Carpincho needs at:
+The public dApp surface is CIP-0103. Carpincho exposes that provider to dApps.
+wallet-gateway-devkit exposes the HTTP JSON-RPC bridge Carpincho needs at:
 
 ```text
-POST /rpc
+POST http://localhost:3011/rpc
 ```
+
+Devkit also exposes:
+
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /health` | Devkit health and active network metadata. |
+| `GET /devkit/info` | Devkit provider metadata for local tooling. |
+
+When an upstream wallet-gateway is configured, routes not owned by devkit are
+forwarded to that upstream. In localnet devkit mode, `/api/v0/dapp`,
+`/api/v0/user`, `/login`, and `/readyz` come from the official wallet-gateway
+container. The official wallet-gateway is also public at `http://localhost:3010`.
+Carpincho does not need those routes for the current flow; it uses `/rpc` and
+lets RPC methods reach the configured Canton stack.
 
 - [CIP-0103 Provider API](https://github.com/canton-foundation/cips/blob/main/cip-0103/cip-0103.md#provider-api)
 - [CIP-0103 Synchronous dApp API](https://github.com/canton-foundation/cips/blob/main/cip-0103/cip-0103.md#synchronous-dapp-api)
@@ -51,7 +70,7 @@ Service-specific methods:
 | -------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `prepareTransaction` | Carpincho                       | Calls Canton interactive submission prepare and returns the prepared transaction payload/hash for local signing. |
 | `executePrepared`    | Carpincho                       | Submits Carpincho's signature over a prepared transaction to Canton.                                             |
-| `ledgerApi`          | Carpincho on behalf of the dApp | Proxies app-user JSON API reads/writes and injects `CANTON_BACKEND_TOKEN`.                                       |
+| `ledgerApi`          | Carpincho on behalf of the dApp | Proxies app-user JSON API reads/writes and injects the configured Canton bearer token.                           |
 
 ### CIP-56 token methods
 

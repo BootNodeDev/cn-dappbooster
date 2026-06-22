@@ -57,10 +57,10 @@ Subproject docs must not restate root rules. They should describe only their loc
 
 | Path | Purpose | Stack | Port |
 |------|---------|-------|------|
-| [`canton-barebones/`](canton-barebones/) | Local Canton participant + Postgres via docker-compose; deploy + health + token scripts | Docker, Bash, Node scripts | 3013/3014/3015/3016/3017/3018 |
+| [`canton-barebones/`](canton-barebones/) | Local Canton participant + Postgres via docker-compose; deploy + health + token scripts | Docker, Bash, Node scripts | 3010/3011 + Splice ports |
 | [`dapp/daml/`](dapp/daml/) | `quickstart-tally` DAML model | DAML | n/a (DAR artifact) |
-| [`canton-barebones/wallet-gateway-devkit/`](canton-barebones/wallet-gateway-devkit/) | JSON-RPC bridge between the wallet and the Canton participant. Started by `npm run canton:up`. Uses an explicit Canton JWT from `.env`. | Node + Express + TypeScript | 3010 |
-| [`carpincho-wallet/`](carpincho-wallet/) | CIP-0103 wallet — vault, signing, WalletConnect, Chrome extension | Vite 6 + React 18 + Tailwind v4 + Biome | 3011 |
+| [`canton-barebones/wallet-gateway-devkit/`](canton-barebones/wallet-gateway-devkit/) | JSON-RPC bridge between the wallet and the Canton participant. Started by `npm run canton:up`. Reads endpoints from environment config and secrets from `.env`. | Node + Express + TypeScript | 3011 |
+| [`carpincho-wallet/`](carpincho-wallet/) | CIP-0103 wallet — vault, signing, WalletConnect, Chrome extension | Vite 6 + React 18 + Tailwind v4 + Biome | 3011 default; use 3013 with devkit |
 | [`dapp/frontend/`](dapp/frontend/) | dApp UI | Vite + React + Tailwind v4 + Radix UI + Biome | 3012 |
 | [`dapp/e2e/`](dapp/e2e/) | dApp integration tests | Playwright + TypeScript | n/a |
 | [`canton-connect-kit/`](canton-connect-kit/) | wagmi-style React hooks for connecting Canton dApps to CIP-0103 wallets | TypeScript + React 18 + Biome | n/a (library) |

@@ -87,6 +87,6 @@ Each hook exposes one consumer-facing concern:
 
 ## Boundaries
 
-This package must not depend on the scaffold's dApp, wallet, or wallet-service internals. Its stable boundary is the CIP-0103 provider surface plus `@canton-network/dapp-sdk`.
+This package must not depend on the scaffold's dApp, wallet, or wallet-gateway-devkit internals. Its stable boundary is the CIP-0103 provider surface plus `@canton-network/dapp-sdk`.
 
 For the full local stack around this package, see the root [`architecture.md`](../architecture.md).
