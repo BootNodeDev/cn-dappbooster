@@ -2,7 +2,7 @@ import { defineConfig } from '@playwright/test'
 
 // All endpoints and artifact paths are env-driven so the suite can target either
 // the in-tree dev stack (default) or a published-package monorepo build later.
-const WALLET_GATEWAY_DEVKIT_URL = process.env.WALLET_GATEWAY_DEVKIT_URL ?? 'http://localhost:3011'
+const WALLET_GATEWAY_TOOLS_URL = process.env.WALLET_GATEWAY_TOOLS_URL ?? 'http://localhost:3011'
 const DAPP_URL = process.env.DAPP_URL ?? 'http://localhost:3012'
 
 export default defineConfig({
@@ -30,7 +30,7 @@ export default defineConfig({
         // The fixture file resolves baseURL / endpoints from env.
       },
       metadata: {
-        walletGatewayDevkitUrl: WALLET_GATEWAY_DEVKIT_URL,
+        walletGatewayToolsUrl: WALLET_GATEWAY_TOOLS_URL,
         dappUrl: DAPP_URL,
       },
     },

@@ -2,8 +2,8 @@ import assert from 'node:assert/strict'
 import http from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { after, describe, it } from 'node:test'
-import { createWalletGatewayDevkitApp } from '../src/app.ts'
-import type { WalletGatewayDevkitConfig } from '../src/config.ts'
+import { createWalletGatewayToolsApp } from '../src/app.ts'
+import type { WalletGatewayToolsConfig } from '../src/config.ts'
 
 const servers: http.Server[] = []
 
@@ -26,12 +26,12 @@ after(async () => {
 })
 
 // Builds the smallest real-mode config needed by the Express app factory.
-const config = (upstreamUrl: string): WalletGatewayDevkitConfig => ({
+const config = (upstreamUrl: string): WalletGatewayToolsConfig => ({
   port: 3010,
   corsOrigins: ['http://localhost:3011'],
   network: 'canton:localnet',
   provider: {
-    id: 'wallet-gateway-devkit',
+    id: 'wallet-gateway-tools',
     version: '0.1.0',
     url: 'http://localhost:3010',
     userUrl: 'http://localhost:3010',
@@ -63,30 +63,30 @@ const listen = async (server: http.Server): Promise<string> => {
 }
 
 describe('wallet-gateway facade proxy', () => {
-  it('reports the devkit service identity on the local health endpoint', async () => {
+  it('reports the tools service identity on the local health endpoint', async () => {
     // Scenario: operators and container probes check the public facade URL. The
     // response should name the selected gateway service, not the old bridge name.
     const facadeUrl = await listen(
-      http.createServer(createWalletGatewayDevkitApp(config('http://127.0.0.1:9'))),
+      http.createServer(createWalletGatewayToolsApp(config('http://127.0.0.1:9'))),
     )
 
-    // Action: read the local health endpoint that is owned by the devkit facade.
+    // Action: read the local health endpoint that is owned by the tools facade.
     const response = await fetch(`${facadeUrl}/health`)
     const body = (await response.json()) as { ok: boolean; service: string }
 
-    // Expected result: health confirms the devkit service that users selected.
+    // Expected result: health confirms the tools service that users selected.
     assert.equal(response.status, 200)
     assert.deepEqual(body, {
       ok: true,
-      service: 'wallet-gateway-devkit',
+      service: 'wallet-gateway-tools',
       network: 'canton:localnet',
     })
   })
 
   it('forwards standard wallet-gateway requests to the configured upstream', async () => {
-    // Scenario: devkit mode exposes one public service. Requests for the
+    // Scenario: tools mode exposes one public service. Requests for the
     // official wallet-gateway API must pass through unchanged so existing
-    // wallet-gateway consumers can point at the devkit facade URL.
+    // wallet-gateway consumers can point at the tools facade URL.
     let seen: { url?: string; method?: string; body?: string } = {}
     const upstreamUrl = await listen(
       http.createServer((req, res) => {
@@ -106,7 +106,7 @@ describe('wallet-gateway facade proxy', () => {
       }),
     )
     const facadeUrl = await listen(
-      http.createServer(createWalletGatewayDevkitApp(config(upstreamUrl))),
+      http.createServer(createWalletGatewayToolsApp(config(upstreamUrl))),
     )
 
     // Action: send a representative JSON-RPC call to the upstream dApp path

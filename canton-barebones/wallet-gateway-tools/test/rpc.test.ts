@@ -8,7 +8,7 @@ const baseConfig = () => ({
   corsOrigins: ['http://localhost:3011'],
   network: 'canton:local',
   provider: {
-    id: 'wallet-gateway-devkit',
+    id: 'wallet-gateway-tools',
     version: '0.1.0',
     url: 'http://localhost:3010',
     userUrl: 'http://localhost:3010',
@@ -192,7 +192,7 @@ describe('ledgerApi pass-through', () => {
 
 describe('CIP-56 token helpers', () => {
   it('lists pending transfers through the SDK token namespace without reshaping contracts', async () => {
-    // Scenario: wallet-gateway-devkit owns the Node-only wallet-sdk dependency, but
+    // Scenario: wallet-gateway-tools owns the Node-only wallet-sdk dependency, but
     // Carpincho should still see the SDK contract payload directly so future
     // browser-SDK migration does not need a second DTO translation.
     const pendingContracts = [
@@ -252,7 +252,7 @@ describe('CIP-56 token helpers', () => {
   it('prepares an accept-transfer command through the SDK token namespace', async () => {
     // Scenario: accepting a pending CIP-56 transfer requires SDK registry
     // context, but Carpincho must still sign the prepared transaction itself.
-    // wallet-gateway-devkit returns the SDK command and disclosed contracts only.
+    // wallet-gateway-tools returns the SDK command and disclosed contracts only.
     const disclosedContracts = [{ contractId: 'registry-context-cid', createdEventBlob: 'blob' }]
     const seen: { transferInstructionCid?: string; registryUrl?: string } = {}
     const rpc = createRpc(withToken(), {
@@ -286,7 +286,7 @@ describe('CIP-56 token helpers', () => {
   })
 
   it('prepares a token transfer command through the SDK token namespace', async () => {
-    // Scenario: sending CIP-56 tokens requires wallet-gateway-devkit to ask the
+    // Scenario: sending CIP-56 tokens requires wallet-gateway-tools to ask the
     // Node-only SDK for transfer commands, while Carpincho remains responsible
     // for signing the prepared transaction hash with the sender's local key.
     const disclosedContracts = [{ contractId: 'transfer-context-cid', createdEventBlob: 'blob' }]
@@ -770,7 +770,7 @@ describe('CIP-56 token helpers', () => {
 
   it('lists token holding UTXOs through the SDK token namespace without reshaping contracts', async () => {
     // Scenario: Carpincho needs the active CIP-56 holdings for a party, but the
-    // Node-only wallet SDK must stay behind wallet-gateway-devkit. The RPC returns the
+    // Node-only wallet SDK must stay behind wallet-gateway-tools. The RPC returns the
     // SDK holding contracts unchanged so the browser boundary remains thin.
     const holdingContracts = [
       {

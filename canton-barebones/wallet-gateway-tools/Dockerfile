@@ -11,16 +11,16 @@ COPY package.json package-lock.json ./
 COPY canton-connect-kit/package.json canton-connect-kit/
 COPY carpincho-wallet/package.json carpincho-wallet/
 COPY canton-barebones/package.json canton-barebones/
-COPY canton-barebones/wallet-gateway-devkit/package.json canton-barebones/wallet-gateway-devkit/
+COPY canton-barebones/wallet-gateway-tools/package.json canton-barebones/wallet-gateway-tools/
 COPY dapp/daml/package.json dapp/daml/
 COPY dapp/e2e/package.json dapp/e2e/
 COPY dapp/frontend/package.json dapp/frontend/
 # --ignore-scripts skips the root husky prepare hook (no .git in the image) and
-# unrelated workspace postinstalls; the devkit build needs none of them.
+# unrelated workspace postinstalls; the tools build needs none of them.
 RUN npm ci --ignore-scripts
-COPY canton-barebones/wallet-gateway-devkit/tsconfig.json canton-barebones/wallet-gateway-devkit/
-COPY canton-barebones/wallet-gateway-devkit/src canton-barebones/wallet-gateway-devkit/src
-RUN npm run build --workspace @canton-dappbooster/wallet-gateway-devkit
+COPY canton-barebones/wallet-gateway-tools/tsconfig.json canton-barebones/wallet-gateway-tools/
+COPY canton-barebones/wallet-gateway-tools/src canton-barebones/wallet-gateway-tools/src
+RUN npm run build --workspace @canton-dappbooster/wallet-gateway-tools
 
 FROM node:24-alpine AS run
 WORKDIR /app
@@ -30,12 +30,12 @@ COPY package.json package-lock.json ./
 COPY canton-connect-kit/package.json canton-connect-kit/
 COPY carpincho-wallet/package.json carpincho-wallet/
 COPY canton-barebones/package.json canton-barebones/
-COPY canton-barebones/wallet-gateway-devkit/package.json canton-barebones/wallet-gateway-devkit/
+COPY canton-barebones/wallet-gateway-tools/package.json canton-barebones/wallet-gateway-tools/
 COPY dapp/daml/package.json dapp/daml/
 COPY dapp/e2e/package.json dapp/e2e/
 COPY dapp/frontend/package.json dapp/frontend/
 RUN npm ci --omit=dev --ignore-scripts
-COPY --from=build /app/canton-barebones/wallet-gateway-devkit/dist canton-barebones/wallet-gateway-devkit/dist
-WORKDIR /app/canton-barebones/wallet-gateway-devkit
+COPY --from=build /app/canton-barebones/wallet-gateway-tools/dist canton-barebones/wallet-gateway-tools/dist
+WORKDIR /app/canton-barebones/wallet-gateway-tools
 EXPOSE 3010
 CMD ["node", "dist/server.js"]

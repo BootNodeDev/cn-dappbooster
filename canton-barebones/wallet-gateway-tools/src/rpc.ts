@@ -1,6 +1,6 @@
 import { SDK } from '@canton-network/wallet-sdk'
 import { type AuthProvider, createAuthProvider } from './auth.ts'
-import type { WalletGatewayDevkitConfig } from './config.ts'
+import type { WalletGatewayToolsConfig } from './config.ts'
 import type {
   ConnectResult,
   JsonRpcError,
@@ -281,7 +281,7 @@ export const rpcError = (
 const unsupported = (id: JsonRpcId, method: string): JsonRpcError =>
   rpcError(id, -32004, 'Method not supported', {
     method,
-    reason: 'This wallet-gateway-devkit has no private keys. Carpincho signs.',
+    reason: 'This wallet-gateway-tools has no private keys. Carpincho signs.',
   })
 
 // SDK rejections are plain JsCantonError objects ({ code, cause, ... }), not
@@ -328,7 +328,7 @@ export const objectParam = <T>(params: unknown, name: string): T => {
   return params as T
 }
 
-export const buildProvider = (p: WalletGatewayDevkitConfig['provider']): Provider => ({
+export const buildProvider = (p: WalletGatewayToolsConfig['provider']): Provider => ({
   id: p.id,
   clientType: 'remote',
   version: p.version,
@@ -524,7 +524,7 @@ export type Rpc = {
   getSdk: () => Promise<WalletSdk>
 }
 
-export const createRpc = (config: WalletGatewayDevkitConfig, deps: RpcDependencies = {}): Rpc => {
+export const createRpc = (config: WalletGatewayToolsConfig, deps: RpcDependencies = {}): Rpc => {
   const sdkFactory: SdkFactory =
     deps.sdkFactory ??
     (async (options: unknown) => {
@@ -831,7 +831,7 @@ export const createRpc = (config: WalletGatewayDevkitConfig, deps: RpcDependenci
       try {
         return await scanAmuletHoldingSummary(partyId, instrumentId)
       } catch (error) {
-        console.warn('[wallet-gateway-devkit] scan holding summary fallback', errorData(error))
+        console.warn('[wallet-gateway-tools] scan holding summary fallback', errorData(error))
       }
     }
     return summarizeHoldingUtxos(await listHoldingUtxos(partyId), instrumentId)
@@ -1121,7 +1121,7 @@ export const createRpc = (config: WalletGatewayDevkitConfig, deps: RpcDependenci
           return rpcError(id, -32601, 'Method not found', { method: request.method })
       }
     } catch (error) {
-      console.error('[wallet-gateway-devkit] rpc failed', {
+      console.error('[wallet-gateway-tools] rpc failed', {
         id,
         method: request.method,
         error: errorData(error),
@@ -1141,7 +1141,7 @@ export const createRpc = (config: WalletGatewayDevkitConfig, deps: RpcDependenci
   }
 
   const serviceInfo = (): Record<string, unknown> => ({
-    service: 'wallet-gateway-devkit',
+    service: 'wallet-gateway-tools',
     rpcEndpoint: '/rpc',
     api: 'Carpincho service bridge over JSON-RPC 2.0',
     dappApi: 'CIP-0103 is exposed by Carpincho over WalletConnect; this service has no signer.',

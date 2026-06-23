@@ -1,4 +1,4 @@
-# Wallet Gateway Devkit
+# Wallet Gateway Tools
 
 Express facade that composes the official Canton wallet-gateway with
 development helpers for Carpincho and local dApp work.
@@ -8,16 +8,16 @@ consumer, Carpincho owns signing and approval UI, and this package only handles
 Canton connectivity, participant reads, prepared transaction execution,
 wallet-internal party onboarding, and helper RPCs useful during development.
 
-`../env/.env.wallet-gateway-devkit` defines the upstream official wallet-gateway.
-Unclaimed HTTP routes are proxied there, while devkit keeps its own public port
+`../env/.env.wallet-gateway-tools` defines the upstream official wallet-gateway.
+Unclaimed HTTP routes are proxied there, while tools keeps its own public port
 for helper RPCs.
-Carpincho should point only at the devkit RPC URL; Canton, Scan, validator, and
+Carpincho should point only at the tools RPC URL; Canton, Scan, validator, and
 registry URLs are configured in this service, not in the wallet.
 
 ## Run
 
 `npm run canton:up` (the root [quick start](../../README.md#quick-start)) brings
-wallet-gateway-devkit up alongside Splice LocalNet and the official
+wallet-gateway-tools up alongside Splice LocalNet and the official
 wallet-gateway. Verify it from the repo root:
 
 ```bash
@@ -27,9 +27,9 @@ curl -fsS http://localhost:3011/health
 ## Auth
 
 Real Canton calls require a bearer token accepted by the target participant.
-wallet-gateway-devkit owns this auth boundary. It reads endpoints, network id,
+wallet-gateway-tools owns this auth boundary. It reads endpoints, network id,
 provider metadata, auth mode, and secrets directly from
-`../env/.env.wallet-gateway-devkit`.
+`../env/.env.wallet-gateway-tools`.
 
 | Mode | Required values |
 | --- | --- |
@@ -40,21 +40,21 @@ provider metadata, auth mode, and secrets directly from
 ## API Boundary
 
 The public dApp surface is CIP-0103. Carpincho exposes that provider to dApps.
-wallet-gateway-devkit exposes the HTTP JSON-RPC bridge Carpincho needs at:
+wallet-gateway-tools exposes the HTTP JSON-RPC bridge Carpincho needs at:
 
 ```text
 POST http://localhost:3011/rpc
 ```
 
-Devkit also exposes:
+Tools also exposes:
 
 | Endpoint | Purpose |
 | --- | --- |
-| `GET /health` | Devkit health and active network metadata. |
-| `GET /devkit/info` | Devkit provider metadata for local tooling. |
+| `GET /health` | Tools health and active network metadata. |
+| `GET /tools/info` | Tools provider metadata for local tooling. |
 
-When an upstream wallet-gateway is configured, routes not owned by devkit are
-forwarded to that upstream. In localnet devkit mode, `/api/v0/dapp`,
+When an upstream wallet-gateway is configured, routes not owned by tools are
+forwarded to that upstream. In localnet tools mode, `/api/v0/dapp`,
 `/api/v0/user`, `/login`, and `/readyz` come from the official wallet-gateway
 container. The official wallet-gateway is also public at `http://localhost:3010`.
 Carpincho does not need those routes for the current flow; it uses `/rpc` and

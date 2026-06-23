@@ -2,7 +2,7 @@
 
 Integration tests across the cn-dappbooster's four packages.
 
-- Test the cross-package wiring: dApp ↔ wallet ↔ wallet-gateway-devkit ↔ Canton
+- Test the cross-package wiring: dApp ↔ wallet ↔ wallet-gateway-tools ↔ Canton
 - Drive real browser sessions with the Carpincho extension loaded
 - Verify wire shapes against the documented public surfaces
 - Run deterministically in CI

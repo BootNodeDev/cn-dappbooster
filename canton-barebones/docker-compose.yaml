@@ -22,20 +22,20 @@ services:
       retries: 30
       start_period: 5s
 
-  wallet-gateway-devkit:
+  wallet-gateway-tools:
     build:
       context: ..
-      dockerfile: canton-barebones/wallet-gateway-devkit/Dockerfile
-    container_name: canton-barebones-wallet-gateway-devkit
+      dockerfile: canton-barebones/wallet-gateway-tools/Dockerfile
+    container_name: canton-barebones-wallet-gateway-tools
     depends_on:
       wallet-gateway:
         condition: service_healthy
     extra_hosts:
       - "host.docker.internal:host-gateway"
     env_file:
-      - ./env/.env.wallet-gateway-devkit
+      - ./env/.env.wallet-gateway-tools
     ports:
-      - "${WALLET_GATEWAY_DEVKIT_PORT:-3011}:3010"
+      - "${WALLET_GATEWAY_TOOLS_PORT:-3011}:3010"
 
 volumes:
   wallet-gateway-data:

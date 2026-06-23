@@ -1,7 +1,7 @@
 // End-to-end test for the wallet-pushed `txChanged` dapp-api event lifecycle.
 //
 // Carpincho's pending-approval flow orchestrates: prepareTransaction (wallet-
-// service) → local sign with the vault key → executePrepared (wallet-gateway-devkit).
+// service) → local sign with the vault key → executePrepared (wallet-gateway-tools).
 // Per the dapp-api spec, the wallet should emit `txChanged` events at each
 // transition: pending → signed → executed (or failed).
 //

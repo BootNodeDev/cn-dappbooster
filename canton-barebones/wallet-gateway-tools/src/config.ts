@@ -1,6 +1,6 @@
 import type { CantonAuthConfig } from './auth.ts'
 
-export interface WalletGatewayDevkitConfig {
+export interface WalletGatewayToolsConfig {
   port: number
   corsOrigins: string[]
   network: string
@@ -77,7 +77,7 @@ const authMode = (): AuthMode => {
   return mode
 }
 
-// Resolves the Canton auth recipe from the devkit service env file.
+// Resolves the Canton auth recipe from the tools service env file.
 const loadAuthConfig = (): CantonAuthConfig => {
   const mode = authMode()
   switch (mode) {
@@ -105,13 +105,13 @@ const loadAuthConfig = (): CantonAuthConfig => {
   }
 }
 
-// Builds the runtime config directly from the devkit service env file.
-export const loadConfig = (): WalletGatewayDevkitConfig => ({
+// Builds the runtime config directly from the tools service env file.
+export const loadConfig = (): WalletGatewayToolsConfig => ({
   port: optionalNumber('PORT', 3010),
   corsOrigins: csv('CORS_ORIGINS', ['http://localhost:3013']),
   network: optional('NETWORK') ?? 'canton:localnet',
   provider: {
-    id: optional('PROVIDER_ID') ?? 'wallet-gateway-devkit',
+    id: optional('PROVIDER_ID') ?? 'wallet-gateway-tools',
     version: optional('PROVIDER_VERSION') ?? '0.1.0',
     url: optional('PROVIDER_URL') ?? 'http://localhost:3011',
     userUrl: optional('PROVIDER_USER_URL') ?? 'http://localhost:3011',

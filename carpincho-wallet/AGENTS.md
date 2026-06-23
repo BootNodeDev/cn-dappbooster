@@ -39,7 +39,7 @@ This file applies only to `carpincho-wallet/`. For monorepo-wide rules (commit s
 
 ## Architecture
 
-See [`architecture.md`](architecture.md) for project structure, data flow, and key abstractions inside the wallet. For how the wallet plugs into the rest of the monorepo (dApp, wallet-gateway-devkit, canton-barebones), see [`../architecture.md`](../architecture.md).
+See [`architecture.md`](architecture.md) for project structure, data flow, and key abstractions inside the wallet. For how the wallet plugs into the rest of the monorepo (dApp, wallet-gateway-tools, canton-barebones), see [`../architecture.md`](../architecture.md).
 
 ## Testing
 

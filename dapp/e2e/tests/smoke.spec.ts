@@ -2,35 +2,33 @@
 //
 // These tests deliberately do NOT exercise the full transaction flow — that's
 // Phase 2 work. Here we only verify the cross-package wiring works:
-//   * wallet-gateway-devkit responds with the post-Phase-1 surface
+//   * wallet-gateway-tools responds with the post-Phase-1 surface
 //   * Carpincho extension loads and announces via the discovery protocol
 //   * dApp page loads
 //
 // A failing smoke means the integration boundary is broken. Each test runs in
 // well under a second once the stack is up.
 
-import { DAPP_URL, expect, test, WALLET_GATEWAY_DEVKIT_URL } from '../fixtures/stack.ts'
+import { DAPP_URL, expect, test, WALLET_GATEWAY_TOOLS_URL } from '../fixtures/stack.ts'
 
 test.describe('cn-dappbooster integration smoke', () => {
-  test('wallet-gateway-devkit /health responds with the configured service', async ({
-    request,
-  }) => {
-    const response = await request.get(`${WALLET_GATEWAY_DEVKIT_URL}/health`)
+  test('wallet-gateway-tools /health responds with the configured service', async ({ request }) => {
+    const response = await request.get(`${WALLET_GATEWAY_TOOLS_URL}/health`)
     expect(response.ok()).toBe(true)
     const body = await response.json()
     expect(body).toMatchObject({
       ok: true,
-      service: 'wallet-gateway-devkit',
+      service: 'wallet-gateway-tools',
       network: 'canton:localnet',
     })
   })
 
-  test('wallet-gateway-devkit /devkit/info exposes the current helper surface', async ({
+  test('wallet-gateway-tools /tools/info exposes the current helper surface', async ({
     request,
   }) => {
-    // The devkit info endpoint is the discoverable contract for wallet-side tooling.
-    const response = await request.get(`${WALLET_GATEWAY_DEVKIT_URL}/devkit/info`)
-    // A healthy devkit must describe every RPC helper Carpincho can call through /rpc.
+    // The tools info endpoint is the discoverable contract for wallet-side tooling.
+    const response = await request.get(`${WALLET_GATEWAY_TOOLS_URL}/tools/info`)
+    // A healthy tools must describe every RPC helper Carpincho can call through /rpc.
     expect(response.ok()).toBe(true)
     const body = (await response.json()) as Record<string, unknown>
     // The method list intentionally includes unsigned helpers only; signing stays in Carpincho.

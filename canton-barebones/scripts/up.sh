@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # This script starts the Canton gateway layer. The default is Splice plus
-# wallet-gateway-devkit; callers can pass --no-splice for external Canton/Splice
+# wallet-gateway-tools; callers can pass --no-splice for external Canton/Splice
 # endpoints or wallet-gateway to expose only the official gateway.
 
 # Step 1: load shared config, logging, compose wrappers, and validation helpers.
@@ -14,21 +14,21 @@ source "$SCRIPT_DIR/splice-common.sh"
 
 cd "$ROOT"
 
-GATEWAY_MODE="wallet-gateway-devkit"
+GATEWAY_MODE="wallet-gateway-tools"
 WITH_SPLICE=1
 
 # Prints the supported startup modes without touching Docker.
 usage() {
   cat <<EOF
-Usage: npm run canton:up -- [--splice|--no-splice] [wallet-gateway|wallet-gateway-devkit]
+Usage: npm run canton:up -- [--splice|--no-splice] [wallet-gateway|wallet-gateway-tools]
 
 Defaults:
-  --splice wallet-gateway-devkit
+  --splice wallet-gateway-tools
 
 Examples:
   npm run canton:up
   npm run canton:up -- wallet-gateway
-  npm run canton:up -- --no-splice wallet-gateway-devkit
+  npm run canton:up -- --no-splice wallet-gateway-tools
 EOF
 }
 
@@ -45,7 +45,7 @@ while [ "$#" -gt 0 ]; do
     --no-splice)
       WITH_SPLICE=0
       ;;
-    wallet-gateway | wallet-gateway-devkit)
+    wallet-gateway | wallet-gateway-tools)
       GATEWAY_MODE="$1"
       ;;
     *)
@@ -85,11 +85,11 @@ wallet_gateway_compose() {
     "$@"
 }
 
-# Builds the local compose command for devkit mode, where devkit needs both env files.
-wallet_gateway_devkit_compose() {
+# Builds the local compose command for tools mode, where tools needs both env files.
+wallet_gateway_tools_compose() {
   docker compose \
     --env-file "$ROOT/env/.env.wallet-gateway" \
-    --env-file "$ROOT/env/.env.wallet-gateway-devkit" \
+    --env-file "$ROOT/env/.env.wallet-gateway-tools" \
     --project-directory "$ROOT" \
     "$@"
 }
@@ -102,14 +102,14 @@ start_wallet_gateway() {
   wait_http "http://localhost:${WALLET_GATEWAY_PORT:-3010}/readyz" "wallet-gateway" "${WALLET_GATEWAY_HEALTH_TIMEOUT_SECONDS:-120}"
 }
 
-# Starts wallet-gateway plus devkit; devkit owns /rpc and forwards gateway routes upstream.
-start_wallet_gateway_devkit() {
+# Starts wallet-gateway plus tools; tools owns /rpc and forwards gateway routes upstream.
+start_wallet_gateway_tools() {
   load_env_file "$ROOT/env/.env.wallet-gateway"
-  load_env_file "$ROOT/env/.env.wallet-gateway-devkit"
-  require_devkit_auth_config
-  log "Starting wallet-gateway-devkit"
-  COMPOSE_IGNORE_ORPHANS=true wallet_gateway_devkit_compose up -d --build wallet-gateway wallet-gateway-devkit
-  wait_http "http://localhost:${WALLET_GATEWAY_DEVKIT_PORT:-3011}/health" "wallet-gateway-devkit" "${WALLET_GATEWAY_DEVKIT_HEALTH_TIMEOUT_SECONDS:-120}"
+  load_env_file "$ROOT/env/.env.wallet-gateway-tools"
+  require_tools_auth_config
+  log "Starting wallet-gateway-tools"
+  COMPOSE_IGNORE_ORPHANS=true wallet_gateway_tools_compose up -d --build wallet-gateway wallet-gateway-tools
+  wait_http "http://localhost:${WALLET_GATEWAY_TOOLS_PORT:-3011}/health" "wallet-gateway-tools" "${WALLET_GATEWAY_TOOLS_HEALTH_TIMEOUT_SECONDS:-120}"
 }
 
 # Step 5: start the requested public gateway surface.
@@ -117,11 +117,11 @@ case "$GATEWAY_MODE" in
   wallet-gateway)
     start_wallet_gateway
     ;;
-  wallet-gateway-devkit)
-    start_wallet_gateway_devkit
+  wallet-gateway-tools)
+    start_wallet_gateway_tools
     ;;
   *)
-    die "Unknown gateway mode: $GATEWAY_MODE. Use wallet-gateway or wallet-gateway-devkit."
+    die "Unknown gateway mode: $GATEWAY_MODE. Use wallet-gateway or wallet-gateway-tools."
     ;;
 esac
 
@@ -132,7 +132,7 @@ Local stack is up:
   splice localnet         $WITH_SPLICE
   gateway mode            $GATEWAY_MODE
   wallet-gateway URL      http://localhost:${WALLET_GATEWAY_PORT:-3010}
-  devkit URL              http://localhost:${WALLET_GATEWAY_DEVKIT_PORT:-3011}
+  tools URL              http://localhost:${WALLET_GATEWAY_TOOLS_PORT:-3011}
   app-user wallet UI      http://wallet.localhost:2000
   app-user JSON API       http://localhost:2975
   app-user Ledger API     grpc://localhost:2901

@@ -7,7 +7,7 @@
     "canton-connect-kit",
     "carpincho-wallet",
     "canton-barebones",
-    "canton-barebones/wallet-gateway-devkit",
+    "canton-barebones/wallet-gateway-tools",
     "dapp/daml",
     "dapp/e2e",
     "dapp/frontend"

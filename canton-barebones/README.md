@@ -7,7 +7,7 @@ This package starts the official Splice LocalNet bundle with:
 ```text
 sv
 app-user
-wallet-gateway or wallet-gateway-devkit
+wallet-gateway or wallet-gateway-tools
 ```
 
 It does not start:
@@ -21,7 +21,7 @@ disables app-provider Nginx routes. The official shared Canton/Splice
 containers still expose app-provider backend ports because the bundle bakes
 that config in.
 
-Splice, wallet-gateway, and wallet-gateway-devkit share the
+Splice, wallet-gateway, and wallet-gateway-tools share the
 `canton-barebones` Docker Compose project, so Docker groups the selected local
 stack together.
 
@@ -40,7 +40,7 @@ From the repo root, use:
 npm run canton:up
 ```
 
-`npm run up` and `npm run canton:up` use devkit mode by default.
+`npm run up` and `npm run canton:up` use tools mode by default.
 `npm run canton:up -- --help` prints the root command flags.
 
 ## Gateway Modes
@@ -49,21 +49,21 @@ Use one gateway mode per local stack:
 
 ```bash
 npm run up -- wallet-gateway          # Splice + official wallet-gateway
-npm run up -- wallet-gateway-devkit   # Splice + wallet-gateway + devkit facade
+npm run up -- wallet-gateway-tools   # Splice + wallet-gateway + tools facade
 ```
 
 From the repo root:
 
 ```bash
 npm run canton:up -- wallet-gateway
-npm run canton:up -- wallet-gateway-devkit
+npm run canton:up -- wallet-gateway-tools
 ```
 
 The official wallet-gateway is always public on `http://localhost:3010`.
-In devkit mode, wallet-gateway-devkit is also public on `http://localhost:3011`.
-Carpincho points at `http://localhost:3011/rpc` when it needs devkit helper
+In tools mode, wallet-gateway-tools is also public on `http://localhost:3011`.
+Carpincho points at `http://localhost:3011/rpc` when it needs tools helper
 RPCs. Canton, Scan, validator, and registry URLs stay in
-`env/.env.wallet-gateway-devkit`.
+`env/.env.wallet-gateway-tools`.
 
 ## Environment Config
 
@@ -73,7 +73,7 @@ Runtime config is split by service:
 | --- | --- |
 | `env/.env.splice` | Splice bundle tag, cache path, compose project, and profiles |
 | `env/.env.wallet-gateway` | official wallet-gateway public port |
-| `env/.env.wallet-gateway-devkit` | devkit public port, Canton/Scan URLs, provider metadata, auth, upstream wallet-gateway URL |
+| `env/.env.wallet-gateway-tools` | tools public port, Canton/Scan URLs, provider metadata, auth, upstream wallet-gateway URL |
 | `config/wallet-gateway/config.json` | JSON config consumed by the official wallet-gateway package |
 
 The real service env files are ignored because they can contain secrets. Start
@@ -82,7 +82,7 @@ from the service examples:
 ```bash
 cp env/examples/.env.splice.example env/.env.splice
 cp env/examples/.env.wallet-gateway.example env/.env.wallet-gateway
-cp env/examples/.env.wallet-gateway-devkit.example env/.env.wallet-gateway-devkit
+cp env/examples/.env.wallet-gateway-tools.example env/.env.wallet-gateway-tools
 ```
 
 `docker-compose.yaml` fixes `WALLET_GATEWAY_CONFIG` to
@@ -93,12 +93,12 @@ only if you need a different official wallet-gateway JSON:
 WALLET_GATEWAY_CONFIG=./path/to/wallet-gateway-config.json npm run up -- wallet-gateway
 ```
 
-Use the service env files directly when pointing devkit at external endpoints.
+Use the service env files directly when pointing tools at external endpoints.
 
 ## Auth
 
-wallet-gateway-devkit supports three auth modes through
-`env/.env.wallet-gateway-devkit`:
+wallet-gateway-tools supports three auth modes through
+`env/.env.wallet-gateway-tools`:
 
 | Mode | Required values |
 | --- | --- |
@@ -111,12 +111,12 @@ wallet-gateway-devkit supports three auth modes through
 Do not put `AUTH_SECRET`, OAuth client secrets, or bearer tokens in Carpincho.
 Carpincho points at one gateway URL.
 
-## Wallet Gateway Devkit
+## Wallet Gateway Tools
 
-`npm run up` starts wallet-gateway-devkit after app-user is ready.
+`npm run up` starts wallet-gateway-tools after app-user is ready.
 
-wallet-gateway-devkit points to app-user through
-`env/.env.wallet-gateway-devkit`:
+wallet-gateway-tools points to app-user through
+`env/.env.wallet-gateway-tools`:
 
 ```text
 JSON API   http://host.docker.internal:2975
@@ -124,11 +124,11 @@ Ledger API grpc://host.docker.internal:2901
 Admin API  grpc://host.docker.internal:2902
 ```
 
-To use an external Splice stack, edit `env/.env.wallet-gateway-devkit` and skip
+To use an external Splice stack, edit `env/.env.wallet-gateway-tools` and skip
 LocalNet startup:
 
 ```bash
-npm run up -- --no-splice wallet-gateway-devkit
+npm run up -- --no-splice wallet-gateway-tools
 ```
 
 ## Services And Ports
@@ -136,7 +136,7 @@ npm run up -- --no-splice wallet-gateway-devkit
 | Service | What It Is | URL / Port |
 | --- | --- | --- |
 | wallet-gateway | official wallet-gateway | `http://localhost:3010` |
-| wallet-gateway-devkit | public facade plus dev helpers | `http://localhost:3011` |
+| wallet-gateway-tools | public facade plus dev helpers | `http://localhost:3011` |
 | app-user Wallet UI | official Splice wallet UI | `http://wallet.localhost:2000` |
 | app-user Ledger API | gRPC Ledger API | `grpc://localhost:2901` |
 | app-user Admin API | gRPC Admin API | `grpc://localhost:2902` |

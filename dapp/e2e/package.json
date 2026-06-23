@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Integration tests across the canton-barebones, wallet-gateway-devkit, carpincho-wallet, and dapp/frontend packages. Black-box: consumes each package via its stable surface (HTTP endpoints, extension artifact, dApp UI). No direct source imports.",
+  "description": "Integration tests across the canton-barebones, wallet-gateway-tools, carpincho-wallet, and dapp/frontend packages. Black-box: consumes each package via its stable surface (HTTP endpoints, extension artifact, dApp UI). No direct source imports.",
   "engines": {
     "node": ">=24"
   },

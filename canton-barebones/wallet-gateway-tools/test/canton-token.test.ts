@@ -9,7 +9,7 @@ const b64urlDecode = (value: string): Buffer => {
 
 describe('createCantonToken', () => {
   it('produces the pinned LocalNet HS256 token for known inputs', () => {
-    // Scenario: wallet-gateway-devkit must keep the exact LocalNet JWT shape so
+    // Scenario: wallet-gateway-tools must keep the exact LocalNet JWT shape so
     // generated tokens work across app-user Ledger, Validator, Scan, and Registry endpoints.
     const token = createCantonToken({
       subject: 'ledger-api-user',

@@ -5,7 +5,7 @@ import { createCantonToken } from '../src/canton-token.ts'
 
 describe('auth provider', () => {
   it('returns the configured static bearer token without extra work', async () => {
-    // Scenario: operators can paste a JWT obtained outside devkit. The service
+    // Scenario: operators can paste a JWT obtained outside tools. The service
     // should pass that token through without trying to inspect or refresh it.
     const auth = createAuthProvider({
       mode: 'static-token',
@@ -16,7 +16,7 @@ describe('auth provider', () => {
   })
 
   it('mints a LocalNet self-signed token from the configured signing recipe', async () => {
-    // Scenario: local Splice uses the unsafe self-signed auth recipe. Devkit can
+    // Scenario: local Splice uses the unsafe self-signed auth recipe. Tools can
     // derive the same token shape as the standalone token script at startup.
     const auth = createAuthProvider({
       mode: 'self-signed',
@@ -36,16 +36,16 @@ describe('auth provider', () => {
   })
 
   it('fetches and reuses an OAuth client-credentials token until it is near expiry', async () => {
-    // Scenario: DevNet/TestNet deployments give devkit an OAuth client instead
-    // of a pre-generated JWT. Devkit should exchange it once and cache the
+    // Scenario: DevNet/TestNet deployments give tools an OAuth client instead
+    // of a pre-generated JWT. Tools should exchange it once and cache the
     // bearer token while it is still safely valid.
     const requests: string[] = []
     const auth = createAuthProvider(
       {
         mode: 'oauth-client-credentials',
         tokenUrl: 'https://auth.example/token',
-        clientId: 'devkit-client',
-        clientSecret: 'devkit-secret',
+        clientId: 'tools-client',
+        clientSecret: 'tools-secret',
         scope: 'daml_ledger_api',
       },
       {
@@ -63,7 +63,7 @@ describe('auth provider', () => {
     assert.equal(await auth.getToken(), 'oauth.jwt')
     assert.equal(await auth.getToken(), 'oauth.jwt')
     assert.deepEqual(requests, [
-      'https://auth.example/token grant_type=client_credentials&client_id=devkit-client&client_secret=devkit-secret&scope=daml_ledger_api',
+      'https://auth.example/token grant_type=client_credentials&client_id=tools-client&client_secret=tools-secret&scope=daml_ledger_api',
     ])
   })
 
@@ -76,8 +76,8 @@ describe('auth provider', () => {
       {
         mode: 'oauth-client-credentials',
         tokenUrl: 'https://auth.example/token',
-        clientId: 'devkit-client',
-        clientSecret: 'devkit-secret',
+        clientId: 'tools-client',
+        clientSecret: 'tools-secret',
       },
       {
         now: () => now,

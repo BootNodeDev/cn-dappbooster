@@ -3,7 +3,7 @@
 // CONSUMPTION CONTRACT — read before editing:
 // This package treats the other four parts of the system as published artifacts.
 // It does NOT import from their source. The only ways it consumes them:
-//   * HTTP: wallet-gateway-devkit (`WALLET_GATEWAY_DEVKIT_URL`), dApp (`DAPP_URL`).
+//   * HTTP: wallet-gateway-tools (`WALLET_GATEWAY_TOOLS_URL`), dApp (`DAPP_URL`).
 //   * Filesystem: Carpincho's built extension bundle at `EXTENSION_PATH`.
 //
 // All of these are env-overridable so a future monorepo migration can point the
@@ -18,8 +18,8 @@ import { type BrowserContext, test as base, chromium, type Worker } from '@playw
 
 const moduleDir = path.dirname(fileURLToPath(import.meta.url))
 
-export const WALLET_GATEWAY_DEVKIT_URL =
-  process.env.WALLET_GATEWAY_DEVKIT_URL ?? 'http://localhost:3011'
+export const WALLET_GATEWAY_TOOLS_URL =
+  process.env.WALLET_GATEWAY_TOOLS_URL ?? 'http://localhost:3011'
 export const DAPP_URL = process.env.DAPP_URL ?? 'http://localhost:3012'
 
 // Default: the in-tree dev extension. Override via EXTENSION_PATH for published builds.

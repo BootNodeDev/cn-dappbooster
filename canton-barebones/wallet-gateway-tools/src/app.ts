@@ -1,15 +1,13 @@
 import cors from 'cors'
 import express from 'express'
 import { createProxyMiddleware } from 'http-proxy-middleware'
-import type { WalletGatewayDevkitConfig } from './config.ts'
+import type { WalletGatewayToolsConfig } from './config.ts'
 import { createPartyApi } from './party.ts'
 import { createRpc, InvalidParams } from './rpc.ts'
 import type { JsonRpcRequest, JsonRpcResponse } from './types.ts'
 
 // Builds the HTTP app so tests can exercise routing without binding a fixed port.
-export const createWalletGatewayDevkitApp = (
-  config: WalletGatewayDevkitConfig,
-): express.Express => {
+export const createWalletGatewayToolsApp = (config: WalletGatewayToolsConfig): express.Express => {
   const rpc = createRpc(config)
   const adminParty = createPartyApi(config, { getSdk: () => rpc.getSdk() })
   const app = express()
@@ -25,30 +23,30 @@ export const createWalletGatewayDevkitApp = (
   app.get('/health', (_req, res) => {
     res.json({
       ok: true,
-      service: 'wallet-gateway-devkit',
+      service: 'wallet-gateway-tools',
       network: config.network,
     })
   })
 
-  app.get('/devkit/health', (_req, res) => {
+  app.get('/tools/health', (_req, res) => {
     res.json({
       ok: true,
-      service: 'wallet-gateway-devkit',
+      service: 'wallet-gateway-tools',
       network: config.network,
     })
   })
 
-  app.get('/devkit/info', (_req, res) => {
+  app.get('/tools/info', (_req, res) => {
     res.json(rpc.serviceInfo())
   })
 
-  // Converts expected devkit validation failures into client errors.
+  // Converts expected tools validation failures into client errors.
   const handleAdminError = (res: express.Response, error: unknown): void => {
     if (error instanceof InvalidParams) {
       res.status(400).json({ error: error.message })
       return
     }
-    console.error('[wallet-gateway-devkit] admin failed', error)
+    console.error('[wallet-gateway-tools] admin failed', error)
     res.status(500).json({ error: error instanceof Error ? error.message : String(error) })
   }
 

@@ -128,8 +128,8 @@ check_docker_memory() {
   fi
 }
 
-# Ensures the devkit auth mode has the env values needed to start.
-require_devkit_auth_config() {
+# Ensures the tools auth mode has the env values needed to start.
+require_tools_auth_config() {
   local auth_mode
   auth_mode="${AUTH_MODE:-self-signed}"
   case "$auth_mode" in

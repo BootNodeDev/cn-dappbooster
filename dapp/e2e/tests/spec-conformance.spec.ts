@@ -1,4 +1,4 @@
-// Conformance tests for the wallet-gateway-devkit `/rpc` surface — locks invariants
+// Conformance tests for the wallet-gateway-tools `/rpc` surface — locks invariants
 // that the dapp-api spec implies but doesn't write down.
 //
 // In particular: ledgerApi is a TRANSPARENT proxy to the participant's JSON API.
@@ -6,14 +6,14 @@
 // must NOT translate request bodies, and MUST return the raw participant
 // response (not a `{response, status}` or `{contracts}` wrapper).
 //
-// This test exists because an earlier version of wallet-gateway-devkit had a
+// This test exists because an earlier version of wallet-gateway-tools had a
 // compatibility shim that translated `{parties, templateIds, filterByParty}`
 // into the participant-native `{filter, activeAtOffset, ...}` shape and wrapped
 // the response in `{contracts}`. That shim was removed once the canonical
 // wallet-gateway-remote behavior (pure pass-through) was verified upstream.
 // If anyone reintroduces a translator, these tests should fail.
 
-import { expect, test, WALLET_GATEWAY_DEVKIT_URL } from '../fixtures/stack.ts'
+import { expect, test, WALLET_GATEWAY_TOOLS_URL } from '../fixtures/stack.ts'
 
 const rpc = async (
   request: import('@playwright/test').APIRequestContext,
@@ -25,7 +25,7 @@ const rpc = async (
   result?: unknown
   error?: { code: number; message: string; data?: unknown }
 }> => {
-  const response = await request.post(`${WALLET_GATEWAY_DEVKIT_URL}/rpc`, {
+  const response = await request.post(`${WALLET_GATEWAY_TOOLS_URL}/rpc`, {
     data: { jsonrpc: '2.0', id: 1, method, params },
   })
   expect(response.ok()).toBe(true)

@@ -1,10 +1,10 @@
-# Agent Configuration — wallet-gateway-devkit
+# Agent Configuration — wallet-gateway-tools
 
-This file applies only to `canton-barebones/wallet-gateway-devkit/`. For monorepo-wide rules, see [`../../AGENTS.md`](../../AGENTS.md).
+This file applies only to `canton-barebones/wallet-gateway-tools/`. For monorepo-wide rules, see [`../../AGENTS.md`](../../AGENTS.md).
 
 ## Scope
 
-The wallet-gateway-devkit is a consumer-dApp-agnostic Express JSON-RPC bridge between Carpincho and the local Canton participant. It holds the Canton bearer token boundary, prepares and executes transactions, proxies participant reads, exposes CIP-56 token-standard reads/transfers and Amulet (Canton Coin) preapproval management and DevNet faucet tap, and handles wallet-internal party onboarding.
+The wallet-gateway-tools is a consumer-dApp-agnostic Express JSON-RPC bridge between Carpincho and the local Canton participant. It holds the Canton bearer token boundary, prepares and executes transactions, proxies participant reads, exposes CIP-56 token-standard reads/transfers and Amulet (Canton Coin) preapproval management and DevNet faucet tap, and handles wallet-internal party onboarding.
 
 ## Working Rules
 
@@ -16,7 +16,7 @@ The wallet-gateway-devkit is a consumer-dApp-agnostic Express JSON-RPC bridge be
 
 ## Testing
 
-- Run tests with `npm test` from this package, or `npm --prefix canton-barebones/wallet-gateway-devkit test` from the repo root.
+- Run tests with `npm test` from this package, or `npm --prefix canton-barebones/wallet-gateway-tools test` from the repo root.
 - Use `node:test` with `--experimental-strip-types`, matching `package.json`.
 - Cover RPC method shape, pending approvals, CIP-56 token reads/transfers, Amulet preapproval, party onboarding, and HTTP status behavior.
 

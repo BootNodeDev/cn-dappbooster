@@ -110,7 +110,7 @@ const createOauthAuthProvider = (
   }
 }
 
-// Parses only the OAuth fields devkit needs and rejects malformed token responses early.
+// Parses only the OAuth fields tools needs and rejects malformed token responses early.
 const parseOAuthPayload = (text: string): { accessToken: string; expiresInSeconds: number } => {
   const value = JSON.parse(text) as { access_token?: unknown; expires_in?: unknown }
   if (typeof value.access_token !== 'string' || value.access_token.trim() === '') {
