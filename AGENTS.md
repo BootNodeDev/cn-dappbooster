@@ -78,7 +78,7 @@ Subproject docs must not restate root rules. They should describe only their loc
 - Use **npm** only (never pnpm or yarn).
 - This is an npm workspaces monorepo: one `npm install` from the repo root installs and links every package. There is no per-package install step.
 - Run a subproject script either by `cd <subproject>` or by using `npm --prefix <subproject> run <script>`. The root `package.json` exposes orchestration shortcuts:
-  - `npm run canton:up` / `canton:down` / `canton:health`
+  - `npm run canton:up` / `canton:down`
   - `npm run carpincho:build:extension`
   - `npm run app:dev`
 - Local ports are intentionally assigned in the `3010+` range (see table above). Do not change them without updating every subproject's defaults.

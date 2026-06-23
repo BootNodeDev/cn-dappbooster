@@ -9,6 +9,8 @@ dist-extension/
 .env
 .env.local
 .env.fivenorth
+canton-barebones/.env*
+canton-barebones/env/.env.*
 
 # typescript
 *.tsbuildinfo

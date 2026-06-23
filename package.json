@@ -15,7 +15,6 @@
   "scripts": {
     "canton:up": "npm --prefix canton-barebones run up --",
     "canton:down": "npm --prefix canton-barebones run down",
-    "canton:health": "npm --prefix canton-barebones run health",
     "carpincho:build:extension": "npm --prefix carpincho-wallet run build:extension",
     "app:dev": "npm --prefix dapp/frontend run dev -- --host localhost --port 3012 --strictPort",
     "lint": "biome check",

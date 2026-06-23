@@ -9,6 +9,11 @@ const projectRoot = path.resolve(__dirname, '..')
 const commonScript = path.join(projectRoot, 'scripts/splice-common.sh')
 
 describe('Splice LocalNet shell config', () => {
+  // Test HOME keeps path derivation deterministic without relying on the developer's machine.
+  const envHome = '/tmp/canton-dappbooster-splice-test-home'
+  // The Splice env file derives LocalNet paths from HOME, so assertions use the same root.
+  const envBundleDir = `${envHome}/.canton-dappbooster/splice-localnet`
+
   it('starts only the sv and app-user LocalNet profiles', () => {
     // Scenario: this stack activates only the app-user and SV UI profiles.
     // The official shared backend containers still expose app-provider ports.
@@ -19,8 +24,7 @@ describe('Splice LocalNet shell config', () => {
         cwd: projectRoot,
         env: {
           ...process.env,
-          SPLICE_IMAGE_TAG: '0.5.18',
-          SPLICE_BUNDLE_DIR: '/tmp/splice-localnet-test',
+          HOME: envHome,
         },
         encoding: 'utf8',
       },
@@ -30,20 +34,22 @@ describe('Splice LocalNet shell config', () => {
   })
 
   it('loads Splice settings from the service env file', () => {
-    // Scenario: Docker Compose reads IMAGE_TAG and LocalNet paths from the
-    // Splice service env file before resolving image names and bind mounts.
+    // Scenario: Docker Compose reads image tags, project names, and LocalNet
+    // paths directly from the Splice service env file before resolving image
+    // names and bind mounts.
     const output = execFileSync(
       'bash',
       [
         '-lc',
-        `source "${commonScript}"; printf '%s\\n' "$IMAGE_TAG" "$LOCALNET_DIR" "$LOCALNET_ENV_DIR"`,
+        `source "${commonScript}"; printf '%s\\n' "$SPLICE_IMAGE_TAG" "$IMAGE_TAG" "$COMPOSE_PROJECT_NAME" "$SPLICE_COMPOSE_PROJECT_NAME" "$LOCALNET_DIR" "$LOCALNET_ENV_DIR"`,
       ],
       {
         cwd: projectRoot,
         env: {
           ...process.env,
-          SPLICE_IMAGE_TAG: '0.5.18',
-          SPLICE_BUNDLE_DIR: '/tmp/splice-localnet-test',
+          HOME: envHome,
+          SPLICE_IMAGE_TAG: 'ignored-shell-tag',
+          SPLICE_BUNDLE_DIR: '/tmp/ignored-shell-bundle',
         },
         encoding: 'utf8',
       },
@@ -51,8 +57,11 @@ describe('Splice LocalNet shell config', () => {
 
     assert.deepEqual(output.trim().split('\n'), [
       '0.5.18',
-      '/tmp/splice-localnet-test/splice-node/docker-compose/localnet',
-      '/tmp/splice-localnet-test/splice-node/docker-compose/localnet/env',
+      '0.5.18',
+      'canton-barebones',
+      'canton-barebones',
+      `${envBundleDir}/splice-node/docker-compose/localnet`,
+      `${envBundleDir}/splice-node/docker-compose/localnet/env`,
     ])
   })
 
@@ -67,8 +76,7 @@ describe('Splice LocalNet shell config', () => {
         cwd: projectRoot,
         env: {
           ...process.env,
-          SPLICE_IMAGE_TAG: '0.5.18',
-          SPLICE_BUNDLE_DIR: '/tmp/splice-localnet-test',
+          HOME: envHome,
         },
         encoding: 'utf8',
       },
@@ -184,20 +192,6 @@ describe('Splice LocalNet shell config', () => {
     assert.match(walletGatewayBlock, /\$\{WALLET_GATEWAY_PORT:-3010\}:3030/)
     assert.match(composeFile, /env_file:\n {6}- \.\/env\/\.env\.wallet-gateway-devkit/)
     assert.match(composeFile, /\$\{WALLET_GATEWAY_DEVKIT_PORT:-3011\}:3010/)
-  })
-
-  it('checks gateway health through the service port env files', () => {
-    // Scenario: gateway port overrides live in service env files. Health
-    // checks must read the same files instead of hardcoding public ports.
-    const healthScript = execFileSync('cat', [path.join(projectRoot, 'scripts/health-check.sh')], {
-      cwd: projectRoot,
-      encoding: 'utf8',
-    })
-
-    assert.match(healthScript, /load_env_file "\$ROOT\/env\/\.env\.wallet-gateway"/)
-    assert.match(healthScript, /load_env_file "\$ROOT\/env\/\.env\.wallet-gateway-devkit"/)
-    assert.match(healthScript, /http:\/\/localhost:\$\{WALLET_GATEWAY_PORT:-3010\}\/readyz/)
-    assert.match(healthScript, /http:\/\/localhost:\$\{WALLET_GATEWAY_DEVKIT_PORT:-3011\}\/health/)
   })
 
   it('keeps wallet-gateway-devkit compose environment minimal', () => {

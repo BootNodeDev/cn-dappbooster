@@ -118,9 +118,9 @@ Runtime config is split by service:
 
 | File | Owner |
 | --- | --- |
-| `canton-barebones/env/.env.splice` | Splice LocalNet bundle tag, cache path, compose project, profiles |
-| `canton-barebones/env/.env.wallet-gateway` | official wallet-gateway public port |
-| `canton-barebones/env/.env.wallet-gateway-devkit` | devkit ports, Canton/Scan URLs, provider metadata, auth, upstream wallet-gateway URL |
+| `canton-barebones/env/.env.splice` | ignored local Splice LocalNet bundle tag, cache path, compose project, profiles |
+| `canton-barebones/env/.env.wallet-gateway` | ignored local official wallet-gateway public port |
+| `canton-barebones/env/.env.wallet-gateway-devkit` | ignored local devkit ports, Canton/Scan URLs, provider metadata, auth, upstream wallet-gateway URL |
 | `canton-barebones/config/wallet-gateway/config.json` | JSON config consumed by the official wallet-gateway package |
 
 ## Splice Profiles
@@ -170,8 +170,9 @@ target app-user or point at app-provider endpoints.
 
 ## Config And Auth
 
-There is no environment selector in code. A developer edits the service env
-files directly, or copies a reference file from `canton-barebones/env/examples/`.
+There is no environment selector in code. A developer copies the service
+examples from `canton-barebones/env/examples/` and edits the ignored service env
+files directly.
 
 wallet-gateway-devkit supports three auth modes through
 `canton-barebones/env/.env.wallet-gateway-devkit`:
@@ -195,9 +196,6 @@ validator, registry, OAuth, or signing-secret configuration from this repo.
 | `npm run canton:up -- wallet-gateway-devkit` | start Splice plus wallet-gateway behind the public devkit facade |
 | `npm run canton:up -- --no-splice wallet-gateway-devkit` | start only the gateway layer against externally configured Splice endpoints |
 | `npm run canton:down` | stop the selected gateway and Splice LocalNet, preserving volumes |
-| `npm run canton:health` | check app-user, sv, Scan, wallet UI, and the selected gateway |
-| `npm --prefix canton-barebones run token -- ledger-api-user` | generate a LocalNet dev JWT for manual/static-token use |
-| `./canton-barebones/scripts/deploy-dar.sh <dar>` | upload DAR to app-user JSON API |
 | `npm run app:dev` | start the dApp frontend |
 
 For the bring-up sequence, follow [`README.md`](README.md).

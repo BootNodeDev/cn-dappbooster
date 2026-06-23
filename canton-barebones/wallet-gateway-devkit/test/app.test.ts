@@ -64,7 +64,7 @@ const listen = async (server: http.Server): Promise<string> => {
 
 describe('wallet-gateway facade proxy', () => {
   it('reports the devkit service identity on the local health endpoint', async () => {
-    // Scenario: operators and scripts health-check the public facade URL. The
+    // Scenario: operators and container probes check the public facade URL. The
     // response should name the selected gateway service, not the old bridge name.
     const facadeUrl = await listen(
       http.createServer(createWalletGatewayDevkitApp(config('http://127.0.0.1:9'))),

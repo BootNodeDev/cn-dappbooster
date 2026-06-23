@@ -8,10 +8,9 @@ const b64urlDecode = (value: string): Buffer => {
 }
 
 describe('createCantonToken', () => {
-  it('produces the same HS256 token as canton-barebones/scripts/mint-token.mjs for the pinned inputs', () => {
-    // Scenario: wallet-gateway-devkit and the top-level token script must agree on
-    // the exact LocalNet JWT shape so generated tokens work across app-user
-    // Ledger, Validator, Scan, and Registry endpoints.
+  it('produces the pinned LocalNet HS256 token for known inputs', () => {
+    // Scenario: wallet-gateway-devkit must keep the exact LocalNet JWT shape so
+    // generated tokens work across app-user Ledger, Validator, Scan, and Registry endpoints.
     const token = createCantonToken({
       subject: 'ledger-api-user',
       audience: 'https://canton.network.global',

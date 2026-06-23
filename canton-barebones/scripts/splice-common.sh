@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-# Shared helpers for every canton-barebones script. This file owns path
-# discovery, Splice bundle defaults, compose wrappers, logging, waits, and
-# startup validation so the public scripts stay short.
+# Shared helpers for every canton-barebones script. This file loads the Splice
+# service env file, adapts comma-separated config to Bash, and exposes common
+# compose, logging, wait, and validation helpers.
 
 # Step 1: anchor every relative path at canton-barebones/.
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -18,36 +18,17 @@ load_env_file() {
   fi
 }
 
-EXTERNAL_SPLICE_IMAGE_TAG="${SPLICE_IMAGE_TAG:-}"
-EXTERNAL_SPLICE_BUNDLE_DIR="${SPLICE_BUNDLE_DIR:-}"
-EXTERNAL_IMAGE_TAG="${IMAGE_TAG:-}"
-EXTERNAL_LOCALNET_DIR="${LOCALNET_DIR:-}"
-EXTERNAL_LOCALNET_ENV_DIR="${LOCALNET_ENV_DIR:-}"
-EXTERNAL_SPLICE_COMPOSE_PROJECT_NAME="${SPLICE_COMPOSE_PROJECT_NAME:-}"
+# Step 2: load Splice LocalNet settings from its service env file.
+set -a
+# shellcheck disable=SC1091
+source "$ROOT/env/.env.splice"
+set +a
 
-# Step 2: load default Splice LocalNet settings from the service env file.
-load_env_file "$ROOT/env/.env.splice"
-
-# Step 3: restore shell-provided overrides so CLI callers can replace env-file defaults.
-[ -n "$EXTERNAL_SPLICE_IMAGE_TAG" ] && SPLICE_IMAGE_TAG="$EXTERNAL_SPLICE_IMAGE_TAG"
-[ -n "$EXTERNAL_SPLICE_BUNDLE_DIR" ] && SPLICE_BUNDLE_DIR="$EXTERNAL_SPLICE_BUNDLE_DIR"
-[ -n "$EXTERNAL_IMAGE_TAG" ] && IMAGE_TAG="$EXTERNAL_IMAGE_TAG"
-[ -n "$EXTERNAL_LOCALNET_DIR" ] && LOCALNET_DIR="$EXTERNAL_LOCALNET_DIR"
-[ -n "$EXTERNAL_LOCALNET_ENV_DIR" ] && LOCALNET_ENV_DIR="$EXTERNAL_LOCALNET_ENV_DIR"
-[ -n "$EXTERNAL_SPLICE_COMPOSE_PROJECT_NAME" ] && SPLICE_COMPOSE_PROJECT_NAME="$EXTERNAL_SPLICE_COMPOSE_PROJECT_NAME"
-
-# Step 4: normalize Splice paths, image tag aliases, compose project names, and profiles.
-SPLICE_IMAGE_TAG="${SPLICE_IMAGE_TAG:-${IMAGE_TAG:-0.5.18}}"
-IMAGE_TAG="${IMAGE_TAG:-$SPLICE_IMAGE_TAG}"
-COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-canton-barebones}"
-SPLICE_BUNDLE_DIR="${SPLICE_BUNDLE_DIR:-$HOME/.canton-dappbooster/splice-localnet}"
-LOCALNET_DIR="${LOCALNET_DIR:-$SPLICE_BUNDLE_DIR/splice-node/docker-compose/localnet}"
-LOCALNET_ENV_DIR="${LOCALNET_ENV_DIR:-$LOCALNET_DIR/env}"
-SPLICE_COMPOSE_PROJECT_NAME="${SPLICE_COMPOSE_PROJECT_NAME:-$COMPOSE_PROJECT_NAME}"
+# Step 3: expose local paths and convert comma-separated env values to Bash arrays.
 CANTON_BAREBONES_DIR="$ROOT"
-IFS=',' read -r -a SPLICE_PROFILES <<< "${SPLICE_PROFILES:-sv,app-user}"
+IFS=',' read -r -a SPLICE_PROFILES <<< "$SPLICE_PROFILES"
 
-# Step 5: export values needed by the official Splice compose files and local overrides.
+# Step 4: export values needed by the official Splice compose files and local overrides.
 export COMPOSE_PROJECT_NAME SPLICE_IMAGE_TAG IMAGE_TAG SPLICE_BUNDLE_DIR LOCALNET_DIR LOCALNET_ENV_DIR SPLICE_COMPOSE_PROJECT_NAME CANTON_BAREBONES_DIR
 
 # Prints a compact status line so stack scripts are easy to scan.

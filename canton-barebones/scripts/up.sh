@@ -7,6 +7,8 @@ set -euo pipefail
 
 # Step 1: load shared config, logging, compose wrappers, and validation helpers.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Load shared paths, env-file loading, Splice compose helpers, logging, waits,
+# and validation used by every stack lifecycle script.
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/splice-common.sh"
 
@@ -127,7 +129,7 @@ esac
 cat <<EOF
 
 Local stack is up:
-  splice localnet          $WITH_SPLICE
+  splice localnet         $WITH_SPLICE
   gateway mode            $GATEWAY_MODE
   wallet-gateway URL      http://localhost:${WALLET_GATEWAY_PORT:-3010}
   devkit URL              http://localhost:${WALLET_GATEWAY_DEVKIT_PORT:-3011}

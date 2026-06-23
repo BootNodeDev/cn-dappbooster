@@ -49,7 +49,7 @@ Install workspace dependencies:
 npm install
 ```
 
-Local service env files are already present under `canton-barebones/env/`:
+Local service env files live under `canton-barebones/env/`:
 
 | File | Owner |
 | --- | --- |
@@ -60,7 +60,16 @@ Local service env files are already present under `canton-barebones/env/`:
 The official wallet-gateway also reads
 `canton-barebones/config/wallet-gateway/config.json` because that package
 expects a JSON config file. The compose file pins that path by default.
-Examples for other setups live in `canton-barebones/env/examples/`.
+
+The real service env files are ignored because they can contain secrets. Start
+from the service examples:
+
+```bash
+cp canton-barebones/env/examples/.env.splice.example canton-barebones/env/.env.splice
+cp canton-barebones/env/examples/.env.wallet-gateway.example canton-barebones/env/.env.wallet-gateway
+cp canton-barebones/env/examples/.env.wallet-gateway-devkit.example canton-barebones/env/.env.wallet-gateway-devkit
+```
+
 Carpincho only needs one RPC URL.
 
 Auth configuration:
@@ -90,7 +99,6 @@ Start the stack:
 
 ```bash
 npm run canton:up
-npm run canton:health
 ```
 
 `canton:up` defaults to `--splice wallet-gateway-devkit`. Pass one gateway mode
@@ -115,11 +123,11 @@ Carpincho should point at `http://localhost:3011/rpc` when you want the
 development helper RPCs. Devkit mode owns the Canton, Scan, validator, and
 registry URLs behind service configuration.
 
-Build and deploy the sample DAR:
+Build the sample DAR when you need the package artifact:
 
 ```bash
-cd dapp/daml && dpm build && cd ../..
-./canton-barebones/scripts/deploy-dar.sh dapp/daml/.daml/dist/quickstart-tally-0.0.1.dar
+cd dapp/daml
+dpm build
 ```
 
 Verify wallet-gateway-devkit:

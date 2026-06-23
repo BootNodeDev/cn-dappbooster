@@ -32,14 +32,12 @@ user and not a product user.
 
 ```bash
 npm run up
-npm run health
 ```
 
 From the repo root, use:
 
 ```bash
 npm run canton:up
-npm run canton:health
 ```
 
 `npm run up` and `npm run canton:up` use devkit mode by default.
@@ -50,8 +48,8 @@ npm run canton:health
 Use one gateway mode per local stack:
 
 ```bash
-npm run up:wallet-gateway          # Splice + official wallet-gateway
-npm run up:wallet-gateway-devkit   # Splice + wallet-gateway + devkit facade
+npm run up -- wallet-gateway          # Splice + official wallet-gateway
+npm run up -- wallet-gateway-devkit   # Splice + wallet-gateway + devkit facade
 ```
 
 From the repo root:
@@ -78,15 +76,24 @@ Runtime config is split by service:
 | `env/.env.wallet-gateway-devkit` | devkit public port, Canton/Scan URLs, provider metadata, auth, upstream wallet-gateway URL |
 | `config/wallet-gateway/config.json` | JSON config consumed by the official wallet-gateway package |
 
+The real service env files are ignored because they can contain secrets. Start
+from the service examples:
+
+```bash
+cp env/examples/.env.splice.example env/.env.splice
+cp env/examples/.env.wallet-gateway.example env/.env.wallet-gateway
+cp env/examples/.env.wallet-gateway-devkit.example env/.env.wallet-gateway-devkit
+```
+
 `docker-compose.yaml` fixes `WALLET_GATEWAY_CONFIG` to
 `./config/wallet-gateway/config.json` by default. Override it from the shell
 only if you need a different official wallet-gateway JSON:
 
 ```bash
-WALLET_GATEWAY_CONFIG=./path/to/wallet-gateway-config.json npm run up:wallet-gateway
+WALLET_GATEWAY_CONFIG=./path/to/wallet-gateway-config.json npm run up -- wallet-gateway
 ```
 
-Reference values for localnet and external setups live in `env/examples/`.
+Use the service env files directly when pointing devkit at external endpoints.
 
 ## Auth
 
@@ -99,12 +106,7 @@ wallet-gateway-devkit supports three auth modes through
 | `oauth-client-credentials` | `AUTH_TOKEN_URL`, `AUTH_CLIENT_ID`, `AUTH_CLIENT_SECRET`, optional `AUTH_SCOPE` |
 | `static-token` | `AUTH_TOKEN` |
 
-The token script is optional. Use it only when you want a manual JWT for
-`static-token` mode or another client. It reads
-`env/.env.wallet-gateway-devkit` and `AUTH_SECRET`.
-
-It prints a JWT. It does not edit `.env`. Pass a subject as the first argument
-only if LocalNet expects something other than `ledger-api-user`.
+`static-token` mode expects an already-issued bearer token in `AUTH_TOKEN`.
 
 Do not put `AUTH_SECRET`, OAuth client secrets, or bearer tokens in Carpincho.
 Carpincho points at one gateway URL.
@@ -156,26 +158,3 @@ If hostnames do not resolve, add:
 ```text
 127.0.0.1 wallet.localhost scan.localhost sv.localhost
 ```
-
-## Deploy a DAR
-
-Compile a Daml project with `dpm build`, then upload the DAR from the repo root:
-
-```bash
-./canton-barebones/scripts/deploy-dar.sh <path/to/file.dar>
-```
-
-For the in-repo Tally package that means:
-
-```bash
-cd dapp/daml && dpm build && cd ../..
-./canton-barebones/scripts/deploy-dar.sh dapp/daml/.daml/dist/quickstart-tally-0.0.1.dar
-```
-
-The script uploads to app-user:
-
-```text
-http://localhost:2975/v2/packages
-```
-
-`npm run canton:health` must return OK before deploying; otherwise the DAR upload can fail.
