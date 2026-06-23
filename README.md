@@ -11,7 +11,6 @@ flowchart TD
   au["Splice app-user<br/>primary local validator<br/>JSON API http://localhost:2975"]
   sv["Splice sv<br/>SV / DSO / synchronizer side"]
   scan["Scan<br/>Splice read model<br/>http://scan.localhost:4000"]
-  dar["dapp/daml<br/>quickstart-tally DAR"]
 
   fe <-->|"Injected CIP-0103 provider<br/>optional WalletConnect"| wallet
   wallet -->|"one configured RPC URL<br/>/rpc"| devkit
@@ -21,7 +20,6 @@ flowchart TD
   wg -->|"LocalNet network config"| au
   au <--> sv
   sv -->|"indexed Splice read model"| scan
-  dar -->|"deploy package"| au
 ```
 
 `canton:up` activates the official Splice LocalNet `sv` and `app-user` Docker
@@ -51,11 +49,11 @@ npm install
 
 Local service env files live under `canton-barebones/env/`:
 
-| File | Owner |
-| --- | --- |
-| `env/.env.splice` | Splice LocalNet download/profiles |
-| `env/.env.wallet-gateway` | public wallet-gateway port |
-| `env/.env.wallet-gateway-devkit` | devkit endpoints and auth |
+| File                             | Owner                             |
+| -------------------------------- | --------------------------------- |
+| `env/.env.splice`                | Splice LocalNet download/profiles |
+| `env/.env.wallet-gateway`        | public wallet-gateway port        |
+| `env/.env.wallet-gateway-devkit` | devkit endpoints and auth         |
 
 The official wallet-gateway also reads
 `canton-barebones/config/wallet-gateway/config.json` because that package
@@ -74,15 +72,11 @@ Carpincho only needs one RPC URL.
 
 Auth configuration:
 
-| Name | What It Is | Who Uses It |
-| --- | --- | --- |
-| `AUTH_MODE=self-signed` | local JWT signed with `AUTH_SECRET` | wallet-gateway-devkit |
-| `AUTH_MODE=oauth-client-credentials` | OAuth client credentials flow | wallet-gateway-devkit |
-| `AUTH_MODE=static-token` | externally obtained bearer token | wallet-gateway-devkit |
-
-`npm --prefix canton-barebones run token -- ledger-api-user` is only needed
-when you explicitly want to generate a JWT for `static-token` mode or another
-manual client.
+| Name                                 | What It Is                          | Who Uses It           |
+| ------------------------------------ | ----------------------------------- | --------------------- |
+| `AUTH_MODE=self-signed`              | local JWT signed with `AUTH_SECRET` | wallet-gateway-devkit |
+| `AUTH_MODE=oauth-client-credentials` | OAuth client credentials flow       | wallet-gateway-devkit |
+| `AUTH_MODE=static-token`             | externally obtained bearer token    | wallet-gateway-devkit |
 
 Optional WalletConnect fallback:
 
@@ -169,27 +163,27 @@ Developer mode enabled.
 
 ## Services And Ports
 
-| Service | What It Is | URL / Port | Who Uses It |
-| --- | --- | --- | --- |
-| wallet-gateway | Official wallet-gateway | `http://localhost:3010` | direct wallet-gateway clients/devkit |
-| wallet-gateway-devkit | Public facade for official wallet-gateway plus dev helpers | `http://localhost:3011` | Carpincho via `/rpc`, tools |
-| Carpincho wallet | Browser wallet UI/provider | `http://localhost:3013` during devkit mode | user/dApp |
-| dApp frontend | Example dApp | `http://localhost:3012` | user |
-| app-user Wallet UI | Official Splice wallet UI for app-user | `http://wallet.localhost:2000` | optional/manual |
-| app-user Ledger API | gRPC Ledger API | `grpc://localhost:2901` | SDK/tools |
-| app-user Admin API | gRPC Admin API | `grpc://localhost:2902` | wallet-gateway-devkit/tools |
-| app-user Validator API | Splice validator readiness/API | `http://localhost:2903` | health/tools |
-| app-user JSON API | JSON Ledger API | `http://localhost:2975` | wallet-gateway-devkit/tools |
-| app-user Validator proxy | wallet-sdk validator route | `http://localhost:2000/api/validator` | wallet-gateway-devkit/tools |
-| app-provider backend APIs | Official bundle backend wiring, unused here | `grpc://localhost:3901`, `grpc://localhost:3902`, `http://localhost:3903`, `http://localhost:3975` | not used |
-| app-provider UI port | Nginx port exposed by the bundle; routes disabled here | `http://localhost:3000` | not used |
-| Scan UI | Splice explorer/read model UI | `http://scan.localhost:4000` | optional/manual |
-| Scan API | Splice indexed API | `http://scan.localhost:4000/api/scan` | wallet-gateway-devkit/tools |
-| Amulet Registry | token metadata via scan proxy | `http://localhost:2000/api/validator/v0/scan-proxy` | wallet-gateway-devkit/tools |
-| SV UI | Super Validator operations UI | `http://sv.localhost:4000` | optional/manual |
-| sv Ledger/Admin/JSON APIs | Official SV participant APIs | `grpc://localhost:4901`, `grpc://localhost:4902`, `http://localhost:4975` | Splice internals/tools |
-| sv Validator API | SV readiness/admin surface | `http://localhost:4903` | health checks |
-| PostgreSQL | Splice LocalNet DB | `localhost:5432` | LocalNet containers/tools |
+| Service                   | What It Is                                                 | URL / Port                                                                                         | Who Uses It                          |
+| ------------------------- | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| wallet-gateway            | Official wallet-gateway                                    | `http://localhost:3010`                                                                            | direct wallet-gateway clients/devkit |
+| wallet-gateway-devkit     | Public facade for official wallet-gateway plus dev helpers | `http://localhost:3011`                                                                            | Carpincho via `/rpc`, tools          |
+| Carpincho wallet          | Browser wallet UI/provider                                 | `http://localhost:3013` during devkit mode                                                         | user/dApp                            |
+| dApp frontend             | Example dApp                                               | `http://localhost:3012`                                                                            | user                                 |
+| app-user Wallet UI        | Official Splice wallet UI for app-user                     | `http://wallet.localhost:2000`                                                                     | optional/manual                      |
+| app-user Ledger API       | gRPC Ledger API                                            | `grpc://localhost:2901`                                                                            | SDK/tools                            |
+| app-user Admin API        | gRPC Admin API                                             | `grpc://localhost:2902`                                                                            | wallet-gateway-devkit/tools          |
+| app-user Validator API    | Splice validator readiness/API                             | `http://localhost:2903`                                                                            | health/tools                         |
+| app-user JSON API         | JSON Ledger API                                            | `http://localhost:2975`                                                                            | wallet-gateway-devkit/tools          |
+| app-user Validator proxy  | wallet-sdk validator route                                 | `http://localhost:2000/api/validator`                                                              | wallet-gateway-devkit/tools          |
+| app-provider backend APIs | Official bundle backend wiring, unused here                | `grpc://localhost:3901`, `grpc://localhost:3902`, `http://localhost:3903`, `http://localhost:3975` | not used                             |
+| app-provider UI port      | Nginx port exposed by the bundle; routes disabled here     | `http://localhost:3000`                                                                            | not used                             |
+| Scan UI                   | Splice explorer/read model UI                              | `http://scan.localhost:4000`                                                                       | optional/manual                      |
+| Scan API                  | Splice indexed API                                         | `http://scan.localhost:4000/api/scan`                                                              | wallet-gateway-devkit/tools          |
+| Amulet Registry           | token metadata via scan proxy                              | `http://localhost:2000/api/validator/v0/scan-proxy`                                                | wallet-gateway-devkit/tools          |
+| SV UI                     | Super Validator operations UI                              | `http://sv.localhost:4000`                                                                         | optional/manual                      |
+| sv Ledger/Admin/JSON APIs | Official SV participant APIs                               | `grpc://localhost:4901`, `grpc://localhost:4902`, `http://localhost:4975`                          | Splice internals/tools               |
+| sv Validator API          | SV readiness/admin surface                                 | `http://localhost:4903`                                                                            | health checks                        |
+| PostgreSQL                | Splice LocalNet DB                                         | `localhost:5432`                                                                                   | LocalNet containers/tools            |
 
 If `wallet.localhost`, `scan.localhost`, or `sv.localhost` do not resolve, add:
 
