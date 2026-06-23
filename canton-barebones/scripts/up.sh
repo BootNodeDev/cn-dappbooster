@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# This script starts either the official wallet-gateway or the devkit facade.
-# By default it also starts Splice LocalNet; --no-splice skips that phase so the
-# gateway layer can point at externally configured Canton/Splice endpoints.
+# This script starts the Canton gateway layer. The default is Splice plus
+# wallet-gateway-devkit; callers can pass --no-splice for external Canton/Splice
+# endpoints or wallet-gateway to expose only the official gateway.
 
 # Step 1: load shared config, logging, compose wrappers, and validation helpers.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -15,10 +15,29 @@ cd "$ROOT"
 GATEWAY_MODE="wallet-gateway-devkit"
 WITH_SPLICE=1
 
+# Prints the supported startup modes without touching Docker.
+usage() {
+  cat <<EOF
+Usage: npm run canton:up -- [--splice|--no-splice] [wallet-gateway|wallet-gateway-devkit]
+
+Defaults:
+  --splice wallet-gateway-devkit
+
+Examples:
+  npm run canton:up
+  npm run canton:up -- wallet-gateway
+  npm run canton:up -- --no-splice wallet-gateway-devkit
+EOF
+}
+
 # Step 2: parse a small command surface: Splice on/off plus one gateway mode.
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --with-splice)
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    --splice | --with-splice)
       WITH_SPLICE=1
       ;;
     --no-splice)

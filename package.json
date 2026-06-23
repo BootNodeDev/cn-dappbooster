@@ -13,24 +13,14 @@
     "dapp/frontend"
   ],
   "scripts": {
-    "canton:up": "npm --prefix canton-barebones run up",
-    "canton:up:wallet-gateway": "npm --prefix canton-barebones run up:wallet-gateway",
-    "canton:up:wallet-gateway-devkit": "npm --prefix canton-barebones run up:wallet-gateway-devkit",
+    "canton:up": "npm --prefix canton-barebones run up --",
     "canton:down": "npm --prefix canton-barebones run down",
     "canton:health": "npm --prefix canton-barebones run health",
-    "canton:token": "npm --prefix canton-barebones run token",
-    "deploy-dar": "bash canton-barebones/scripts/deploy-dar.sh",
-    "wallet:dev": "npm --prefix carpincho-wallet run dev",
-    "wallet-gateway-devkit:dev": "npm --prefix canton-barebones/wallet-gateway-devkit run dev",
-    "wallet-gateway-devkit:health": "curl -fsS http://localhost:3011/health",
     "carpincho:build:extension": "npm --prefix carpincho-wallet run build:extension",
     "app:dev": "npm --prefix dapp/frontend run dev -- --host localhost --port 3012 --strictPort",
     "lint": "biome check",
     "lint:fix": "biome check --write",
     "format": "biome format --write",
-    "e2e": "npm --prefix dapp/e2e test",
-    "e2e:headed": "npm --prefix dapp/e2e run test:headed",
-    "e2e:ui": "npm --prefix dapp/e2e run test:ui",
     "prepare": "husky"
   },
   "overrides": {

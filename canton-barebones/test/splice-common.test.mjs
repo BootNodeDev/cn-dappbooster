@@ -144,8 +144,24 @@ describe('Splice LocalNet shell config', () => {
     })
 
     assert.match(upScript, /--no-splice/)
+    assert.match(upScript, /--splice \| --with-splice/)
     assert.match(upScript, /WITH_SPLICE=0/)
     assert.match(upScript, /if \[ "\$WITH_SPLICE" = "1" \]/)
+  })
+
+  it('documents the single root canton:up command surface', () => {
+    // Scenario: the root package exposes one canton:up script. The underlying
+    // stack script should explain flags and gateway modes without requiring
+    // users to inspect bash control flow.
+    const upScript = execFileSync('cat', [path.join(projectRoot, 'scripts/up.sh')], {
+      cwd: projectRoot,
+      encoding: 'utf8',
+    })
+
+    assert.match(upScript, /Usage: npm run canton:up --/)
+    assert.match(upScript, /--splice\|--no-splice/)
+    assert.match(upScript, /wallet-gateway\|wallet-gateway-devkit/)
+    assert.match(upScript, /-h \| --help/)
   })
 
   it('publishes wallet-gateway and wallet-gateway-devkit through service env files', () => {

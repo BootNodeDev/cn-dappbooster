@@ -71,8 +71,9 @@ Auth configuration:
 | `AUTH_MODE=oauth-client-credentials` | OAuth client credentials flow | wallet-gateway-devkit |
 | `AUTH_MODE=static-token` | externally obtained bearer token | wallet-gateway-devkit |
 
-`npm run canton:token -- ledger-api-user` is only needed when you explicitly
-want to generate a JWT for `static-token` mode or another manual client.
+`npm --prefix canton-barebones run token -- ledger-api-user` is only needed
+when you explicitly want to generate a JWT for `static-token` mode or another
+manual client.
 
 Optional WalletConnect fallback:
 
@@ -92,19 +93,20 @@ npm run canton:up
 npm run canton:health
 ```
 
-`canton:up` is the default devkit mode. Use a specific mode when you need to
-switch the public gateway behavior:
+`canton:up` defaults to `--splice wallet-gateway-devkit`. Pass one gateway mode
+when you need to switch the public gateway behavior:
 
 ```bash
-npm run canton:up:wallet-gateway          # Splice + official wallet-gateway
-npm run canton:up:wallet-gateway-devkit   # Splice + wallet-gateway + devkit facade
+npm run canton:up -- wallet-gateway          # Splice + official wallet-gateway
+npm run canton:up -- wallet-gateway-devkit   # Splice + wallet-gateway + devkit facade
+npm run canton:up -- --help                  # show supported flags
 ```
 
 When pointing the gateway layer at an external Splice stack, edit
 `canton-barebones/env/.env.wallet-gateway-devkit` and start without LocalNet:
 
 ```bash
-npm --prefix canton-barebones run up -- --no-splice wallet-gateway-devkit
+npm run canton:up -- --no-splice wallet-gateway-devkit
 ```
 
 The official wallet-gateway is always public on `http://localhost:3010`.
@@ -117,13 +119,13 @@ Build and deploy the sample DAR:
 
 ```bash
 cd dapp/daml && dpm build && cd ../..
-npm run deploy-dar -- dapp/daml/.daml/dist/quickstart-tally-0.0.1.dar
+./canton-barebones/scripts/deploy-dar.sh dapp/daml/.daml/dist/quickstart-tally-0.0.1.dar
 ```
 
 Verify wallet-gateway-devkit:
 
 ```bash
-npm run wallet-gateway-devkit:health
+curl -fsS http://localhost:3011/health
 ```
 
 Start Carpincho and the dApp. Carpincho still defaults to `3011`; until that

@@ -43,6 +43,7 @@ npm run canton:health
 ```
 
 `npm run up` and `npm run canton:up` use devkit mode by default.
+`npm run canton:up -- --help` prints the root command flags.
 
 ## Gateway Modes
 
@@ -56,8 +57,8 @@ npm run up:wallet-gateway-devkit   # Splice + wallet-gateway + devkit facade
 From the repo root:
 
 ```bash
-npm run canton:up:wallet-gateway
-npm run canton:up:wallet-gateway-devkit
+npm run canton:up -- wallet-gateway
+npm run canton:up -- wallet-gateway-devkit
 ```
 
 The official wallet-gateway is always public on `http://localhost:3010`.
@@ -161,20 +162,14 @@ If hostnames do not resolve, add:
 Compile a Daml project with `dpm build`, then upload the DAR from the repo root:
 
 ```bash
-npm run deploy-dar -- <path/to/file.dar>
+./canton-barebones/scripts/deploy-dar.sh <path/to/file.dar>
 ```
 
 For the in-repo Tally package that means:
 
 ```bash
 cd dapp/daml && dpm build && cd ../..
-npm run deploy-dar -- dapp/daml/.daml/dist/quickstart-tally-0.0.1.dar
-```
-
-Or call the upload script directly:
-
-```bash
-./scripts/deploy-dar.sh /path/to/app.dar
+./canton-barebones/scripts/deploy-dar.sh dapp/daml/.daml/dist/quickstart-tally-0.0.1.dar
 ```
 
 The script uploads to app-user:

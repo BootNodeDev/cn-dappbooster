@@ -21,7 +21,7 @@ wallet-gateway-devkit up alongside Splice LocalNet and the official
 wallet-gateway. Verify it from the repo root:
 
 ```bash
-npm run wallet-gateway-devkit:health
+curl -fsS http://localhost:3011/health
 ```
 
 ## Auth

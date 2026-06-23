@@ -29,4 +29,4 @@ npm --prefix dapp/e2e run test:ui    # interactive Playwright UI
 npm --prefix dapp/e2e run report     # open the last HTML report
 ```
 
-Or from the repo root: `npm run e2e`.
+From the repo root, keep using the package owner: `npm --prefix dapp/e2e test`.

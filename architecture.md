@@ -191,14 +191,13 @@ validator, registry, OAuth, or signing-secret configuration from this repo.
 | Command | What it does |
 | --- | --- |
 | `npm run canton:up` | download/cache Splice bundle, start `sv + app-user` UI profiles, then wallet-gateway-devkit mode |
-| `npm run canton:up:wallet-gateway` | start Splice plus the official wallet-gateway as the public gateway |
-| `npm run canton:up:wallet-gateway-devkit` | start Splice plus wallet-gateway behind the public devkit facade |
-| `npm --prefix canton-barebones run up -- --no-splice wallet-gateway-devkit` | start only the gateway layer against externally configured Splice endpoints |
+| `npm run canton:up -- wallet-gateway` | start Splice plus the official wallet-gateway as the public gateway |
+| `npm run canton:up -- wallet-gateway-devkit` | start Splice plus wallet-gateway behind the public devkit facade |
+| `npm run canton:up -- --no-splice wallet-gateway-devkit` | start only the gateway layer against externally configured Splice endpoints |
 | `npm run canton:down` | stop the selected gateway and Splice LocalNet, preserving volumes |
 | `npm run canton:health` | check app-user, sv, Scan, wallet UI, and the selected gateway |
-| `npm run canton:token -- ledger-api-user` | generate a LocalNet dev JWT for manual/static-token use |
-| `npm run deploy-dar -- <dar>` | upload DAR to app-user JSON API |
-| `npm run wallet:dev` | start Carpincho web UI |
+| `npm --prefix canton-barebones run token -- ledger-api-user` | generate a LocalNet dev JWT for manual/static-token use |
+| `./canton-barebones/scripts/deploy-dar.sh <dar>` | upload DAR to app-user JSON API |
 | `npm run app:dev` | start the dApp frontend |
 
 For the bring-up sequence, follow [`README.md`](README.md).
