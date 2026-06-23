@@ -7,7 +7,6 @@
     "down": "./scripts/down.sh",
     "lint": "biome check",
     "lint:fix": "biome check --write",
-    "format": "biome format --write",
-    "test": "node --test"
+    "format": "biome format --write"
   }
 }

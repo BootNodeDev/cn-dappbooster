@@ -96,7 +96,6 @@ See [`architecture.md`](architecture.md) for the system shape, subproject layout
   - `carpincho-wallet`: `npm test` (Node `node:test` + `tsx` + happy-dom)
   - `dapp/frontend`: `npm test` (Node `node:test` with `--experimental-strip-types`)
   - `dapp/e2e`: `npm test` (Playwright against the running local stack)
-  - `canton-barebones`: `npm test` (Node `node:test` against the scripts)
 - Cover the paths that matter — business logic, API integrations, component behaviour. Skip styling, third-party library internals, trivial getters/setters.
 
 ## Commit Standards
